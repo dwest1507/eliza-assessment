@@ -161,6 +161,9 @@ def test_ask_prints_the_query_scope_the_sources_and_the_streamed_answer(index, t
     scope, rest = printed.split("\nSources", 1)
     assert "Apple Inc (AAPL, tracked)" in scope
     assert "JPMorgan Chase & Co (JPM, snapshot)" in scope
+    assert "Time window: latest" in scope
+    assert "Sections: Risk Factors" in scope
+    assert "AAPL: AAPL_10-K_2025-09-27 (FY2025), AAPL_10-Q_2025-12-27 (Q1 FY2026)" in scope
     assert "[S1] AAPL " in rest
     sources, answer = rest.split("\nAnswer\n", 1)
     assert "TSLA " in sources and "JPM " in sources

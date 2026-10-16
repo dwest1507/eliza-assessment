@@ -194,11 +194,11 @@ def test_the_fts5_arm_is_the_one_shipped_arm():
 
 
 def test_the_fts5_arm_ranks_the_answer_contexts_sources_taking_each_company_in_turn(index):
+    # Not a risk question: the risk route gives each of these Companies a single Source.
     question = [
         ChatMessage(
             "user",
-            "What are the primary risk factors facing Apple, Tesla, and JPMorgan, "
-            "and how do they compare?",
+            "How do Apple, Tesla, and JPMorgan describe competition, and how do they compare?",
         )
     ]
     fts5 = next(arm for arm in ARMS if arm.name == "fts5")

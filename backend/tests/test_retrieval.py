@@ -9,6 +9,7 @@ import pytest
 from edgar_rag.retrieval import (
     CONTEXT_BUDGET_TOKENS,
     PROMPT_VERSION,
+    STUB_TOKENS,
     Message,
     build_index,
     count_tokens,
@@ -252,14 +253,17 @@ def test_sources_fit_the_context_budget(index):
     assert all(t <= CONTEXT_BUDGET_TOKENS / 3 * 1.05 for t in per_company.values())
 
 
-def test_risk_pointers_are_never_retrieved(index):
-    context = _ask(index, "What are Apple's risk factors?")
+def test_a_risk_pointer_is_cited_as_it_stands_but_never_ranked(index):
+    pointer = _chunks(index, filing_id="AAPL_10-Q_2025-12-27", section="Risk Factors")[0]
 
-    assert context.sources
-    assert not any(
-        s.filing_id == "AAPL_10-Q_2025-12-27" and s.section == "Risk Factors"
-        for s in context.sources
-    )
+    risk = _ask(index, "What are Apple's risk factors?")
+    other = _ask(index, "Did Apple report material changes in its 10-Q for the latest quarter?")
+
+    cited = [s for s in risk.sources if s.filing_id == "AAPL_10-Q_2025-12-27"]
+    assert [(s.section, s.text) for s in cited] == [("Risk Factors", pointer["text"])]
+    assert risk.sources[0].filing_id == "AAPL_10-K_2025-09-27"  # the risks come first
+    assert other.sources
+    assert not any(pointer["text"] in s.text for s in other.sources)
 
 
 def test_a_source_carries_its_citation_metadata_and_passage(index):
@@ -359,3 +363,202 @@ def test_the_conversation_must_end_with_a_user_message(index):
 def test_a_missing_index_says_how_to_build_it(tmp_path):
     with pytest.raises(FileNotFoundError, match="make index"):
         _ask(tmp_path / "missing.sqlite", BRIEF_QUESTION)
+
+
+# --- Time windows ------------------------------------------------------------------------
+
+
+def _scope_filings(context, ticker):
+    return [f.filing_id for f in context.query_scope.filings if f.ticker == ticker]
+
+
+def test_the_last_two_years_is_eight_quarters_up_to_the_companys_latest_filing(index):
+    context = _ask(index, "How has NVIDIA's revenue changed over the last two years?")
+
+    assert context.query_scope.time_window.label == "last 2 years"
+    assert _scope_filings(context, "NVDA") == [
+        "NVDA_10-K_2024-01-28",
+        "NVDA_10-Q_2024-04-28",
+        "NVDA_10-Q_2024-07-28",
+        "NVDA_10-Q_2024-10-27",
+        "NVDA_10-K_2025-01-26",
+        "NVDA_10-Q_2025-04-27",
+        "NVDA_10-Q_2025-07-27",
+        "NVDA_10-Q_2025-10-26",
+    ]
+    assert context.sources
+    assert {s.filing_id for s in context.sources} <= set(_scope_filings(context, "NVDA"))
+
+
+def test_each_company_anchors_its_window_on_its_own_latest_filing(index):
+    context = _ask(index, "How did Apple and Tesla describe demand over the past three years?")
+
+    apple, tesla = _scope_filings(context, "AAPL"), _scope_filings(context, "TSLA")
+    assert len(apple) == len(tesla) == 12
+    assert (apple[0], apple[-1]) == ("AAPL_10-Q_2023-04-01", "AAPL_10-Q_2025-12-27")
+    assert (tesla[0], tesla[-1]) == ("TSLA_10-Q_2023-03-31", "TSLA_10-K_2025-12-31")
+
+
+@pytest.mark.parametrize(
+    ("phrase", "label"),
+    [
+        ("in the last year", "last 1 year"),
+        ("over the past 3 years", "last 3 years"),
+        ("in the previous two quarters", "last 2 quarters"),
+    ],
+)
+def test_time_phrases_are_read_with_their_count_and_unit(index, phrase, label):
+    context = _ask(index, f"How did Tesla's deliveries change {phrase}?")
+
+    assert context.query_scope.time_window.label == label
+
+
+def test_latest_is_the_latest_10k_plus_any_later_10qs(index):
+    context = _ask(
+        index, "What do Apple, Tesla and NVIDIA say about pricing in their latest Filings?"
+    )
+
+    assert context.query_scope.time_window.label == "latest"
+    assert _scope_filings(context, "AAPL") == ["AAPL_10-K_2025-09-27", "AAPL_10-Q_2025-12-27"]
+    assert _scope_filings(context, "TSLA") == ["TSLA_10-K_2025-12-31"]
+    assert _scope_filings(context, "NVDA") == [
+        "NVDA_10-K_2025-01-26",
+        "NVDA_10-Q_2025-04-27",
+        "NVDA_10-Q_2025-07-27",
+        "NVDA_10-Q_2025-10-26",
+    ]
+    assert {s.filing_id for s in context.sources} <= {
+        f.filing_id for f in context.query_scope.filings
+    }
+
+
+def test_a_question_with_no_time_phrase_searches_every_filing(index):
+    context = _ask(index, "What does Tesla say about Gigafactory Texas?")
+
+    assert context.query_scope.time_window.label == "all Filings"
+    assert len(_scope_filings(context, "TSLA")) == 16
+
+
+def test_a_scope_filing_carries_its_periods(index):
+    context = _ask(index, "What did Apple say in its most recent Filings about tariffs?")
+
+    latest = context.query_scope.filings[-1]
+    assert (latest.filing_id, latest.form_type, latest.report_period, latest.fiscal_period) == (
+        "AAPL_10-Q_2025-12-27",
+        "10-Q",
+        "2025-12-27",
+        "Q1 FY2026",
+    )
+
+
+# --- Section hints -----------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("question", "section"),
+    [
+        ("What are the main risk factors in Apple's latest Filings?", "Risk Factors"),
+        ("What legal proceedings does Apple disclose in its latest Filings?", "Legal Proceedings"),
+        ("What does Tesla's latest MD&A say about deliveries?", "MD&A"),
+        ("What does Apple's latest management's discussion say about services?", "MD&A"),
+        ("What interest rate risk does Tesla report in its latest Filings?", "Market Risk"),
+        ("Summarise the business overview in Target's latest Filings.", "Business"),
+    ],
+)
+def test_a_section_hint_prefers_that_section(index, question, section):
+    context = _ask(index, question)
+
+    assert context.query_scope.sections == (section,)
+    assert context.sources
+    assert {s.section for s in context.sources} == {section}
+
+
+def test_market_risk_phrases_are_not_read_as_risk_factors(index):
+    context = _ask(index, "What foreign currency and interest rate risks does Apple disclose?")
+
+    assert context.query_scope.sections == ("Market Risk",)
+
+
+def test_a_stub_section_falls_back_to_the_whole_filing(index):
+    stub = _chunks(index, filing_id="TSLA_10-K_2025-12-31", section="Legal Proceedings")
+    assert sum(c["tokens"] for c in stub) < STUB_TOKENS  # "see Note 15" and little else
+
+    context = _ask(index, "What legal proceedings does Tesla disclose in its latest Filings?")
+
+    assert context.query_scope.sections == ("Legal Proceedings",)
+    assert {s.filing_id for s in context.sources} == {"TSLA_10-K_2025-12-31"}
+    assert {s.section for s in context.sources} - {"Legal Proceedings"}
+
+
+def test_a_missing_section_falls_back_to_the_whole_filing(index):
+    assert not _chunks(index, filing_id="JPM_10-Q_2025-09-30", section="MD&A")
+
+    context = _ask(
+        index, "What does JPMorgan's MD&A say about net interest income in the last two quarters?"
+    )
+
+    assert _scope_filings(context, "JPM") == ["JPM_10-Q_2025-09-30", "JPM_10-K_2025-12-31"]
+    assert "JPM_10-Q_2025-09-30" in {s.filing_id for s in context.sources}
+    assert {s.section for s in context.sources} - {"MD&A"}
+
+
+# --- Risk routing ------------------------------------------------------------------------
+
+
+def test_the_brief_risk_comparison_retrieves_each_latest_10k_risk_factors(index):
+    context = _ask(index, BRIEF_QUESTION)
+
+    pairs = {(s.filing_id, s.section) for s in context.sources}
+    assert {
+        ("AAPL_10-K_2025-09-27", "Risk Factors"),
+        ("TSLA_10-K_2025-12-31", "Risk Factors"),
+        ("JPM_10-K_2025-12-31", "Risk Factors"),
+    } <= pairs
+    assert pairs <= {
+        ("AAPL_10-K_2025-09-27", "Risk Factors"),
+        ("AAPL_10-Q_2025-12-27", "Risk Factors"),  # "no material changes", cited as it stands
+        ("TSLA_10-K_2025-12-31", "Risk Factors"),
+        ("JPM_10-K_2025-12-31", "Risk Factors"),
+    }
+    assert context.query_scope.time_window.label == "latest"
+
+
+def test_a_risk_question_adds_later_10qs_that_state_risk_text(index):
+    context = _ask(index, "Compare the supply chain risks of Apple and NVIDIA.")
+
+    nvidia = {s.filing_id for s in context.sources if s.ticker == "NVDA"}
+    assert "NVDA_10-K_2025-01-26" in nvidia
+    assert nvidia & {"NVDA_10-Q_2025-04-27", "NVDA_10-Q_2025-07-27", "NVDA_10-Q_2025-10-26"}
+    assert {s.section for s in context.sources} == {"Risk Factors"}
+
+
+def test_a_risk_question_with_a_time_phrase_keeps_its_window(index):
+    context = _ask(index, "How have Tesla's risk factors changed over the last two years?")
+
+    assert context.query_scope.time_window.label == "last 2 years"
+    assert len(_scope_filings(context, "TSLA")) == 8
+    assert {s.section for s in context.sources} == {"Risk Factors"}
+    assert {s.filing_id for s in context.sources} & {"TSLA_10-Q_2025-03-31", "TSLA_10-Q_2025-06-30"}
+
+
+def test_each_company_gets_an_even_share_of_the_budget_on_the_risk_route(index):
+    context = _ask(index, "Compare the risk factors of Apple, Tesla, JPMorgan and NVIDIA.")
+
+    spent = {}
+    for source in context.sources:
+        spent[source.ticker] = spent.get(source.ticker, 0) + count_tokens(source.text)
+    assert set(spent) == {"AAPL", "TSLA", "JPM", "NVDA"}
+    share = CONTEXT_BUDGET_TOKENS / 4
+    assert all(share * 0.8 <= t <= share * 1.05 for t in spent.values())
+
+
+def test_an_index_built_by_an_older_version_says_to_rebuild_it(tmp_path, index):
+    old = tmp_path / "old.sqlite"
+    old.write_bytes(index.read_bytes())
+    db = sqlite3.connect(old)
+    db.execute("PRAGMA user_version = 1")
+    db.commit()
+    db.close()
+
+    with pytest.raises(RuntimeError, match="make index"):
+        _ask(old, BRIEF_QUESTION)

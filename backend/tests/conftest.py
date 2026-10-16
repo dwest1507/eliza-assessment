@@ -6,8 +6,9 @@ from edgar_rag.corpus import load_corpus
 from edgar_rag.retrieval import build_index
 
 # The brief's first example names Apple, Tesla and JPMorgan (a Snapshot Company).
-# Target is a Company whose name is also an everyday word.
-INDEXED_TICKERS = {"AAPL", "TSLA", "JPM", "TGT"}
+# Target is a Company whose name is also an everyday word. NVIDIA's fiscal year ends in
+# January, and its 10-Qs state risk text rather than pointing back to the 10-K.
+INDEXED_TICKERS = {"AAPL", "TSLA", "JPM", "TGT", "NVDA"}
 
 
 @pytest.fixture(scope="session")

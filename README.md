@@ -11,7 +11,7 @@ The work runs in phases. The exploratory data analysis (EDA) phase is complete. 
 | Deliverable (from the brief) | Status | Where |
 |---|---|---|
 | README with setup and run instructions | Done | This file |
-| Indexing and retrieval code | Partly done: Corpus loading, cleaning, Section splitting, Financial Facts extraction, chunking, the FTS5 index, Company recognition and retrieval into numbered Sources are built and tested. Time windows, Sector phrases, follow-ups, Coverage Gaps and per-Company routing are next. | [`backend/src/edgar_rag/`](backend/src/edgar_rag/) |
+| Indexing and retrieval code | Partly done: Corpus loading, cleaning, Section splitting, Financial Facts extraction, chunking, the FTS5 index, Company recognition, time windows, Section hints, risk routing and retrieval into numbered Sources budgeted per Company are built and tested. Sector phrases, follow-ups, Coverage Gaps and deduplication are next. | [`backend/src/edgar_rag/`](backend/src/edgar_rag/) |
 | Log of prompt iterations | Started: v1 | [`docs/prompt-iterations.md`](docs/prompt-iterations.md) |
 | Final prompt template | v1 in place; the final version follows the prompt iterations | [`docs/prompt-iterations.md`](docs/prompt-iterations.md), [`backend/src/edgar_rag/_prompt.py`](backend/src/edgar_rag/_prompt.py) |
 | Front-end | Not started | [`frontend/`](frontend/) (reserved for Next.js) |
@@ -89,7 +89,7 @@ Every command runs through the root `Makefile` (`make help` lists them):
 
 ### Asking a question
 
-`make index` chunks every Filing and writes the index, one SQLite file under `data/derived/` (about 25 seconds). `make ask` answers one question through one Answer Call to OpenAI, so it needs an OpenAI API key in `backend/.env`:
+`make index` chunks every Filing and writes the index, one SQLite file under `data/derived/` (about 25 seconds). An index written by an earlier version of the code is refused with a message to run `make index` again. `make ask` answers one question through one Answer Call to OpenAI, so it needs an OpenAI API key in `backend/.env`:
 
 ```sh
 cp backend/.env.example backend/.env   # then set OPENAI_API_KEY (unquoted)
@@ -97,7 +97,7 @@ make index
 make ask Q="What are the primary risk factors facing Apple, Tesla, and JPMorgan, and how do they compare?"
 ```
 
-`make ask` builds the index first if it is missing. It prints the Query Scope (the Companies the question names), the numbered Sources the answer may cite, then the answer as it streams, and a last line with the model, prompt version, token usage and latency. The model defaults to `gpt-6-luna`; set `OPENAI_MODEL` in `backend/.env` to try another. Every Answer Call is also logged as one JSON line in `data/derived/logs/answer_calls.jsonl`.
+`make ask` builds the index first if it is missing. It prints the Query Scope (the Companies the question names, the time window, any Section hints, and each Company's Filings inside the window), the numbered Sources the answer may cite, then the answer as it streams, and a last line with the model, prompt version, token usage and latency. The model defaults to `gpt-6-luna`; set `OPENAI_MODEL` in `backend/.env` to try another. Every Answer Call is also logged as one JSON line in `data/derived/logs/answer_calls.jsonl`.
 
 ### The chat API
 
@@ -173,6 +173,9 @@ from edgar_rag.retrieval import Message, prepare_answer_context
 
 context = prepare_answer_context([Message("user", "What are NVIDIA's main supply risks?")])
 context.query_scope.companies
+context.query_scope.time_window.label  # "latest": a risk question with no time phrase
+context.query_scope.sections           # ("Risk Factors",)
+[f.filing_id for f in context.query_scope.filings]
 [(s.tag, s.label) for s in context.sources]
 context.messages  # the rendered prompt for the Answer Call
 ```

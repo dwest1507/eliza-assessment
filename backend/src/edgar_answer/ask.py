@@ -65,6 +65,16 @@ def _print_context(context: AnswerContext, out: TextIO) -> None:
         ),
         file=out,
     )
+    scope = context.query_scope
+    print(f"  Time window: {scope.time_window.label}", file=out)
+    print(f"  Sections: {', '.join(scope.sections) or 'whole Filings'}", file=out)
+    for company in companies:
+        filings = [f for f in scope.filings if f.ticker == company.ticker]
+        print(
+            f"  {company.ticker}: "
+            + ", ".join(f"{f.filing_id} ({f.fiscal_period})" for f in filings),
+            file=out,
+        )
     print(f"\nSources ({len(context.sources)})", file=out)
     for source in context.sources:
         print(f"  [{source.tag}] {source.label}", file=out)
