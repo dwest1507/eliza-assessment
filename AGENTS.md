@@ -22,6 +22,7 @@ Single-context: one root `CONTEXT.md` plus `docs/adr/`. See `docs/agents/domain.
 - `data/reference/sectors.csv`: the curated Sector table, one row per Company (see `data/README.md`).
 - `backend/src/edgar_rag/`: `corpus.py` (the Corpus seam), `financial_facts.py` (the Financial Facts seam), `sec_reference.py` (fetches and reads the SEC company-facts evaluation reference).
 - `docs/findings.md`: EDA findings, each as Finding → Implication → Design decision.
+- `docs/adr/`: architecture decisions, numbered `NNNN-slug.md` (0001: the SQLite Financial Facts store).
 
 Run everything through the root `Makefile`: `make install` (uv sync), `make test`, `make lint`, `make format`, `make eda`, `make sec-facts`.
 

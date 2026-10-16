@@ -3,10 +3,14 @@
 A Financial Fact is one reported figure: Company, Report Period, metric, value and
 unit. Values are normalised to base units (US dollars, not "millions of dollars").
 
-Only revenue is extracted so far. Filing tables survive in the cleaned body as rows of
-`|`-separated cells, with the column headers (the periods) on rows of their own above
-the figures and the scale ("in millions") in the table title or a header row. The
-revenue figure for the Filing's own period is read from the Filing's income statement:
+Three metrics are extracted: `revenue`, `net_income` and `segment_revenue` (one fact
+per segment, named in `FinancialFact.segment`). Per-share values (earnings per share)
+are not extracted, and are never read as one of these metrics.
+
+Filing tables survive in the cleaned body as rows of `|`-separated cells, with the
+column headers (the periods) on rows of their own above the figures and the scale
+("in millions") in the table title or a header row. Revenue and net income for the
+Filing's own period are read from the Filing's income statement:
 
 1. A table is a run of consecutive lines that contain a `|`.
 2. A revenue row is a row whose label is one of the revenue labels the Companies use
@@ -25,9 +29,29 @@ revenue figure for the Filing's own period is read from the Filing's income stat
    matched, and a leading note-reference column is skipped.
 5. The scale ("in millions", "(millions of dollars)", "(MILLIONS") is the one stated
    nearest above the revenue row: in the header rows, else in the title above them.
+6. Net income is the row below revenue, in the same table and column, labelled net
+   income or net earnings. Net income attributable to the Company ("... attributable
+   to ExxonMobil") wins over the total including noncontrolling interests, matching
+   what the SEC reports as `NetIncomeLoss`. Rows per share, for continuing or
+   discontinued operations, or attributable to noncontrolling interests never count.
 
-A Filing yields no revenue fact rather than a guessed one when any step is ambiguous:
-no revenue row, header years that don't line up with the figures, or no scale.
+Segment revenue is read from the first segment table that reconciles to revenue:
+
+7. A table is split at each of its header rows, since a page footer containing a `|`
+   can glue separate tables into one run of lines.
+8. Segments are either rows of figures directly above a row equal to revenue (a
+   subtotal replaces the rows it adds up; a dash for the period is nil), or heading
+   rows each followed by its own revenue row ("North America", then "Net sales").
+9. The text introducing them (the label rows above them, or the last sentence of the
+   paragraph above the table) must call them segments, which keeps out tables of
+   products, geographies and end markets that also add up to revenue.
+10. Their figures, with reconciling rows (eliminations, hedging, corporate), must add
+   up to revenue. The reconciling rows are not segments and yield no facts.
+
+A Filing yields no fact rather than a guessed one when any step is ambiguous: no
+revenue row, header years that don't line up with the figures, no scale, or segments
+that don't add up. Without a revenue fact it yields no facts at all, since net income
+and segments are located and checked against it.
 
 The seam is separate from the Corpus seam so the EDA can recommend dropping it
 without touching the core.
@@ -64,12 +88,26 @@ class FinancialFact:
     """The multiplier applied to the figure as printed, e.g. 1,000,000 for "in millions"."""
     offset: int
     """Character offset of the source row in the Filing's cleaned body."""
+    segment: str | None = None
+    """The segment a segment revenue figure belongs to, as the Filing names it."""
 
 
 def extract_financial_facts(filing: Filing) -> list[FinancialFact]:
-    """The Financial Facts this Filing reports for its own period. Revenue only, so far."""
-    revenue = _extract_revenue(filing)
-    return [revenue] if revenue else []
+    """The Financial Facts this Filing reports for its own period.
+
+    Revenue and net income from the income statement, then segment revenue. A Filing
+    whose revenue cannot be read yields no facts at all, since the other metrics are
+    located and checked against it.
+    """
+    statement = _income_statement(filing)
+    if statement is None:
+        return []
+    revenue = statement.fact("revenue", statement.anchor)
+    facts = [revenue]
+    net_income_row = _net_income_row(statement)
+    if net_income_row is not None:
+        facts.append(statement.fact("net_income", net_income_row))
+    return facts + _segment_revenue(filing, statement.rows, revenue)
 
 
 # Labels Companies give their top-line revenue, compared after lower-casing, dropping
@@ -83,6 +121,25 @@ _REVENUE_LABEL = re.compile(
     r"|total\s+revenues?,?\s+net\s+of\s+interest\s+expense"
 )
 _NET_INCOME_LABEL = re.compile(r"net\s+(?:income|earnings)\b")
+# The net income row itself: "Net income", "Net earnings/(loss)", "Consolidated net
+# income", "Net income including noncontrolling interests", or net income attributable
+# to the Company ("... attributable to ExxonMobil"), never to noncontrolling interests.
+_NET_INCOME_ROW = re.compile(
+    r"(?:consolidated\s+)?net\s+(?:\(loss\)\s+)?(?:income|earnings)(?:\s*/?\s*\(loss\))?"
+    r"(?:\s+(?P<attributable>attributable\s+to\s+(?!noncontrolling).+)"
+    r"|\s+(?:including|before\s+allocation\s+to)\s+noncontrolling\s+interests)?"
+)
+_SEGMENT = re.compile(r"\bsegments?\b", re.IGNORECASE)
+# Rows in a segment table that reconcile segments to the total but are not segments.
+_RECONCILING = re.compile(
+    r"eliminat|hedging|corporate|reconcil|unallocated|intersegment", re.IGNORECASE
+)
+# How far above segment rows to look for the text that introduces them, how long a
+# text may be to be read whole, and where a long one's last sentence starts.
+_INTRO_ROWS = 8
+_SHORT_TEXT = 120
+_SENTENCE_BREAK = re.compile(r"[.:•]\s*(?=[A-Z(\u201c])|\.\s")
+_TOTAL_HEADING = re.compile(r"total|consolidated(?:\s+totals?)?|total\s+consolidated")
 _STATEMENT_TITLE = re.compile(
     r"statements?\s+of\s+(?:consolidated\s+)?(?:income|operations|earnings)"
     r"|income\s+statements?",
@@ -104,7 +161,7 @@ _HEADER_SEARCH_ROWS = 15
 _STATEMENT_ROWS = 40
 
 _YEAR = re.compile(r"(?<!\d)((?:19|20)\d{2})(?!\d)")
-_NUMBER = re.compile(r"\(?-?\$?\s*\d[\d,]*(?:\.\d+)?\s*\)?")
+_NUMBER = re.compile(r"\$?\s*\(?-?\$?\s*\d[\d,]*(?:\.\d+)?\s*\)?")
 _DASHES = {"—", "–", "-"}
 # Footnote marks and note references: "(1)", "(a)", "(Note 9)", a trailing "*".
 _FOOTNOTE = re.compile(r"\s*\((?:\d{1,2}|[a-z]|note\s*\d+)\)|\s*\*+$", re.IGNORECASE)
@@ -117,7 +174,56 @@ class _Row:
     offset: int
 
 
-def _extract_revenue(filing: Filing) -> FinancialFact | None:
+@dataclass(frozen=True)
+class _Table:
+    """A table of a Filing, with its Report Period column and scale located.
+
+    `anchor` is the row the header and scale were located from: the revenue row of
+    the income statement, or the first row of figures in a segment table.
+    """
+
+    filing: Filing
+    rows: list[_Row]
+    anchor: int
+    years: int
+    """How many year columns the header row heads."""
+    column: int
+    """Index of the Report Period's column among the year columns."""
+    scale: int
+
+    def value(self, i: int) -> int | None:
+        """Row `i`'s figure in the Report Period's column, in base units."""
+        values = _values(self.rows[i].cells)
+        if len(values) not in (self.years, self.years + 1):
+            return None
+        figure = values[len(values) - self.years + self.column]
+        return None if figure is None else int(figure * self.scale)
+
+    def is_nil(self, i: int) -> bool:
+        """Whether row `i` has a dash, not a figure, in the Report Period's column."""
+        values = _values(self.rows[i].cells)
+        if len(values) not in (self.years, self.years + 1):
+            return False
+        return values[len(values) - self.years + self.column] is None
+
+    def fact(self, metric: str, i: int, segment: str | None = None) -> FinancialFact:
+        filing = self.filing
+        return FinancialFact(
+            ticker=filing.ticker,
+            report_period=filing.report_period,
+            metric=metric,
+            value=self.value(i),
+            unit="USD",
+            filing_id=filing.filing_id,
+            period_months=12 if filing.form_type == "10-K" else 3,
+            label=self.rows[i].label,
+            scale=self.scale,
+            offset=self.rows[i].offset,
+            segment=segment,
+        )
+
+
+def _income_statement(filing: Filing) -> _Table | None:
     body = filing.body
     rows = _rows(body, filing.toc.end if filing.toc else 0)
     candidates = []
@@ -126,27 +232,186 @@ def _extract_revenue(filing: Filing) -> FinancialFact | None:
         if header is not None:
             candidates.append((_statement_rank(body, rows, header, i), i, header))
     for _, i, header in sorted(candidates):
-        row = rows[i]
-        values = _values(row.cells)
         years = _years(rows[header])
-        values = values[len(values) - len(years) :]  # drop a leading note-reference column
         column = _column(years, filing.report_period)
         scale = _scale(body, rows, header, i)
-        if column is None or scale is None or values[column] is None:
+        if column is None or scale is None:
             continue
-        return FinancialFact(
-            ticker=filing.ticker,
-            report_period=filing.report_period,
-            metric="revenue",
-            value=int(values[column] * scale),
-            unit="USD",
-            filing_id=filing.filing_id,
-            period_months=12 if filing.form_type == "10-K" else 3,
-            label=row.label,
-            scale=scale,
-            offset=row.offset,
-        )
+        statement = _Table(filing, rows, i, len(years), column, scale)
+        if statement.value(i) is not None:
+            return statement
     return None
+
+
+def _net_income_row(statement: _Table) -> int | None:
+    """The income statement's net income row: attributable to the Company if stated.
+
+    Searched below the revenue row to the end of its table. Per-share rows, rows for
+    continuing or discontinued operations and rows attributable to noncontrolling
+    interests are never net income.
+    """
+    rows = statement.rows
+    found: list[tuple[int, int]] = []
+    for i in range(statement.anchor + 1, len(rows)):
+        if not rows[i].cells or i > statement.anchor + _STATEMENT_ROWS:
+            break
+        match = _NET_INCOME_ROW.fullmatch(_norm(rows[i].label))
+        if match and statement.value(i) is not None:
+            found.append((0 if match["attributable"] else 1, i))
+    return min(found)[1] if found else None
+
+
+def _segment_revenue(
+    filing: Filing, rows: list[_Row], revenue: FinancialFact
+) -> list[FinancialFact]:
+    """Segment revenue from the first segment table whose segments reconcile to revenue.
+
+    Segments are listed in one of two layouts:
+
+    - as rows of figures directly above a row equal to total revenue (a subtotal
+      replaces the rows it adds up), or
+    - as heading rows, each followed by its own revenue row ("North America", then
+      "Net sales"), with a "Consolidated" or "Total" heading left out.
+
+    Either way the text that introduces them must call them segments, and they must
+    add up to revenue. Reconciling rows (eliminations, hedging, corporate) count
+    towards the sum but are not segments.
+    """
+    for table, start, end in _sub_tables(filing, rows):
+        candidates = [
+            *_listed_segments(table, start, end, revenue),
+            _headed_segments(table, start, end),
+        ]
+        for intro, segments in candidates:
+            if (
+                len(segments) >= 2
+                and _introduced_as_segments(rows, intro)
+                and _reconciles([table.value(j) for _, j in segments], revenue, table)
+            ):
+                return [
+                    table.fact("segment_revenue", j, segment=name)
+                    for name, j in segments
+                    if not _RECONCILING.search(name)
+                ]
+    return []
+
+
+def _listed_segments(
+    table: _Table, start: int, end: int, revenue: FinancialFact
+) -> list[tuple[int, list[tuple[str, int]]]]:
+    """For each row equal to revenue, the top level of the rows of figures above it.
+
+    Each comes with the row its introduction ends on: the one above the first row.
+    """
+    rows = table.rows
+    found = []
+    for i in range(start, end):
+        if table.value(i) != revenue.value:
+            continue
+        run = []
+        j = i - 1
+        while j > start and rows[j].label and (table.value(j) is not None or table.is_nil(j)):
+            if not table.is_nil(j):  # a dash for the period: nil, neither segment nor sum
+                run.insert(0, j)
+            j -= 1
+        if run:
+            segments = [(_segment_name(rows[k].label), k) for k in _collapse_subtotals(run, table)]
+            found.append((run[0] - 1, segments))
+    return found
+
+
+def _headed_segments(table: _Table, start: int, end: int) -> tuple[int, list[tuple[str, int]]]:
+    """Each heading row paired with the first revenue row under it, and the first heading."""
+    rows = table.rows
+    segments: list[tuple[str, int]] = []
+    first = start
+    heading = None
+    for i in range(start + 1, end):
+        row = rows[i]
+        if not _is_data(row):
+            heading = (i, _segment_name(row.label)) if row.label else None
+        elif heading and _REVENUE_LABEL.fullmatch(_norm(row.label)) and table.value(i) is not None:
+            if not _TOTAL_HEADING.fullmatch(heading[1].lower()):
+                if not segments:
+                    first = heading[0]
+                segments.append((heading[1], i))
+            heading = None
+    return first, segments
+
+
+def _introduced_as_segments(rows: list[_Row], i: int) -> bool:
+    """Whether the text ending at row `i` calls what follows segments.
+
+    Read upwards from row `i` across label and header rows to the prose line above
+    the table, stopping at a row of figures. Short texts are read whole; of a long one
+    (a paragraph glued to the table's title) only the last sentence counts.
+    """
+    for j in range(i, max(-1, i - _INTRO_ROWS), -1):
+        row = rows[j]
+        if _is_data(row):
+            return False
+        text = " ".join((row.label, *row.cells)).strip()
+        if len(text) > _SHORT_TEXT:
+            text = _SENTENCE_BREAK.split(text.rstrip(" :|"))[-1][-_SHORT_TEXT * 2 :]
+        if _SEGMENT.search(text):
+            return True
+        if not row.cells:
+            return False
+    return False
+
+
+def _collapse_subtotals(run: list[int], table: _Table) -> list[int]:
+    """The top level of a run of rows: a subtotal replaces the rows it adds up.
+
+    A row is a subtotal when it equals the sum of two or more rows directly above it
+    (UnitedHealth's "Optum" over Optum Health, Optum Insight, Optum Rx).
+    """
+    kept: list[int] = []
+    for i in run:
+        value = table.value(i)
+        for n in range(len(kept), 1, -1):
+            if sum(table.value(j) for j in kept[-n:]) == value:
+                del kept[-n:]
+                break
+        kept.append(i)
+    return kept
+
+
+def _sub_tables(filing: Filing, rows: list[_Row]) -> list[tuple[_Table, int, int]]:
+    """Every block of a table that starts at a header row, with its columns located.
+
+    Runs of `|` rows are split at each header row (a row of years over the figures),
+    since a page footer with a `|` can glue separate tables into one run.
+    """
+    blocks = []
+    run_start = None
+    for i, row in enumerate([*rows, _Row("", (), -1)]):
+        if row.cells and run_start is None:
+            run_start = i
+        elif not row.cells and run_start is not None:
+            headers = [j for j in range(run_start, i) if not _is_data(rows[j]) and _years(rows[j])]
+            blocks += zip(headers, [*headers[1:], i][: len(headers)], strict=True)
+            run_start = None
+    tables = []
+    for header, end in blocks:
+        first = next((i for i in range(header + 1, end) if _is_data(rows[i])), None)
+        if first is None or _header_row(rows, first, len(_values(rows[first].cells))) != header:
+            continue
+        years = _years(rows[header])
+        column = _column(years, filing.report_period)
+        scale = _scale(filing.body, rows, header, first)
+        if column is not None and scale is not None:
+            tables.append((_Table(filing, rows, first, len(years), column, scale), header, end))
+    return tables
+
+
+def _reconciles(values: list[int], revenue: FinancialFact, table: _Table) -> bool:
+    """Whether segment figures add up to revenue, allowing for rounding of each figure."""
+    return abs(sum(values) - revenue.value) < len(values) * table.scale
+
+
+def _segment_name(label: str) -> str:
+    return re.sub(r"\s+", " ", _FOOTNOTE.sub("", label.replace("\u00a0", " "))).strip(" :")
 
 
 def _rows(body: str, start: int) -> list[_Row]:
@@ -227,7 +492,7 @@ def _values(cells: tuple[str, ...]) -> list[Decimal | None]:
 
 
 def _number(cell: str) -> Decimal | None:
-    negative = cell.startswith("(") or cell.startswith("-")
+    negative = cell.lstrip("$ ").startswith(("(", "-"))
     digits = re.sub(r"[^\d.]", "", cell)
     try:
         value = Decimal(digits)

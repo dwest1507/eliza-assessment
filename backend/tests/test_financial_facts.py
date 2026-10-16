@@ -26,11 +26,21 @@ def quarterly():
     return load_filing(DEFAULT_CORPUS_DIR / "GOOG_10Q_2025Q3_2025-10-30_full.txt")
 
 
-def _revenue(filing, excerpt):
+def _facts(filing, excerpt, metric):
     facts = extract_financial_facts(replace(filing, body=excerpt, toc=None, sections=()))
-    revenue = [f for f in facts if f.metric == "revenue"]
+    return [f for f in facts if f.metric == metric]
+
+
+def _revenue(filing, excerpt):
+    revenue = _facts(filing, excerpt, "revenue")
     assert len(revenue) <= 1
     return revenue[0] if revenue else None
+
+
+def _net_income(filing, excerpt):
+    net_income = _facts(filing, excerpt, "net_income")
+    assert len(net_income) <= 1
+    return net_income[0] if net_income else None
 
 
 def test_revenue_in_millions_is_returned_in_base_units(annual):
@@ -195,18 +205,268 @@ def test_no_fact_rather_than_a_guess_when_the_scale_or_period_is_unknown(annual)
     assert _revenue(annual, no_year) is None
 
 
+def test_net_income_is_read_from_the_income_statement_in_base_units(annual):
+    excerpt = (
+        "CONSOLIDATED STATEMENTS OF OPERATIONS(In millions, except per-share amounts)\n"
+        "| Years ended\n"
+        "| September 28,2024 |  | September 30,2023\n"
+        "Total net sales | 391,035 |  |  | 383,285 |\n"
+        "Provision for income taxes | 29,749 |  |  | 16,741 |\n"
+        "Net income | $ | 93,736 |  |  | $ | 96,995 |\n"
+    )
+
+    fact = _net_income(annual, excerpt)
+
+    assert fact.value == 93_736_000_000
+    assert fact.unit == "USD"
+    assert fact.label == "Net income"
+    assert fact.period_months == 12
+    assert fact.filing_id == "AAPL_10-K_2024-09-28"
+
+
+def test_net_income_attributable_to_the_company_wins_over_the_consolidated_total(quarterly):
+    excerpt = (
+        "CONDENSED CONSOLIDATED STATEMENTS OF OPERATIONS (in millions)\n"
+        "| Three Months Ended September 30, |  | Nine Months Ended September 30,\n"
+        "| 2025 |  | 2024 |  | 2025 |  | 2024\n"
+        "Total revenues | $ | 28,095 |  |  | $ | 25,182 |  |  | $ | 69,926 |  |  | $ | 71,983 |\n"
+        "Net income including noncontrolling interests | 1,423 |  |  | 2,183 |  |  | 3,061 |  |"
+        "  | 4,700 |\n"
+        "Less: Net income attributable to noncontrolling interests | 50 |  |  | 16 |  |  | 82 |  |"
+        "  | 54 |\n"
+        "Net income attributable to common stockholders | $ | 1,373 |  |  | $ | 2,167 |  |  | $ |"
+        " 2,979 |  |  | $ | 4,646 |\n"
+    )
+
+    fact = _net_income(quarterly, excerpt)
+
+    assert fact.value == 1_373_000_000
+    assert fact.label == "Net income attributable to common stockholders"
+    assert fact.period_months == 3
+
+
+def test_a_net_loss_in_parentheses_is_negative(annual):
+    excerpt = (
+        "STATEMENTS OF OPERATIONS (in thousands)\n"
+        "| 2024 |  | 2023\n"
+        "Revenues | $ | 120,500 |  |  | $ | 98,000 |\n"
+        "Net income (loss) | $ | (4,400) |  |  | $ | 2,000 |\n"
+    )
+
+    assert _net_income(annual, excerpt).value == -4_400_000
+
+
+def test_a_net_loss_written_after_the_dollar_sign_and_labelled_loss_first(quarterly):
+    # UnitedHealth's "Net (loss) earnings"; J&J's "$(68)" with the sign inside.
+    excerpt = (
+        "Condensed Consolidated Statements of Operations\n"
+        "|  | Three Months EndedSeptember 30,\n"
+        "(in millions, except per share data) |  | 2025 |  | 2024\n"
+        "Total revenues |  | $102,346 |  | $88,268 |\n"
+        "Net (loss) earnings |  | $(1,221) |  |  |  |  | $5,774 |  |\n"
+    )
+
+    assert _net_income(quarterly, excerpt).value == -1_221_000_000
+
+
+def test_per_share_values_are_neither_net_income_nor_scaled_to_millions(quarterly):
+    # "In millions, except per share amounts": the per-share rows sit under the scale
+    # word but are dollars per share. Neither may become a net income of $2.31 million.
+    excerpt = (
+        "CONSOLIDATED STATEMENTS OF INCOME(in millions, except per share amounts)\n"
+        "| Three Months Ended |  | Nine Months Ended\n"
+        "| 2025 |  | 2024 |  | 2025 |  | 2024\n"
+        "Revenues | $ | 102,346 |  |  | $ | 88,268 |  |  | $ | 289,007 |  |  | $ | 253,549 |\n"
+        "Net income per share: |  |  |  |  |  |  |\n"
+        "Net income per share - basic | 2.89 |  |  | 2.14 |  |  | 7.92 |  |  | 5.82 |\n"
+        "Net income per share - diluted | 2.87 |  |  | 2.12 |  |  | 7.85 |  |  | 5.77 |\n"
+        "Net income | $ | 34,979 |  |  | $ | 26,301 |  |  | $ | 97,715 |  |  | $ | 73,582 |\n"
+    )
+    per_share_only = excerpt.rsplit("Net income |", 1)[0]
+
+    assert _net_income(quarterly, excerpt).value == 34_979_000_000
+    assert _net_income(quarterly, per_share_only) is None
+
+
+_INCOME_STATEMENT = (
+    "CONSOLIDATED STATEMENTS OF INCOME(in millions, except per share amounts)\n"
+    "| Three Months Ended |  | Nine Months Ended\n"
+    "| 2025 |  | 2024 |  | 2025 |  | 2024\n"
+    "Revenues | $ | 102,346 |  |  | $ | 88,268 |  |  | $ | 289,007 |  |  | $ | 253,549 |\n"
+    "Net income | $ | 34,979 |  |  | $ | 26,301 |  |  | $ | 97,715 |  |  | $ | 73,582 |\n"
+    "Prose between the statements and the notes.\n"
+)
+
+
+def _segments(filing, excerpt):
+    return {f.segment: f.value for f in _facts(filing, excerpt, "segment_revenue")}
+
+
+def test_segment_rows_above_a_total_that_reconciles_to_revenue(quarterly):
+    excerpt = _INCOME_STATEMENT + (
+        "The following table presents revenue and operating income by segment (in millions):\n"
+        "| Three Months Ended |  | Nine Months Ended\n"
+        "| 2025 |  | 2024 |  | 2025 |  | 2024\n"
+        "Revenues: |  |  |  |  |  |  |\n"
+        "Google Services | 87,052 |  |  | 76,510 |  |  | 246,859 |  |  | 220,836 |\n"
+        "Google Cloud | 15,157 |  |  | 11,353 |  |  | 41,041 |  |  | 31,274 |\n"
+        "Other Bets (1) | 344 |  |  | 388 |  |  | 1,167 |  |  | 1,248 |\n"
+        "Hedging gains (losses) | (207) |  |  | 17 |  |  | (60) |  |  | 191 |\n"
+        "Total revenues | 102,346 |  |  | 88,268 |  |  | 289,007 |  |  | 253,549 |\n"
+        "Operating income (loss): |  |  |  |  |  |  |\n"
+        "Google Services | $ | 33,527 |  |  | $ | 30,856 |  |  | $ | 97,005 |  |  | $ | 85,370 |\n"
+    )
+
+    facts = _facts(quarterly, excerpt, "segment_revenue")
+
+    # Hedging gains reconcile the segments to revenue but are not a segment.
+    assert {f.segment: f.value for f in facts} == {
+        "Google Services": 87_052_000_000,
+        "Google Cloud": 15_157_000_000,
+        "Other Bets": 344_000_000,
+    }
+    assert {f.period_months for f in facts} == {3}
+    assert {f.unit for f in facts} == {"USD"}
+
+
+def test_a_subtotal_of_segments_is_one_segment_not_added_twice(quarterly):
+    # UnitedHealth's layout: Optum subtotals its three businesses and their eliminations.
+    excerpt = _INCOME_STATEMENT + (
+        "The following table presents a summary of the reportable segment financial"
+        " information:\n"
+        "|  | Three Months Ended September 30,\n"
+        "(in millions) |  | 2025 |  | 2024\n"
+        "Revenues |  |  |  |\n"
+        "UnitedHealthcare |  | $ | 60,000 |  |  | $ | 50,000 |\n"
+        "Optum Health |  | 25,000 |  |  | 22,000 |\n"
+        "Optum Rx |  | 38,000 |  |  | 33,000 |\n"
+        "Optum eliminations |  | (654) |  |  | (500) |\n"
+        "Optum |  | 62,346 |  |  | 54,500 |\n"
+        "Eliminations |  | (20,000) |  |  | (16,232) |\n"
+        "Consolidated revenues |  | $ | 102,346 |  |  | $ | 88,268 |\n"
+    )
+
+    assert _segments(quarterly, excerpt) == {
+        "UnitedHealthcare": 60_000_000_000,
+        "Optum": 62_346_000_000,
+    }
+
+
+def test_a_row_with_a_dash_for_the_period_does_not_end_the_segment_rows(annual):
+    # Disney's MD&A layout: a reconciling row that is nil this year.
+    excerpt = (
+        "CONSOLIDATED STATEMENTS OF INCOME (in millions)\n"
+        "| 2024 |  | 2023\n"
+        "Total revenues | 88,898 |  |  | 82,722 |\n"
+        "Net income | 2,354 |  |  | 3,145 |\n"
+        "The following table presents revenues by segment:\n"
+        "($ in millions) | 2024 |  | 2023 |  | % ChangeBetter (Worse)\n"
+        "Entertainment | $ | 40,635 |  |  | $ | 39,569 |  |  | 3  %\n"
+        "Sports | 17,111 |  |  | 17,270 |  |  | (1) %\n"
+        "Experiences | 32,549 |  |  | 28,085 |  |  | 16  %\n"
+        "Eliminations | (1,397) |  |  | (1,179) |  |  | (18) %\n"
+        "Content License Early Termination | — |  |  | (1,023) |  |  | 100  %\n"
+        "Revenues | $ | 88,898 |  |  | $ | 82,722 |  |  | 7  %\n"
+    )
+
+    assert _segments(annual, excerpt) == {
+        "Entertainment": 40_635_000_000,
+        "Sports": 17_111_000_000,
+        "Experiences": 32_549_000_000,
+    }
+
+
+def test_segments_as_headings_each_with_its_own_revenue_row(annual):
+    # Amazon's layout: a heading per segment, then its net sales and operating income.
+    excerpt = (
+        "CONSOLIDATED STATEMENTS OF OPERATIONS (in millions)\n"
+        "| 2024 |  | 2023\n"
+        "Total net sales | 637,959 |  |  | 574,785 |\n"
+        "Net income | 59,248 |  |  | 30,425 |\n"
+        "Information on reportable segments and reconciliation to consolidated net income is"
+        " as follows (in millions):\n"
+        "| Year Ended December 31,\n"
+        "| 2023 |  | 2024\n"
+        "North America |  |  |  |\n"
+        "Net sales | $ | 352,828 |  |  | $ | 387,497 |\n"
+        "Operating income | $ | 14,877 |  |  | $ | 24,967 |\n"
+        "International |  |  |  |\n"
+        "Net sales | $ | 131,200 |  |  | $ | 142,906 |\n"
+        "Operating income (loss) | $ | (2,656) |  |  | $ | 3,792 |\n"
+        "AWS |  |  |  |\n"
+        "Net sales | $ | 90,757 |  |  | $ | 107,556 |\n"
+        "Operating income | $ | 24,631 |  |  | $ | 39,834 |\n"
+        "Consolidated |  |  |  |\n"
+        "Net sales | $ | 574,785 |  |  | $ | 637,959 |\n"
+    )
+
+    facts = _facts(annual, excerpt, "segment_revenue")
+
+    assert {f.segment: f.value for f in facts} == {
+        "North America": 387_497_000_000,
+        "International": 142_906_000_000,
+        "AWS": 107_556_000_000,
+    }
+    assert {(f.label, f.period_months) for f in facts} == {("Net sales", 12)}
+
+
+def test_no_segment_revenue_when_the_segments_do_not_add_up_to_revenue(quarterly):
+    excerpt = _INCOME_STATEMENT + (
+        "Revenue by reportable segment (in millions):\n"
+        "| 2025 |  | 2024\n"
+        "Americas | $ | 50,000 |  |  | $ | 40,000 |\n"
+        "Europe | 40,000 |  |  | 30,000 |\n"
+        "Total net sales | $ | 102,346 |  |  | $ | 88,268 |\n"
+    )
+
+    assert _segments(quarterly, excerpt) == {}
+
+
 @pytest.mark.parametrize(
-    "name, period_months, value",
+    "name, period_months, revenue, net_income",
     [
         # Values read by hand from each Filing's income statement.
-        ("AAPL_10K_2024Q3_2024-11-01_full.txt", 12, 391_035_000_000),
-        ("GOOG_10Q_2025Q3_2025-10-30_full.txt", 3, 102_346_000_000),
-        ("XOM_10Q_2025Q2_2025-08-04_full.txt", 3, 81_506_000_000),
+        ("AAPL_10K_2024Q3_2024-11-01_full.txt", 12, 391_035_000_000, 93_736_000_000),
+        ("GOOG_10Q_2025Q3_2025-10-30_full.txt", 3, 102_346_000_000, 34_979_000_000),
+        # ExxonMobil's: net income attributable to ExxonMobil, not including NCI.
+        ("XOM_10Q_2025Q2_2025-08-04_full.txt", 3, 81_506_000_000, 7_082_000_000),
     ],
 )
-def test_revenue_of_real_tracked_company_filings(name, period_months, value):
+def test_revenue_and_net_income_of_real_tracked_company_filings(
+    name, period_months, revenue, net_income
+):
+    facts = extract_financial_facts(load_filing(DEFAULT_CORPUS_DIR / name))
+    by_metric = {f.metric: f for f in facts if f.metric in ("revenue", "net_income")}
+
+    assert {m: (f.period_months, f.value) for m, f in by_metric.items()} == {
+        "revenue": (period_months, revenue),
+        "net_income": (period_months, net_income),
+    }
+
+
+@pytest.mark.parametrize(
+    "name, segments",
+    [
+        # Values read by hand from each Filing's segment note.
+        (
+            "MSFT_10Q_2025Q1_2025-04-30_full.txt",
+            {
+                "Productivity and Business Processes": 29_944_000_000,
+                "Intelligent Cloud": 26_751_000_000,
+                "More Personal Computing": 13_371_000_000,
+            },
+        ),
+        (
+            "AMZN_10Q_2025Q2_2025-08-01_full.txt",
+            {
+                "North America": 100_068_000_000,
+                "International": 36_761_000_000,
+                "AWS": 30_873_000_000,
+            },
+        ),
+    ],
+)
+def test_segment_revenue_of_real_tracked_company_filings(name, segments):
     facts = extract_financial_facts(load_filing(DEFAULT_CORPUS_DIR / name))
 
-    assert [(f.metric, f.period_months, f.value) for f in facts] == [
-        ("revenue", period_months, value)
-    ]
+    assert {f.segment: f.value for f in facts if f.metric == "segment_revenue"} == segments

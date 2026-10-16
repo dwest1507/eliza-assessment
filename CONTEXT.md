@@ -57,7 +57,7 @@ A Company with one or a few Filings, so only point-in-time questions can be answ
 _Avoid_: Partial company, sparse company
 
 **Financial Fact**:
-One reported figure pulled from a Filing's tables: Company, Report Period, metric, value, unit (e.g. NVDA, 2025-07-27, revenue, value, USD).
+One reported figure pulled from a Filing's tables: Company, Report Period, metric, value, unit (e.g. NVDA, 2025-07-27, revenue, value, USD). The metrics are revenue, net income (attributable to the Company) and segment revenue, which also names its segment.
 _Avoid_: Metric, data point, number
 
 ### Time

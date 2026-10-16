@@ -1570,8 +1570,10 @@ by_section
 # years?") need figures, and figures sit in flattened tables that retrieval and the
 # Answer Call read poorly (analysis 3). If Financial Facts can be extracted reliably,
 # they can be handed to the Answer Call as a small, exact table instead. This part
-# measures that for one metric, **revenue**, over every Filing of the 13 Tracked
-# Companies, through the `edgar_rag.financial_facts` seam.
+# measures that for three metrics, **revenue**, **net income** and **segment
+# revenue**, over every Filing of the 13 Tracked Companies, through the
+# `edgar_rag.financial_facts` seam. Per-share values (earnings per share) are not
+# extracted; the seam's tests check they are never read as net income.
 #
 # The reference is the SEC's XBRL company-facts API (`make sec-facts` caches it under
 # `data/derived/`). **The SEC data is used for evaluation only.** It measures how
@@ -1581,17 +1583,27 @@ by_section
 # Each Filing is matched to its own SEC facts on the accession number in its source
 # URL (`.../000032019324000123/...` is `0000320193-24-000123`), the Report Period as
 # the period end, and the period length: three months for a 10-Q, twelve for a 10-K.
-# Companies tag revenue differently, so the reference takes the first tag present
-# from `Revenues`, `RevenueFromContractWithCustomerExcludingAssessedTax`,
-# `RevenueFromContractWithCustomerIncludingAssessedTax`, `SalesRevenueNet`.
+# Companies tag the same figure differently, so the reference takes the first tag
+# present, in this order:
+#
+# - **revenue:** `Revenues`, `RevenueFromContractWithCustomerExcludingAssessedTax`,
+#   `RevenueFromContractWithCustomerIncludingAssessedTax`, `SalesRevenueNet`;
+# - **net income:** `NetIncomeLoss` (net income attributable to the Company), then
+#   `ProfitLoss` (including noncontrolling interests).
+#
+# The company-facts API carries no segment breakdown (it holds only facts without
+# XBRL dimensions), so segment revenue is checked differently, in 7.2.
 
 # %%
-SEC_REVENUE_TAGS = [
-    "Revenues",
-    "RevenueFromContractWithCustomerExcludingAssessedTax",
-    "RevenueFromContractWithCustomerIncludingAssessedTax",
-    "SalesRevenueNet",
-]
+SEC_TAGS = {
+    "revenue": [
+        "Revenues",
+        "RevenueFromContractWithCustomerExcludingAssessedTax",
+        "RevenueFromContractWithCustomerIncludingAssessedTax",
+        "SalesRevenueNet",
+    ],
+    "net_income": ["NetIncomeLoss", "ProfitLoss"],
+}
 
 
 def accession_number(url):
@@ -1605,12 +1617,12 @@ def sec_us_gaap(cik):
     return load_company_facts(cik)["facts"]["us-gaap"]
 
 
-def sec_revenue(filing):
-    """(tag, value) the SEC reports as revenue for this Filing's own period, or (None, None)."""
+def sec_value(filing, metric):
+    """(tag, value) the SEC reports for this metric and Filing's own period, or (None, None)."""
     accn = accession_number(filing.source_url)
     end = filing.report_period.isoformat()
     days = 365 if filing.form_type == "10-K" else 91
-    for tag in SEC_REVENUE_TAGS:
+    for tag in SEC_TAGS[metric]:
         for fact in sec_us_gaap(filing.cik).get(tag, {}).get("units", {}).get("USD", []):
             if fact["accn"] != accn or fact["end"] != end or "start" not in fact:
                 continue
@@ -1621,65 +1633,84 @@ def sec_revenue(filing):
 
 
 tracked = [f for f in filings if f.coverage == "tracked"]
-revenue_rows = []
+facts_by_filing = {f.filing_id: extract_financial_facts(f) for f in tracked}
+
+measured_rows = []
 for f in tracked:
-    fact = next((x for x in extract_financial_facts(f) if x.metric == "revenue"), None)
-    tag, reference = sec_revenue(f)
-    revenue_rows.append(
-        {
-            "ticker": f.ticker,
-            "filing_id": f.filing_id,
-            "report_period": f.report_period,
-            "fiscal_period": f.fiscal_period,
-            "form_type": f.form_type,
-            "label": fact.label if fact else None,
-            "scale": fact.scale if fact else None,
-            "extracted": fact.value if fact else None,
-            "sec_tag": tag,
-            "sec_value": reference,
-        }
-    )
-revenue = pd.DataFrame(revenue_rows)
+    for metric in SEC_TAGS:
+        fact = next((x for x in facts_by_filing[f.filing_id] if x.metric == metric), None)
+        tag, reference = sec_value(f, metric)
+        measured_rows.append(
+            {
+                "metric": metric,
+                "ticker": f.ticker,
+                "filing_id": f.filing_id,
+                "report_period": f.report_period,
+                "fiscal_period": f.fiscal_period,
+                "form_type": f.form_type,
+                "label": fact.label if fact else None,
+                "scale": fact.scale if fact else None,
+                "extracted": fact.value if fact else None,
+                "sec_tag": tag,
+                "sec_value": reference,
+            }
+        )
+measured = pd.DataFrame(measured_rows)
 # A match is equal to the SEC value within one unit of the table's printed precision
 # (under $1 million for a table in millions), i.e. equal at the Filing's own precision.
-revenue["difference"] = revenue["extracted"] - revenue["sec_value"]
-revenue["match"] = revenue["difference"].abs() < revenue["scale"]
+measured["difference"] = measured["extracted"] - measured["sec_value"]
+measured["match"] = measured["difference"].abs() < measured["scale"]
+revenue = measured[measured["metric"] == "revenue"]
 
-extracted = revenue["extracted"].notna()
-referenced = revenue["sec_value"].notna()
-print(f"Tracked Company Filings: {len(revenue)}")
-print(f"Coverage, Filings with an extracted revenue: {extracted.sum()} ({extracted.mean():.1%})")
-print(f"Filings with an SEC reference value: {referenced.sum()}")
-both = extracted & referenced
-print(
-    f"Accuracy, extracted values matching the SEC within one printed unit: "
-    f"{revenue['match'].sum()} of {both.sum()} ({revenue.loc[both, 'match'].mean():.1%}); "
-    f"exactly equal: {(revenue['difference'] == 0).sum()}"
-)
-
-# %%
-by_company = revenue.groupby("ticker").agg(
+summary = measured.groupby("metric", sort=False).agg(
     filings=("filing_id", "size"),
     extracted=("extracted", "count"),
     with_sec_value=("sec_value", "count"),
     matching=("match", "sum"),
-    labels=("label", lambda s: " / ".join(sorted(set(s.dropna())))),
+    exactly_equal=("difference", lambda s: (s == 0).sum()),
 )
-display(by_company)
+summary["coverage"] = (summary["extracted"] / summary["filings"]).map("{:.1%}".format)
+summary["accuracy"] = (summary["matching"] / summary["extracted"]).map("{:.1%}".format)
+summary
 
-# Which SEC tag holds each Company's revenue, Filing by Filing ("RFC excl. tax" is
+# %%
+# Coverage (Filings with an extracted value) and accuracy (extracted values matching
+# the SEC) for each Company and metric.
+per_company = measured.groupby(["ticker", "metric"], sort=False).agg(
+    filings=("filing_id", "size"),
+    extracted=("extracted", "count"),
+    matching=("match", "sum"),
+)
+per_company = per_company.unstack("metric")
+per_company.columns = [f"{metric}_{what}" for what, metric in per_company.columns]
+per_company = per_company[
+    ["revenue_filings", "revenue_extracted", "revenue_matching"]
+    + ["net_income_extracted", "net_income_matching"]
+].rename(columns={"revenue_filings": "filings"})
+display(per_company)
+
+# Labels each Company uses for the two metrics, as printed.
+measured.pivot_table(
+    index="ticker",
+    columns="metric",
+    values="label",
+    aggfunc=lambda s: " / ".join(sorted(set(s.dropna()))),
+)
+
+# %%
+# Which SEC tag holds each Company's figure, Filing by Filing ("RFC excl. tax" is
 # RevenueFromContractWithCustomerExcludingAssessedTax).
 pd.crosstab(
-    revenue["ticker"],
-    revenue["sec_tag"].replace(
+    [measured["metric"], measured["ticker"]],
+    measured["sec_tag"].replace(
         {"RevenueFromContractWithCustomerExcludingAssessedTax": "RFC excl. tax"}
     ),
 )
 
 # %%
-mismatches = revenue[~revenue["match"]]
+mismatches = measured[~measured["match"]]
 print(f"{len(mismatches)} mismatches or missing values")
-mismatches[["filing_id", "label", "extracted", "sec_tag", "sec_value", "difference"]]
+mismatches[["metric", "filing_id", "label", "extracted", "sec_tag", "sec_value", "difference"]]
 
 # %% [markdown]
 # ### 7.1 Values checked by hand
@@ -1687,30 +1718,59 @@ mismatches[["filing_id", "label", "extracted", "sec_tag", "sec_value", "differen
 # The SEC data has quirks of its own: a Company can switch tags between Filings, and
 # a value can be restated later. Matching on the accession number takes each value as
 # that Filing reported it, which avoids restatements, but the reference is still
-# another system's reading. As a guard, these eight values were read by hand from the
-# income statement in each Filing's text, one per Company where the layout differs:
-# prior year first (Alphabet), a note-reference column (ExxonMobil, 10-K), a
-# percent-of-sales column (J&J), a scale in capitals (Pfizer), revenue below its parts
-# (Apple, Microsoft).
+# another system's reading. As a guard, these values were read by hand from each
+# Filing's text, one per Company where the layout differs. Revenue: prior year first
+# (Alphabet), a note-reference column (ExxonMobil, 10-K), a percent-of-sales column
+# (J&J), a scale in capitals (Pfizer), revenue below its parts (Apple, Microsoft).
+# Net income: attributable to the Company below the total including noncontrolling
+# interests (ExxonMobil, Tesla), a net loss labelled "Net (loss) earnings"
+# (UnitedHealth), a figure written `$3,255` beside a prior-year `$(68)` (J&J).
 
 # %%
 hand_checked = pd.DataFrame(
     [
-        ("AAPL_10-K_2024-09-28", "Total net sales", "391,035", "millions"),
-        ("MSFT_10-K_2024-06-30", "Total revenue", "245,122", "millions"),
-        ("KO_10-K_2023-12-31", "Net Operating Revenues", "45,754", "millions"),
-        ("XOM_10-Q_2025-06-30", "Total revenues and other income", "81,506", "millions"),
-        ("JNJ_10-Q_2024-06-30", "Sales to customers (Note 9)", "22,447", "millions"),
-        ("PFE_10-Q_2024-06-30", "Total revenues", "13,283", "millions"),
-        ("GOOG_10-Q_2025-09-30", "Revenues", "102,346", "millions"),
-        ("NVDA_10-Q_2025-10-26", "Revenue", "57,006", "millions"),
+        ("revenue", "AAPL_10-K_2024-09-28", "Total net sales", "391,035"),
+        ("revenue", "MSFT_10-K_2024-06-30", "Total revenue", "245,122"),
+        ("revenue", "KO_10-K_2023-12-31", "Net Operating Revenues", "45,754"),
+        ("revenue", "XOM_10-Q_2025-06-30", "Total revenues and other income", "81,506"),
+        ("revenue", "JNJ_10-Q_2024-06-30", "Sales to customers (Note 9)", "22,447"),
+        ("revenue", "PFE_10-Q_2024-06-30", "Total revenues", "13,283"),
+        ("revenue", "GOOG_10-Q_2025-09-30", "Revenues", "102,346"),
+        ("revenue", "NVDA_10-Q_2025-10-26", "Revenue", "57,006"),
+        ("net_income", "AAPL_10-K_2024-09-28", "Net income", "93,736"),
+        ("net_income", "GOOG_10-Q_2025-09-30", "Net income", "34,979"),
+        (
+            "net_income",
+            "XOM_10-Q_2025-06-30",
+            "Net income (loss) attributable to ExxonMobil",
+            "7,082",
+        ),
+        (
+            "net_income",
+            "TSLA_10-Q_2025-06-30",
+            "Net income attributable to common stockholders",
+            "1,172",
+        ),
+        (
+            "net_income",
+            "UNH_10-Q_2024-03-31",
+            "Net (loss) earnings attributable to UnitedHealth Group common shareholders",
+            "(1,409)",
+        ),
+        ("net_income", "JNJ_10-Q_2024-03-31", "Net earnings (loss)", "3,255"),
     ],
-    columns=["filing_id", "label_in_filing", "figure_in_filing", "scale_in_filing"],
+    columns=["metric", "filing_id", "label_in_filing", "figure_in_millions"],
 )
-hand_checked["hand_value"] = hand_checked["figure_in_filing"].str.replace(",", "").astype(
-    int
-) * hand_checked["scale_in_filing"].map({"millions": 1_000_000})
-hand_checked = hand_checked.merge(revenue[["filing_id", "extracted", "sec_value"]], on="filing_id")
+hand_checked["hand_value"] = (
+    hand_checked["figure_in_millions"]
+    .str.replace(",", "")
+    .str.replace(r"\((.*)\)", r"-\1", regex=True)
+    .astype(int)
+    * 1_000_000
+)
+hand_checked = hand_checked.merge(
+    measured[["metric", "filing_id", "extracted", "sec_value"]], on=["metric", "filing_id"]
+)
 hand_checked["extracted_ok"] = hand_checked["hand_value"] == hand_checked["extracted"]
 hand_checked["sec_ok"] = hand_checked["hand_value"] == hand_checked["sec_value"]
 hand_checked
@@ -1718,18 +1778,139 @@ hand_checked
 # %%
 # The source row of each hand-checked value, as the extractor found it in the cleaned body.
 by_id = {f.filing_id: f for f in tracked}
-for filing_id in hand_checked["filing_id"]:
-    f = by_id[filing_id]
-    fact = extract_financial_facts(f)[0]
-    row = f.body[fact.offset :].split("\n", 1)[0]
-    print(f"{filing_id:22} {row[:110]}")
+for metric, filing_id in hand_checked[["metric", "filing_id"]].itertuples(index=False):
+    fact = next(x for x in facts_by_filing[filing_id] if x.metric == metric)
+    row = by_id[filing_id].body[fact.offset :].split("\n", 1)[0]
+    print(f"{metric:10} {filing_id:22} {row[:100]}")
 
 # %% [markdown]
-# ### 7.2 A 10-K reports the year, not its fourth quarter
+# ### 7.2 Segment revenue
 #
-# A quarterly revenue series needs every quarter, but the 10-K reports the fiscal year.
+# A segment's revenue is read from the Filing's segment table: either rows of figures
+# above a row equal to revenue (Microsoft, Alphabet, Apple, Disney), or a heading per
+# segment followed by its own revenue row (Amazon, Meta, Tesla). The text introducing
+# the table must call them segments, which keeps out tables of products, geographies
+# and end markets that also add up to revenue (Apple's net sales by category,
+# NVIDIA's revenue by market platform). The segments, with any reconciling rows
+# (eliminations, hedging), must add up to the Filing's revenue fact, which 7 has
+# matched to the SEC for every Filing.
+#
+# Without an SEC reference, accuracy is checked two ways: every extracted set
+# reconciles to SEC-matched revenue by construction, and values read by hand from the
+# Filing text must agree.
+
+# %%
+segment_facts = pd.DataFrame(
+    {
+        "ticker": x.ticker,
+        "filing_id": x.filing_id,
+        "report_period": x.report_period,
+        "segment": x.segment,
+        "value": x.value,
+    }
+    for fs in facts_by_filing.values()
+    for x in fs
+    if x.metric == "segment_revenue"
+)
+segment_coverage = (
+    pd.DataFrame({"ticker": f.ticker, "filing_id": f.filing_id} for f in tracked)
+    .assign(with_segments=lambda d: d["filing_id"].isin(segment_facts["filing_id"]))
+    .groupby("ticker")
+    .agg(filings=("filing_id", "size"), with_segments=("with_segments", "sum"))
+)
+covered = segment_coverage["with_segments"].sum()
+print(
+    f"Segment revenue extracted from {covered} of {segment_coverage['filings'].sum()} "
+    f"Tracked Company Filings ({covered / segment_coverage['filings'].sum():.1%}), "
+    f"{(segment_coverage['with_segments'] > 0).sum()} of {len(segment_coverage)} Companies"
+)
+segment_coverage
+
+# %%
+# The segments each Company reports, and the Report Periods each set covers. A change
+# of set is a reorganisation of the Company's segments.
+segment_sets = (
+    segment_facts.groupby(["ticker", "filing_id", "report_period"])["segment"]
+    .agg(" / ".join)
+    .reset_index()
+    .groupby(["ticker", "segment"])
+    .agg(
+        filings=("filing_id", "size"),
+        first=("report_period", "min"),
+        last=("report_period", "max"),
+    )
+    .sort_values(["ticker", "first"])
+)
+segment_sets
+
+# %%
+# The segments add up to the Filing's revenue (with any reconciling rows), which is
+# what the extractor requires. Shown here as the share of revenue the named segments
+# account for: the rest is eliminations, hedging and similar rows.
+segment_share = (
+    segment_facts.groupby("filing_id")["value"]
+    .sum()
+    .to_frame("segments_total")
+    .join(revenue.set_index("filing_id")[["ticker", "sec_value"]])
+)
+segment_share["share_of_revenue"] = segment_share["segments_total"] / segment_share["sec_value"]
+segment_share.groupby("ticker")["share_of_revenue"].agg(["min", "max"]).round(4)
+
+# %%
+segment_hand_checked = pd.DataFrame(
+    [
+        ("MSFT_10-Q_2025-03-31", "Productivity and Business Processes", "29,944"),
+        ("MSFT_10-Q_2025-03-31", "Intelligent Cloud", "26,751"),
+        ("MSFT_10-Q_2025-03-31", "More Personal Computing", "13,371"),
+        ("AMZN_10-Q_2025-06-30", "North America", "100,068"),
+        ("AMZN_10-Q_2025-06-30", "AWS", "30,873"),
+        ("GOOG_10-Q_2025-06-30", "Google Cloud", "13,624"),
+        ("META_10-Q_2025-06-30", "Reality Labs", "370"),
+        ("TSLA_10-Q_2025-06-30", "Energy generation and storage segment", "2,789"),
+        ("AAPL_10-Q_2025-06-28", "Greater China", "15,369"),
+        ("DIS_10-K_2023-09-30", "Experiences", "32,549"),
+    ],
+    columns=["filing_id", "segment", "figure_in_millions"],
+)
+segment_hand_checked["hand_value"] = (
+    segment_hand_checked["figure_in_millions"].str.replace(",", "").astype(int) * 1_000_000
+)
+segment_hand_checked = segment_hand_checked.merge(
+    segment_facts[["filing_id", "segment", "value"]], on=["filing_id", "segment"], how="left"
+)
+segment_hand_checked["extracted_ok"] = (
+    segment_hand_checked["hand_value"] == segment_hand_checked["value"]
+)
+segment_hand_checked
+
+# %% [markdown]
+# Six Companies yield no segment revenue. Each was inspected by hand; none is a
+# misread, each is a layout the rules don't handle:
+#
+# - **KO, NVDA, XOM:** segments are the **columns** of the segment table, not its
+#   rows (Coca-Cola's regions; NVIDIA's Compute & Networking and Graphics;
+#   ExxonMobil's Upstream, Energy, Chemical and Specialty Products, each split U.S. /
+#   non-U.S.).
+# - **JNJ:** segment sales are broken down by franchise and by U.S. / International
+#   rows; the segment totals sit in columns of a later table.
+# - **PFE:** revenues, earnings and depreciation sit side by side in one table, and
+#   the reconciling rows leave the revenue column empty, so the rows don't line up.
+# - **UNH:** the MD&A table's percentage-change cells carry a `%` on some rows and not
+#   others, so rows of one table have different widths; the note gives segments as
+#   columns.
+#
+# Two Disney Filings (the FY2022 10-K and the Q2 FY2022 10-Q) are missed for a
+# different reason, and rightly: their segments add up to "segment revenues", which a
+# separate table reconciles to total revenue through a $1,023 million content-licence
+# termination charged outside the segments. The segment table alone does not add up to
+# revenue, so the extractor returns nothing rather than a set it cannot check.
+
+# %% [markdown]
+# ### 7.3 A 10-K reports the year, not its fourth quarter
+#
+# A quarterly series needs every quarter, but the 10-K reports the fiscal year.
 # Its fourth quarter is the year less the three quarters reported in that year's
-# 10-Qs. NVIDIA's series over the Corpus shows the derivation:
+# 10-Qs. NVIDIA's revenue over the Corpus shows the derivation:
 
 # %%
 nvda = revenue[revenue["ticker"] == "NVDA"][
@@ -1746,46 +1927,65 @@ for i, row in nvda[nvda["form_type"] == "10-K"].iterrows():
 nvda.round(3)
 
 # %% [markdown]
-# **What the revenue extraction shows**
+# **What the extraction shows**
 #
-# - **Coverage is complete.** A revenue figure is extracted from all 197 Filings of
-#   the 13 Tracked Companies, 10-Ks and 10-Qs.
-# - **Accuracy is complete.** Every extracted value equals the SEC's value for the
-#   same Filing and period, to the dollar (the tolerance allowed is under one printed
-#   unit, $1 million for a table in millions, and none was needed). There are no
-#   mismatches to list. All eight hand-checked values agree with both.
+# - **Revenue and net income: complete and exact.** Both are extracted from all 197
+#   Filings of the 13 Tracked Companies, 10-Ks and 10-Qs, and every value equals the
+#   SEC's value for the same Filing and period to the dollar (the tolerance allowed is
+#   under one printed unit, $1 million for a table in millions, and none was needed).
+#   There are no mismatches to list. All 14 hand-checked values agree with both.
+# - **Net income needs the right row, not just a net income row.** Six Companies
+#   report a total including noncontrolling interests and then the part attributable
+#   to the Company (ExxonMobil, Coca-Cola, Pfizer, Tesla, Disney, UnitedHealth); the
+#   SEC's `NetIncomeLoss` is the attributable figure, and so is what a reader means by
+#   "net income". Per-share rows ("Net income per share - diluted") sit in the same
+#   table under the same "in millions" title and must never be read as net income.
+# - **Segment revenue: exact where found, found for half the Filings.** It is
+#   extracted from 101 of the 197 Filings (51%), for 7 of the 13 Companies: Apple,
+#   Amazon, Alphabet, Meta, Microsoft and Tesla in every Filing, Disney in 15 of 17.
+#   Every extracted set adds up to the SEC-matched revenue (with eliminations or
+#   hedging) and all 10 hand-checked values agree. The other six Companies (J&J,
+#   Coca-Cola, NVIDIA, Pfizer, UnitedHealth, ExxonMobil) yield nothing: their segments
+#   are the columns of a table, or are split across rows the rules can't add up. The
+#   SEC's company-facts data has no segment breakdown, so a wider check needs the
+#   hand-checked values or another reference.
+# - **Segments change.** Disney reorganised from two segments (Disney Media and
+#   Entertainment Distribution; Disney Parks, Experiences and Products) to three
+#   (Entertainment, Sports, Experiences) from FY2023, so a segment trend can't run
+#   across the change.
 # - **Rules are enough, but they encode the Corpus.** Thirteen Companies use eight
-#   different revenue labels ("Total net sales", "Net Operating Revenues", "Sales to
-#   customers", "Total revenues and other income"...), put the current year in the
-#   first or the last column, add note-reference or percent-of-sales columns, state the
-#   scale in the title, a header row or in capitals, and put revenue below its parts.
-#   The extractor handles each with a rule: a label list, columns chosen by the years in
-#   the nearest header row, percentage cells dropped, the income statement preferred
-#   by its title, "Total" rows preferred over their parts. These rules were written
-#   against these 13 Companies; the 41 Snapshot Companies are not measured here and
-#   will have labels the list lacks. The extractor returns nothing rather than a guess
-#   when a step is ambiguous.
-# - **The SEC's own tagging varies too.** It tags these values as `Revenues` for some
-#   Companies and `RevenueFromContractWithCustomerExcludingAssessedTax` for others, and
-#   Alphabet and Pfizer switch between them from one Filing to the next. A reference
-#   built on one tag would have reported false mismatches.
+#   revenue labels and 17 net income labels, put the current year in the first or
+#   the last column, add note-reference or percent-of-sales columns, state the scale in
+#   the title, a header row or in capitals, write negatives as `(68)` or `$(68)`, and
+#   lay segment tables out three different ways. These rules were written against
+#   these 13 Companies; the 41 Snapshot Companies are not measured here. The extractor
+#   returns nothing rather than a guess when a step is ambiguous.
+# - **The SEC's own tagging varies too.** Revenue is `Revenues` for some Companies and
+#   `RevenueFromContractWithCustomerExcludingAssessedTax` for others, and Alphabet and
+#   Pfizer switch between them from one Filing to the next. A reference built on one
+#   tag would have reported false mismatches. Net income is `NetIncomeLoss` throughout.
 # - **A 10-K gives the year.** A quarterly series needs the fourth quarter derived as
 #   the fiscal year less its three 10-Q quarters (NVIDIA's Q4 FY2025: $39.3bn).
 #
 # **So the design does:**
 #
-# - **Keep the Financial Facts seam** and extract revenue for the Tracked Companies at
-#   index time. Each fact carries its Filing ID, Report Period, Fiscal Period, label
-#   and position in the body, so the Answer Call can cite the exact row.
-# - **Hand trend questions exact figures.** For a revenue trend question, the
-#   rule-based query parser selects the Company's facts for the window and puts them in
-#   the Answer Call's context as a small table, next to the retrieved MD&A text, so the
-#   single Answer Call reads numbers rather than flattened tables. Quarterly series
-#   derive the fourth quarter from the 10-K and say so.
+# - **Build a SQLite Financial Facts store** of the Tracked Companies' revenue, net
+#   income and segment revenue, rebuilt from the Corpus at index time, and query it
+#   with fixed, parameterised queries chosen by the rule-based query parser before the
+#   single Answer Call. Never text-to-SQL, which would need a second LLM call. The
+#   decision and its alternatives are in
+#   [ADR 0001](../../docs/adr/0001-sqlite-financial-facts-store.md).
+# - **Hand trend questions exact figures.** For a revenue, net income or segment
+#   question, the facts for the Company and window go into the Answer Call's context as
+#   a small table, each with its Filing ID, Report Period, Fiscal Period and label as
+#   printed, next to the retrieved MD&A text. Quarterly series derive the fourth
+#   quarter from the 10-K and say so.
+# - **Fall back to text, and say so, where the store has no fact.** Segment questions
+#   for the six Companies without segment facts, any other metric, and every Snapshot
+#   Company are answered from retrieved table and MD&A chunks, and the answer says the
+#   figure was read from the Filing text rather than from extracted Financial Facts.
 # - **Never answer from the SEC data.** It stays an evaluation reference, cached under
 #   `data/derived/` and fetched only by `make sec-facts`.
-# - Whether to persist facts in a SQLite store is decided in the Financial Facts ADR,
-#   once net income and segment revenue have been measured the same way.
 
 # %% [markdown]
 # ## 8. Coverage of the example questions
