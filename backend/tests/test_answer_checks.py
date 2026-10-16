@@ -6,6 +6,7 @@ from edgar_eval.answer_checks import (
     check_citations,
     check_coverage_gaps,
     check_figures,
+    check_structure,
     claims,
     figures,
 )
@@ -403,3 +404,108 @@ def test_a_gap_about_one_company_may_be_stated_without_naming_it_again():
     )
 
     assert check_coverage_gaps(answer, [gap("no_guidance", "TSLA")], {"TSLA": ("Tesla",)}).passed
+
+
+# --- Answer structure (assumption 8) ------------------------------------------------------
+
+COMPANIES = {"AAPL": ("Apple Inc", "Apple"), "TSLA": ("Tesla Inc", "Tesla")}
+FILLER = " ".join(["Apple relies on partners in Asia for most of its manufacturing [S1]."] * 30)
+
+
+def structured(opening: str = "", body: str = "", coverage: str = "") -> str:
+    """An answer in the shape of assumption 8, with any part replaced."""
+    return "\n\n".join(
+        (
+            opening
+            or "Apple and Tesla both depend on outside suppliers [S1][S3]. Tesla's risks also "
+            "centre on one person [S3].",
+            body
+            or f"## Apple (AAPL)\n\n{FILLER}\n\n## Tesla (TSLA)\n\n"
+            "- Tesla depends on Elon Musk [S3].",
+            coverage or "**Coverage:** JPMorgan's risk factors were not among the Sources.",
+        )
+    )
+
+
+def test_an_answer_in_the_analyst_structure_passes():
+    check = check_structure(structured(), COMPANIES)
+
+    assert check.passed, check.problems
+    assert 300 <= check.words <= 600
+
+
+@pytest.mark.parametrize(
+    "opening",
+    [
+        "## Apple (AAPL)",
+        "| Company | Main risk |\n|---|---|\n| Apple | Outsourcing [S1] |",
+        "- Apple outsources manufacturing [S1].",
+        "Apple outsources [S1]. Tesla depends on Elon Musk [S3]. Both face tariffs [S1]. "
+        "Apple sells abroad [S1]. Tesla builds factories [S3].",
+    ],
+)
+def test_an_answer_that_does_not_open_with_a_short_direct_answer_fails(opening):
+    check = check_structure(structured(opening=opening), COMPANIES)
+
+    assert not check.passed
+    assert any("direct answer" in p for p in check.problems)
+
+
+def test_several_companies_need_a_heading_each_or_a_comparison_table():
+    no_tesla_heading = f"## Apple (AAPL)\n\n{FILLER} Tesla depends on Elon Musk [S3]."
+    table = (
+        f"{FILLER}\n\n| Company | Main risk |\n|---|---|\n"
+        "| Apple | Outsourcing [S1] |\n| Tesla | Elon Musk [S3] |"
+    )
+
+    failing = check_structure(structured(body=no_tesla_heading), COMPANIES)
+    assert any("per Company" in p for p in failing.problems)
+    assert check_structure(structured(body=table), COMPANIES).passed
+    single = check_structure(structured(body=FILLER), {"AAPL": COMPANIES["AAPL"]})
+    assert single.passed, single.problems
+
+
+@pytest.mark.parametrize(
+    "coverage",
+    [
+        "### Coverage\n\nJPMorgan's risk factors were not among the Sources.",
+        "Tesla also faces tariffs [S3]. **Coverage:** JPMorgan's risk factors were not "
+        "among the Sources.",
+    ],
+)
+def test_a_closing_coverage_note_may_be_a_heading_or_a_bold_label(coverage):
+    check = check_structure(structured(coverage=coverage), COMPANIES)
+
+    assert check.passed, check.problems
+
+
+@pytest.mark.parametrize(
+    "coverage",
+    [
+        "Tesla also faces tariffs [S3].",
+        "**Coverage:** JPMorgan's risk factors were not among the Sources.\n\n"
+        "## Tesla (TSLA)\n\nTesla also faces tariffs [S3].",
+    ],
+)
+def test_an_answer_that_does_not_end_with_a_coverage_note_fails(coverage):
+    check = check_structure(structured(coverage=coverage), COMPANIES)
+
+    assert any("Coverage note" in p for p in check.problems)
+
+
+@pytest.mark.parametrize(("repeats", "verdict"), [(4, "under 300"), (110, "over 600")])
+def test_an_answer_outside_300_to_600_words_fails(repeats, verdict):
+    body = " ".join(["Apple relies on partners in Asia [S1]."] * repeats)
+    check = check_structure(
+        structured(body=f"{body}\n\n| A | B |\n|---|---|\n| x | y |"), COMPANIES
+    )
+
+    assert [p for p in check.problems if "words" in p] == [f"{check.words} words, {verdict}"]
+
+
+def test_an_answer_with_no_sources_need_only_open_with_its_direct_answer():
+    answer = "Honeywell is not in the Filings provided, so I can't assess its performance."
+
+    check = check_structure(answer, {})
+
+    assert check.passed, check.problems

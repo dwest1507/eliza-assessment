@@ -228,6 +228,10 @@ def test_each_case_is_answered_checked_judged_and_priced(index, tmp_path):
     assert result.figures.passed  # matches Apple's revenue Financial Fact
     assert result.coverage_gaps.stated == ("periods_differ",)
     assert result.coverage_gaps.missing == ("no_guidance",)
+    # Its structure, against the Companies its Sources come from (Apple and Tesla).
+    assert not result.structure.passed
+    assert any("AAPL, TSLA" in p for p in result.structure.problems)
+    assert f"{result.structure.words} words, under 300" in result.structure.problems
     # Jev's judgments, asked about the case's Required Facts and the answer's claims.
     answer, facts, claims, sources = judge.asked[0]
     assert facts == ["Apple uses outsourcing partners.", "Tesla depends on Elon Musk."]
@@ -251,6 +255,8 @@ def test_each_case_is_answered_checked_judged_and_priced(index, tmp_path):
         0,
     )
     assert (overall.fact_recall, overall.faithfulness) == (0.5, 1.0)
+    assert overall.structure_followed == 0
+    assert overall.mean_words == result.structure.words
     assert overall.mean_cost_usd == pytest.approx(0.0025)
     assert overall.judge_cost_usd == pytest.approx(5_000 * 0.042 / 1_000_000)
     assert report.by_type["risk"].cases == 1

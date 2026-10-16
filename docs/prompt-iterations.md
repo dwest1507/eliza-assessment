@@ -183,3 +183,115 @@ Retrieval changes with it, which is where most of the follow-up behaviour lives:
 **Why.** v1 dropped the tags because the browser did not yet send the earlier turns' Sources ([v1's known gaps](#v1-the-tracer-bullet)). With the tags gone the model could not tell which Filing an earlier claim came from, so "How did that change?" lost the period the earlier answer was about. With `[S3]` left in, it would point at whatever this turn's S3 is, a different Filing. A Filing ID says which Company, Form Type and Report Period the earlier claim rested on, in the same words the Coverage block uses, without being citable in this turn.
 
 **Scores.** Retrieval on dev, from the retrieval harness: hit@10 0.71 → 0.88, recall@10 0.65 → 0.82, MRR 0.59 → 0.73; only the five multi-turn cases changed ([evaluation notes](evaluation.md#after-follow-up-inheritance)). Generation on dev (`gpt-6-luna`, `jev-1.13.0`), against v3 (v4 was never scored, so this run also scores the Financial Facts table): Coverage Gaps stated 0.91 → 1.00, Fact Recall 0.55 → 0.50, Faithfulness 0.90 → 0.90, citations valid 0.79 → 0.75, figures exact 0.95 → 0.90, $0.0024 → $0.0024 per answer, 6.6 → 6.1 seconds ([evaluation notes](evaluation.md#after-financial-facts-and-follow-ups-prompt-v5)). The Fact Recall and citation moves are within the run-to-run range; the multi-turn answers no longer have uncited sentences about earlier turns. The Golden Set's scripted histories already cite Filing IDs in this form, so the harness scores of the multi-turn cases measure the inheritance, not the rewriting; the rewriting is checked by tests through the retrieval seam and the API.
+
+## The iteration pass: v6 to v10
+
+With retrieval settled ([ADR 0008](adr/0008-fts5-stays-the-shipped-arm.md)), the template was tuned on the dev split's failures. Each version below is one change to the template, written for named failing cases or a named metric, and scored with `make eval-generation` on the 20 dev cases (`gpt-6-luna`, `jev-1.13.0`, 2026-10-16, the `fts5` Arm). The holdout split was not run.
+
+**Before.** v5's two scored runs from the Arm comparison (the `fts5` run and its control rerun, on the same code and retrieval) are the baseline, so every version is compared with two samples of v5 and the noise between them is visible.
+
+**A new check: the answer's structure.** The harness now checks each answer against assumption 8 in code ([`answer_checks.check_structure`](../backend/src/edgar_eval/answer_checks.py)): it opens with a direct answer of at most three sentences of prose (not a heading, list or table); when its Sources come from two or more Companies, it has a heading per Company or a comparison table; it ends with a Coverage note; and it runs to 300–600 words. An answer with no Sources (a question about a Company missing from the Corpus, or the stale GE Filing) is its Coverage Gaps alone, so only the opening rule applies to it. v5's answers were scored by the same check after the fact: 0.58 and 0.42 of answers followed the structure, mostly failing on length (8 to 11 answers under 300 words).
+
+**How a version is kept.** A version is kept when it fixes the failing cases it was written for and the exact sign test, pairing the dev cases with its predecessor's, puts it behind on none of Fact Recall, Faithfulness, Coverage Gaps or structure. A version that fails either test is discarded, and the next one starts again from the last kept version. On 20 cases the two v5 runs differ by up to 5 cases on one score with nothing changed, so a version is also never kept for an overall score that moved by less than that.
+
+**Where Fact Recall can move.** Of the 44 Required Facts on dev, 14 have evidence quotes that never reach the prompt: the Inflation Reduction Act passages of the five pharmaceutical Companies and Merck's Keytruda forecast (`sector-pharma-regulatory`, `missing-bms-with-merck`), Tesla's 10-K net income narrative, UnitedHealth's date of the Change Healthcare intrusion, and the topic-change follow-up's Sources. No prompt can state them; they are retrieval's to fix. So each version below also reports the share of the 30 reachable facts that its answers state (Jev probability at least 0.5).
+
+| Version | cases | citations valid | figures exact | gaps stated | structure followed | words | Fact Recall | reachable facts stated | Faithfulness | $ per answer | latency s | first text s |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| v5 | 19 | 0.84 | 0.95 | 1.00 | 0.58 | 257 | 0.54 | 18 of 29 | 0.95 | 0.0023 | 5.4 | 1.7 |
+| v5 again | 19 | 0.89 | 0.95 | 1.00 | 0.42 | 248 | 0.53 | 18 of 29 | 0.93 | 0.0023 | 5.7 | 2.1 |
+| v6 | 20 | 0.85 | 0.95 | 1.00 | 0.55 | 326 | 0.58 | 23 of 30 | 0.94 | 0.0025 | 5.6 | 1.9 |
+| **v7** | 19 | 0.89 | 0.95 | 1.00 | **0.84** | 389 | **0.63** | 21 of 29 | 0.95 | 0.0025 | 8.0 | 2.5 |
+| **v7 again** | 20 | 0.90 | 0.95 | 1.00 | **0.90** | 404 | **0.65** | 24 of 30 | 0.91 | 0.0026 | 8.9 | 3.0 |
+| v8 (discarded) | 20 | 0.90 | 0.95 | 1.00 | 0.80 | 373 | 0.61 | 23 of 30 | 0.93 | 0.0026 | 7.0 | 2.0 |
+| v9 (discarded) | 20 | 0.95 | 0.95 | 1.00 | 0.75 | 382 | 0.64 | 24 of 30 | 0.93 | 0.0026 | 9.0 | 3.5 |
+| v10 (discarded) | 20 | 0.90 | 0.95 | 1.00 | 0.75 | 408 | 0.69 | 26 of 30 | 0.94 | 0.0026 | 8.7 | 3.1 |
+
+Jev refused to judge `trend-jpm-revenue-snapshot` on the v5 runs and on v7's first (`max_tokens_exceeded`), so those score 19 cases. Each run's answers cost about $0.05 in all, and Jev's judging about $0.02.
+
+### v6: the specifics the Sources state
+
+**What.** Rule 5 gains a sentence, and a rule 8 is added:
+
+```text
+5. ... When a Source's text states a change itself ("Revenue increased $36.6 billion or 15%") or what drove it, give that too, in its words and with its tag, rather than computing the change yourself.
+8. Be specific. For each point, give the particulars the Sources state: the laws and programs, products, people, places, dates, amounts and percentages they name, in their words. Never reduce them to broad categories ("regulatory risk", "pricing pressure") that would fit any company.
+```
+
+**Why.** Fact Recall (0.54 and 0.53 under v5) was the lowest score, and on four cases the missed facts were in the prompt but the answer summarised them away. `risk-aapl-tsla-jpm` (0.43 in both v5 runs) said "global supply-chain dependence" where Apple's 10-K names its outsourcing partners' countries and the tariffs announced from the second quarter of fiscal 2025, and never named Elon Musk or Cybercab. `trend-meta-revenue-two-years` (0.50) gave the table's levels but not the MD&A's "an increase of 22% compared to 2023". `followup-switch-to-msft` (0.33 and 0.67) gave Microsoft's revenue levels but not "Revenue increased $36.6 billion or 15%". `followup-regulatory-exposure` (0.33) said Apple faces "regulation" without the Digital Markets Act's fines. And `trend-tsla-net-income-three-years` failed figure exactness in both runs on a 74.7% decline the model computed itself.
+
+**Scores.** Kept. Reachable facts stated rose from 18 of 29 to 23 of 30: `risk-aapl-tsla-jpm` 0.43 → 0.86, `trend-meta-revenue-two-years` 0.50 → 1.00 and `followup-regulatory-exposure` 0.33 → 0.67, while `followup-switch-to-msft` stated the fiscal 2025 change but lost the quarter's (0.33). Against each v5 run, Fact Recall is 3 cases higher and 1 lower (exact p = 0.625), Faithfulness 4 higher and 4 lower (p = 1.000) and 4 higher and 2 lower (p = 0.688), structure 3 higher and 4 lower (p = 1.000) and 3 higher and 1 lower (p = 0.625), and Coverage Gaps unchanged: behind on nothing, ahead on nothing yet distinguishable. Tesla's computed decline did not go away (the Sources state no change over three years, so the rule does not apply); Meta's answer instead computed a dollar increase, labelled derived as rule 5 asks, which the figure check fails by design. The answers grew from about 250 to 326 words, still with 8 of 20 under 300.
+
+### v7: the PE-analyst structure
+
+**What.** The structure lines at the end of the system message change from
+
+```text
+- Open with a direct answer in two or three sentences.
+- ...
+- End with a short "Coverage" note repeating the Coverage Gaps and saying what else the Sources could not answer.
+- Aim for 300 to 600 words.
+```
+
+to
+
+```text
+- Open with the direct answer: two or three sentences of prose, citing their Sources like any other claim. Put nothing before it: no heading, list or table.
+- ...
+- Always end with a short "Coverage" note, even when there is no Coverage Gap: repeat the Coverage Gaps (or say there are none) and say what else the Sources could not answer.
+- Write 300 to 600 words. When the question is narrow, reach 300 words with the specifics of rule 8 that bear on it (what drove a figure, the segments, periods or plans behind it, the risks the Sources attach to it), never with repetition or general knowledge. When the Sources hold more than 600 words can carry, keep the most material points. Only an answer whose question the Sources cannot answer at all may be shorter.
+```
+
+**Why.** The structure check failed 45% of v6's answers. Answers opened with a heading (`missing-wells-fargo-vs-jpm` with "## Comparison", `missing-citigroup` with "## Citigroup" under v6 and v5's rerun), left out the Coverage note when there was no gap (`outlook-meta-capex-2026`, a 38-word answer, in v5 and v6), and ran short: `trend-meta-revenue-two-years`, `trend-tsla-net-income-three-years`, `followup-switch-to-msft` and `outlook-meta-capex-2026` were under 300 words in all three runs. "Aim for" read as a ceiling, not a range. Citation validity also failed on opening summaries with no tag (`sector-pharma-regulatory` in all three runs, `missing-bms-with-merck` in v5, `trend-jpm-revenue-snapshot` in v6), so the opening is told to cite like any other claim.
+
+**Scores.** Kept, and run twice, since it is the final version. Structure followed rose to 0.84 and 0.90. Paired with each v5 run, structure is 7 cases higher and 2 lower (p = 0.180) and 9 higher and 1 lower (p = 0.021) for the first run, 7 and 1 (p = 0.070) and 9 and 0 (p = 0.004) for the second: distinguishably better against one baseline run, and in the same direction against the other. No answer opens with a heading or leaves out its Coverage note, and no opening summary of cited points is left without a tag. Every short figure answer now gives the MD&A's stated changes and drivers (Meta's advertising impressions and price per ad, Microsoft's segment growth), and Fact Recall is 0.63 and 0.65 (4 to 5 cases higher and 1 to 2 lower against v5, p = 0.219 to 0.453). Faithfulness is 0.95 and 0.91, within the v5 runs' own range (3 to 6 cases higher and 5 to 8 lower, p = 0.227 to 1.000). The cost: answers are about 400 words and 800 output tokens against v5's 250 and 490, so an answer takes 8 to 9 seconds to finish rather than 5.5 (first text after 2.5 to 3 seconds, as it streams) and costs $0.0025 rather than $0.0023. The remaining structure failures are length: the five-Company `sector-pharma-regulatory` (702 and 632 words) and `risk-aapl-tsla-jpm` (652) run over, and `followup-topic-change-export-controls`, whose Sources are the wrong Company's (ADR 0003's known weakness), runs under.
+
+### v8: a word budget for comparisons (discarded)
+
+**What.** The length line of v7 became: "Write 300 to 600 words in all, the Coverage note included. ... When the Sources hold more than 600 words can carry, as they do when several Companies are compared, give each Company only its two or three most material points, keep each table cell to one or two sentences, and stop at 600 words. ..."
+
+**Why.** v7's over-length answers, `risk-aapl-tsla-jpm` (652 words) and `sector-pharma-regulatory` (702 and 632), all compare three or more Companies.
+
+**Scores.** Discarded: `sector-pharma-regulatory` came in at 567 words, but `risk-aapl-tsla-jpm` grew to 753, and `outlook-meta-capex-2026` (55 words) and `followup-switch-to-msft` (265) fell back under 300. Structure followed 0.80 against v7's 0.84 and 0.90.
+
+### v9: no closing summary (discarded)
+
+**What.** On top of v8, after the per-Company line: "Add no closing summary or "Comparison" section that restates them: the direct answer is the summary."
+
+**Why.** v8's 753-word `risk-aapl-tsla-jpm` answer ends with a "Comparison" section that restates its opening, about 70 words of repetition.
+
+**Scores.** Discarded: `risk-aapl-tsla-jpm` (775 words) and `sector-pharma-regulatory` (779) both ran over, and `sector-aerospace-government` opened with five sentences. Structure followed 0.75. The model does not count words: across v7 to v9 the same comparison questions land anywhere from about 570 to 780 words whatever the length line says, so the over-length cases are left as they are.
+
+### v10: no tags on statements of absence (discarded)
+
+**What.** On top of v7, a line after the opening rule: "Give a Coverage Gap, or anything else the Sources do not contain, no tag: no Source says it, so a tag would cite a Source for a claim it does not make."
+
+**Why.** In v7's second run, Faithfulness fell to 0.50 on `missing-bms-with-merck` and 0.62 on `followup-topic-change-export-controls`, because the answers tagged sentences such as "Bristol Myers Squibb's regulatory risks cannot be assessed from the provided filings [S1]" with a Merck or Apple Source, and Jev rightly judged the Source not to say so. v7's "citing their Sources like any other claim" may have encouraged it.
+
+**Scores.** Discarded. `missing-bms-with-merck` returned to 1.00, but it scored 1.00 in v5, v6 and v7's first run too, so its miss was noise; `followup-topic-change-export-controls` still had three unsupported claims (0.70), and `stale-gecc-eni-2014` two. Structure followed 0.75 (0 cases higher and 3 lower than v7's second run, p = 0.250). Its Fact Recall (0.69, 26 of 30 reachable facts) is the highest of the pass, but 3 cases higher and 0 to 1 lower than v7 (p = 0.250 and 0.625) is not distinguishable, and it was not the change's purpose.
+
+### The final template (v7)
+
+`PROMPT_VERSION = "v7"`. The user message is as described under v1 to v5: Coverage Gaps, Companies in scope (when the question uses a Sector phrase), Coverage, Financial Facts (when the question names a metric), Sources grouped by Company, the earlier conversation (the last 10 turns, about 6k tokens at most, with earlier Source tags named as Filing IDs), and the question. The system message:
+
+```text
+You are a research assistant for private equity analysts. You answer business questions about public companies using only the excerpts from their SEC 10-K and 10-Q filings given to you as numbered Sources.
+
+Rules:
+1. Use only the Sources. Never use general knowledge, memory or any outside data, even for well-known facts. If the Sources do not answer part of the question, say so plainly.
+2. Cite every claim with the tag of the Source it comes from, e.g. [S3], placed right after the claim. Use several tags when a claim rests on several Sources. Cite only tags listed in this turn's Sources.
+3. The earlier conversation is there to help you understand the question. It is not evidence: never repeat a claim from an earlier answer unless a Source in this turn supports it, and then cite that Source.
+4. When you use a Company's filings, give the filing's form type, fiscal period and report period, as listed under "Coverage", and say so when the Companies you compare report for different periods.
+5. Take revenue, net income and segment revenue from the Financial Facts table when it has them, cite the row's Source tags, and quote figures exactly with their units and periods. Label a derived figure as derived: a fourth quarter computed from a 10-K less three 10-Qs, a growth rate, or any figure you compute yourself, citing the rows it comes from. When a figure is not in the table and you read it from a Source's text instead, say it was read from the Filing text. When a Source's text states a change itself ("Revenue increased $36.6 billion or 15%") or what drove it, give that too, in its words and with its tag, rather than computing the change yourself.
+6. When the question names a group of companies ("the major banks"), it was resolved through a curated Sector table to the Companies listed under "Companies in scope". Name those Companies near the start of the answer, say they come from the Sector table, and cover no other company for that group.
+7. "Coverage Gaps" lists what the filings cannot answer: a trend asked of a company with only a snapshot of filings, a company not in the filings, a stale filing, guidance the filings do not contain, or periods that differ. State every gap listed there, in the words given, near the start of the answer. Never fill a gap from general knowledge: say nothing about a company the filings do not include, never use a filing listed as left out, and never present MD&A commentary as the company's guidance.
+8. Be specific. For each point, give the particulars the Sources state: the laws and programs, products, people, places, dates, amounts and percentages they name, in their words. Never reduce them to broad categories ("regulatory risk", "pricing pressure") that would fit any company.
+
+Structure the answer for a PE analyst, in Markdown:
+- Open with the direct answer: two or three sentences of prose, citing their Sources like any other claim. Put nothing before it: no heading, list or table.
+- Then give the points for each Company under its own heading, or a comparison table when several Companies are compared on the same dimensions.
+- Always end with a short "Coverage" note, even when there is no Coverage Gap: repeat the Coverage Gaps (or say there are none) and say what else the Sources could not answer.
+- Write 300 to 600 words. When the question is narrow, reach 300 words with the specifics of rule 8 that bear on it (what drove a figure, the segments, periods or plans behind it, the risks the Sources attach to it), never with repetition or general knowledge. When the Sources hold more than 600 words can carry, keep the most material points. Only an answer whose question the Sources cannot answer at all may be shorter.
+```
+
+**What is left.** The generator comparison scores this template with the other three models; the holdout is run once after it. Three things for later work: the 14 unreachable Required Facts are retrieval's (the per-Company budget leaves out the pharmaceutical Companies' Inflation Reduction Act passages); the longer answers make more claims for Jev to judge, so Faithfulness is worth watching across generators; and the citation check still fails statements of absence it does not recognise ("The stated Coverage Gap applies: ...", "[Coverage Gaps]" written as a tag), which are wording rules for the check, not faults of the answers.

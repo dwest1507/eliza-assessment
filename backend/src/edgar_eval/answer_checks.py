@@ -1,4 +1,4 @@
-"""The generation harness's checks in code: citations, figures and Coverage Gaps.
+"""The generation harness's checks in code: citations, figures, Coverage Gaps and structure.
 
 Pure functions over an answer's Markdown text, so each is unit-tested on hand-written
 answers. An answer is read as a list of units (`units`): each prose paragraph, each
@@ -24,10 +24,12 @@ __all__ = [
     "CoverageGapCheck",
     "Figure",
     "FigureCheck",
+    "StructureCheck",
     "Unit",
     "check_citations",
     "check_coverage_gaps",
     "check_figures",
+    "check_structure",
     "claims",
     "figures",
     "source_numbers_cited",
@@ -492,6 +494,99 @@ def claims(answer: str) -> list[Claim]:
             if re.search(r"\w", text):
                 found.append(Claim(text=text, tags=tags_in(sentence) or unit.tags))
     return found
+
+
+# --- Answer structure -------------------------------------------------------------------
+
+MIN_WORDS = 300
+MAX_WORDS = 600
+
+
+@dataclass(frozen=True)
+class StructureCheck:
+    """Whether the answer has the PE-analyst structure of assumption 8."""
+
+    words: int
+    """The answer's length in words, without Source tags or Markdown markup."""
+    problems: tuple[str, ...]
+    """Each way the answer departs from the structure, in words."""
+
+    @property
+    def passed(self) -> bool:
+        return not self.problems
+
+
+def check_structure(answer: str, companies: Mapping[str, Sequence[str]]) -> StructureCheck:
+    """The structure of assumption 8: a direct answer of two or three sentences first,
+    then the points per Company under a heading each, or a comparison table, then a
+    closing Coverage note, in 300 to 600 words. `companies` are the Companies the
+    answer's Sources come from, each with the names an answer may call it by. An answer
+    with no Sources is its Coverage Gaps alone, so it need only open with its direct
+    answer."""
+    words = _words(answer)
+    found = [_opening_problem(answer)]
+    if companies:
+        found += [
+            _per_company_problem(answer, companies),
+            _coverage_note_problem(answer),
+            f"{words} words, under {MIN_WORDS}" if words < MIN_WORDS else None,
+            f"{words} words, over {MAX_WORDS}" if words > MAX_WORDS else None,
+        ]
+    return StructureCheck(words=words, problems=tuple(p for p in found if p))
+
+
+def _opening_problem(answer: str) -> str | None:
+    """Why the answer does not open with a direct answer of at most three sentences."""
+    paragraph = answer.strip().split("\n\n", 1)[0].strip()
+    first = paragraph.splitlines()[0] if paragraph else ""
+    if not first or _HEADING.match(first) or first.startswith("|") or _LIST_ITEM.match(first):
+        return "does not open with a direct answer in prose"
+    sentences = [s for s in _sentences(" ".join(paragraph.split())) if len(s.split()) >= 3]
+    if len(sentences) > 3:
+        return f"opens with a direct answer of {len(sentences)} sentences, not two or three"
+    return None
+
+
+def _per_company_problem(answer: str, companies: Mapping[str, Sequence[str]]) -> str | None:
+    """Why an answer about several Companies has neither a heading per Company nor a
+    comparison table."""
+    if len(companies) < 2:
+        return None
+    lines = [line.strip() for line in answer.splitlines()]
+    if any(_TABLE_SEPARATOR.match(line) for line in lines if line.startswith("|")):
+        return None
+    headings = [line for line in lines if _HEADING.match(line) or _BOLD_ONLY.match(line)]
+    unheaded = [
+        ticker
+        for ticker, names in companies.items()
+        if not any(_mentions(h, names) for h in headings)
+    ]
+    if unheaded:
+        return f"no points per Company (no heading for {', '.join(unheaded)}) or comparison table"
+    return None
+
+
+def _coverage_note_problem(answer: str) -> str | None:
+    """Why the answer does not end with a Coverage note: it has none, or a heading of
+    another part follows it."""
+    lines = [line.strip() for line in answer.splitlines() if line.strip()]
+    starts = [
+        n for n, line in enumerate(lines) if _COVERAGE.match(line) or _COVERAGE_IN_LINE.search(line)
+    ]
+    if not starts:
+        return "no closing Coverage note"
+    if any(_HEADING.match(line) for line in lines[starts[-1] + 1 :]):
+        return "the Coverage note is not at the end"
+    return None
+
+
+def _mentions(text: str, names: Sequence[str]) -> bool:
+    return any(re.search(rf"\b{re.escape(n)}\b", text, re.I) for n in names)
+
+
+def _words(answer: str) -> int:
+    text = strip_tags(answer)
+    return len([w for w in re.split(r"[\s|]+", text) if re.search(r"\w", w)])
 
 
 def _sentences(text: str) -> list[str]:

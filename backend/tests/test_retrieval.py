@@ -292,7 +292,7 @@ def test_a_source_carries_its_citation_metadata_and_passage(index):
 def test_the_prompt_renders_rules_sources_and_question(index):
     context = _ask(index, BRIEF_QUESTION)
 
-    assert context.prompt_version == PROMPT_VERSION == "v5"
+    assert context.prompt_version == PROMPT_VERSION == "v7"
     system, user = context.messages
     assert system.role == "system"
     assert "[S3]" in system.content and "general knowledge" in system.content

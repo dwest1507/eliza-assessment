@@ -4,7 +4,7 @@ One fixed template with a version constant. Every change to it bumps `PROMPT_VER
 and gets an entry in `docs/prompt-iterations.md`, with what changed, why, and its dev
 scores before and after.
 
-v5 renders, in this order: the system rules, the Coverage Gaps the answer must state,
+v7 renders, in this order: the system rules, the Coverage Gaps the answer must state,
 the Companies each Sector phrase resolved to (when the question uses one), each
 Company's coverage (its class, Filings, Report Periods and Fiscal Periods), the
 Financial Facts table (when the question names a metric), the text Sources grouped by
@@ -28,7 +28,7 @@ if TYPE_CHECKING:
     from edgar_rag._query_scope import ScopeFiling
     from edgar_rag.retrieval import Message, QueryScope, Source
 
-PROMPT_VERSION = "v5"
+PROMPT_VERSION = "v7"
 
 HISTORY_TURNS = 10
 HISTORY_MAX_TOKENS = 6_000
@@ -55,7 +55,9 @@ has them, cite the row's Source tags, and quote figures exactly with their units
 periods. Label a derived figure as derived: a fourth quarter computed from a 10-K less \
 three 10-Qs, a growth rate, or any figure you compute yourself, citing the rows it comes \
 from. When a figure is not in the table and you read it from a Source's text instead, say \
-it was read from the Filing text.
+it was read from the Filing text. When a Source's text states a change itself ("Revenue \
+increased $36.6 billion or 15%") or what drove it, give that too, in its words and with its \
+tag, rather than computing the change yourself.
 6. When the question names a group of companies ("the major banks"), it was resolved \
 through a curated Sector table to the Companies listed under "Companies in scope". Name \
 those Companies near the start of the answer, say they come from the Sector table, and \
@@ -66,14 +68,23 @@ the filings do not contain, or periods that differ. State every gap listed there
 the words given, near the start of the answer. Never fill a gap from general \
 knowledge: say nothing about a company the filings do not include, never use a filing \
 listed as left out, and never present MD&A commentary as the company's guidance.
+8. Be specific. For each point, give the particulars the Sources state: the laws and \
+programs, products, people, places, dates, amounts and percentages they name, in their \
+words. Never reduce them to broad categories ("regulatory risk", "pricing pressure") \
+that would fit any company.
 
 Structure the answer for a PE analyst, in Markdown:
-- Open with a direct answer in two or three sentences.
+- Open with the direct answer: two or three sentences of prose, citing their Sources like \
+any other claim. Put nothing before it: no heading, list or table.
 - Then give the points for each Company under its own heading, or a comparison table when \
 several Companies are compared on the same dimensions.
-- End with a short "Coverage" note repeating the Coverage Gaps and saying what else \
-the Sources could not answer.
-- Aim for 300 to 600 words."""
+- Always end with a short "Coverage" note, even when there is no Coverage Gap: repeat the \
+Coverage Gaps (or say there are none) and say what else the Sources could not answer.
+- Write 300 to 600 words. When the question is narrow, reach 300 words with the specifics \
+of rule 8 that bear on it (what drove a figure, the segments, periods or plans behind it, \
+the risks the Sources attach to it), never with repetition or general knowledge. When the \
+Sources hold more than 600 words can carry, keep the most material points. Only an answer \
+whose question the Sources cannot answer at all may be shorter."""
 
 # A run of Source tags in an earlier answer ("[S1]", "[S1][S2]", "[S3, S1]"). They
 # pointed at that turn's Sources, not this turn's.

@@ -237,6 +237,7 @@ It runs each Golden Set case through the whole pipeline, one real Answer Call pe
 2. **Checks in code.** An answer is read as units: each prose paragraph, list item and table body row, since each makes its own claims.
    - **Citation validity** (pass/fail per answer): every `[Sn]` tag names one of that turn's Sources, and every unit cites at least one. Tags may be grouped (`[S1, S2]`) or ranged (`[S1–S5]`). Exempt units: headings, table header rows, lead-ins ending in a colon, bold-only labels, the closing Coverage note, and units whose every sentence says what the Sources lack ("The Sources contain no Honeywell filings"), since there is nothing to cite for an absence.
    - **Figure exactness** (pass/fail per answer): every figure (an amount, a percentage or a count) matches a Financial Fact of a Company in the Query Scope or among the Sources, or appears in a passage the answer cites. A figure may be rounded and rescaled: "$416.2 billion" matches a passage reading "416,161" in a table in millions. A percentage must appear as written. Years, dates, single-digit counts and numbers inside labels (FY2025, Q3, 10-K, Item 1A, Filing IDs) are not figures. **Derived figures fail**: a growth rate, a difference or a share the model computed is in no passage and no Financial Fact. The spec asks for derived figures to be labelled as derived; how to check a labelled derivation is left to the Financial Facts task.
+   - **Structure** (pass/fail per answer): the PE-analyst structure of assumption 8. The answer opens with a direct answer of at most three sentences of prose, not a heading, list or table; when its Sources come from two or more Companies, it has a heading naming each Company or a comparison table; it ends with a Coverage note, with no other heading after it; and it runs to 300–600 words, counted without Source tags or Markdown markup. An answer with no Sources (a missing Company, the stale GE Filing) is its Coverage Gaps alone, so only the opening rule applies to it. The report gives each failing answer's problems and the mean length in words.
    - **Coverage Gaps** (pass/fail per answer with expected gaps): every expected Coverage Gap is stated. A gap is stated for a Company when one sentence names the Company and says what the gap's kind says: the fixed wordings of EDA section 8.6, or a plain variant ("Wells Fargo is not in the Corpus", "do not include Wells Fargo filings", "guidance is not in the Filings", "the periods differ"). A sentence that names no Company counts for the Company its paragraph names, or for the only Company the gap is about. "Periods differ" is about the comparison, so it is stated once, not per Company. The wording rules are in `_GAP_MARKERS`; extra gaps an answer states are not penalised.
 3. **Judgments by Jev.** Jev is TypeSafe's System One model: it returns typed answers with probabilities, not text, and it is from neither generator's family, so it judges OpenAI and Anthropic answers alike. It is pinned to `jev-1.13.0`, never an alias such as `jev-latest`, which moves with each release; the harness refuses a response from any other version.
    - **Fact Recall**: one request per answer, with the answer as the state and one yes/no question per Required Fact ("does the answer state this fact, in any wording?"). A fact counts as stated at a probability of at least 0.5. Fact Recall is the share of the case's Required Facts stated, averaged over the cases that have Required Facts.
@@ -338,6 +339,29 @@ The answers cost $0.049 in all; the slowest took 12.8 seconds; Jev's judging cos
 - **Citations (0.75) fail on the checks' rules, as in v3.** The uncited units are opening summaries that restate cited points (`sector-pharma-regulatory`, `trend-jpm-revenue-snapshot`), table rows of figures (`trend-meta-revenue-two-years`), and sentences saying what the Filings lack phrased in ways the absence rule doesn't yet recognise (`missing-wells-fargo-vs-jpm`, `stale-ge-recent-performance`).
 - **Figures not exact** are both model-computed: Meta's quarterly differences ($36,465 million, $29,599 million) and Tesla's 74.7% decline, which the table does not state.
 - Fact Recall (0.50 against 0.55) and Faithfulness (0.90 against 0.90) are within the run-to-run range, and the answers cost the same.
+
+The holdout split has not been scored.
+
+### After the prompt iterations (prompt v7)
+
+`gpt-6-luna`, `jev-1.13.0`, 2026-10-16, prompt [v7](prompt-iterations.md#the-final-template-v7), on the same retrieval as v5. The template was tuned in five versions, v6 to v10, each written for named failing dev cases and kept only if it fixed them and the paired sign test put it behind its predecessor on nothing; v6 and v7 were kept and v8 to v10 discarded. Each version's scores, the cases behind it and the paired tests are in the [prompt iteration log](prompt-iterations.md#the-iteration-pass-v6-to-v10). This is v7's second run, the one the "How it works" page shows; its first run scored structure 0.84, Fact Recall 0.63 and Faithfulness 0.95.
+
+| | cases | citations valid | figures exact | gaps stated | structure followed | words | Fact Recall | Faithfulness | $ per answer | latency s | first text s |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| **overall** | 20 | 0.90 | 0.95 | **1.00** | **0.90** | 404 | **0.65** | **0.91** | 0.0026 | 8.9 | 3.0 |
+| figure_trend | 4 | 1.00 | 0.75 | 1.00 | 1.00 | 416 | 0.67 | 0.97 | 0.0043 | 10.3 | 3.7 |
+| missing_company | 4 | 0.75 | 1.00 | 1.00 | 1.00 | 274 | 0.75 | 0.72 | 0.0011 | 6.3 | 2.6 |
+| outlook | 2 | 1.00 | 1.00 | 1.00 | 1.00 | 430 | 0.75 | 0.96 | 0.0036 | 8.6 | 2.6 |
+| risk | 6 | 1.00 | 1.00 | 1.00 | 0.83 | 465 | 0.62 | 0.91 | 0.0023 | 9.6 | 3.1 |
+| sector | 2 | 1.00 | 1.00 | 1.00 | 0.50 | 588 | 0.33 | 0.90 | 0.0029 | 12.9 | 3.9 |
+| stale_filing | 2 | 0.50 | 1.00 | 1.00 | 1.00 | 251 | 1.00 | 0.92 | 0.0020 | 5.1 | 1.8 |
+
+The answers cost $0.052 in all; the slowest took 13.6 seconds; Jev's judging cost $0.028.
+
+- **Answers now have the analyst structure.** 0.90 of answers follow it, against 0.58 and 0.42 for v5's two runs scored by the same check, distinguishably so against one of them (9 cases higher, 0 lower, p = 0.004). Every answer opens with its direct answer and ends with a Coverage note. The two failures are length: the five-Company pharmaceutical answer runs to 632 words, and the topic-change follow-up, whose Sources are the wrong Company's (ADR 0003), to 273.
+- **Answers state more of what the Sources say.** Fact Recall is 0.65 against v5's 0.54 and 0.53. Of the 30 dev Required Facts whose evidence reaches the prompt, 24 are stated against v5's 18; the other 14 never reach the prompt, which is retrieval's to fix (the pharmaceutical Companies' Inflation Reduction Act passages, for one).
+- **The price is time, not money.** Answers are about 400 words and 800 output tokens against 250 and 490, so they finish in about 9 seconds rather than 5.5, with the first text after about 3 seconds. They cost $0.0026 against $0.0023.
+- Faithfulness (0.91, and 0.95 in the first run) is within the run-to-run range of v5's 0.95 and 0.93. The missing-Company row's 0.72 is mostly `missing-bms-with-merck` (0.50), whose answer tags "Bristol Myers Squibb's regulatory risks cannot be assessed from the provided filings" with a Merck Source that does not say so; the topic-change follow-up does the same. That case scored 1.00 in every other run, and v10, which told the model not to tag such statements, did not stop the follow-up doing it.
 
 The holdout split has not been scored.
 

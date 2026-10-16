@@ -4,8 +4,8 @@ Each case's conversation goes through the full pipeline: `prepare_answer_context
 the ranker of the retrieval Arm under test (the Shipped Arm by default), then one Answer
 Call to the generator under test. The answer is then scored three ways:
 
-- **In code** (`edgar_eval.answer_checks`): citation validity, figure exactness and
-  Coverage Gap statements.
+- **In code** (`edgar_eval.answer_checks`): citation validity, figure exactness,
+  Coverage Gap statements, and the answer's structure (assumption 8).
 - **By Jev** (`edgar_eval.judge`), pinned to an exact version: Fact Recall against the
   case's Required Facts, and Faithfulness of each claim to the Sources it cites.
 - **Cost and latency**, from the Answer Call's logged record: its token usage priced
@@ -42,9 +42,11 @@ from edgar_eval.answer_checks import (
     Claim,
     CoverageGapCheck,
     FigureCheck,
+    StructureCheck,
     check_citations,
     check_coverage_gaps,
     check_figures,
+    check_structure,
     claims,
 )
 from edgar_eval.judge import Evidence, Judgments
@@ -126,6 +128,7 @@ class CaseResult:
     coverage_gaps: CoverageGapCheck | None
     """None when the case expects no Coverage Gap."""
     judgments: Judgments
+    structure: StructureCheck
 
     @property
     def fact_recall(self) -> float | None:
@@ -148,6 +151,9 @@ class Summary:
     """Share of answers whose every figure matches a Financial Fact or a cited passage."""
     coverage_gaps_stated: float | None
     """Share of answers with expected Coverage Gaps that state every one of them."""
+    structure_followed: float
+    """Share of answers in the PE-analyst structure of assumption 8."""
+    mean_words: float
     fact_recall: float | None
     """Mean share of Required Facts stated, over cases with Required Facts."""
     faithfulness: float | None
@@ -254,6 +260,7 @@ def _run_case(
     }
     passages = {s.number: s.text for s in context.sources}
     evidence = {s.tag: Evidence(s.tag, s.label, s.text) for s in context.sources}
+    covered = {s.ticker: names.get(s.ticker, (s.ticker,)) for s in context.sources}
     gaps = case.expected_coverage_gaps
     return CaseResult(
         case_id=case.id,
@@ -273,6 +280,7 @@ def _run_case(
         judgments=judge.judge(
             answer, [f.fact for f in case.required_facts], claims(answer), evidence
         ),
+        structure=check_structure(answer, covered),
     )
 
 
@@ -290,6 +298,8 @@ def _summarise(results: Sequence[CaseResult]) -> Summary:
         coverage_gaps_stated=mean(
             r.coverage_gaps.passed if r.coverage_gaps else None for r in results
         ),
+        structure_followed=mean(r.structure.passed for r in results) or 0.0,
+        mean_words=mean(r.structure.words for r in results) or 0.0,
         fact_recall=mean(r.fact_recall for r in results),
         faithfulness=mean(r.faithfulness for r in results),
         mean_cost_usd=fmean(priced) if priced else None,
@@ -451,6 +461,8 @@ _COLUMNS = (
     ("citations", lambda s: _share(s.citations_valid)),
     ("figures", lambda s: _share(s.figures_exact)),
     ("gaps", lambda s: _share(s.coverage_gaps_stated)),
+    ("structure", lambda s: _share(s.structure_followed)),
+    ("words", lambda s: f"{s.mean_words:.0f}"),
     ("recall", lambda s: _share(s.fact_recall)),
     ("faithful", lambda s: _share(s.faithfulness)),
     ("$/answer", lambda s: "–" if s.mean_cost_usd is None else f"{s.mean_cost_usd:.4f}"),
@@ -493,6 +505,12 @@ def _print_report(report: GenerationReport, split: str, out: TextIO) -> None:
         ),
     ):
         print(f"{label}: {', '.join(failing) or 'none'}", file=out)
+    for r in report.cases:
+        if not r.structure.passed:
+            print(
+                f"Structure not followed in {r.case_id}: {'; '.join(r.structure.problems)}",
+                file=out,
+            )
     for case_id, error in report.errors.items():
         print(f"Error in {case_id}: {error}", file=out)
 
