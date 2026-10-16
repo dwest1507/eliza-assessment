@@ -17,6 +17,7 @@ The work runs in phases. The exploratory data analysis (EDA) phase is complete. 
 | Front-end | Started: the research workspace streams answers, opens each `[Sn]` citation's passage (or, for a Financial Facts Source, its table of figures) in a Sources panel, shows each answer's Query Scope as chips and its Coverage Gaps as a callout, and offers the six starter prompts. The conversation is kept for the browser session, and a "New conversation" control clears it. A "How it works" page shows the architecture, the evaluation scoreboard (from `make eval-export`) and the Corpus coverage grid. | [`frontend/`](frontend/), [Running the full stack](#running-the-full-stack) |
 | Example request, ready to execute | Done: `make ask` answers a question from the command line, and `backend/scripts/chat.sh` calls the chat API with `curl` | [Asking a question](#asking-a-question), [The chat API](#the-chat-api) |
 | Notes on how quality was evaluated | Done: Financial Facts extraction is measured against SEC XBRL data, the Golden Set of 30 labelled questions is written and checked against the Corpus, the retrieval harness scores the FTS5 Arm on it (hit@10 0.88 on dev), three challenger Arms (dense, hybrid, cross-encoder re-ranking) were measured in both harnesses and none beat FTS5 ([ADR 0008](docs/adr/0008-fts5-stays-the-shipped-arm.md)), the generation harness scores the answers in code and with the Jev judge, four generators (`gpt-6-luna`, `gpt-6.1-sol`, Claude Sonnet 5.5, Claude Opus 5.5) were compared on dev and none beat `gpt-6-luna` at 20 to 65 times its cost ([ADR 0009](docs/adr/0009-gpt-6-luna-stays-the-generator.md)), and the final configuration was run once on the holdout split (Fact Recall 0.67, Faithfulness 0.95, Coverage Gaps stated 1.00, every citation valid and hit@10 0.90, at $0.0030 per answer). | [`docs/evaluation.md`](docs/evaluation.md), [`docs/findings.md`](docs/findings.md) (findings 21–24), notebook analysis 7, [`docs/golden-set.md`](docs/golden-set.md) |
+| Presentation: value case and future state | Drafted, awaiting the developer's review: eight slides (the Client's problem, the value case, the demo hand-off, the holdout numbers, how the choices were made, risks and limits, the future state), each linking the documents its numbers come from; a test checks every figure on a slide is in one of them | [`docs/deck.md`](docs/deck.md), [The slide deck](#the-slide-deck) |
 | Documented assumptions and decisions | Done for the EDA | [`docs/findings.md`](docs/findings.md), [`docs/assumptions.md`](docs/assumptions.md), [`docs/adr/`](docs/adr/) |
 
 ## What the EDA found
@@ -117,6 +118,7 @@ Every command runs through the root `Makefile` (`make help` lists them):
 | `make eval-arms` | Answer the dev split through every retrieval Arm and choose the Shipped Arm by the selection rule (needs `OPENAI_API_KEY` and `JEV_API_KEY`, costs money) |
 | `make eval-generators` | Answer the dev split with `gpt-6-luna`, `gpt-6.1-sol`, Claude Sonnet 5.5 and Claude Opus 5.5 and choose the generator by the selection rule (needs `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` and `JEV_API_KEY`, costs about $6 on dev) |
 | `make eval-export` | Export the harnesses' latest results and the Corpus coverage for the workspace's "How it works" page (`SPLIT=` to change the split); no LLM call |
+| `make deck` | Render the slide deck (`docs/deck.md`) to `data/derived/deck/deck.html` with the Marp CLI, which `npx` fetches |
 
 ### Asking a question
 
@@ -195,6 +197,10 @@ make eval-export
 ```
 
 collects the harnesses' latest reports for the dev split (every Arm's retrieval scores and comparison with the Shipped Arm, and every generator's scores, cost and latency) and the Corpus coverage grid (each Company's Filings by Report Period, Tracked Companies first) into `frontend/data/eval-export.json`. The workspace's "How it works" page (http://localhost:3000/how-it-works, linked from its header) shows them with the architecture. The export runs the retrieval harness first if its report is missing, but never the generation harness, which costs money: until `make eval-generation` has run, the page says so instead of showing answer scores. The export is committed, so the page shows the last exported results without anyone rerunning the harnesses; rerun it and commit the file after a harness run worth publishing.
+
+### The slide deck
+
+The presentation around the demo is [`docs/deck.md`](docs/deck.md), Markdown for [Marp](https://marp.app/): one slide per `---`, with speaker notes in HTML comments. It reads as plain Markdown on GitHub, and `make deck` renders it to `data/derived/deck/deck.html` (it needs Node.js and network access the first time, for `npx` to fetch the pinned Marp CLI; open the HTML in a browser and press `p` for presenter view). Every slide ends with links to the documents its numbers come from, and `backend/tests/test_deck.py` checks that every figure on a slide, speaker notes included, is found word for word in one of them, so a changed evaluation number fails the test until the slide is updated.
 
 ### Running the EDA
 
@@ -276,6 +282,7 @@ context.messages  # the rendered prompt for the Answer Call
 │   ├── golden-set.md          the Golden Set's fields, split rule and review
 │   ├── evaluation.md          how quality is measured, and the scores
 │   ├── prompt-iterations.md   every version of the Answer Call's prompt template
+│   ├── deck.md                the slide deck (Marp Markdown; `make deck` renders it)
 │   └── adr/                   architecture decision records
 ├── CONTEXT.md                 domain glossary
 └── Makefile                   single entry point

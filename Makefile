@@ -20,7 +20,7 @@ ENV_FILE := $(BACKEND)/.env
 -include $(ENV_FILE)
 export $(shell sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' $(ENV_FILE) 2>/dev/null)
 
-.PHONY: help install test lint format eda sec-facts index embeddings ask api eval-retrieval eval-generation eval-arms eval-generators eval-export dev frontend-deps
+.PHONY: help install test lint format eda sec-facts index embeddings ask api eval-retrieval eval-generation eval-arms eval-generators eval-export deck dev frontend-deps
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-15s %s\n", $$1, $$2}'
@@ -117,6 +117,12 @@ RETRIEVAL_REPORT = data/derived/eval/retrieval-$(SPLIT).json
 
 eval-export: $(RETRIEVAL_REPORT) ## Export the latest eval results and Corpus coverage for the "How it works" page [SPLIT=...]
 	$(UV) python -m edgar_eval.export --split $(SPLIT)
+
+# The slide deck is Markdown for Marp (docs/deck.md); npx fetches the pinned Marp CLI.
+MARP := npx --yes @marp-team/marp-cli@4.5.1
+
+deck: ## Render the slide deck (docs/deck.md) to data/derived/deck/deck.html with Marp
+	$(MARP) docs/deck.md --output data/derived/deck/deck.html
 
 dev: $(INDEX) frontend-deps ## Run the API and the front-end together on http://localhost:3000 (WEB_PORT)
 	@echo "API on http://127.0.0.1:$(API_PORT), workspace on http://localhost:$(WEB_PORT). Ctrl+C stops both."
