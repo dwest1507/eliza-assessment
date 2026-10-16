@@ -17,7 +17,7 @@ The system is a chat: the browser sends the conversation, and each user message 
 - **Retrieve on the latest message alone, history in the prompt only.** An elliptical follow-up names no Company, so retrieval ranks across all 54 and the model has nothing it may cite.
 - **Retrieve on the recent user messages joined together.** It can only add to the scope, never replace: a switch to Microsoft keeps the earlier Companies and splits the per-Company budget between them.
 - **Carry the previous turn's Sources forward.** Context grows every turn and keeps stale Sources after a change of subject, and new retrieval still needs a Query Scope.
-- **An LLM rewrite before retrieval.** Best on messy follow-ups, but it is a second generative call. If the Client allows one (Client email, question 1), it replaces the inheritance rule behind the same seam.
+- **An LLM rewrite before retrieval.** Best on messy follow-ups, but it is a second generative call. The Client has confirmed the single call is a hard requirement across the whole pipeline (assumption 1), so this option is closed.
 
 ## Consequences
 
