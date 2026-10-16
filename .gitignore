@@ -21,3 +21,8 @@ data/derived/
 
 # Draft email to the Client, kept local
 docs/client-email.md
+
+# Local environment, one per app (copy the app's .env.example)
+.env
+.env.*
+!.env.example

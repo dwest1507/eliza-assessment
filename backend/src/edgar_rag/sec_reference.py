@@ -9,8 +9,8 @@ The data is fetched once per Company (`make sec-facts`) and cached under
 `data/derived/sec_companyfacts/`, which is gitignored. The SEC asks every automated
 client to identify itself with a User-Agent naming the requester and a contact email,
 so fetching requires the `SEC_USER_AGENT` environment variable, e.g.
-`SEC_USER_AGENT="Your Name you@example.com"`. It is read from the environment only and
-never written to disk.
+`SEC_USER_AGENT=Your Name you@example.com`. This module reads it from the environment
+only; locally it comes from the gitignored `backend/.env`, which the Makefile loads.
 """
 
 from __future__ import annotations
@@ -43,8 +43,8 @@ _REQUEST_INTERVAL_SECONDS = 0.25
 
 _USER_AGENT_HELP = (
     f"{USER_AGENT_ENV} is not set. The SEC requires every request to carry a User-Agent "
-    "naming you and a contact email. Set it for the command, e.g.\n"
-    f'  {USER_AGENT_ENV}="Your Name you@example.com" make sec-facts'
+    "naming you and a contact email. Copy backend/.env.example to backend/.env and "
+    "fill it in (the Makefile reads it), or export it in your shell."
 )
 
 

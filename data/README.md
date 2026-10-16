@@ -56,7 +56,8 @@ To measure how accurately Financial Facts are extracted, the EDA compares them w
 The SEC requires every automated request to carry a User-Agent naming the requester and a contact email. Fetching reads it from the `SEC_USER_AGENT` environment variable and refuses to run without it:
 
 ```sh
-SEC_USER_AGENT="Your Name you@example.com" make sec-facts
+cp backend/.env.example backend/.env   # then edit SEC_USER_AGENT (unquoted)
+make sec-facts
 ```
 
-Set it for the command only. It is never written to a file, so the contact address stays out of the repository.
+`backend/.env` is gitignored, so the contact address stays out of the repository.

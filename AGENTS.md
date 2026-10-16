@@ -27,6 +27,8 @@ Single-context: one root `CONTEXT.md` plus `docs/adr/`. See `docs/agents/domain.
 
 Run everything through the root `Makefile`: `make install` (uv sync), `make test`, `make lint`, `make format`, `make eda`, `make sec-facts`.
 
-`make sec-facts` caches the SEC XBRL company-facts data (an evaluation reference for Financial Facts, never an answer source) in `data/derived/sec_companyfacts/`; `make eda` runs it when that cache is missing. The SEC requires a User-Agent with a contact email, read from the `SEC_USER_AGENT` environment variable: set it inline for the command (`SEC_USER_AGENT="Your Name you@example.com" make sec-facts`). Never write a real value into code, the Makefile, docs, tests, notebook outputs, `.env` files or commit messages.
+`make sec-facts` caches the SEC XBRL company-facts data (an evaluation reference for Financial Facts, never an answer source) in `data/derived/sec_companyfacts/`; `make eda` runs it when that cache is missing. The SEC requires a User-Agent with a contact email, read from the `SEC_USER_AGENT` environment variable, which the Makefile loads from `backend/.env`.
+
+Environment files are per app: each app has a gitignored `.env` and a committed `.env.example` with placeholders only, and the app's `.dockerignore` keeps `.env` out of images. The developer fills in `.env`; an agent never creates or edits it and never writes a real value into code, the Makefile, docs, tests, notebook outputs, `.env.example` files or commit messages. A new variable goes into that app's `.env.example` with a placeholder.
 
 The notebook source of truth is `backend/notebooks/eda.py` (jupytext percent format). `make eda` executes it and writes the paired `eda.ipynb` with outputs; commit both and never edit the `.ipynb` by hand.

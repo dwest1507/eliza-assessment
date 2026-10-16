@@ -5,6 +5,12 @@ UV := cd $(BACKEND) && uv run
 
 SEC_FACTS_INDEX := data/derived/sec_companyfacts/index.json
 
+# Local settings for the backend (copy backend/.env.example). Optional; the variables
+# it defines are exported to the recipes. Make syntax, so values are unquoted.
+ENV_FILE := $(BACKEND)/.env
+-include $(ENV_FILE)
+export $(shell sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' $(ENV_FILE) 2>/dev/null)
+
 .PHONY: help install test lint format eda sec-facts
 
 help: ## List targets
@@ -30,8 +36,8 @@ eda: $(SEC_FACTS_INDEX) ## Execute the EDA notebook from its script source and w
 sec-facts: ## Fetch SEC XBRL company-facts for Tracked Companies (evaluation only; needs SEC_USER_AGENT)
 	@if [ -z "$$SEC_USER_AGENT" ]; then \
 		echo 'error: SEC_USER_AGENT is not set. The SEC requires every request to carry a' >&2; \
-		echo 'User-Agent naming you and a contact email. Set it for the command, e.g.' >&2; \
-		echo '  SEC_USER_AGENT="Your Name you@example.com" make sec-facts' >&2; \
+		echo 'User-Agent naming you and a contact email. Copy backend/.env.example to' >&2; \
+		echo 'backend/.env and fill it in.' >&2; \
 		exit 1; \
 	fi
 	$(UV) python -m edgar_rag.sec_reference

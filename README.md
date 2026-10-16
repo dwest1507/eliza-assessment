@@ -85,11 +85,14 @@ Every command runs through the root `Makefile` (`make help` lists them):
 
 ### Running the EDA
 
-`make eda` compares extracted Financial Facts with the SEC's XBRL company-facts data, so it needs that data cached first. It fetches it automatically when the cache is missing. The SEC requires every automated request to carry a User-Agent naming the requester and a contact email, which is read from the `SEC_USER_AGENT` environment variable. Set it inline for the command, so it is never written to a file:
+`make eda` compares extracted Financial Facts with the SEC's XBRL company-facts data, so it needs that data cached first. It fetches it automatically when the cache is missing. The SEC requires every automated request to carry a User-Agent naming the requester and a contact email, which is read from the `SEC_USER_AGENT` environment variable. Put it in `backend/.env`, which is gitignored and loaded by the `Makefile`:
 
 ```sh
-SEC_USER_AGENT="Your Name you@example.com" make eda
+cp backend/.env.example backend/.env   # then edit SEC_USER_AGENT (unquoted)
+make eda
 ```
+
+Each app keeps its own `.env` beside a committed `.env.example`, so a container gets only its own variables.
 
 The notebook's source of truth is [`backend/notebooks/eda.py`](backend/notebooks/eda.py) (jupytext percent format). `make eda` writes the paired `eda.ipynb`; edit the `.py`, never the `.ipynb`. The committed `.ipynb` already has its outputs, so you can read the analysis on GitHub without running anything.
 
