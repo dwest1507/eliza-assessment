@@ -187,6 +187,38 @@ def test_titled_income_statement_is_preferred_over_an_earlier_summary_table(annu
     assert fact.label == "Total revenues and other income"
 
 
+def test_income_statement_whose_rows_start_with_a_cell_separator_is_found(annual):
+    # Chevron's layout: each statement row starts with "|", so its label is the first
+    # cell. The earlier summary table (the Obligor Group's) must not win over it.
+    excerpt = (
+        "The tables below contain summary financial information for the Obligor Group.\n"
+        "| At December 31,\n"
+        "| 2024 |  | 2023\n"
+        "| (Millions of dollars) (unaudited)\n"
+        "Sales and other operating revenues | $ | 96,035 |  |  | $ | 100,405 |\n"
+        "Net income (loss) | $ | 73,119 |  |  | $ | 12,190 |\n"
+        "49\n"
+        "Consolidated Statement of Income | Financial Table of Contents\n"
+        "Millions of dollars, except per-share amounts |\n"
+        "|  | Year ended December 31 |\n"
+        "|  | 2024 |  |  | 2023 |  | 2022 |\n"
+        "| Revenues and Other Income |  |  |  |  |  |  |\n"
+        "| Sales and other operating revenues | $ | 193,414 |  |  |  | $ | 196,913 |  |  | $ |"
+        " 235,717 |  |\n"
+        "| Total Revenues and Other Income | 202,792 |  |  |  | 200,949 |  |  | 246,252 |  |\n"
+        "| Net Income (Loss) | 17,749 |  |  |  | 21,411 |  |  | 35,608 |  |\n"
+        "| Less: Net income (loss) attributable to noncontrolling interests | 88 |  |  |  | 42 |"
+        "  |  | 143 |  |\n"
+        "| Net Income (Loss) Attributable to Chevron Corporation | $ | 17,661 |  |  |  | $ |"
+        " 21,369 |  |  | $ | 35,465 |  |\n"
+    )
+
+    revenue = _revenue(annual, excerpt)
+
+    assert (revenue.label, revenue.value) == ("Total Revenues and Other Income", 202_792_000_000)
+    assert _net_income(annual, excerpt).value == 17_661_000_000
+
+
 def test_no_fact_rather_than_a_guess_when_the_scale_or_period_is_unknown(annual):
     no_scale = (
         "STATEMENTS OF OPERATIONS\n"
@@ -422,6 +454,66 @@ def test_no_segment_revenue_when_the_segments_do_not_add_up_to_revenue(quarterly
     assert _segments(quarterly, excerpt) == {}
 
 
+_ANNUAL_INCOME_STATEMENT = (
+    "CONSOLIDATED STATEMENTS OF INCOME (in millions)\n"
+    "| 2024 |  | 2023\n"
+    "Total revenues | 101,887 |  |  | 98,581 |\n"
+    "Net income | 27,132 |  |  | 26,515 |\n"
+)
+
+
+def test_no_segment_revenue_when_the_text_above_only_refers_to_segments_elsewhere(annual):
+    # Bank of America's selected financial data: two rows that add up to revenue, under
+    # a paragraph whose last sentence points to the segment results on another page.
+    excerpt = _ANNUAL_INCOME_STATEMENT + (
+        "Our consolidated key performance indicators are presented in Table 6 on page 31."
+        "For information on key segment performance metrics, see Business Segment Operations"
+        " on page 35.\n"
+        "Table 6 | Selected Annual Financial Data |  |  |\n"
+        "(In millions) | 2024 |  | 2023 |\n"
+        "Income statement |  |  |  |\n"
+        "Net interest income | $ | 56,060 |  |  | $ | 56,931 |\n"
+        "Noninterest income | 45,827 |  |  | 41,650 |\n"
+        "Total revenue | 101,887 |  |  | 98,581 |\n"
+    )
+
+    assert _segments(annual, excerpt) == {}
+
+
+def test_a_page_number_after_a_full_stop_still_ends_the_sentence(annual):
+    # AMD's geographic table: "segments" is in the sentence before the page break, not
+    # in the one that introduces the table.
+    excerpt = _ANNUAL_INCOME_STATEMENT + (
+        "The Chief Operating Decision Maker does not evaluate operating segments using"
+        " discrete asset information.71Table of ContentsThe following table summarizes sales"
+        " to external customers by geographic regions (in millions):\n"
+        "| 2024 |  | 2023\n"
+        "United States | $ | 60,000 |  |  | $ | 58,000 |\n"
+        "Taiwan | 41,887 |  |  | 40,581 |\n"
+        "Total sales | $ | 101,887 |  |  | $ | 98,581 |\n"
+    )
+
+    assert _segments(annual, excerpt) == {}
+
+
+def test_segments_introduced_just_before_a_page_break_and_its_running_headers(annual):
+    # NVIDIA's: the introduction ends a page, the next page's headers follow it.
+    excerpt = _ANNUAL_INCOME_STATEMENT + (
+        "The table below presents details of our reportable segments and the “All Other”"
+        " category.22NVIDIA CORPORATION AND SUBSIDIARIESNOTES TO CONDENSED CONSOLIDATED"
+        " FINANCIAL STATEMENTS (Continued)(Unaudited)\n"
+        "| 2024 |  | 2023\n"
+        "Compute & Networking | $ | 60,000 |  |  | $ | 58,000 |\n"
+        "Graphics | 41,887 |  |  | 40,581 |\n"
+        "Total | $ | 101,887 |  |  | $ | 98,581 |\n"
+    )
+
+    assert _segments(annual, excerpt) == {
+        "Compute & Networking": 60_000_000_000,
+        "Graphics": 41_887_000_000,
+    }
+
+
 @pytest.mark.parametrize(
     "name, period_months, revenue, net_income",
     [
@@ -495,6 +587,35 @@ def test_segment_revenue_of_real_tracked_company_filings(name, segments):
     facts = extract_financial_facts(load_filing(DEFAULT_CORPUS_DIR / name))
 
     assert {f.segment: f.value for f in facts if f.metric == "segment_revenue"} == segments
+
+
+# Snapshot Company Filings, which the SEC company-facts check does not cover.
+
+
+def test_revenue_and_net_income_of_a_real_filing_whose_statement_rows_start_with_a_separator():
+    # Chevron's: read by hand from its Consolidated Statement of Income, not from the
+    # Obligor Group's summary table earlier in the Filing.
+    facts = extract_financial_facts(load_filing(DEFAULT_CORPUS_DIR / "CVX_10K_2025-02-21_full.txt"))
+
+    assert {f.metric: f.value for f in facts if f.metric in ("revenue", "net_income")} == {
+        "revenue": 202_792_000_000,
+        "net_income": 17_661_000_000,
+    }
+
+
+@pytest.mark.parametrize(
+    "name",
+    [
+        # Net interest income and noninterest income, under a pointer to the segments.
+        "BAC_10K_2025-02-25_full.txt",
+        # Sales by geographic region.
+        "AMD_10K_2026-02-04_full.txt",
+    ],
+)
+def test_no_segment_revenue_from_real_tables_that_are_not_segments(name):
+    facts = extract_financial_facts(load_filing(DEFAULT_CORPUS_DIR / name))
+
+    assert [f.segment for f in facts if f.metric == "segment_revenue"] == []
 
 
 # Segment tables laid out in columns: one column per segment, one block of rows per

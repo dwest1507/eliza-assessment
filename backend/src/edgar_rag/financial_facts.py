@@ -12,7 +12,9 @@ column headers (the periods) on rows of their own above the figures and the scal
 ("in millions") in the table title or a header row. Revenue and net income for the
 Filing's own period are read from the Filing's income statement:
 
-1. A table is a run of consecutive lines that contain a `|`.
+1. A table is a run of consecutive lines that contain a `|`. A row's label is the text
+   before its first `|`, or its first cell when a row of figures starts with a `|`
+   (Chevron's statements).
 2. A revenue row is a row whose label is one of the revenue labels the Companies use
    ("Revenues", "Total net sales", "Net Operating Revenues", "Sales to customers"...)
    and which holds figures. Within a table a label starting with "Total" wins over its
@@ -44,7 +46,8 @@ Segment revenue is read from the first segment table that reconciles to revenue:
    rows each followed by its own revenue row ("North America", then "Net sales").
 9. The text introducing them (the label rows above them, or the last sentence of the
    paragraph above the table) must call them segments, which keeps out tables of
-   products, geographies and end markets that also add up to revenue.
+   products, geographies and end markets that also add up to revenue. A sentence that
+   only points to segments elsewhere ("... see Business Segment Operations") does not.
 10. Their figures, with reconciling rows (eliminations, hedging, corporate), must add
    up to revenue. The reconciling rows are not segments and yield no facts.
 11. Failing rows, segments are read from a table that lays them out as columns
@@ -149,6 +152,13 @@ _RECONCILING = re.compile(
 _INTRO_ROWS = 8
 _SHORT_TEXT = 120
 _SENTENCE_BREAK = re.compile(r"[.:•]\s*(?=[A-Z(\u201c])|\.\s")
+# A page break inside a text: a full stop, then the page number glued to the next page
+# ("...asset information.71Table of Contents"), and the page's running headers.
+_PAGE_BREAK = re.compile(r"\.\d{1,3}(?=[A-Z])")
+_PAGE_FURNITURE = re.compile(r"table\s+of\s+contents|\((?:continued|unaudited)\)", re.IGNORECASE)
+# A sentence pointing to segments elsewhere ("For information on key segment performance
+# metrics, see ...") does not introduce the table below it.
+_CROSS_REFERENCE = re.compile(r"\b(?:see|refer\s+to)\b", re.IGNORECASE)
 _TOTAL_HEADING = re.compile(r"total|consolidated(?:\s+totals?)?|total\s+consolidated")
 # Columns of a segment table that total it rather than being a segment.
 _TOTAL_COLUMN = re.compile(
@@ -540,7 +550,8 @@ def _introduced_as_segments(rows: list[_Row], i: int) -> bool:
 
     Read upwards from row `i` across label and header rows to the prose line above
     the table, stopping at a row of figures. Short texts are read whole; of a long one
-    (a paragraph glued to the table's title) only the last sentence counts.
+    (a paragraph glued to the table's title) only the last sentence counts. A text that
+    refers the reader elsewhere ("see", "refer to") does not count.
     """
     for j in range(i, max(-1, i - _INTRO_ROWS), -1):
         row = rows[j]
@@ -548,12 +559,25 @@ def _introduced_as_segments(rows: list[_Row], i: int) -> bool:
             return False
         text = " ".join((row.label, *row.cells)).strip()
         if len(text) > _SHORT_TEXT:
-            text = _SENTENCE_BREAK.split(text.rstrip(" :|"))[-1][-_SHORT_TEXT * 2 :]
-        if _SEGMENT.search(text):
+            text = _last_sentence(text)
+        if _SEGMENT.search(text) and not _CROSS_REFERENCE.search(text):
             return True
         if not row.cells:
             return False
     return False
+
+
+def _last_sentence(text: str) -> str:
+    """The last sentence of a long text, before any page furniture that ends it.
+
+    A text running over a page break ends with the next page's running headers
+    ("NVIDIA CORPORATION ... NOTES ... (Continued)"), which are skipped when that page
+    has nothing but furniture and capitals.
+    """
+    pages = _PAGE_BREAK.split(text.rstrip(" :|"))
+    while len(pages) > 1 and not re.search(r"[a-z]", _PAGE_FURNITURE.sub("", pages[-1])):
+        pages.pop()
+    return _SENTENCE_BREAK.split(pages[-1])[-1][-_SHORT_TEXT * 2 :]
 
 
 def _collapse_subtotals(run: list[int], table: _Table) -> list[int]:
@@ -613,12 +637,19 @@ def _segment_name(label: str) -> str:
 def _rows(body: str, start: int) -> list[_Row]:
     """Every line from `start` on, split into a label and cells at its `|`s.
 
-    A line without a `|` (prose, or a table title) has no cells.
+    A line without a `|` (prose, or a table title) has no cells. A row of figures that
+    starts with a `|` takes its first cell as its label.
     """
     rows = []
     offset = start
     for line in body[start:].split("\n"):
         label, *cells = (cell.strip() for cell in line.split("|"))
+        if (
+            not label
+            and _is_data(_Row("", tuple(cells[1:]), offset))
+            and not _is_data(_Row("", tuple(cells[:1]), offset))
+        ):
+            label, *cells = cells  # Chevron's "| Sales ... | 193,414 |": the label is a cell
         rows.append(_Row(label, tuple(cells), offset))
         offset += len(line) + 1
     return rows
