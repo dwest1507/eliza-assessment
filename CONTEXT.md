@@ -41,7 +41,7 @@ The full set of Filings provided with the assessment, described by its manifest.
 _Avoid_: Dataset, data
 
 **Section**:
-A standard, form-independent part of a Filing (e.g. Risk Factors, MD&A, Financial Statements, Market Risk, Legal Proceedings, Business). The default unit for talking about filing content.
+A standard, form-independent part of a Filing (e.g. Risk Factors, MD&A, Financial Statements, Market Risk, Legal Proceedings, Business). The default unit for talking about filing content. Items with no standard Section of their own map to Other. Text outside any Item (cover page, TOC, a Filing with no Item headings) is kept as an Unsectioned Section, so a Filing's Sections cover its whole body.
 _Avoid_: Chapter, part
 
 **Item**:

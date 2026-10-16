@@ -37,6 +37,7 @@ from matplotlib.patches import Patch
 from edgar_rag.corpus import (
     DEFAULT_CORPUS_DIR,
     TRACKED_MIN_QUARTERS,
+    UNSECTIONED,
     check_manifest,
     consecutive_quarters,
     load_corpus,
@@ -362,7 +363,13 @@ sources = pd.crosstab(
 sources
 
 # %%
-diagnostics = [(f.filing_id, d.code, d.detail) for f in filings for d in f.diagnostics]
+# Section diagnostics belong to analysis 4.
+diagnostics = [
+    (f.filing_id, d.code, d.detail)
+    for f in filings
+    for d in f.diagnostics
+    if not d.code.startswith("section_")
+]
 print(f"Filings with a Report Period: {sum(f.report_period is not None for f in filings)}")
 print(f"Diagnostics (source disagreements, missing cover-page sentence, ...): {len(diagnostics)}")
 pd.DataFrame(diagnostics, columns=["filing_id", "code", "detail"])
@@ -743,3 +750,276 @@ print(
 # - Split prose on sentence boundaries within a token budget, not on line breaks, and
 #   strip running page headers and page footers before chunking so they do not pollute
 #   chunk text and embeddings.
+
+# %% [markdown]
+# ## 4. Section and Item detection
+#
+# Can Filings be addressed by Section? The Corpus seam splits each cleaned body at its
+# Item headings, skipping the TOC. Each Section carries a standard, form-independent
+# name and the Item label the Filing used, so 10-K Item 7 and 10-Q Part I, Item 2 are
+# both **MD&A**, while a question about "Item 7" can still filter on the label. Text
+# before the first heading (cover page, TOC, forward-looking statements) is kept as
+# an **Unsectioned** Section, so the Sections of a Filing add up to its whole body.
+#
+# A heading is an Item number followed by the start of the Item's official title
+# ("Item 1A. Risk Factors"). Flattening glues headings into running text, so the
+# splitter cannot rely on line starts. It rejects three look-alikes:
+#
+# - **cross-references**, which cite an Item mid-sentence ("see Part II, Item 7,
+#   “Management's Discussion…”"): a heading is never preceded by a lower-case word, a
+#   comma or an opening quote, unless that word ends a "Table of Contents" page header;
+# - **TOC rows**, by searching only after the TOC;
+# - **cross-reference index rows** near the end of some 10-Ks ("Item 1A | Risk Factors |
+#   Page28"): runs of five or more short table rows naming Items.
+#
+# Items are searched for in form order first, then any still missing anywhere after
+# the TOC, because some Filings reorder them. A required Section that cannot be found
+# is recorded as a `section_not_found` diagnostic on the Filing.
+
+# %%
+section_rows = pd.DataFrame(
+    {
+        "file": f.path.name,
+        "ticker": f.ticker,
+        "form_type": f.form_type,
+        "section": s.name,
+        "item": s.item,
+        "chars": len(s.text),
+        "share": len(s.text) / len(f.body),
+    }
+    for f in filings
+    for s in f.sections
+)
+items = section_rows.dropna(subset=["item"])
+mapping = (
+    items.groupby(["form_type", "item", "section"], sort=False)
+    .size()
+    .rename("Filings")
+    .reset_index()
+)
+mapping["order"] = (
+    mapping["item"]
+    .str.extract(r"(\d+)([A-C]?)$")
+    .apply(lambda m: int(m[0]) * 10 + (ord(m[1]) - 64 if m[1] else 0), axis=1)
+    + mapping["item"].str.startswith("Part II").astype(int) * 1000
+)
+mapping.sort_values(["form_type", "order"]).drop(columns="order").set_index(["form_type", "item"])
+
+# %%
+REQUIRED = {
+    "10-K": [
+        "Business",
+        "Risk Factors",
+        "Legal Proceedings",
+        "MD&A",
+        "Market Risk",
+        "Financial Statements",
+        "Controls and Procedures",
+        "Cybersecurity",
+    ],
+    "10-Q": [
+        "Financial Statements",
+        "MD&A",
+        "Market Risk",
+        "Controls and Procedures",
+        "Legal Proceedings",
+        "Risk Factors",
+    ],
+}
+found = items.groupby(["form_type", "section"])["file"].nunique()
+filings_per_form = Counter(f.form_type for f in filings)
+detection = pd.DataFrame(
+    {
+        form: {
+            name: f"{found.get((form, name), 0)}/{filings_per_form[form]} "
+            f"({found.get((form, name), 0) / filings_per_form[form]:.0%})"
+            for name in REQUIRED[form]
+        }
+        for form in ["10-K", "10-Q"]
+    }
+).fillna("–")
+detection
+
+# %%
+fig, ax = plt.subplots(figsize=(10, 4))
+names = REQUIRED["10-K"]
+x = np.arange(len(names))
+for offset, form, colour in [(-0.2, "10-K", "#fd8d3c"), (0.2, "10-Q", "#6baed6")]:
+    rates = [
+        found.get((form, n), 0) / filings_per_form[form] * 100 if n in REQUIRED[form] else 0
+        for n in names
+    ]
+    ax.bar(x + offset, rates, width=0.4, color=colour, label=form)
+ax.set_xticks(x, names, rotation=20, ha="right")
+ax.set_ylabel("Filings where the Section is found (%)")
+ax.set_ylim(0, 105)
+ax.set_title("Section detection rate by Form Type")
+ax.legend(loc="upper left", bbox_to_anchor=(1.01, 1.0))
+fig.tight_layout()
+plt.show()
+
+# %% [markdown]
+# ### 4.1 Every failure, by name
+
+# %%
+failures = pd.DataFrame(
+    {"file": f.path.name, "form_type": f.form_type, "missing": d.detail}
+    for f in filings
+    for d in f.diagnostics
+    if d.code == "section_not_found"
+)
+print(f"section_not_found diagnostics: {len(failures)} in {failures['file'].nunique()} Filings")
+failures.groupby(["file", "form_type"])["missing"].agg("; ".join).to_frame()
+
+# %% [markdown]
+# Reading each failing Filing shows why:
+#
+# - **Morgan Stanley, Intel, McDonald's (10-K):** no "Item N" headings in the body at
+#   all. They use their own headings, mapped to Items in the TOC (Morgan Stanley) or in
+#   a cross-reference index at the end (Intel, McDonald's). The whole body after the
+#   TOC is Unsectioned.
+# - **JPMorgan (10-Q × 3):** the same pattern in its 10-Qs: MD&A and the financial
+#   statements run under JPMorgan's own headings; only Part II has Item headings.
+# - **Bank of America (10-K) and Comcast (10-K):** the Company name sits between the
+#   label and the title ("Item 7. Bank of America Corporation and Subsidiaries /
+#   Management's Discussion…", "Item 8: Comcast Corporation Financial Statements…").
+#   Their MD&A and financial statements stay inside the previous Item.
+# - **J&J and ExxonMobil (10-Q × 24):** not a detection failure. Their 10-Qs have no
+#   Part II, Item 1A at all; both rely on the risk factors in their 10-K.
+#
+# Cybersecurity (Item 1C) only became required for fiscal years ending on or after
+# 15 December 2023, so its absence from earlier 10-Ks is not reported as a failure.
+
+# %% [markdown]
+# ### 4.2 Section lengths, stubs and coverage
+
+# %%
+named = items[items["section"] != "Other"]
+order = REQUIRED["10-K"]
+fig, axes = plt.subplots(1, 2, figsize=(13, 4.5), sharey=True)
+for ax, form in zip(axes, ["10-K", "10-Q"], strict=True):
+    present = [n for n in order if n in REQUIRED[form]]
+    data = [named[(named["form_type"] == form) & (named["section"] == n)]["chars"] for n in present]
+    ax.boxplot(data, positions=[order.index(n) for n in present], orientation="horizontal")
+    ax.set_xscale("log")
+    ax.axvline(2_000, color="grey", linestyle=":", linewidth=1)
+    ax.set_title(form)
+    ax.set_xlabel("Section length (characters, log scale)")
+axes[0].set_yticks(range(len(order)), order)
+axes[0].invert_yaxis()
+fig.suptitle("Section length distribution (dotted line: about 500 tokens)")
+fig.tight_layout()
+plt.show()
+
+named.groupby(["form_type", "section"])["chars"].describe(percentiles=[0.1, 0.5, 0.9]).astype(int)[
+    ["count", "min", "10%", "50%", "90%", "max"]
+]
+
+# %%
+POINTER = re.compile(
+    r"refer to|see |incorporated (?:herein )?by reference|no material changes|"
+    r"is (?:included|presented|set forth) (?:in|under)|not applicable|^\W*none",
+    re.IGNORECASE,
+)
+STUB_CHARS = 1_000
+stub_rows = named[named["chars"] < STUB_CHARS].copy()
+texts = {(f.path.name, s.item): s.text for f in filings for s in f.sections if s.item is not None}
+stub_rows["points_elsewhere"] = [
+    bool(POINTER.search(texts[(r.file, r.item)])) for r in stub_rows.itertuples()
+]
+stubs = (
+    stub_rows.groupby(["form_type", "section"])
+    .agg(stubs=("file", "size"), pointing_elsewhere=("points_elsewhere", "sum"))
+    .join(named.groupby(["form_type", "section"]).size().rename("found"))
+)
+stubs["stub share"] = (stubs["stubs"] / stubs["found"] * 100).round(0).astype(int).astype(str) + "%"
+stubs
+
+# %%
+for file, item in [
+    ("JPM_10K_2026-02-13_full.txt", "Item 7"),
+    ("AMZN_10K_2024Q4_2025-02-07_full.txt", "Item 3"),
+    ("DIS_10K_2025-11-13_full.txt", "Item 8"),
+    ("KO_10Q_2025Q1_2025-05-01_full.txt", "Part I, Item 3"),
+]:
+    print(f"{file} {item}:\n  {texts[(file, item)][:260]!r}\n")
+
+# %%
+coverage = section_rows.assign(
+    kind=np.where(section_rows["section"] == UNSECTIONED, "Unsectioned", "Item Sections")
+)
+by_kind = coverage.groupby(["form_type", "kind"])["chars"].sum().unstack()
+(by_kind.div(by_kind.sum(axis=1), axis=0) * 100).round(1)
+
+# %%
+unsectioned_share = (
+    coverage[coverage["kind"] == "Unsectioned"].groupby("file")["share"].sum().sort_values()
+)
+print("Filings where more than 10% of the body is Unsectioned:")
+print((unsectioned_share[unsectioned_share > 0.10] * 100).round(1).to_string())
+
+last_items = section_rows.dropna(subset=["item"]).groupby("file").tail(1)
+swallowing = last_items[last_items["share"] > 0.25].sort_values("share", ascending=False)
+print("\nFilings whose last Item runs over a quarter of the body (trailing material):")
+print(
+    swallowing.assign(share=(swallowing["share"] * 100).round(1))[
+        ["file", "item", "chars", "share"]
+    ].to_string(index=False)
+)
+
+# %% [markdown]
+# **What Section detection shows**
+#
+# - Item headings are found in 96–97% of 10-Ks for every required Section and in
+#   98–100% of 10-Qs, apart from 10-Q Risk Factors (85%), where all 24 misses are J&J
+#   and ExxonMobil 10-Qs that have no Part II, Item 1A. The 53 `section_not_found`
+#   diagnostics sit in 32 Filings. Excluding those genuine absences, detection fails in
+#   eight Filings: Morgan Stanley, Intel and McDonald's 10-Ks and JPMorgan's three
+#   10-Qs, which use their own headings, and Bank of America's and Comcast's 10-Ks,
+#   which put the Company name inside the heading.
+# - TOC rows never become Section starts, and the cross-reference index rows at the end
+#   of Intel's, McDonald's and Mastercard's 10-Ks are rejected too. Bank of America's
+#   10-Qs, which open with MD&A and put the financial statements after Items 3 and 4,
+#   are split correctly.
+# - The Sections plus the Unsectioned text add up to every cleaned body. Unsectioned
+#   text is 6% of 10-K text and 10% of 10-Q text: mostly cover pages and TOCs, plus
+#   the whole body of the six Filings without Item headings.
+# - **An Item label says where content belongs, not always where it is.** Many
+#   Sections are stubs that point elsewhere. Legal Proceedings is under 1,000 characters
+#   in 65% of 10-Ks and 72% of 10-Qs ("See Note 7 — Commitments and Contingencies"),
+#   10-Q Market Risk in 66% ("no material changes"), 10-Q Risk Factors in 39%, and
+#   10-K Financial Statements in 24% ("See Index to Financial Statements on page 67").
+#   Where the content really is, it often follows the last Item. JPMorgan's Item 7 says
+#   its MD&A "appears on pages 46–160" of the Annual Report appended after Item 15,
+#   which makes Item 15 86% of the body. ExxonMobil's financial section follows Item 16
+#   (74–76% of each of its 10-Ks), and Deere's, Netflix's, Disney's and BlackRock's
+#   financial statements do the same (31–69%).
+# - Section sizes vary by two orders of magnitude. 10-K Risk Factors has a median of
+#   69,000 characters, MD&A 58,000 and Business 40,000; Controls and Procedures and
+#   10-Q Market Risk are a few thousand characters or less. Nearly all substantive
+#   Sections need splitting into many chunks.
+#
+# **So the design does:**
+#
+# - Carry the standard Section name and the original Item label on every chunk. Questions
+#   about a topic ("risk factors") filter on the Section name. Questions about an Item
+#   ("Item 7 of the 10-K") filter on the label. Citations name both ("Apple 10-K FY2024,
+#   Item 1A Risk Factors").
+# - Treat **Risk Factors, Business, MD&A and Controls and Procedures** as reliable chunk
+#   boundaries and metadata filters: each is found in 96% or more of the 10-Ks and is
+#   rarely a stub (a 10-Q Risk Factors stub says "no material changes", which itself
+#   tells retrieval to use the 10-K). Legal Proceedings, Market Risk and Financial
+#   Statements are reliable as boundaries but not as filters: their Item is often a
+#   pointer to a Note or to MD&A.
+# - Use a Section filter as a preference, not a hard filter: if a Company's Filing has no
+#   such Section, or only a stub, retrieve from the whole Filing instead (still filtered
+#   on Company and Report Period). This covers the six Filings without Item headings, the
+#   10-Qs without Risk Factors, and the 10-Ks whose MD&A or financial statements follow
+#   the last Item.
+# - Index Unsectioned text and the last Item like any other text (except the TOC span),
+#   because they hold real content in the Filings above.
+# - Chunk within Section boundaries, never across them, and split long Sections by the
+#   prose and table rules of analysis 3.
+# - The standard set is the spec's initial one plus **Cybersecurity** (10-K Item 1C,
+#   required from FY2023 and found in 69 10-Ks). All other Items map to **Other** and
+#   stay addressable by their Item label.

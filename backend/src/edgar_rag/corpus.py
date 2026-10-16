@@ -11,7 +11,9 @@ only when it knows the fiscal year end: from a 10-K's own Report Period, or when
 is passed in.
 
 The body is cleaned: the XBRL noise in front of the cover page is removed and the
-table of contents is located.
+table of contents is located. The cleaned body is then split into Sections at its Item
+headings, skipping the table of contents. Each Section carries its standard name and
+its original Item label; text outside any Item is kept as an "Unsectioned" Section.
 
 Every Filing carries its Company's Sector and industry from the curated Sector table
 (`data/reference/sectors.csv`). Coverage is also Company-level, so only `load_corpus`
@@ -32,6 +34,26 @@ from pathlib import Path
 from typing import Literal
 
 from edgar_rag._body import Span, clean_body
+from edgar_rag._sections import UNSECTIONED, Section, split_sections
+
+__all__ = [
+    "DEFAULT_CORPUS_DIR",
+    "DEFAULT_SECTOR_TABLE",
+    "TRACKED_MIN_QUARTERS",
+    "UNSECTIONED",
+    "Coverage",
+    "Diagnostic",
+    "Filing",
+    "ReportPeriodSource",
+    "Section",
+    "SectorRow",
+    "Span",
+    "check_manifest",
+    "consecutive_quarters",
+    "load_corpus",
+    "load_filing",
+    "load_sector_table",
+]
 
 _DATA_DIR = Path(__file__).resolve().parents[3] / "data"
 DEFAULT_CORPUS_DIR = _DATA_DIR / "edgar_corpus"
@@ -111,6 +133,9 @@ class Filing:
     toc: Span | None
     """Where the table of contents sits in the cleaned body, or None if it has none.
     Section detection must skip it: TOC rows repeat the real Item headings."""
+    sections: tuple[Section, ...] = field(default=(), repr=False)
+    """The cleaned body split into Sections, in body order. Together they cover the
+    whole body exactly."""
     fiscal_year_end_month: int | None = None
     fiscal_period: str | None = None
     sector: str | None = None
@@ -191,6 +216,8 @@ def load_filing(path: str | Path, fiscal_year_end_month: int | None = None) -> F
         name=path.name,
     )
     body = clean_body(_raw_body(text))
+    sections, missing = split_sections(body.text, form_type, body.toc.end if body.toc else 0)
+    diagnostics += tuple(Diagnostic("section_not_found", detail) for detail in missing)
     filing = Filing(
         company=header["Company"],
         ticker=header["Ticker"],
@@ -206,6 +233,7 @@ def load_filing(path: str | Path, fiscal_year_end_month: int | None = None) -> F
         body=body.text,
         xbrl_noise_chars=body.xbrl_noise_chars,
         toc=body.toc,
+        sections=sections,
     )
     sector_row = _sector_rows(DEFAULT_SECTOR_TABLE).get(filing.ticker)
     if sector_row:

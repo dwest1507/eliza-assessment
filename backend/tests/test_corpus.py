@@ -9,6 +9,7 @@ import pytest
 
 from edgar_rag.corpus import (
     DEFAULT_CORPUS_DIR,
+    UNSECTIONED,
     check_manifest,
     load_corpus,
     load_filing,
@@ -19,6 +20,10 @@ from edgar_rag.corpus import (
 @pytest.fixture(scope="module")
 def corpus():
     return load_corpus()
+
+
+def _report_period_diagnostics(filing):
+    return [d for d in filing.diagnostics if d.code.startswith("report_period")]
 
 
 def _only(filings, **attrs):
@@ -70,7 +75,7 @@ def test_10q_takes_its_text_date_from_the_quarterly_period_sentence_not_a_10k_re
     filing = load_filing(DEFAULT_CORPUS_DIR / "JPM_10Q_2025Q1_2025-05-01_full.txt")
 
     assert filing.report_period == date(2025, 3, 31)
-    assert filing.diagnostics == ()
+    assert _report_period_diagnostics(filing) == []
 
 
 @pytest.mark.parametrize(
@@ -101,9 +106,10 @@ def test_url_and_text_disagreement_is_reported_as_a_diagnostic(tmp_path):
 
     assert filing.report_period == date(2024, 12, 31)
     assert filing.report_period_source == "url"
-    assert [d.code for d in filing.diagnostics] == ["report_period_mismatch"]
-    assert "url=2024-12-31" in filing.diagnostics[0].detail
-    assert "text=2024-09-30" in filing.diagnostics[0].detail
+    [mismatch] = _report_period_diagnostics(filing)
+    assert mismatch.code == "report_period_mismatch"
+    assert "url=2024-12-31" in mismatch.detail
+    assert "text=2024-09-30" in mismatch.detail
 
 
 def test_coca_cola_filings_sharing_a_calendar_quarter_have_distinct_identifiers(corpus):
@@ -314,3 +320,158 @@ def test_companies_with_two_years_of_quarterly_filings_are_tracked_the_rest_snap
     assert {coverage[t] for t in ["BAC", "JPM", "MCD", "PEP", "GE", "LLY"]} == {"snapshot"}
     # Every Filing of a Company carries the same class.
     assert len({(f.ticker, f.coverage) for f in corpus}) == 54
+
+
+# --- Sections: standard names, Item labels and coverage -------------------------
+
+# Flattening often leaves four no-break spaces between an Item label and its title.
+NBSP4 = "\xa0" * 4
+
+
+def _section(filing, name):
+    matches = [s for s in filing.sections if s.name == name]
+    assert len(matches) == 1, f"expected one {name} Section, got {len(matches)}"
+    return matches[0]
+
+
+def test_10k_risk_factors_come_from_item_1a_and_mda_from_item_7():
+    filing = load_filing(APPLE_10K)
+
+    risk_factors = _section(filing, "Risk Factors")
+    mda = _section(filing, "MD&A")
+
+    assert risk_factors.item == "Item 1A"
+    assert risk_factors.text.startswith(f"Item 1A.{NBSP4}Risk FactorsThe Company’s business")
+    assert risk_factors.text.endswith("investor confidence and employee retention.")
+    assert mda.item == "Item 7"
+    assert mda.text.startswith(f"Item 7.{NBSP4}Management’s Discussion and Analysis")
+    assert filing.body[mda.span.start : mda.span.end] == mda.text
+
+
+def test_10q_mda_comes_from_part_i_item_2_and_risk_factors_from_part_ii_item_1a():
+    filing = load_filing(DEFAULT_CORPUS_DIR / "AAPL_10Q_2025Q2_2025-08-01_full.txt")
+
+    mda = _section(filing, "MD&A")
+    risk_factors = _section(filing, "Risk Factors")
+
+    assert mda.item == "Part I, Item 2"
+    assert mda.text.startswith(f"Item 2.{NBSP4}Management’s Discussion and Analysis")
+    assert risk_factors.item == "Part II, Item 1A"
+    assert risk_factors.text.startswith(f"Item 1A.{NBSP4}Risk FactorsThe Company’s business")
+    # Part I and Part II both have an Item 1; the title tells them apart.
+    assert _section(filing, "Financial Statements").item == "Part I, Item 1"
+    assert _section(filing, "Legal Proceedings").item == "Part II, Item 1"
+
+
+def test_every_item_keeps_its_label_so_an_item_question_can_filter_on_it():
+    filing = load_filing(APPLE_10K)
+
+    labels = [s.item for s in filing.sections]
+    item_7 = [s for s in filing.sections if s.item == "Item 7"]
+
+    assert labels == [None] + [
+        f"Item {n}" for n in "1 1A 1B 1C 2 3 4 5 6 7 7A 8 9 9A 9B 9C 10 11 12 13 14 15 16".split()
+    ]
+    assert [s.name for s in item_7] == ["MD&A"]
+    assert _section(filing, "Cybersecurity").item == "Item 1C"
+    assert {s.name for s in filing.sections if s.item in {"Item 2", "Item 15", "Item 16"}} == {
+        "Other"
+    }
+
+
+def test_sections_cover_every_cleaned_body_exactly(corpus):
+    for f in corpus:
+        assert "".join(s.text for s in f.sections) == f.body, f.path.name
+        assert f.sections[0].span.start == 0
+        assert f.sections[-1].span.end == len(f.body)
+        for before, after in zip(f.sections, f.sections[1:], strict=False):
+            assert before.span.end == after.span.start, f.path.name
+        unsectioned = [s for s in f.sections if s.item is None]
+        assert all(s.name == UNSECTIONED for s in unsectioned), f.path.name
+        assert all(s.name != UNSECTIONED for s in f.sections if s.item is not None)
+
+
+def test_no_section_starts_inside_the_table_of_contents(corpus):
+    for f in corpus:
+        if f.toc is None:
+            continue
+        starts = [s.span.start for s in f.sections if s.item is not None]
+        assert all(start >= f.toc.end for start in starts), f.path.name
+
+
+def test_large_jpmorgan_10k_items_are_found_after_the_toc_and_its_mda_is_a_pointer():
+    filing = load_filing(DEFAULT_CORPUS_DIR / "JPM_10K_2026-02-13_full.txt")
+
+    risk_factors = _section(filing, "Risk Factors")
+    mda = _section(filing, "MD&A")
+    exhibits = next(s for s in filing.sections if s.item == "Item 15")
+
+    assert [s.item for s in filing.sections][:3] == [None, "Item 1", "Item 1A"]
+    assert len([s for s in filing.sections if s.item]) == 22  # every 10-K Item but Item 16
+    assert risk_factors.text.startswith("Item 1A. Risk Factors. The following discussion")
+    assert len(risk_factors.text) > 100_000
+    # JPMorgan's Item 7 only points to the MD&A in the Annual Report appended after
+    # Item 15, which therefore runs to the end of the body.
+    assert mda.text.startswith("Item 7. Management’s Discussion and Analysis")
+    assert "appears on pages 46–160" in mda.text
+    assert len(mda.text) < 500
+    assert exhibits.span.end == len(filing.body)
+    assert "Management’s discussion and analysisThe following is" in exhibits.text
+    assert [d for d in filing.diagnostics if d.code == "section_not_found"] == []
+
+
+def test_a_section_that_cannot_be_found_is_reported_as_a_diagnostic():
+    # Bank of America puts its name between the label and the title:
+    # "Item 7. Bank of America Corporation and Subsidiaries\nManagement's Discussion".
+    filing = load_filing(DEFAULT_CORPUS_DIR / "BAC_10K_2025-02-25_full.txt")
+
+    assert "MD&A" not in {s.name for s in filing.sections}
+    assert [(d.code, d.detail) for d in filing.diagnostics] == [
+        ("section_not_found", "MD&A (Item 7)")
+    ]
+    # The MD&A text is not lost: it stays in the Item before it.
+    item_6 = next(s for s in filing.sections if s.item == "Item 6")
+    assert "Management's Discussion and Analysis" in item_6.text
+
+
+def test_items_out_of_form_order_are_still_found():
+    # Bank of America's 10-Qs open with MD&A (Part I, Item 2) and put the financial
+    # statements (Part I, Item 1) after Items 3 and 4.
+    filing = load_filing(DEFAULT_CORPUS_DIR / "BAC_10Q_2025Q1_2025-04-30_full.txt")
+
+    labels = [s.item for s in filing.sections if s.item]
+
+    assert labels[:4] == ["Part I, Item 2", "Part I, Item 3", "Part I, Item 4", "Part I, Item 1"]
+    assert _section(filing, "MD&A").text.startswith("Item 2. Management’s Discussion")
+    assert _section(filing, "Financial Statements").text.startswith(
+        "Item 1. Financial StatementsBank of America Corporation"
+    )
+    assert [d for d in filing.diagnostics if d.code == "section_not_found"] == []
+
+
+def test_rows_of_a_cross_reference_index_are_not_section_starts():
+    # McDonald's 10-K uses its own headings and maps them to Items in a cross-reference
+    # index near the end ("Item 1A | Risk Factors | Page28"). Those rows are not
+    # headings, so the Items are reported missing rather than cut into one-row Sections.
+    filing = load_filing(DEFAULT_CORPUS_DIR / "MCD_10K_2025-02-25_full.txt")
+
+    assert [s.item for s in filing.sections if s.item] == []
+    assert [d.detail for d in filing.diagnostics if d.code == "section_not_found"] == [
+        "Business (Item 1)",
+        "Risk Factors (Item 1A)",
+        "Legal Proceedings (Item 3)",
+        "MD&A (Item 7)",
+        "Market Risk (Item 7A)",
+        "Financial Statements (Item 8)",
+        "Controls and Procedures (Item 9A)",
+    ]
+
+
+def test_heading_after_a_running_page_header_is_not_taken_for_a_cross_reference():
+    # "...48Table of Contents ITEM 7A.    Quantitative and Qualitative Disclosures":
+    # the words before the heading are page furniture, not a sentence citing it.
+    filing = load_filing(DEFAULT_CORPUS_DIR / "LMT_10K_2026-01-29_full.txt")
+
+    assert _section(filing, "MD&A").text.startswith(f"ITEM\xa07.{NBSP4}Management’s Discussion")
+    assert _section(filing, "Market Risk").text.startswith(f"ITEM 7A.{NBSP4}Quantitative")
+    assert [d for d in filing.diagnostics if d.code == "section_not_found"] == []
