@@ -28,6 +28,10 @@ _Avoid_: Industry (unqualified), vertical
 One 10-K or 10-Q document submitted to the SEC by a single company, as one file in the corpus.
 _Avoid_: Document, report, file
 
+**Filing ID**:
+The stable identifier of a Filing, built from ticker, Form Type and Report Period (e.g. `KO_10-Q_2022-07-01`). Unique across the Corpus.
+_Avoid_: Using Calendar Quarter or file name as a key
+
 **Form Type**:
 The kind of Filing: `10-K` (annual) or `10-Q` (quarterly).
 _Avoid_: Filing type, doc type
@@ -59,7 +63,7 @@ _Avoid_: Metric, data point, number
 ### Time
 
 **Report Period**:
-The end date of the period a Filing covers. The canonical time axis for ordering and filtering Filings. Missing from some Filing headers, in which case it is derived.
+The end date of the period a Filing covers. The canonical time axis for ordering and filtering Filings. Missing from some Filing headers, in which case it is derived from the date in the source URL or the cover-page "period ended" sentence; each Filing records which source its Report Period came from.
 _Avoid_: Period, as-of date
 
 **Filing Date**:

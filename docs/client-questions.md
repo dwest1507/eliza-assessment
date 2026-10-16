@@ -20,10 +20,25 @@ Status: `open` (not yet sent), `sent`, `answered`.
 
 ## 3. What does "2023–2025" mean?
 
-- **Question:** The brief describes filings "spanning 2023–2025". The Corpus also contains Filings with Report Periods in 2022, FY2025 10-Ks filed in early 2026, and a GE 10-K filed in 2015 (its source URL suggests it may be GE Capital's FY2014 report). Should these be kept, dropped, or treated differently?
-- **Why it matters:** It decides what "the last two years" and "latest" resolve to, and whether a ten-year-old Filing can show up in answers.
-- **Our assumption:** Keep every Filing and show the Report Period in every citation. Flag the GE Filing as stale and leave it out of any "current state" answer.
-- **Status:** open (to be confirmed by the EDA)
+- **Question:** The brief describes filings "spanning 2023–2025", but by Report Period (the end of the period a Filing covers) 48 Filings fall outside that window, and 27 more were filed in 2026. Should these be kept, dropped, or treated differently?
+  - **GE (1 Filing):** the only GE Filing is not a General Electric Company report. It is **GE Capital's** (General Electric Capital Corporation's) 10-K for the fiscal year ended 31 December 2014, filed on 27 February 2015.
+  - **2022 (47 Filings from 12 Companies):**
+    - AAPL: 10-Q 2022-03-26, 10-Q 2022-06-25, 10-K 2022-09-24, 10-Q 2022-12-31
+    - AMZN: 10-Q 2022-03-31, 10-Q 2022-06-30, 10-Q 2022-09-30, 10-K 2022-12-31
+    - DIS: 10-Q 2022-01-01, 10-Q 2022-04-02, 10-Q 2022-07-02, 10-K 2022-10-01, 10-Q 2022-12-31
+    - GOOG: 10-Q 2022-09-30, 10-K 2022-12-31
+    - JNJ: 10-K 2022-01-02 (FY2021), 10-Q 2022-04-03, 10-Q 2022-07-03, 10-Q 2022-10-02
+    - KO: 10-Q 2022-04-01, 10-Q 2022-07-01, 10-Q 2022-09-30, 10-K 2022-12-31
+    - MSFT: 10-Q 2022-03-31, 10-K 2022-06-30, 10-Q 2022-09-30, 10-Q 2022-12-31
+    - NVDA: 10-K 2022-01-30 (FY2022), 10-Q 2022-05-01, 10-Q 2022-07-31, 10-Q 2022-10-30
+    - PFE: 10-Q 2022-04-03, 10-Q 2022-07-03, 10-Q 2022-10-02, 10-K 2022-12-31
+    - TSLA: 10-Q 2022-03-31, 10-Q 2022-06-30, 10-Q 2022-09-30, 10-K 2022-12-31
+    - UNH: 10-Q 2022-03-31, 10-Q 2022-06-30, 10-Q 2022-09-30, 10-K 2022-12-31
+    - XOM: 10-Q 2022-03-31, 10-Q 2022-06-30, 10-Q 2022-09-30, 10-K 2022-12-31
+  - **Filed in 2026 (27 Filings, inside the window by Report Period):** 24 FY2025 10-Ks and 3 10-Qs for quarters ending in December 2025 (AAPL, DIS, MSFT).
+- **Why it matters:** It decides what "the last two years" and "latest" resolve to, and whether a ten-year-old Filing from a different legal entity can show up in answers about General Electric.
+- **Our assumption:** Keep every Filing and show the Report Period in every citation. Treat the GE Filing as GE Capital's, flag it as stale, and leave it out of any "current state" answer.
+- **Status:** open
 
 ## 4. What kinds of questions should the system be built for, given the uneven coverage?
 
