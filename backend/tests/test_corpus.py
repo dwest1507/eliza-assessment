@@ -467,6 +467,28 @@ def test_rows_of_a_cross_reference_index_are_not_section_starts():
     ]
 
 
+def test_a_heading_glued_to_its_title_is_found_when_the_title_starts_with_a_to_c(tmp_path):
+    # "Item 1Business" is Item 1, not Item 1B, though B can follow an Item number. No
+    # Filing in the Corpus glues these today, so a synthetic one isolates the case.
+    path = tmp_path / "XYZ_10K_2025-02-01_full.txt"
+    path.write_text(
+        "Company: Example Corp\nTicker: XYZ\nFiling Type: 10-K (Annual Report)\n"
+        "Filing Date: 2025-02-01\nCIK: 0000000001\nSource: SEC EDGAR\n"
+        "URL: https://www.sec.gov/Archives/edgar/data/1/0001/xyz-20241231.htm\n"
+        + "="
+        * 60
+        + "\n\nFORM 10-KFor the fiscal year ended December 31, 2024\n"
+        "PART IItem 1Business. We make things.Item 1ARisk Factors. Things may break.\n"
+        "Item 8Consolidated Financial Statements. The tables.\n"
+        "Item 9Changes in and Disagreements with Accountants. None.\n",
+        encoding="utf-8",
+    )
+
+    filing = load_filing(path)
+
+    assert [s.item for s in filing.sections if s.item] == ["Item 1", "Item 1A", "Item 8", "Item 9"]
+
+
 def test_heading_after_a_running_page_header_is_not_taken_for_a_cross_reference():
     # "...48Table of Contents ITEM 7A.    Quantitative and Qualitative Disclosures":
     # the words before the heading are page furniture, not a sentence citing it.

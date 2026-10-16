@@ -219,6 +219,57 @@ def test_income_statement_whose_rows_start_with_a_cell_separator_is_found(annual
     assert _net_income(annual, excerpt).value == 17_661_000_000
 
 
+def test_a_change_column_after_the_years_is_not_taken_for_a_note_column_before_them(annual):
+    # JPMorgan's financial highlights: one extra figure per row, the change, after the
+    # years. ExxonMobil's note-reference column comes before them instead.
+    excerpt = (
+        "CONSOLIDATED STATEMENTS OF INCOME (in millions)\n"
+        "| 2024 |  | 2023 |  | Change\n"
+        "Total net revenue | 45,310 |  |  | 41,934 |  |  | 8 |\n"
+        "Net income | 14,643 |  |  | 13,419 |  |  | 9 |\n"
+    )
+
+    assert _revenue(annual, excerpt).value == 45_310_000_000
+    assert _net_income(annual, excerpt).value == 14_643_000_000
+
+
+def test_a_statement_is_ranked_by_the_net_income_rows_that_are_read(annual):
+    # Walmart's statement says "Consolidated net income"; an earlier MD&A table has
+    # its net sales but no net income row at all.
+    excerpt = (
+        "Our objective is to achieve operating income leverage.\n"
+        "|  | Fiscal Years Ended January 31,\n"
+        "(Amounts in millions) |  | 2024 |  | 2023\n"
+        "Net sales |  | $ | 674,538 |  |  | $ | 642,637 |\n"
+        "Operating income |  | $ | 29,348 |  |  | $ | 27,012 |\n"
+        "Prose between the tables.\n"
+        "Consolidated Statements of Income\n"
+        "(Amounts in millions) |  | 2024 |  | 2023\n"
+        "Total revenues |  | 680,985 |  |  | 648,125 |\n"
+        "Consolidated net income |  | 20,157 |  |  | 16,270 |\n"
+        "Consolidated net income attributable to Walmart |  | $ | 19,436 |  |  | $ | 15,511 |\n"
+    )
+
+    assert _revenue(annual, excerpt).value == 680_985_000_000
+    assert _net_income(annual, excerpt).value == 19_436_000_000
+
+
+def test_a_per_share_row_does_not_rank_a_table_as_having_net_income(annual):
+    excerpt = (
+        "Financial highlights (in millions)\n"
+        "| 2024 |  | 2023\n"
+        "Total revenues | 1,000 |  |  | 900 |\n"
+        "Net income per share | 1.20 |  |  | 1.00 |\n"
+        "Prose between the tables.\n"
+        "Results of operations (in millions)\n"
+        "| 2024 |  | 2023\n"
+        "Total revenues | 1,000 |  |  | 900 |\n"
+        "Net income | 120 |  |  | 100 |\n"
+    )
+
+    assert _net_income(annual, excerpt).value == 120_000_000
+
+
 def test_no_fact_rather_than_a_guess_when_the_scale_or_period_is_unknown(annual):
     no_scale = (
         "STATEMENTS OF OPERATIONS\n"
@@ -299,6 +350,27 @@ def test_a_net_loss_written_after_the_dollar_sign_and_labelled_loss_first(quarte
     )
 
     assert _net_income(quarterly, excerpt).value == -1_221_000_000
+
+
+@pytest.mark.parametrize(
+    "interests",
+    [
+        "noncontrolling interests",
+        "non-controlling interests",
+        "the noncontrolling interest",
+        "minority interests",
+    ],
+)
+def test_net_income_attributable_to_noncontrolling_interests_is_never_the_companys(
+    annual, interests
+):
+    excerpt = _ANNUAL_INCOME_STATEMENT.replace("Net income | 27,132 |  |  | 26,515 |\n", "") + (
+        "Net income | 27,232 |  |  | 26,615 |\n"
+        f"Net income attributable to {interests} | 100 |  |  | 100 |\n"
+        "Net income attributable to Acme | 27,132 |  |  | 26,515 |\n"
+    )
+
+    assert _net_income(annual, excerpt).value == 27_132_000_000
 
 
 def test_per_share_values_are_neither_net_income_nor_scaled_to_millions(quarterly):
@@ -496,6 +568,24 @@ def test_a_page_number_after_a_full_stop_still_ends_the_sentence(annual):
     assert _segments(annual, excerpt) == {}
 
 
+def test_a_segment_named_with_corporate_is_a_segment_but_corporate_alone_reconciles(annual):
+    # McDonald's "International Developmental Licensed Markets & Corporate" is one of
+    # its segments; Starbucks' "Corporate and Other" only reconciles them to revenue.
+    excerpt = _ANNUAL_INCOME_STATEMENT + (
+        "The following table presents revenues by reportable segment (in millions):\n"
+        "| 2024 |  | 2023\n"
+        "U.S. | 60,000 |  |  | 58,000 |\n"
+        "International Developmental Licensed Markets & Corporate | 41,000 |  |  | 40,000 |\n"
+        "Corporate and Other | 887 |  |  | 581 |\n"
+        "Total revenues | 101,887 |  |  | 98,581 |\n"
+    )
+
+    assert _segments(annual, excerpt) == {
+        "U.S.": 60_000_000_000,
+        "International Developmental Licensed Markets & Corporate": 41_000_000_000,
+    }
+
+
 def test_segments_introduced_just_before_a_page_break_and_its_running_headers(annual):
     # NVIDIA's: the introduction ends a page, the next page's headers follow it.
     excerpt = _ANNUAL_INCOME_STATEMENT + (
@@ -567,6 +657,7 @@ def test_revenue_and_net_income_of_real_tracked_company_filings(
                 "Bottling Investments": 1_411_000_000,
             },
         ),
+        # Rows of the MD&A table, with a change column after the years.
         (
             "NVDA_10K_2025-02-26_full.txt",
             {"Compute & Networking": 116_193_000_000, "Graphics": 14_304_000_000},
@@ -600,6 +691,36 @@ def test_revenue_and_net_income_of_a_real_filing_whose_statement_rows_start_with
     assert {f.metric: f.value for f in facts if f.metric in ("revenue", "net_income")} == {
         "revenue": 202_792_000_000,
         "net_income": 17_661_000_000,
+    }
+
+
+@pytest.mark.parametrize(
+    "name, revenue, net_income",
+    [
+        # The current quarter's, not the prior year's next to it, before a change column.
+        ("JPM_10Q_2025Q1_2025-05-01_full.txt", 45_310_000_000, 14_643_000_000),
+        # From the statement ("Consolidated net income attributable to Walmart"), not
+        # the net sales of an MD&A table.
+        ("WMT_10K_2025-03-14_full.txt", 680_985_000_000, 19_436_000_000),
+    ],
+)
+def test_revenue_and_net_income_of_real_snapshot_company_filings(name, revenue, net_income):
+    facts = extract_financial_facts(load_filing(DEFAULT_CORPUS_DIR / name))
+
+    assert {f.metric: f.value for f in facts if f.metric in ("revenue", "net_income")} == {
+        "revenue": revenue,
+        "net_income": net_income,
+    }
+
+
+def test_segment_revenue_of_a_real_filing_with_a_segment_named_corporate():
+    filing = load_filing(DEFAULT_CORPUS_DIR / "MCD_10Q_2023Q1_2023-05-04_full.txt")
+    facts = extract_financial_facts(filing)
+
+    assert {f.segment: f.value for f in facts if f.metric == "segment_revenue"} == {
+        "U.S.": 2_487_600_000,
+        "International Operated Markets": 2_794_800_000,
+        "International Developmental Licensed Markets & Corporate": 615_400_000,
     }
 
 

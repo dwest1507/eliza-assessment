@@ -28,7 +28,8 @@ Filing's own period are read from the Filing's income statement:
    10-Q is the three months ended. Columns are never taken by position alone, because
    Companies order them differently (most put the current year first, Alphabet's
    recent 10-Qs put it last). Percentage-change cells are dropped before columns are
-   matched, and a leading note-reference column is skipped.
+   matched. One extra figure is a note-reference column before the years, or a change
+   column after them when the header names one there ("Change").
 5. The scale ("in millions", "(millions of dollars)", "(MILLIONS") is the one stated
    nearest above the revenue row: in the header rows, else in the title above them.
 6. Net income is the row below revenue, in the same table and column, labelled net
@@ -133,19 +134,21 @@ _REVENUE_LABEL = re.compile(
     r"|total\s+revenues?\s+and\s+other\s+income"
     r"|total\s+revenues?,?\s+net\s+of\s+interest\s+expense"
 )
-_NET_INCOME_LABEL = re.compile(r"net\s+(?:income|earnings)\b")
 # The net income row itself: "Net income", "Net earnings/(loss)", "Consolidated net
 # income", "Net income including noncontrolling interests", or net income attributable
-# to the Company ("... attributable to ExxonMobil"), never to noncontrolling interests.
+# to the Company ("... attributable to ExxonMobil"), never to noncontrolling interests
+# ("non-controlling", "the noncontrolling interest", "minority interests").
 _NET_INCOME_ROW = re.compile(
     r"(?:consolidated\s+)?net\s+(?:\(loss\)\s+)?(?:income|earnings)(?:\s*/?\s*\(loss\))?"
-    r"(?:\s+(?P<attributable>attributable\s+to\s+(?!noncontrolling).+)"
+    r"(?:\s+(?P<attributable>attributable\s+to\s+(?!(?:the\s+)?(?:non-?controlling|minority)).+)"
     r"|\s+(?:including|before\s+allocation\s+to)\s+noncontrolling\s+interests)?"
 )
 _SEGMENT = re.compile(r"\bsegments?\b", re.IGNORECASE)
 # Rows in a segment table that reconcile segments to the total but are not segments.
+# "Corporate" only on its own: "... Licensed Markets & Corporate" is a segment.
 _RECONCILING = re.compile(
-    r"eliminat|hedging|corporate|reconcil|unallocated|intersegment", re.IGNORECASE
+    r"eliminat|hedging|reconcil|unallocated|intersegment|^corporate(?:\s+(?:and|&)\s+other)?$",
+    re.IGNORECASE,
 )
 # How far above segment rows to look for the text that introduces them, how long a
 # text may be to be read whole, and where a long one's last sentence starts.
@@ -216,21 +219,30 @@ class _Table:
     column: int
     """Index of the Report Period's column among the year columns."""
     scale: int
+    extra_leads: bool
+    """Whether a row's one figure more than `years` comes before the year columns (a
+    note reference) rather than after them (the change since the prior year)."""
 
     def value(self, i: int) -> int | None:
         """Row `i`'s figure in the Report Period's column, in base units."""
         values = _values(self.rows[i].cells)
-        if len(values) not in (self.years, self.years + 1):
-            return None
-        figure = values[len(values) - self.years + self.column]
+        k = self._index(values)
+        figure = None if k is None else values[k]
         return None if figure is None else int(figure * self.scale)
 
     def is_nil(self, i: int) -> bool:
         """Whether row `i` has a dash, not a figure, in the Report Period's column."""
         values = _values(self.rows[i].cells)
-        if len(values) not in (self.years, self.years + 1):
-            return False
-        return values[len(values) - self.years + self.column] is None
+        k = self._index(values)
+        return k is not None and values[k] is None
+
+    def _index(self, values: list[Decimal | None]) -> int | None:
+        """Where the Report Period's figure sits in a row's figures, if they line up."""
+        if len(values) == self.years:
+            return self.column
+        if len(values) == self.years + 1:
+            return self.column + self.extra_leads
+        return None
 
     def fact(self, metric: str, i: int, segment: str | None = None) -> FinancialFact:
         return _fact(self.filing, metric, self.rows[i], self.value(i), self.scale, segment)
@@ -268,7 +280,7 @@ def _income_statement(filing: Filing) -> _Table | None:
         scale = _scale(body, rows, header, i)
         if column is None or scale is None:
             continue
-        statement = _Table(filing, rows, i, len(years), column, scale)
+        statement = _Table(filing, rows, i, len(years), column, scale, _extra_leads(rows[header]))
         if statement.value(i) is not None:
             return statement
     return None
@@ -621,7 +633,10 @@ def _sub_tables(filing: Filing, rows: list[_Row]) -> list[tuple[_Table, int, int
         column = _column(years, filing.report_period)
         scale = _scale(filing.body, rows, header, first)
         if column is not None and scale is not None:
-            tables.append((_Table(filing, rows, first, len(years), column, scale), header, end))
+            table = _Table(
+                filing, rows, first, len(years), column, scale, _extra_leads(rows[header])
+            )
+            tables.append((table, header, end))
     return tables
 
 
@@ -691,7 +706,7 @@ def _statement_rank(body: str, rows: list[_Row], header: int, i: int) -> int:
     for row in rows[i + 1 : i + 1 + _STATEMENT_ROWS]:
         if not row.cells:
             break
-        if _NET_INCOME_LABEL.match(_norm(row.label)) and len(_values(row.cells)) == width:
+        if _NET_INCOME_ROW.fullmatch(_norm(row.label)) and len(_values(row.cells)) == width:
             has_net_income = True
             break
     if not has_net_income:
@@ -735,7 +750,7 @@ def _years(row: _Row) -> list[int]:
 def _header_row(rows: list[_Row], i: int, width: int) -> int | None:
     """The nearest header row above row `i` whose years head its `width` figures.
 
-    One extra figure is allowed for a note-reference column in front of the figures.
+    One extra figure is allowed for a note-reference or change column.
     """
     for j in range(i - 1, max(-1, i - 1 - _HEADER_SEARCH_ROWS), -1):
         row = rows[j]
@@ -744,6 +759,17 @@ def _header_row(rows: list[_Row], i: int, width: int) -> int | None:
         if len(_years(row)) in (width, width - 1) and _years(row):
             return j
     return None
+
+
+def _extra_leads(header: _Row) -> bool:
+    """Whether a row's extra figure is a note reference before the years, not a change after.
+
+    It is a change when the header row names a column after its last year ("Change",
+    "$ Change"), as JPMorgan's and Caterpillar's do.
+    """
+    cells = [c for c in (header.label, *header.cells) if c]
+    last_year = max(k for k, c in enumerate(cells) if _YEAR.search(c))
+    return not cells[last_year + 1 :]
 
 
 def _column(years: list[int], report_period: date) -> int | None:

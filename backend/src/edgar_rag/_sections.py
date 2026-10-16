@@ -187,6 +187,10 @@ def _candidates(text: str, items: list[_Item], search_from: int) -> list[tuple[i
     for m in _ITEM_NUMBER.finditer(text, search_from):
         number = (m.group(1) + m.group(2)).upper()
         matching = [item for item in by_number.get(number, []) if item.title.match(text, m.end())]
+        if not matching and m.group(2):  # "Item 1Business": the letter starts the title
+            matching = [
+                item for item in by_number.get(m.group(1), []) if item.title.match(text, m.start(2))
+            ]
         if not matching:
             continue
         before = text[max(0, m.start() - _LOOKBEHIND) : m.start()]
