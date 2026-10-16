@@ -17,7 +17,7 @@ The work runs in phases. The exploratory data analysis (EDA) phase is complete; 
 | Front-end | Not started | [`frontend/`](frontend/) (reserved for Next.js) |
 | Example request, ready to execute | Not started | Planned with the API |
 | Notes on how quality was evaluated | Partly done: Financial Facts extraction is measured against SEC XBRL data. Retrieval and answer evaluation are next. | [`docs/findings.md`](docs/findings.md) (findings 21–24), notebook analysis 7 |
-| Documented assumptions and decisions | Done for the EDA | [`docs/findings.md`](docs/findings.md), [`docs/client-questions.md`](docs/client-questions.md), [`docs/adr/`](docs/adr/) |
+| Documented assumptions and decisions | Done for the EDA | [`docs/findings.md`](docs/findings.md), [`docs/assumptions.md`](docs/assumptions.md), [`docs/adr/`](docs/adr/) |
 
 ## What the EDA found
 
@@ -59,7 +59,7 @@ Key decisions so far:
 - **Every Filing is kept,** including those outside "2023–2025", and every citation shows its Report Period.
 - **Figures come from a Financial Facts store**, not from the model reading flattened tables ([ADR 0001](docs/adr/0001-sqlite-financial-facts-store.md)).
 
-These rest on assumptions about what the Client wants. Each open question, with the assumption used until it is answered, is in [`docs/client-questions.md`](docs/client-questions.md).
+These rest on assumptions about what the Client wants. Each one, and whether the Client has confirmed it, is in [`docs/assumptions.md`](docs/assumptions.md).
 
 ## Setup
 
@@ -133,8 +133,7 @@ for fact in extract_financial_facts(latest):
 ├── docs/
 │   ├── AI-RAG Assessment.md   the assessment brief
 │   ├── findings.md            EDA findings and recommendations for retrieval
-│   ├── client-questions.md    open questions for the Client, with working assumptions
-│   ├── client-email.md        draft email raising those questions
+│   ├── assumptions.md         working assumptions, confirmed or not by the Client
 │   └── adr/                   architecture decision records
 ├── CONTEXT.md                 domain glossary
 └── Makefile                   single entry point

@@ -1,6 +1,6 @@
 # EDA findings
 
-What the exploratory data analysis found about the Corpus, and what each finding means for the design. The evidence for every entry, with the full numbers, is in the EDA notebook ([`backend/notebooks/eda.ipynb`](../backend/notebooks/eda.ipynb)); the analysis number points to its section. Questions these findings raise for the Client, with the assumptions we work under, are in [`client-questions.md`](client-questions.md).
+What the exploratory data analysis found about the Corpus, and what each finding means for the design. The evidence for every entry, with the full numbers, is in the EDA notebook ([`backend/notebooks/eda.ipynb`](../backend/notebooks/eda.ipynb)); the analysis number points to its section. The assumptions these findings lead to, and which of them the Client has confirmed, are in [`assumptions.md`](assumptions.md).
 
 Each entry has the same shape:
 
@@ -39,7 +39,7 @@ _Analysis 2: metadata integrity._
 
 - **Finding:** The header says "General Electric Company", but the registrant is **General Electric Capital Corporation**, the document is `gecc10k2014.htm`, and it covers the year ended 31 December 2014, filed eight years before anything else in the Corpus.
 - **Implication:** A question about General Electric would be answered from a ten-year-old report of a different legal entity.
-- **Design decision:** Keep the Filing, attribute it to GE Capital, flag it as stale whenever it is used, and leave it out of "current state" answers. Client question 3.
+- **Design decision:** Keep the Filing, attribute it to GE Capital, flag it as stale whenever it is used, and leave it out of "current state" answers. Assumption 3 in `assumptions.md`.
 
 ## 4. Calendar Quarter is not a key; Report Period identifies a Filing
 
@@ -63,7 +63,7 @@ _Analysis 2: metadata integrity._
 
 - **Finding:** By Report Period, 48 Filings fall outside 2023–2025: GE Capital's FY2014 10-K and 47 Filings from 2022 across 12 Companies. 27 more are inside the window but were filed in 2026.
 - **Implication:** "2023–2025" does not describe the Corpus by Report Period or by Filing Date, so "the last two years" and "latest" depend on the Client's intent.
-- **Design decision:** Keep every Filing and show the Report Period in every citation. Client question 3.
+- **Design decision:** Keep every Filing and show the Report Period in every citation. Assumption 3 in `assumptions.md`.
 
 ## 7. A seventh of the raw text is XBRL noise
 
@@ -103,7 +103,7 @@ _Analysis 1: inventory and coverage (1.2)._
 
 - **Finding:** By longest run of consecutive quarter-ends, 12 Companies cover 14–17 quarters, META exactly 8, BAC and JPM 4, and everyone else never two in a row. Nothing falls between 4 and 8. No Financials Company is Tracked.
 - **Implication:** "Over the last two years" is answerable for 13 Companies. The first example question names JPMorgan, whose Filings all cover 2025.
-- **Design decision:** A Tracked Company covers at least 8 consecutive quarter-ends (`TRACKED_MIN_QUARTERS`); any cut-off from 5 to 8 gives the same split. The class is on every Filing and chunk, and the Answer Call states the limit when a trend is asked of a Snapshot Company. Client question 4.
+- **Design decision:** A Tracked Company covers at least 8 consecutive quarter-ends (`TRACKED_MIN_QUARTERS`); any cut-off from 5 to 8 gives the same split. The class is on every Filing and chunk, and the Answer Call states the limit when a trend is asked of a Snapshot Company. Assumption 4 in `assumptions.md`.
 
 ## 12. Sectors come from a curated table; SIC disagrees for 14 Companies
 
@@ -111,7 +111,7 @@ _Analysis 1: inventory and coverage (1.3)._
 
 - **Finding:** No Filing carries a sector. A curated GICS-style table (`data/reference/sectors.csv`) maps the 54 Companies to 8 sectors. SEC SIC codes disagree for 14 Companies, through stale codes (Netflix "video tape rental"), activity over business model (UnitedHealth as an insurer, Thermo Fisher as an instrument maker), or later GICS moves (Visa and Mastercard to Financials). JNJ, LLY, MRK, PFE and ABBV share SIC 2834.
 - **Implication:** Neither SIC nor a Company's name decides which Companies a sector question covers, so "the major pharmaceutical companies" needs a defined, visible rule.
-- **Design decision:** The GICS-style label is the Sector, with the SIC code and every disagreement explained beside it. Sector phrases resolve through the industry column with rule-based synonyms, then retrieval runs per Company. GE is Financials for the GE Capital Filing. Client question 5.
+- **Design decision:** The GICS-style label is the Sector, with the SIC code and every disagreement explained beside it. Sector phrases resolve through the industry column with rule-based synonyms, then retrieval runs per Company. GE is Financials for the GE Capital Filing. Assumption 5 in `assumptions.md`.
 
 ## 13. Item headings locate Sections in almost every Filing
 
@@ -167,7 +167,7 @@ _Analysis 8: coverage of the example questions (8.2, 8.5)._
 
 - **Finding:** The last Filing Date is 19 February 2026. 12 December year-end Companies (including AbbVie, Merck, Pfizer and Chevron) have no FY2025 10-K, and NVIDIA's latest covers the year to January 2025. Anchored on each Company's latest Report Period, "the last two years" holds eight Filings for every Tracked Company; anchored on today, four or five.
 - **Implication:** A comparison of "latest 10-Ks" silently compares different years (every comparison in analysis 8 did), and a calendar anchor would discard half the trend data.
-- **Design decision:** Rule-based query parsing anchors time phrases on each Company's latest Report Period: "latest" is the latest 10-K plus later 10-Qs, "the last two years" the two years up to the latest Filing. Answers name each Company's periods and say when they differ. Client question 6.
+- **Design decision:** Rule-based query parsing anchors time phrases on each Company's latest Report Period: "latest" is the latest 10-K plus later 10-Qs, "the last two years" the two years up to the latest Filing. Answers name each Company's periods and say when they differ. Assumption 6 in `assumptions.md`.
 
 ## 20. Forward guidance is not in 10-K or 10-Q Filings
 
@@ -175,7 +175,7 @@ _Analysis 8: coverage of the example questions (8.2)._
 
 - **Finding:** NVIDIA gives its revenue outlook in earnings releases, which are not in the Corpus. Forward-looking content in the Filings is qualitative MD&A commentary and risk factors.
 - **Implication:** "How has NVIDIA's growth outlook changed?" cannot be answered with guidance figures, and an LLM would be tempted to supply remembered ones.
-- **Design decision:** The Answer Call is told guidance is not in the Filings, and an outlook answer says it is drawn from MD&A commentary and risk factors. Client question 7.
+- **Design decision:** The Answer Call is told guidance is not in the Filings, and an outlook answer says it is drawn from MD&A commentary and risk factors. Assumption 7 in `assumptions.md`.
 
 ## 21. Revenue can be extracted exactly from every Tracked Company Filing
 
