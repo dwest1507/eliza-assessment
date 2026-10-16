@@ -1559,3 +1559,395 @@ by_section
 #   evolved compare consecutive 10-K Risk Factors; the shingle measure above can
 #   pre-compute which paragraphs are new in each 10-K, so retrieval can favour new text
 #   for change questions.
+
+# ## 8. Coverage of the example questions
+#
+# Can the Corpus answer the kind of question the Client will ask, and where can't it?
+# Each example question from the brief is traced to the Filings (by Filing ID and
+# Report Period) and the Sections that should answer it, using only rules a
+# rule-based query parser could apply before the single Answer Call:
+#
+# - **Company names** map to tickers; **sector phrases** ("the major pharmaceutical
+#   companies") resolve through the curated Sector table, on its industry column.
+# - **"Latest" or no time phrase** means each Company's latest 10-K by Report Period,
+#   plus the 10-Qs after it, which may update its risk factors.
+# - **"The last two years"** means the Filings whose Report Period falls in the two
+#   years up to the Company's latest Report Period in the Corpus. 52/53-week years
+#   drift by a few days, so the window start gets a week's slack; a Tracked Company
+#   then has exactly eight Filings in it (one per quarter-end).
+# - **Topics map to Sections:** risk → Risk Factors; revenue and outlook → MD&A, with
+#   the Financial Statements for the figures; regulation and how a Company responds →
+#   Risk Factors, Business (where 10-Ks describe government regulation) and MD&A.
+#
+# A Section is **found**, a **stub** (under 1,000 characters, usually a pointer
+# elsewhere, see analysis 4.2), or **not found** (a `section_not_found` diagnostic or
+# a genuinely absent Item).
+
+# %%
+company_filings = {}
+for f in sorted(filings, key=lambda f: f.report_period):
+    company_filings.setdefault(f.ticker, []).append(f)
+sector_by_ticker = {r.ticker: r for r in load_sector_table()}
+
+
+def latest_filing(ticker, form_type="10-K"):
+    """The Company's Filing of this Form Type with the latest Report Period."""
+    return [f for f in company_filings[ticker] if f.form_type == form_type][-1]
+
+
+def tenqs_after_latest_10k(ticker):
+    """The 10-Qs after the Company's latest 10-K, which may update its risk factors."""
+    cutoff = latest_filing(ticker).report_period
+    return [
+        f for f in company_filings[ticker] if f.form_type == "10-Q" and f.report_period > cutoff
+    ]
+
+
+def last_two_years(ticker):
+    """The Filings in the two years up to the Company's latest Report Period."""
+    anchor = pd.Timestamp(company_filings[ticker][-1].report_period)
+    start = (anchor - pd.DateOffset(years=2) + pd.Timedelta(days=7)).date()
+    return [f for f in company_filings[ticker] if f.report_period > start]
+
+
+def in_industries(*industries):
+    return sorted(t for t, r in sector_by_ticker.items() if r.industry in industries)
+
+
+def section_status(filing, name):
+    matches = [s for s in filing.sections if s.name == name]
+    if not matches:
+        return None, 0, "not found"
+    chars = sum(len(s.text) for s in matches)
+    return matches[0].item, chars, "stub" if chars < STUB_CHARS else "found"
+
+
+def trace(plan):
+    """One row per Filing and Section a question needs. `plan` is [(Filings, Sections)]."""
+    return pd.DataFrame(
+        {
+            "ticker": f.ticker,
+            "filing_id": f.filing_id,
+            "report_period": f.report_period,
+            "fiscal_period": f.fiscal_period,
+            "coverage": f.coverage,
+            "section": name,
+            "item": item,
+            "chars": chars,
+            "status": status,
+        }
+        for planned, names in plan
+        for f in planned
+        for name in names
+        for item, chars, status in [section_status(f, name)]
+    )
+
+
+def latest_annual_and_updates(tickers, sections):
+    return [
+        ([latest_filing(t) for t in tickers], sections),
+        ([f for t in tickers for f in tenqs_after_latest_10k(t)], ["Risk Factors"]),
+    ]
+
+
+# %% [markdown]
+# ### 8.1 Risk factors of Apple, Tesla and JPMorgan
+#
+# _"What are the primary risk factors facing Apple, Tesla, and JPMorgan, and how do they
+# compare?"_
+
+# %%
+q1 = trace(latest_annual_and_updates(["AAPL", "TSLA", "JPM"], ["Risk Factors"]))
+q1
+
+# %%
+aapl_update = tenqs_after_latest_10k("AAPL")[0]
+print(aapl_update.filing_id, [s.text for s in aapl_update.sections if s.name == "Risk Factors"])
+
+# %% [markdown]
+# Every Company has a full Item 1A in its latest 10-K, and all three are FY2025. But
+# Apple's fiscal year ended on 27 September 2025, a quarter before Tesla's and
+# JPMorgan's (31 December 2025). Apple's later 10-Q (Q1 FY2026) only says there have
+# been no material changes. JPMorgan is a Snapshot Company, which doesn't matter for a
+# point-in-time comparison. The three Risk Factors Sections hold about 263,000
+# characters between them, far more than an Answer Call should carry, so retrieval
+# must pick passages per Company rather than whole Sections.
+
+# %% [markdown]
+# ### 8.2 NVIDIA's revenue and outlook over the last two years
+#
+# _"How has NVIDIA's revenue and growth outlook changed over the last two years?"_
+
+# %%
+q2 = trace([(last_two_years("NVDA"), ["MD&A", "Financial Statements"])])
+q2
+
+# %%
+nvda_outlook = {
+    f.filing_id: len(re.findall(r"outlook", f.body, re.IGNORECASE)) for f in company_filings["NVDA"]
+}
+print("Filings mentioning an 'outlook':", {k: v for k, v in nvda_outlook.items() if v})
+print("Latest NVIDIA 10-K:", latest_filing("NVDA").filing_id, latest_filing("NVDA").fiscal_period)
+
+# %% [markdown]
+# "The last two years" resolves to **eight Report Periods, 28 January 2024 to
+# 26 October 2025**: NVIDIA's Q4 FY2024 (its FY2024 10-K) through Q3 FY2026, two
+# 10-Ks and six 10-Qs. The window is anchored on NVIDIA's latest Filing in the Corpus,
+# not on today's date. The Corpus ends with Filings made up to 19 February 2026, and
+# NVIDIA's FY2026 10-K (year ending January 2026) is not in it. Every Filing in the
+# window has a full MD&A. The 10-Ks' Item 8 is only a pointer to the financial
+# statements at the back of the Filing, so revenue figures for the two fiscal years come
+# from the whole Filing or from MD&A.
+#
+# **Outlook is a gap.** NVIDIA gives its revenue outlook in its quarterly earnings
+# release, which is not a 10-K or 10-Q. The word appears in a single Filing, the Q2
+# FY2023 10-Q (outside the window), and only to say that the outlook "provided on
+# August 24, 2022" may not be met. An answer about the growth outlook must be built from
+# MD&A commentary (demand, supply, export controls) and Risk Factors, and must say so.
+
+# %% [markdown]
+# ### 8.3 Regulatory risk at the major pharmaceutical companies
+#
+# _"What regulatory risks do the major pharmaceutical companies face, and how are they
+# addressing them?"_
+
+# %%
+pharma = in_industries("Pharmaceuticals", "Biotechnology")
+print("The major pharmaceutical companies:", ", ".join(pharma))
+q3 = trace(latest_annual_and_updates(pharma, ["Risk Factors", "Business", "MD&A"]))
+q3
+
+# %%
+REGULATORY = re.compile(
+    r"regulat|FDA|Inflation Reduction Act|drug pric|Medicare negotiation", re.IGNORECASE
+)
+pd.DataFrame(
+    {
+        latest_filing(t).filing_id: Counter(
+            {s.name: len(REGULATORY.findall(s.text)) for s in latest_filing(t).sections}
+        )
+        for t in pharma
+    }
+).fillna(0).astype(int).loc[["Risk Factors", "Business", "MD&A", "Financial Statements"]]
+
+# %% [markdown]
+# The Sector table resolves "the major pharmaceutical companies" to **AbbVie, Johnson &
+# Johnson, Eli Lilly, Merck and Pfizer**: the Companies in the Pharmaceuticals
+# industry plus AbbVie (Biotechnology, but SIC 2834 like the others; see Client
+# question 5). UnitedHealth and Thermo Fisher are Health Care but not drug makers.
+#
+# Regulatory content is spread over three Sections: the risks themselves are in Risk
+# Factors, while Business (government regulation, pricing) and MD&A (the effect of the
+# Inflation Reduction Act's Medicare price negotiation) hold how each Company describes
+# and responds to them. All three are found in every pharma 10-K.
+#
+# **The latest 10-Ks are not all from the same year.** J&J and Lilly have FY2025 10-Ks;
+# AbbVie, Merck and Pfizer only FY2024. Pfizer's three 2025 10-Qs only point back to
+# its FY2024 10-K. Only J&J and Pfizer are Tracked Companies, so "how are they
+# addressing them" over time can be answered for those two alone.
+
+# %% [markdown]
+# ### 8.4 Variant questions
+#
+# Five variants of the same kinds test how general these findings are: a trend asked
+# of a Snapshot Company, a trend for the borderline Tracked Company, two more sector
+# phrases, and a Company whose only Filing is stale.
+
+# %%
+banks = in_industries("Banks")
+oil_majors = in_industries("Oil, Gas & Consumable Fuels")
+print("The major banks:", ", ".join(banks), "| The oil majors:", ", ".join(oil_majors))
+
+variants = {
+    "V1 How has JPMorgan's revenue changed over the last two years?": trace(
+        [(last_two_years("JPM"), ["MD&A", "Financial Statements"])]
+    ),
+    "V2 How has Meta's revenue changed over the last two years?": trace(
+        [(last_two_years("META"), ["MD&A"])]
+    ),
+    "V3 What are the main risks facing the major banks?": trace(
+        latest_annual_and_updates(banks, ["Risk Factors"])
+    ),
+    "V4 What regulatory risks do the oil majors face?": trace(
+        latest_annual_and_updates(oil_majors, ["Risk Factors", "Business", "MD&A"])
+    ),
+    "V5 How has General Electric performed recently?": trace([([latest_filing("GE")], ["MD&A"])]),
+}
+pd.concat(variants, names=["question", None]).droplevel(1)
+
+# %% [markdown]
+# - **V1 (JPMorgan, trend):** "the last two years" holds only four Filings, all from
+#   2025. JPMorgan's 10-Qs have no Item headings for MD&A or the financial statements
+#   (analysis 4.1), and its 10-K's Item 7 and Item 8 are pointers to the Annual Report
+#   after Item 15. Everything has to come from the whole Filing, and no two-year trend
+#   exists in the Corpus.
+# - **V2 (Meta, trend):** the borderline Tracked Company has exactly eight Filings in
+#   the window, 2024Q1 to 2025Q4, each with a full MD&A. Comparisons with 2023 come only
+#   from the prior-year columns in those Filings.
+# - **V3 (major banks):** "Banks" resolves to Bank of America and JPMorgan; Goldman
+#   Sachs and Morgan Stanley are Capital Markets, which a reader might count as major
+#   banks. Bank of America's latest 10-K is FY2024 and JPMorgan's FY2025, and Bank of
+#   America's 2025 10-Qs report no material changes to its risk factors.
+# - **V4 (oil majors):** Chevron and ExxonMobil. Chevron's latest 10-K is FY2024 and
+#   ExxonMobil's FY2025. Both MD&A Items are pointers to a financial section after the
+#   last Item, and ExxonMobil's Business Item is short (6,600 characters), so regulation
+#   comes mostly from Risk Factors and the whole Filing.
+# - **V5 (General Electric):** the only GE Filing is GE Capital's FY2014 10-K
+#   (finding 3). It has a full MD&A, but it describes a different legal entity eleven
+#   years ago.
+
+# %% [markdown]
+# ### 8.5 How general are these gaps?
+#
+# Two of the gaps above are Corpus-wide: which annual report is "latest", and what "the
+# last two years" covers if the window is anchored on today's date instead of the
+# Corpus.
+
+# %%
+latest_annual = pd.DataFrame(
+    {
+        "ticker": t,
+        "year ended": pd.Timestamp(latest_filing(t).report_period).to_period("M"),
+    }
+    for t in company_filings
+)
+print("Latest Filing Date in the Corpus:", max(f.filing_date for f in filings))
+latest_annual.groupby("year ended")["ticker"].agg(
+    Companies="size", tickers=lambda s: ", ".join(sorted(s))
+)
+
+# %%
+today = pd.Timestamp("2026-10-15")
+tracked_tickers = sorted(t for t, fs in company_filings.items() if fs[0].coverage == "tracked")
+pd.DataFrame(
+    {
+        "anchored on the latest Filing": len(last_two_years(t)),
+        "anchored on today (2026-10-15)": sum(
+            pd.Timestamp(f.report_period) > today - pd.DateOffset(years=2)
+            for f in company_filings[t]
+        ),
+        "window": f"{last_two_years(t)[0].report_period} – {last_two_years(t)[-1].report_period}",
+    }
+    for t in tracked_tickers
+).set_axis(tracked_tickers).T
+
+# %% [markdown]
+# ### 8.6 Every coverage gap, and how an answer states it
+#
+# Each gap the traces show, the Filings it affects, and what the system does about it.
+# A gap the system can work around silently (falling back to the whole Filing) is
+# listed too, so the fallback is a design decision rather than an accident.
+
+# %%
+all_traces = pd.concat(
+    {"Q1": q1, "Q2": q2, "Q3": q3}
+    | {name.split(" ", 1)[0]: rows for name, rows in variants.items()},
+    names=["question", None],
+).reset_index(level=0)
+not_found = all_traces[all_traces["status"] == "not found"]
+stubs_hit = all_traces[all_traces["status"] == "stub"]
+print("Section not found:")
+print(not_found.groupby(["section", "question"])["filing_id"].agg(", ".join).to_string())
+print("\nStub Sections:")
+print(stubs_hit.groupby(["section", "question"])["filing_id"].agg(", ".join).to_string())
+
+# %%
+gaps = pd.DataFrame(
+    [
+        (
+            "Trend asked of a Snapshot Company",
+            "V1 (JPM: four 2025 Filings); any of the 41 Snapshot Companies",
+            "Trend unavailable: JPMorgan is a Snapshot Company. The Corpus holds four "
+            "JPMorgan Filings, Q1–Q4 2025, so this answer covers 2025 only.",
+        ),
+        (
+            "Compared Companies' latest Filings cover different periods",
+            "Q1 (AAPL FY ends 27 Sep 2025 vs 31 Dec 2025), Q3 (ABBV, MRK, PFE FY2024 vs "
+            "JNJ, LLY FY2025), V3, V4",
+            "Name each Company's Report Period and Fiscal Period beside its points, e.g. "
+            '"Merck (10-K FY2024, year to 31 Dec 2024)", and say when the periods differ.',
+        ),
+        (
+            "Latest 10-K covers a year that ended a year or more before the Corpus ends",
+            "Q3 (ABBV, MRK, PFE), V3 (BAC), V4 (CVX): 12 December year-end Companies with "
+            "no FY2025 10-K; NVDA, WMT, CRM, HD, TGT (years ended Jan–Feb 2025); BLK; GE",
+            "\"The latest annual report in the data is Merck's 10-K for FY2024 (year to "
+            '31 Dec 2024)"; use later 10-Qs where they exist.',
+        ),
+        (
+            "Information not in 10-K or 10-Q Filings at all",
+            "Q2 (NVIDIA's revenue outlook is in its earnings releases)",
+            "\"NVIDIA's own revenue guidance is not in the Filings provided; the outlook "
+            'below is drawn from MD&A commentary and risk factors."',
+        ),
+        (
+            "Stale Filing of a different legal entity",
+            "V5 (GE: GE Capital's FY2014 10-K)",
+            "\"The only General Electric Filing is GE Capital's 10-K for 2014; it does "
+            'not describe General Electric today." Kept out of current-state answers.',
+        ),
+        (
+            "10-Q has no Risk Factors Item, or only says 'no material changes'",
+            "Q1 (AAPL), Q3 (PFE ×3), V3 (BAC ×3); J&J and XOM 10-Qs have none",
+            'Answer from the latest 10-K; state "no material changes reported through '
+            '<latest 10-Q>" where a 10-Q says so.',
+        ),
+        (
+            "Section not found or only a pointer to text elsewhere",
+            "V1 (JPM 10-Qs, JPM 10-K Items 7 and 8), Q2 (NVDA 10-K Item 8), V4 (CVX, XOM Item 7)",
+            "No caveat: retrieval falls back to the whole Filing, still filtered on "
+            "Company and Report Period, and cites the Filing ID.",
+        ),
+        (
+            "Sector phrase is open to interpretation",
+            "Q3 (AbbVie is Biotechnology), V3 (GS and MS are Capital Markets)",
+            'Name the Companies the answer covers and the rule used: "major banks: Bank '
+            'of America and JPMorgan (Sector table industry Banks)".',
+        ),
+    ],
+    columns=["gap", "where it shows", "how the answer states it"],
+)
+gaps.style.hide(axis="index").set_properties(**{"text-align": "left", "white-space": "pre-wrap"})
+
+# %% [markdown]
+# **What the coverage check shows**
+#
+# - All three example questions can be answered from the Corpus, each with a caveat.
+#   The risk-factor questions are answered from Item 1A of each Company's latest 10-K,
+#   found in full for every Company named. NVIDIA's "last two years" is eight Filings
+#   with a full MD&A each. "The major pharmaceutical companies" resolves through the
+#   Sector table to five Companies.
+# - "Latest" does not mean the same year for every Company. The last Filing Date in
+#   the Corpus is 19 February 2026. The latest 10-K covers a year ending between March
+#   and December 2025 for 35 Companies, but 12 December year-end Companies (including
+#   AbbVie, Merck, Pfizer, Bank of America and Chevron) have no FY2025 10-K, five
+#   January year-end Companies (NVIDIA among them) last reported a year ending in
+#   January or February 2025, and BlackRock's latest is FY2023. Every cross-Company
+#   comparison tried here mixed periods.
+# - Anchoring "the last two years" on today's date would leave every Tracked Company
+#   with four or five Filings in the window instead of eight; anchoring on the latest
+#   Filing in the Corpus keeps the full two years.
+# - Forward-looking guidance ("outlook") is not in 10-K or 10-Q Filings. A question
+#   about it can only be answered from MD&A commentary and risk factors (Client
+#   question 7).
+# - Sector phrases need a stated rule. The industry column resolves "pharmaceutical",
+#   "banks" and "oil", but each answer could reasonably include one or two more
+#   Companies.
+#
+# **So the design does:**
+#
+# - Resolve time phrases with rules anchored on each Company's latest Report Period
+#   in the Corpus: "latest" is the latest 10-K plus later 10-Qs; "the last two years"
+#   is the eight quarter-ends up to the latest Filing. Raised with the Client in
+#   question 6.
+# - Pass the Answer Call, for every Company in scope, its coverage class and the Filing
+#   IDs, Report Periods and Fiscal Periods it is given, and instruct it to state the
+#   gaps in the table above in the given wording, never to fill them from general
+#   knowledge.
+# - Resolve sector phrases through the Sector table's industry column with a small
+#   synonym list, and name the resolved Companies in the answer.
+# - Treat "no material changes" in a 10-Q's Risk Factors as content worth citing, and
+#   answer risk questions from the latest 10-K's Item 1A.
+# - Budget the Answer Call per Company: the three Risk Factors Sections of the first
+#   example question alone hold about 263,000 characters, so retrieval picks passages
+#   per Company rather than whole Sections.

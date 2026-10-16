@@ -3,7 +3,7 @@
 import re
 import shutil
 from collections import Counter
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 
@@ -475,3 +475,64 @@ def test_heading_after_a_running_page_header_is_not_taken_for_a_cross_reference(
     assert _section(filing, "MD&A").text.startswith(f"ITEM\xa07.{NBSP4}Management’s Discussion")
     assert _section(filing, "Market Risk").text.startswith(f"ITEM 7A.{NBSP4}Quantitative")
     assert [d for d in filing.diagnostics if d.code == "section_not_found"] == []
+
+
+# --- Example questions: the Filings and Sections that should answer them --------
+
+
+def _latest(filings, ticker, form_type):
+    return max(
+        (f for f in filings if f.ticker == ticker and f.form_type == form_type),
+        key=lambda f: f.report_period,
+    )
+
+
+def test_each_example_question_company_has_a_latest_10k_with_substantive_risk_factors(corpus):
+    # Analysis 8 answers the risk-factor questions from each Company's latest 10-K. Its
+    # Item 1A must be found and hold the real discussion, not a pointer.
+    latest = {
+        t: _latest(corpus, t, "10-K")
+        for t in ["AAPL", "TSLA", "JPM", "JNJ", "LLY", "MRK", "PFE", "ABBV"]
+    }
+
+    assert {t: f.filing_id for t, f in latest.items()} == {
+        "AAPL": "AAPL_10-K_2025-09-27",
+        "TSLA": "TSLA_10-K_2025-12-31",
+        "JPM": "JPM_10-K_2025-12-31",
+        "JNJ": "JNJ_10-K_2025-12-28",
+        "LLY": "LLY_10-K_2025-12-31",
+        # No FY2025 10-K in the Corpus for these three: their latest is FY2024.
+        "MRK": "MRK_10-K_2024-12-31",
+        "PFE": "PFE_10-K_2024-12-31",
+        "ABBV": "ABBV_10-K_2024-12-31",
+    }
+    for ticker, filing in latest.items():
+        risk_factors = _section(filing, "Risk Factors")
+        assert risk_factors.item == "Item 1A", ticker
+        assert len(risk_factors.text) > 20_000, ticker
+
+
+def test_the_major_pharmaceutical_companies_resolve_through_the_sector_table():
+    rows = load_sector_table()
+
+    pharma = sorted(r.ticker for r in rows if r.industry in {"Pharmaceuticals", "Biotechnology"})
+
+    assert pharma == ["ABBV", "JNJ", "LLY", "MRK", "PFE"]
+
+
+def test_nvidias_last_two_years_are_eight_consecutive_quarters_up_to_its_latest_filing(corpus):
+    nvda = sorted((f for f in corpus if f.ticker == "NVDA"), key=lambda f: f.report_period)
+    anchor = nvda[-1].report_period
+
+    # 52/53-week years drift by a few days, so two years back is taken with a week's
+    # slack: NVIDIA's Q3 FY2024 ended on 29 October 2023, three days "after" 26 October.
+    start = anchor.replace(year=anchor.year - 2) + timedelta(days=7)
+    window = [f for f in nvda if f.report_period > start]
+
+    assert anchor == date(2025, 10, 26)
+    assert [f.fiscal_period for f in window] == [
+        "FY2024", "Q1 FY2025", "Q2 FY2025", "Q3 FY2025",
+        "FY2025", "Q1 FY2026", "Q2 FY2026", "Q3 FY2026",
+    ]  # fmt: skip
+    assert [f.form_type for f in window].count("10-K") == 2
+    assert all(_section(f, "MD&A").text for f in window)

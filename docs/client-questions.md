@@ -57,6 +57,23 @@ Status: `open` (not yet sent), `sent`, `answered`.
   - SEC SIC codes disagree with the GICS-style label for 14 Companies, each explained in the table. The ones that change answers: UnitedHealth is a health insurer by SIC but Health Care here; Thermo Fisher is an instrument maker by SIC but Health Care (Life Sciences Tools) here; Alphabet, Meta, Disney and Netflix are Communication Services here; Visa and Mastercard are Financials; Walmart, Costco and Target are Consumer Staples.
   - We read "the major pharmaceutical companies" as **JNJ, LLY, MRK, PFE and ABBV** (all SIC 2834; GICS puts AbbVie in Biotechnology). UnitedHealth and Thermo Fisher are excluded. Only JNJ and PFE have more than one Filing.
   - The GE Filing is GE Capital's FY2014 report (see question 3), so we class it as Financials rather than as General Electric's Industrials.
+  - Other sector phrases resolve the same way, on the industry column. "The major banks" is **Bank of America and JPMorgan** (Banks); Goldman Sachs and Morgan Stanley are Capital Markets and are left out unless you say otherwise. "The oil majors" is **Chevron and ExxonMobil**.
 - **Why it matters:** Without it, sector-scoped questions rely on retrieval guessing which Companies are relevant, and a disputed mapping changes which Companies an answer covers.
 - **Our assumption:** Yes. The table (`data/reference/sectors.csv`) is committed, its source is stated, and it is cross-checked against SEC SIC codes. We use the classifications above until told otherwise.
+- **Status:** open
+
+## 6. What should "latest" and "the last two years" be measured from?
+
+- **Question:** The Corpus stops at Filings made by 19 February 2026, and not every Company's latest annual report covers the same year. Should "the last two years" and "latest" be measured from each Company's latest Filing in the Corpus, or from today's date? And does "the last two years" mean the last eight quarters or the last two fiscal years?
+  - Anchored on each Company's latest Filing, every one of the 13 Tracked Companies has eight quarterly Filings in "the last two years". For NVIDIA that is Q4 FY2024 to Q3 FY2026 (Report Periods 28 January 2024 to 26 October 2025). Anchored on today, each has only four or five.
+  - "Latest" differs by Company: 12 December year-end Companies, including AbbVie, Merck, Pfizer, Bank of America and Chevron, have no FY2025 10-K in the Corpus, so their latest annual report is FY2024 while J&J's, Lilly's and JPMorgan's is FY2025. NVIDIA's FY2026 10-K is not in the Corpus either.
+- **Why it matters:** It decides which Filings a trend or comparison answer uses, and whether a comparison across Companies mixes years.
+- **Our assumption:** Measure from each Company's latest Filing in the Corpus. "The last two years" is the eight quarter-ends up to it, and "latest" is the latest 10-K plus any 10-Qs after it. Every answer states each Company's Report Period and Fiscal Period, and says when the periods it compares differ.
+- **Status:** open
+
+## 7. Should outlook questions be answered without the Companies' guidance?
+
+- **Question:** Your second example asks how NVIDIA's "growth outlook" has changed. NVIDIA, like most Companies, publishes its revenue outlook in its earnings releases, which are not 10-K or 10-Q Filings and are not in the Corpus. Is an answer built from the Filings' MD&A commentary and risk factors what you want, or should the system decline outlook questions it cannot support with guidance figures?
+- **Why it matters:** An answer that sounds like guidance but isn't would mislead an investment discussion, and an LLM may fill the gap with remembered figures that are not grounded in the Corpus.
+- **Our assumption:** Answer from MD&A commentary and risk factors, and say plainly that the Company's own guidance is not in the Filings provided.
 - **Status:** open
