@@ -38,6 +38,14 @@ _Avoid_: Test set, benchmark, eval data
 A self-contained sentence, naming its Company, that a good answer to a Golden Set question must state, with an evidence quote from the Section that supports it.
 _Avoid_: Expected answer, key point
 
+**Arm**:
+One way of choosing an Answer Call's Sources (FTS5, dense embeddings, a hybrid, a re-ranker), scored by the retrieval harness on the Golden Set.
+_Avoid_: Retriever, strategy, variant
+
+**Shipped Arm**:
+The Arm the product uses, which every other Arm is compared with question by question. FTS5 unless a challenger is shown to be better.
+_Avoid_: Baseline, default retriever
+
 ### Filings
 
 **Company**:

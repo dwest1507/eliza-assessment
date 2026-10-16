@@ -6,7 +6,7 @@ This repo is a take-home assessment for a Forward Deployed Engineer (AI Engineer
 
 ## Status
 
-The work runs in phases. The exploratory data analysis (EDA) phase is complete. The retrieval phase has its tracer bullet: a question asked from the command line or over the chat API is answered end to end, from the index through one Answer Call. The query parser's full rules, Coverage Gaps, Financial Facts in the context, the evaluation harnesses and the front-end come next.
+The work runs in phases. The exploratory data analysis (EDA) phase is complete. The retrieval phase has its tracer bullet: a question asked from the command line or over the chat API is answered end to end, from the index through one Answer Call, and the retrieval harness measures it on the Golden Set. The query parser's full rules, Coverage Gaps, Financial Facts in the context, the generation harness and the front-end come next.
 
 | Deliverable (from the brief) | Status | Where |
 |---|---|---|
@@ -16,7 +16,7 @@ The work runs in phases. The exploratory data analysis (EDA) phase is complete. 
 | Final prompt template | v1 in place; the final version follows the prompt iterations | [`docs/prompt-iterations.md`](docs/prompt-iterations.md), [`backend/src/edgar_rag/_prompt.py`](backend/src/edgar_rag/_prompt.py) |
 | Front-end | Not started | [`frontend/`](frontend/) (reserved for Next.js) |
 | Example request, ready to execute | Done: `make ask` answers a question from the command line, and `backend/scripts/chat.sh` calls the chat API with `curl` | [Asking a question](#asking-a-question), [The chat API](#the-chat-api) |
-| Notes on how quality was evaluated | Partly done: Financial Facts extraction is measured against SEC XBRL data, and the Golden Set of 30 labelled questions is written and checked against the Corpus. The retrieval and answer harnesses are next. | [`docs/findings.md`](docs/findings.md) (findings 21–24), notebook analysis 7, [`docs/golden-set.md`](docs/golden-set.md) |
+| Notes on how quality was evaluated | Partly done: Financial Facts extraction is measured against SEC XBRL data, the Golden Set of 30 labelled questions is written and checked against the Corpus, and the retrieval harness scores the FTS5 Arm on it (hit@10 0.71 on dev). The answer harness is next. | [`docs/evaluation.md`](docs/evaluation.md), [`docs/findings.md`](docs/findings.md) (findings 21–24), notebook analysis 7, [`docs/golden-set.md`](docs/golden-set.md) |
 | Documented assumptions and decisions | Done for the EDA | [`docs/findings.md`](docs/findings.md), [`docs/assumptions.md`](docs/assumptions.md), [`docs/adr/`](docs/adr/) |
 
 ## What the EDA found
@@ -85,6 +85,7 @@ Every command runs through the root `Makefile` (`make help` lists them):
 | `make index` | Rebuild the retrieval index (`data/derived/edgar_rag.sqlite`) from the Corpus |
 | `make ask Q="..."` | Answer a question from the command line, without a server (needs `OPENAI_API_KEY`) |
 | `make api` | Run the chat API on http://localhost:8000 (`API_PORT` to change; answers need `OPENAI_API_KEY`) |
+| `make eval-retrieval` | Score the retrieval Arms on the Golden Set's dev split (`SPLIT=holdout` or `all` to change it); no LLM call |
 
 ### Asking a question
 
@@ -122,6 +123,14 @@ curl --no-buffer -X POST http://localhost:8000/api/chat \
 - **`GET /api/health`** returns `{"status": "ok"}` and needs no key.
 
 The backend is stateless: nothing is kept between requests, so the browser sends the whole conversation each time. Cross-origin browser calls are refused unless their origin is listed in `CORS_ALLOWED_ORIGINS` in `backend/.env` (comma-separated). The front-end will call the API through its own server-side route, which needs none. Each Answer Call is logged like `make ask`'s.
+
+### Measuring retrieval
+
+```sh
+make eval-retrieval
+```
+
+runs every Golden Set case on the dev split through each retrieval Arm (today only FTS5, the Shipped Arm), with no LLM call, and prints hit@k, recall@k and MRR overall and per question type, then each challenger Arm's comparison with the Shipped Arm by McNemar's exact test. The report is also written to `data/derived/eval/retrieval-dev.json`. The method and the first numbers are in [`docs/evaluation.md`](docs/evaluation.md).
 
 ### Running the EDA
 
@@ -182,6 +191,7 @@ context.messages  # the rendered prompt for the Answer Call
 │   │   └── golden_set.py      loads and validates the Golden Set and its dev/holdout split
 │   ├── src/edgar_answer/      provider implementations (OpenAI) and the `make ask` CLI
 │   ├── src/edgar_api/         the FastAPI chat API (`make api`)
+│   ├── src/edgar_eval/        evaluation harnesses: retrieval Arms, metrics, the sign test
 │   ├── scripts/chat.sh        the `curl` example against the chat API
 │   ├── tests/                 pytest suite
 │   └── notebooks/             eda.py (source) and eda.ipynb (executed)
@@ -196,13 +206,14 @@ context.messages  # the rendered prompt for the Answer Call
 │   ├── findings.md            EDA findings and recommendations for retrieval
 │   ├── assumptions.md         working assumptions, confirmed or not by the Client
 │   ├── golden-set.md          the Golden Set's fields, split rule and review
+│   ├── evaluation.md          how quality is measured, and the scores
 │   ├── prompt-iterations.md   every version of the Answer Call's prompt template
 │   └── adr/                   architecture decision records
 ├── CONTEXT.md                 domain glossary
 └── Makefile                   single entry point
 ```
 
-The core package depends on nothing outside the Python standard library and must not depend on a web framework, so the API and front-end can sit on top of it; a guard test enforces this. Code that needs a provider's SDK lives in `edgar_answer` ([ADR 0005](docs/adr/0005-provider-sdks-outside-the-core-package.md)), and the web API in `edgar_api`.
+The core package depends on nothing outside the Python standard library and must not depend on a web framework, so the API and front-end can sit on top of it; a guard test enforces this. Code that needs a provider's SDK lives in `edgar_answer` ([ADR 0005](docs/adr/0005-provider-sdks-outside-the-core-package.md)), the web API in `edgar_api`, and the evaluation harnesses in `edgar_eval` ([ADR 0006](docs/adr/0006-evaluation-harnesses-outside-the-core-package.md)).
 
 ## Data
 

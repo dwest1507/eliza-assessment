@@ -19,7 +19,7 @@ The rules go in a system message; everything else goes in one user message.
 
 **Known gaps.** Earlier Source tags are dropped rather than rewritten as Filing IDs, because the browser does not send the earlier turns' Sources yet. There are no fixed Coverage Gap wordings, so the model writes its own coverage note.
 
-**Scores.** Not measured yet: the retrieval and generation harnesses come next. Hand check on the brief's first example (`make ask`, `gpt-6-luna`): every point cites Sources from Apple, Tesla and JPMorgan, it says the Companies' periods differ, and it says JPMorgan's Item 1A risk factors were not among the Sources. About 26k input and 900 output tokens, 9 seconds.
+**Scores.** Retrieval on dev, from the retrieval harness: hit@10 0.71, recall@10 0.52, MRR 0.39 over 17 scored cases ([evaluation notes](evaluation.md#first-fts5-numbers-on-dev)). The generation harness comes next. Hand check on the brief's first example (`make ask`, `gpt-6-luna`): every point cites Sources from Apple, Tesla and JPMorgan, it says the Companies' periods differ, and it says JPMorgan's Item 1A risk factors were not among the Sources. About 26k input and 900 output tokens, 9 seconds.
 
 ### The v1 system rules
 

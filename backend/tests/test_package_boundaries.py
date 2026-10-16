@@ -20,8 +20,9 @@ WEB_FRAMEWORKS = {
     "tornado",
     "uvicorn",
 }
-# Packages that sit on top of the core: the API and the provider implementations.
-OUTSIDE_CORE = {"api", "edgar_api", "edgar_answer"}
+# Packages that sit on top of the core: the API, the provider implementations and the
+# evaluation harnesses.
+OUTSIDE_CORE = {"api", "edgar_api", "edgar_answer", "edgar_eval"}
 
 
 def _imported_modules(path):

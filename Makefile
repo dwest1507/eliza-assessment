@@ -13,10 +13,10 @@ ENV_FILE := $(BACKEND)/.env
 -include $(ENV_FILE)
 export $(shell sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' $(ENV_FILE) 2>/dev/null)
 
-.PHONY: help install test lint format eda sec-facts index ask api
+.PHONY: help install test lint format eda sec-facts index ask api eval-retrieval
 
 help: ## List targets
-	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
+	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-15s %s\n", $$1, $$2}'
 
 install: ## Install the backend environment (uv)
 	cd $(BACKEND) && uv sync
@@ -59,7 +59,12 @@ ask: $(INDEX) ## Answer a question from the command line: make ask Q="..." (need
 api: $(INDEX) ## Run the chat API on http://localhost:8000, or API_PORT (answers need OPENAI_API_KEY)
 	$(UV) uvicorn edgar_api.app:create_app --factory --host 127.0.0.1 --port $(API_PORT)
 
-# `make ask` and `make api` build the index first when it is missing.
+eval-retrieval: $(INDEX) ## Score retrieval Arms on the Golden Set: make eval-retrieval [SPLIT=dev|holdout|all]
+	$(UV) python -m edgar_eval.retrieval --split $(SPLIT) --json ../data/derived/eval/retrieval-$(SPLIT).json
+
+SPLIT ?= dev
+
+# `make ask`, `make api` and `make eval-retrieval` build the index first when it is missing.
 $(INDEX):
 	@$(MAKE) --no-print-directory index
 
