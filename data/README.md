@@ -51,6 +51,9 @@ The evaluation's ground truth: 30 labelled questions, each with the (Filing ID, 
 
 Anything built from the Corpus (cleaned Sections, a Financial Facts database, indexes) is written to `data/derived/`, which is gitignored and rebuilt by Makefile targets.
 
+- `edgar_rag.sqlite`: the retrieval index, rebuilt by `make index`. Its `chunks` table holds every chunk with its Filing's metadata (Filing ID, Company, Sector and industry, Form Type, Report Period, Fiscal Period, Tracked/Snapshot class, Section, Item and chunk kind: `prose`, `table` or `risk_pointer`); `chunks_fts` is the FTS5 index over their text; `companies` lists the indexed Companies.
+- `logs/answer_calls.jsonl`: one line per Answer Call, with its model, prompt version, token usage and latency.
+
 ## SEC company-facts reference (`derived/sec_companyfacts/`)
 
 To measure how accurately Financial Facts are extracted, the EDA compares them with the SEC's XBRL company-facts data (`https://data.sec.gov/api/xbrl/companyfacts/CIK##########.json`), one JSON file per Tracked Company plus an `index.json` recording the retrieval date. **It is an evaluation reference only, never an answer source:** nothing that answers questions reads it.

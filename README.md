@@ -6,16 +6,16 @@ This repo is a take-home assessment for a Forward Deployed Engineer (AI Engineer
 
 ## Status
 
-The work runs in phases. The exploratory data analysis (EDA) phase is complete; retrieval, the prompt and the front-end come next.
+The work runs in phases. The exploratory data analysis (EDA) phase is complete. The retrieval phase has its tracer bullet: a question asked from the command line is answered end to end, from the index through one Answer Call. The query parser's full rules, Coverage Gaps, Financial Facts in the context, the evaluation harnesses, the API and the front-end come next.
 
 | Deliverable (from the brief) | Status | Where |
 |---|---|---|
 | README with setup and run instructions | Done | This file |
-| Indexing and retrieval code | Partly done: Corpus loading, cleaning, Section splitting and Financial Facts extraction are built and tested. Chunking, the index and retrieval are next. | [`backend/src/edgar_rag/`](backend/src/edgar_rag/) |
-| Log of prompt iterations | Not started | Planned with the Answer Call |
-| Final prompt template | Not started | Planned with the Answer Call |
+| Indexing and retrieval code | Partly done: Corpus loading, cleaning, Section splitting, Financial Facts extraction, chunking, the FTS5 index, Company recognition and retrieval into numbered Sources are built and tested. Time windows, Sector phrases, follow-ups, Coverage Gaps and per-Company routing are next. | [`backend/src/edgar_rag/`](backend/src/edgar_rag/) |
+| Log of prompt iterations | Started: v1 | [`docs/prompt-iterations.md`](docs/prompt-iterations.md) |
+| Final prompt template | v1 in place; the final version follows the prompt iterations | [`docs/prompt-iterations.md`](docs/prompt-iterations.md), [`backend/src/edgar_rag/_prompt.py`](backend/src/edgar_rag/_prompt.py) |
 | Front-end | Not started | [`frontend/`](frontend/) (reserved for Next.js) |
-| Example request, ready to execute | Not started | Planned with the API |
+| Example request, ready to execute | Partly done: `make ask` answers a question from the command line. The API and its `curl` example are next. | [Asking a question](#asking-a-question) |
 | Notes on how quality was evaluated | Partly done: Financial Facts extraction is measured against SEC XBRL data, and the Golden Set of 30 labelled questions is written and checked against the Corpus. The retrieval and answer harnesses are next. | [`docs/findings.md`](docs/findings.md) (findings 21–24), notebook analysis 7, [`docs/golden-set.md`](docs/golden-set.md) |
 | Documented assumptions and decisions | Done for the EDA | [`docs/findings.md`](docs/findings.md), [`docs/assumptions.md`](docs/assumptions.md), [`docs/adr/`](docs/adr/) |
 
@@ -82,6 +82,20 @@ Every command runs through the root `Makefile` (`make help` lists them):
 | `make format` | Auto-fix lint issues and format |
 | `make eda` | Execute the EDA notebook from its source and write `eda.ipynb` with outputs |
 | `make sec-facts` | Fetch the SEC XBRL company-facts reference for the Tracked Companies |
+| `make index` | Rebuild the retrieval index (`data/derived/edgar_rag.sqlite`) from the Corpus |
+| `make ask Q="..."` | Answer a question from the command line, without a server (needs `OPENAI_API_KEY`) |
+
+### Asking a question
+
+`make index` chunks every Filing and writes the index, one SQLite file under `data/derived/` (about 25 seconds). `make ask` answers one question through one Answer Call to OpenAI, so it needs an OpenAI API key in `backend/.env`:
+
+```sh
+cp backend/.env.example backend/.env   # then set OPENAI_API_KEY (unquoted)
+make index
+make ask Q="What are the primary risk factors facing Apple, Tesla, and JPMorgan, and how do they compare?"
+```
+
+`make ask` builds the index first if it is missing. It prints the Query Scope (the Companies the question names), the numbered Sources the answer may cite, then the answer as it streams, and a last line with the model, prompt version, token usage and latency. The model defaults to `gpt-6-luna`; set `OPENAI_MODEL` in `backend/.env` to try another. Every Answer Call is also logged as one JSON line in `data/derived/logs/answer_calls.jsonl`.
 
 ### Running the EDA
 
@@ -117,16 +131,30 @@ for fact in extract_financial_facts(latest):
     print(fact.metric, fact.segment, fact.value, fact.label)
 ```
 
+The retrieval seam works on the index `make index` builds. Preparing an Answer Context makes no network call:
+
+```python
+from edgar_rag.retrieval import Message, prepare_answer_context
+
+context = prepare_answer_context([Message("user", "What are NVIDIA's main supply risks?")])
+context.query_scope.companies
+[(s.tag, s.label) for s in context.sources]
+context.messages  # the rendered prompt for the Answer Call
+```
+
 ## Repository layout
 
 ```
 .
 ├── backend/                   uv-managed Python project
-│   ├── src/edgar_rag/
+│   ├── src/edgar_rag/         the core package (standard library only)
 │   │   ├── corpus.py          the Corpus seam: Filings with metadata, cleaned body, Sections
 │   │   ├── financial_facts.py the Financial Facts seam: revenue, net income, segment revenue
+│   │   ├── retrieval.py       the retrieval seam: build the index, prepare an Answer Context
+│   │   ├── answer_model.py    the answer model protocol and the logged Answer Call
 │   │   ├── sec_reference.py   fetches and reads the SEC company-facts evaluation reference
 │   │   └── golden_set.py      loads and validates the Golden Set and its dev/holdout split
+│   ├── src/edgar_answer/      provider implementations (OpenAI) and the `make ask` CLI
 │   ├── tests/                 pytest suite
 │   └── notebooks/             eda.py (source) and eda.ipynb (executed)
 ├── frontend/                  reserved for the Next.js front-end
@@ -140,12 +168,13 @@ for fact in extract_financial_facts(latest):
 │   ├── findings.md            EDA findings and recommendations for retrieval
 │   ├── assumptions.md         working assumptions, confirmed or not by the Client
 │   ├── golden-set.md          the Golden Set's fields, split rule and review
+│   ├── prompt-iterations.md   every version of the Answer Call's prompt template
 │   └── adr/                   architecture decision records
 ├── CONTEXT.md                 domain glossary
 └── Makefile                   single entry point
 ```
 
-The core package depends on nothing outside the Python standard library and must not depend on a web framework, so the API and front-end can sit on top of it.
+The core package depends on nothing outside the Python standard library and must not depend on a web framework, so the API and front-end can sit on top of it; a guard test enforces this. Code that needs a provider's SDK lives in `edgar_answer` ([ADR 0005](docs/adr/0005-provider-sdks-outside-the-core-package.md)).
 
 ## Data
 

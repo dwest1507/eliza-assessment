@@ -4,6 +4,7 @@ BACKEND := backend
 UV := cd $(BACKEND) && uv run
 
 SEC_FACTS_INDEX := data/derived/sec_companyfacts/index.json
+INDEX := data/derived/edgar_rag.sqlite
 
 # Local settings for the backend (copy backend/.env.example). Optional; the variables
 # it defines are exported to the recipes. Make syntax, so values are unquoted.
@@ -11,10 +12,10 @@ ENV_FILE := $(BACKEND)/.env
 -include $(ENV_FILE)
 export $(shell sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' $(ENV_FILE) 2>/dev/null)
 
-.PHONY: help install test lint format eda sec-facts
+.PHONY: help install test lint format eda sec-facts index ask
 
 help: ## List targets
-	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
+	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
 
 install: ## Install the backend environment (uv)
 	cd $(BACKEND) && uv sync
@@ -41,6 +42,22 @@ sec-facts: ## Fetch SEC XBRL company-facts for Tracked Companies (evaluation onl
 		exit 1; \
 	fi
 	$(UV) python -m edgar_rag.sec_reference
+
+index: ## Rebuild the retrieval index (data/derived/edgar_rag.sqlite) from the Corpus
+	$(UV) python -m edgar_rag.retrieval
+
+ask: $(INDEX) ## Answer a question from the command line: make ask Q="..." (needs OPENAI_API_KEY)
+	@if [ -z "$$Q" ]; then echo 'usage: make ask Q="your question"' >&2; exit 1; fi
+	@if [ -z "$$OPENAI_API_KEY" ]; then \
+		echo 'error: OPENAI_API_KEY is not set. Copy backend/.env.example to backend/.env' >&2; \
+		echo 'and fill it in.' >&2; \
+		exit 1; \
+	fi
+	$(UV) python -m edgar_answer.ask "$$Q"
+
+# `make ask` builds the index first when it is missing.
+$(INDEX):
+	@$(MAKE) --no-print-directory index
 
 # The EDA reads the cached company-facts; fetch them only when the cache is missing.
 $(SEC_FACTS_INDEX):

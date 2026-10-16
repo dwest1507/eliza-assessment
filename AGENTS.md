@@ -21,12 +21,16 @@ Single-context: one root `CONTEXT.md` plus `docs/adr/`. See `docs/agents/domain.
 - `data/edgar_corpus/`: the Corpus, read-only (see `data/README.md`). Derived files go in `data/derived/` (gitignored).
 - `data/reference/sectors.csv`: the curated Sector table, one row per Company (see `data/README.md`).
 - `data/eval/golden_set.json`: the Golden Set, the evaluation's labelled questions, including the front-end's starter prompts (see `docs/golden-set.md`). Its tests check every label against the Corpus.
-- `backend/src/edgar_rag/`: `corpus.py` (the Corpus seam), `financial_facts.py` (the Financial Facts seam), `sec_reference.py` (fetches and reads the SEC company-facts evaluation reference), `golden_set.py` (loads and validates the Golden Set, and computes its dev/holdout split).
+- `backend/src/edgar_rag/`: `corpus.py` (the Corpus seam), `financial_facts.py` (the Financial Facts seam), `retrieval.py` (the retrieval seam: build the index, prepare an Answer Context), `answer_model.py` (the answer model protocol and the logged Answer Call), `sec_reference.py` (fetches and reads the SEC company-facts evaluation reference), `golden_set.py` (loads and validates the Golden Set, and computes its dev/holdout split). Standard library only; a guard test enforces it.
+- `backend/src/edgar_answer/`: code that needs a provider SDK, kept outside the core package (ADR 0005): `openai_model.py` and `ask.py` (`make ask`).
 - `docs/findings.md`: EDA findings, each as Finding → Implication → Design decision, ending with recommendations for the retrieval phase.
 - `docs/assumptions.md`: every assumption we build under, each marked `confirmed` or `not confirmed` by the Client. `docs/client-email.md` (gitignored, local only) is the draft email asking the Client about the three that matter most, sent by the developer, never by an agent.
+- `docs/prompt-iterations.md`: every version of the Answer Call's prompt template. A change to `backend/src/edgar_rag/_prompt.py` bumps `PROMPT_VERSION` and adds an entry.
 - `docs/adr/`: architecture decisions, numbered `NNNN-slug.md` (0001: the SQLite Financial Facts store).
 
-Run everything through the root `Makefile`: `make install` (uv sync), `make test`, `make lint`, `make format`, `make eda`, `make sec-facts`.
+Run everything through the root `Makefile`: `make install` (uv sync), `make test`, `make lint`, `make format`, `make eda`, `make sec-facts`, `make index`, `make ask Q="..."`.
+
+`make index` rebuilds the retrieval index, `data/derived/edgar_rag.sqlite`, from the Corpus. `make ask` answers one question through one Answer Call (it needs `OPENAI_API_KEY` from `backend/.env`, and costs money) and logs it to `data/derived/logs/answer_calls.jsonl`. Tests never call a provider: they use a fake answer model.
 
 `make sec-facts` caches the SEC XBRL company-facts data (an evaluation reference for Financial Facts, never an answer source) in `data/derived/sec_companyfacts/`; `make eda` runs it when that cache is missing. The SEC requires a User-Agent with a contact email, read from the `SEC_USER_AGENT` environment variable, which the Makefile loads from `backend/.env`.
 
