@@ -47,7 +47,7 @@ The share of an answer's cited claims that the Sources they cite support, as jud
 _Avoid_: Groundedness, accuracy, hallucination rate
 
 **Arm**:
-One way of choosing an Answer Call's Sources (FTS5, dense embeddings, a hybrid, a re-ranker), scored by the retrieval harness on the Golden Set.
+One way of ranking the chunks that become an Answer Call's Sources (FTS5, dense embeddings, a hybrid, a re-ranker), scored by the retrieval and generation harnesses on the Golden Set.
 _Avoid_: Retriever, strategy, variant
 
 **Shipped Arm**:

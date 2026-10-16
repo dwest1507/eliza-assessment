@@ -154,9 +154,442 @@
           "trend-tsla-net-income-three-years",
           "followup-topic-change-export-controls"
         ]
+      },
+      {
+        "name": "dense",
+        "shipped": false,
+        "overall": {
+          "cases": 17,
+          "hitAt": {
+            "5": 0.7647058823529411,
+            "10": 0.8823529411764706,
+            "20": 0.8823529411764706
+          },
+          "recallAt": {
+            "5": 0.7156862745098039,
+            "10": 0.8235294117647058,
+            "20": 0.8235294117647058
+          },
+          "hitAll": 0.9411764705882353,
+          "recallAll": 0.892156862745098,
+          "mrr": 0.7561751973516679,
+          "meanSources": 10.588235294117647
+        },
+        "byType": [
+          {
+            "questionType": "figure_trend",
+            "cases": 4,
+            "hitAt": {
+              "5": 0.5,
+              "10": 0.75,
+              "20": 0.75
+            },
+            "recallAt": {
+              "5": 0.5,
+              "10": 0.625,
+              "20": 0.625
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.9166666666666666,
+            "mrr": 0.553030303030303,
+            "meanSources": 17.0
+          },
+          {
+            "questionType": "missing_company",
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 1.0,
+            "meanSources": 1.0
+          },
+          {
+            "questionType": "outlook",
+            "cases": 2,
+            "hitAt": {
+              "5": 0.5,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.5,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 0.5714285714285714,
+            "meanSources": 29.0
+          },
+          {
+            "questionType": "risk",
+            "cases": 6,
+            "hitAt": {
+              "5": 0.8333333333333334,
+              "10": 0.8333333333333334,
+              "20": 0.8333333333333334
+            },
+            "recallAt": {
+              "5": 0.75,
+              "10": 0.75,
+              "20": 0.75
+            },
+            "hitAll": 0.8333333333333334,
+            "recallAll": 0.75,
+            "mrr": 0.8333333333333334,
+            "meanSources": 4.333333333333333
+          },
+          {
+            "questionType": "sector",
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.8333333333333333,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 1.0,
+            "meanSources": 10.0
+          },
+          {
+            "questionType": "stale_filing",
+            "cases": 1,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 0.5,
+            "meanSources": 6.0
+          }
+        ],
+        "missed": [
+          "trend-tsla-net-income-three-years",
+          "followup-topic-change-export-controls"
+        ]
+      },
+      {
+        "name": "hybrid",
+        "shipped": false,
+        "overall": {
+          "cases": 17,
+          "hitAt": {
+            "5": 0.8235294117647058,
+            "10": 0.8823529411764706,
+            "20": 0.8823529411764706
+          },
+          "recallAt": {
+            "5": 0.7745098039215685,
+            "10": 0.8235294117647058,
+            "20": 0.8235294117647058
+          },
+          "hitAll": 0.9411764705882353,
+          "recallAll": 0.8725490196078431,
+          "mrr": 0.8033273915626856,
+          "meanSources": 11.588235294117647
+        },
+        "byType": [
+          {
+            "questionType": "figure_trend",
+            "cases": 4,
+            "hitAt": {
+              "5": 0.5,
+              "10": 0.75,
+              "20": 0.75
+            },
+            "recallAt": {
+              "5": 0.5,
+              "10": 0.625,
+              "20": 0.625
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.8333333333333334,
+            "mrr": 0.5391414141414141,
+            "meanSources": 20.5
+          },
+          {
+            "questionType": "missing_company",
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 1.0,
+            "meanSources": 1.0
+          },
+          {
+            "questionType": "outlook",
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 1.0,
+            "meanSources": 29.0
+          },
+          {
+            "questionType": "risk",
+            "cases": 6,
+            "hitAt": {
+              "5": 0.8333333333333334,
+              "10": 0.8333333333333334,
+              "20": 0.8333333333333334
+            },
+            "recallAt": {
+              "5": 0.75,
+              "10": 0.75,
+              "20": 0.75
+            },
+            "hitAll": 0.8333333333333334,
+            "recallAll": 0.75,
+            "mrr": 0.8333333333333334,
+            "meanSources": 4.333333333333333
+          },
+          {
+            "questionType": "sector",
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.8333333333333333,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 1.0,
+            "meanSources": 10.5
+          },
+          {
+            "questionType": "stale_filing",
+            "cases": 1,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 0.5,
+            "meanSources": 8.0
+          }
+        ],
+        "missed": [
+          "trend-tsla-net-income-three-years",
+          "followup-topic-change-export-controls"
+        ]
+      },
+      {
+        "name": "rerank",
+        "shipped": false,
+        "overall": {
+          "cases": 17,
+          "hitAt": {
+            "5": 0.7647058823529411,
+            "10": 0.8823529411764706,
+            "20": 0.9411764705882353
+          },
+          "recallAt": {
+            "5": 0.6764705882352942,
+            "10": 0.8235294117647058,
+            "20": 0.8431372549019608
+          },
+          "hitAll": 0.9411764705882353,
+          "recallAll": 0.9117647058823529,
+          "mrr": 0.6823062558356676,
+          "meanSources": 12.294117647058824
+        },
+        "byType": [
+          {
+            "questionType": "figure_trend",
+            "cases": 4,
+            "hitAt": {
+              "5": 0.5,
+              "10": 0.75,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.41666666666666663,
+              "10": 0.625,
+              "20": 0.7083333333333334
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 0.42063492063492064,
+            "meanSources": 25.25
+          },
+          {
+            "questionType": "missing_company",
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 1.0,
+            "meanSources": 1.0
+          },
+          {
+            "questionType": "outlook",
+            "cases": 2,
+            "hitAt": {
+              "5": 0.5,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.5,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 0.20833333333333331,
+            "meanSources": 26.5
+          },
+          {
+            "questionType": "risk",
+            "cases": 6,
+            "hitAt": {
+              "5": 0.8333333333333334,
+              "10": 0.8333333333333334,
+              "20": 0.8333333333333334
+            },
+            "recallAt": {
+              "5": 0.75,
+              "10": 0.75,
+              "20": 0.75
+            },
+            "hitAll": 0.8333333333333334,
+            "recallAll": 0.75,
+            "mrr": 0.8333333333333334,
+            "meanSources": 4.333333333333333
+          },
+          {
+            "questionType": "sector",
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.6666666666666666,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 0.75,
+            "meanSources": 9.5
+          },
+          {
+            "questionType": "stale_filing",
+            "cases": 1,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 1.0,
+            "meanSources": 8.0
+          }
+        ],
+        "missed": [
+          "trend-tsla-net-income-three-years",
+          "followup-topic-change-export-controls"
+        ]
       }
     ],
-    "comparisons": []
+    "comparisons": [
+      {
+        "arm": "dense",
+        "shippedArm": "fts5",
+        "metric": "hit@10",
+        "challengerOnly": 0,
+        "shippedOnly": 0,
+        "pValue": 1.0,
+        "verdict": "indistinguishable"
+      },
+      {
+        "arm": "hybrid",
+        "shippedArm": "fts5",
+        "metric": "hit@10",
+        "challengerOnly": 0,
+        "shippedOnly": 0,
+        "pValue": 1.0,
+        "verdict": "indistinguishable"
+      },
+      {
+        "arm": "rerank",
+        "shippedArm": "fts5",
+        "metric": "hit@10",
+        "challengerOnly": 0,
+        "shippedOnly": 0,
+        "pValue": 1.0,
+        "verdict": "indistinguishable"
+      }
+    ]
   },
   "generation": [
     {
@@ -164,38 +597,38 @@
       "judgeModel": "jev-1.13.0",
       "promptVersion": "v5",
       "overall": {
-        "cases": 20,
-        "citationsValid": 0.75,
-        "figuresExact": 0.9,
+        "cases": 19,
+        "citationsValid": 0.8421052631578947,
+        "figuresExact": 0.9473684210526315,
         "coverageGapsStated": 1.0,
-        "factRecall": 0.49719887955182074,
-        "faithfulness": 0.9033613445378151,
-        "meanCostUsd": 0.0024334450000000002,
-        "totalCostUsd": 0.0486689,
-        "meanLatencyS": 6.05595,
-        "maxLatencyS": 12.807,
-        "meanFirstTokenS": 1.9304999999999999,
-        "meanInputTokens": 21897.7,
-        "meanOutputTokens": 487.35,
-        "judgeCostUsd": 0.019627146
+        "factRecall": 0.5372023809523809,
+        "faithfulness": 0.9494791666666667,
+        "meanCostUsd": 0.002335384210526316,
+        "totalCostUsd": 0.0443723,
+        "meanLatencyS": 5.43742105263158,
+        "maxLatencyS": 12.452,
+        "meanFirstTokenS": 1.6974736842105265,
+        "meanInputTokens": 20923.315789473683,
+        "meanOutputTokens": 486.10526315789474,
+        "judgeCostUsd": 0.017973270000000003
       },
       "byType": [
         {
           "questionType": "figure_trend",
-          "cases": 4,
-          "citationsValid": 0.5,
-          "figuresExact": 0.5,
-          "coverageGapsStated": 1.0,
-          "factRecall": 0.4583333333333333,
-          "faithfulness": 0.8642857142857143,
-          "meanCostUsd": 0.004007075000000001,
-          "totalCostUsd": 0.016028300000000002,
-          "meanLatencyS": 6.255,
-          "maxLatencyS": 8.443,
-          "meanFirstTokenS": 2.6835,
-          "meanInputTokens": 37464.5,
-          "meanOutputTokens": 521.25,
-          "judgeCostUsd": 0.0037801680000000004
+          "cases": 3,
+          "citationsValid": 1.0,
+          "figuresExact": 0.6666666666666666,
+          "coverageGapsStated": null,
+          "factRecall": 0.5,
+          "faithfulness": 1.0,
+          "meanCostUsd": 0.0039169,
+          "totalCostUsd": 0.011750700000000001,
+          "meanLatencyS": 5.735333333333333,
+          "maxLatencyS": 5.965,
+          "meanFirstTokenS": 2.469666666666667,
+          "meanInputTokens": 36482.333333333336,
+          "meanOutputTokens": 537.3333333333334,
+          "judgeCostUsd": 0.00116823
         },
         {
           "questionType": "missing_company",
@@ -205,14 +638,14 @@
           "coverageGapsStated": 1.0,
           "factRecall": 0.5,
           "faithfulness": 0.95,
-          "meanCostUsd": 0.0009844,
-          "totalCostUsd": 0.0039376,
-          "meanLatencyS": 4.327,
-          "maxLatencyS": 7.067,
-          "meanFirstTokenS": 1.60225,
+          "meanCostUsd": 0.000978775,
+          "totalCostUsd": 0.0039151,
+          "meanLatencyS": 3.6975000000000002,
+          "maxLatencyS": 5.839,
+          "meanFirstTokenS": 1.24525,
           "meanInputTokens": 8235.25,
-          "meanOutputTokens": 321.75,
-          "judgeCostUsd": 0.001637496
+          "meanOutputTokens": 310.5,
+          "judgeCostUsd": 0.0016065839999999999
         },
         {
           "questionType": "outlook",
@@ -222,14 +655,14 @@
           "coverageGapsStated": 1.0,
           "factRecall": 0.75,
           "faithfulness": 1.0,
-          "meanCostUsd": 0.00333795,
-          "totalCostUsd": 0.0066759,
-          "meanLatencyS": 3.9655,
-          "maxLatencyS": 6.079,
-          "meanFirstTokenS": 1.3965,
+          "meanCostUsd": 0.00335445,
+          "totalCostUsd": 0.0067089,
+          "meanLatencyS": 3.4265,
+          "maxLatencyS": 5.27,
+          "meanFirstTokenS": 0.992,
           "meanInputTokens": 32084.5,
-          "meanOutputTokens": 259.0,
-          "judgeCostUsd": 0.000617736
+          "meanOutputTokens": 292.0,
+          "judgeCostUsd": 0.0008045940000000001
         },
         {
           "questionType": "risk",
@@ -237,16 +670,16 @@
           "citationsValid": 1.0,
           "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
-          "factRecall": 0.4087301587301588,
-          "faithfulness": 0.85,
-          "meanCostUsd": 0.0021348833333333333,
-          "totalCostUsd": 0.0128093,
-          "meanLatencyS": 7.363166666666667,
-          "maxLatencyS": 11.798,
-          "meanFirstTokenS": 1.8268333333333333,
+          "factRecall": 0.43253968253968256,
+          "faithfulness": 0.8819444444444445,
+          "meanCostUsd": 0.0021323833333333334,
+          "totalCostUsd": 0.0127943,
+          "meanLatencyS": 6.7915,
+          "maxLatencyS": 12.452,
+          "meanFirstTokenS": 2.0113333333333334,
           "meanInputTokens": 18353.0,
-          "meanOutputTokens": 599.1666666666666,
-          "judgeCostUsd": 0.010501848000000001
+          "meanOutputTokens": 594.1666666666666,
+          "judgeCostUsd": 0.010672200000000001
         },
         {
           "questionType": "sector",
@@ -254,16 +687,16 @@
           "citationsValid": 0.5,
           "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
-          "factRecall": 0.3333333333333333,
-          "faithfulness": 0.95,
-          "meanCostUsd": 0.0027596,
-          "totalCostUsd": 0.0055192,
-          "meanLatencyS": 9.7155,
-          "maxLatencyS": 12.807,
-          "meanFirstTokenS": 2.5295,
+          "factRecall": 0.5,
+          "faithfulness": 1.0,
+          "meanCostUsd": 0.0027776,
+          "totalCostUsd": 0.0055552,
+          "meanLatencyS": 9.091000000000001,
+          "maxLatencyS": 12.115,
+          "meanFirstTokenS": 1.9805000000000001,
           "meanInputTokens": 23281.0,
-          "meanOutputTokens": 863.0,
-          "judgeCostUsd": 0.0026274360000000004
+          "meanOutputTokens": 899.0,
+          "judgeCostUsd": 0.00328377
         },
         {
           "questionType": "stale_filing",
@@ -273,31 +706,30 @@
           "coverageGapsStated": 1.0,
           "factRecall": 1.0,
           "faithfulness": 1.0,
-          "meanCostUsd": 0.0018493000000000001,
-          "totalCostUsd": 0.0036986000000000002,
-          "meanLatencyS": 3.625,
-          "maxLatencyS": 5.63,
-          "meanFirstTokenS": 1.327,
+          "meanCostUsd": 0.0018240500000000002,
+          "totalCostUsd": 0.0036481000000000005,
+          "meanLatencyS": 2.7655000000000003,
+          "maxLatencyS": 3.66,
+          "meanFirstTokenS": 0.9245000000000001,
           "meanInputTokens": 17153.0,
-          "meanOutputTokens": 268.0,
-          "judgeCostUsd": 0.00046246200000000007
+          "meanOutputTokens": 217.5,
+          "judgeCostUsd": 0.00043789200000000006
         }
       ],
       "failing": {
         "citations": [
           "sector-pharma-regulatory",
-          "trend-jpm-revenue-snapshot",
-          "missing-wells-fargo-vs-jpm",
           "stale-ge-recent-performance",
-          "trend-meta-revenue-two-years"
+          "missing-bms-with-merck"
         ],
         "figures": [
-          "trend-meta-revenue-two-years",
           "trend-tsla-net-income-three-years"
         ],
         "coverageGaps": []
       },
-      "errors": []
+      "errors": [
+        "trend-jpm-revenue-snapshot"
+      ]
     }
   ],
   "coverage": {

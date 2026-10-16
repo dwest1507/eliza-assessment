@@ -268,3 +268,41 @@ def test_the_command_scores_a_chosen_split(tmp_path):
     holdout = {c.id for c in load_golden_set().cases if c.split == "holdout"}
     report = json.loads(out.read_text())
     assert set(report["case_ids"] + report["unscored"]) == holdout
+
+
+# --- The challenger Arms -----------------------------------------------------------------
+
+
+def test_the_arms_are_fts5_shipped_and_the_three_challengers_of_the_spec():
+    assert {arm.name: arm.shipped for arm in ARMS} == {
+        "fts5": True,
+        "dense": False,
+        "hybrid": False,
+        "rerank": False,
+    }
+    assert all(arm.prepare is not None for arm in ARMS)
+
+
+def test_a_seam_arm_ranks_the_sources_its_ranker_gives_the_answer_call(index):
+    from edgar_eval.arms import seam_arm
+
+    requests = []
+
+    def make_ranker(path):
+        assert path == index
+
+        def ranker(request):
+            requests.append(request)
+            return list(reversed(request.eligible))
+
+        return ranker
+
+    arm = seam_arm("backwards", "eligible chunks in reverse id order", make_ranker)
+    question = [ChatMessage("user", "What does Tesla say about Gigafactory Texas?")]
+
+    context = arm.prepare(question, index)
+    ranked = arm.retrieve(question, index)
+
+    assert requests and {r.ticker for r in requests} == {"TSLA"}
+    assert context.sources != prepare_answer_context(question, index).sources
+    assert ranked == [(s.filing_id, s.section) for s in context.sources if s.kind == "text"]

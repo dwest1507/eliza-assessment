@@ -312,6 +312,37 @@ def test_the_command_line_prints_scores_with_cost_and_latency_and_writes_json(in
     assert case["fact_recall"] is not None
 
 
+def test_the_command_answers_through_a_chosen_arm_and_records_it(index, tmp_path):
+    import io
+    import json
+
+    from edgar_eval.generation import main
+    from edgar_eval.retrieval import Arm
+    from edgar_rag.retrieval import prepare_answer_context
+
+    used = []
+
+    def arm(name, shipped=False):
+        def prepare(messages, path):
+            used.append(name)
+            return prepare_answer_context(messages, path)
+
+        return Arm(name, name, lambda m, i: [], shipped=shipped, prepare=prepare)
+
+    path = tmp_path / "generation-arms-dev-dense.json"
+    argv = ["--case", "risk-aapl-tsla-jpm", "--index", str(index), "--log", str(tmp_path / "l")]
+    common = dict(judge=FakeJudge(), fact_values=lambda tickers: [], out=io.StringIO())
+    arms = [arm("fts5", shipped=True), arm("dense")]
+
+    main(
+        [*argv, "--arm", "dense", "--json", str(path)], model=FakeModel(ANSWER), arms=arms, **common
+    )
+    main([*argv], model=FakeModel(ANSWER), arms=arms, **common)
+
+    assert used == ["dense", "fts5"]  # the shipped Arm by default
+    assert json.loads(path.read_text())["arm"] == "dense"
+
+
 def test_the_jev_keys_placeholder_is_in_the_backends_env_example():
     from pathlib import Path
 

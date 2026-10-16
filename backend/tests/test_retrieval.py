@@ -1100,3 +1100,76 @@ def test_coverage_gaps_are_worded_the_same_way_every_time(index, gap_index):
     again = _ask(index, "Has JPMorgan's net income changed over the past three years?")
 
     assert _gaps(first, "snapshot_trend") == _gaps(again, "snapshot_trend")
+
+
+# --- A ranker in place of bm25() (the challenger Arms) -----------------------------------
+
+
+class _Recorder:
+    """A ranker that records what it was asked and ranks by a given rule."""
+
+    def __init__(self, rank=lambda request: request.lexical):
+        self.requests = []
+        self.rank = rank
+
+    def __call__(self, request):
+        self.requests.append(request)
+        return self.rank(request)
+
+
+def _chunk_ids(index, **where):
+    return {row["id"] for row in _chunks(index, **where) if row["kind"] != "risk_pointer"}
+
+
+def test_a_ranker_sees_only_the_chunks_inside_the_hard_filters(index):
+    ranker = _Recorder()
+
+    prepare_answer_context(
+        [Message("user", "What are Tesla's risk factors?")], index, ranker=ranker
+    )
+
+    (request,) = ranker.requests
+    assert request.ticker == "TSLA"
+    assert "Tesla's risk factors" in request.question
+    # The latest window: Tesla's FY2025 10-K, which no 10-Q follows, in its Risk Factors.
+    assert set(request.eligible) == _chunk_ids(
+        index, filing_id="TSLA_10-K_2025-12-31", section="Risk Factors"
+    )
+    assert request.lexical and set(request.lexical) <= set(request.eligible)
+
+
+def test_the_lexical_ranking_given_to_a_ranker_is_the_shipped_ranking(index):
+    question = "What does Tesla say about Gigafactory Texas?"
+
+    shipped = _ask(index, question)
+    reranked = prepare_answer_context([Message("user", question)], index, ranker=_Recorder())
+
+    assert reranked.sources == shipped.sources
+
+
+def test_a_ranker_can_reorder_and_rank_chunks_the_terms_do_not_match(index):
+    question = "What does Tesla say about Gigafactory Texas?"
+    shipped = _ask(index, question)
+
+    reversed_ = prepare_answer_context(
+        [Message("user", question)],
+        index,
+        ranker=_Recorder(lambda r: list(reversed(r.eligible))),
+    )
+
+    assert reversed_.sources and reversed_.sources != shipped.sources
+    assert {s.ticker for s in reversed_.sources} == {"TSLA"}
+    assert not all("Texas" in s.text for s in reversed_.sources)
+
+
+def test_a_ranker_cannot_reach_outside_the_hard_filters(index):
+    outside = sorted(_chunk_ids(index, filing_id="AAPL_10-K_2025-09-27"))
+
+    context = prepare_answer_context(
+        [Message("user", "What are Tesla's risk factors?")],
+        index,
+        ranker=_Recorder(lambda r: outside + list(r.lexical)),
+    )
+
+    assert {s.ticker for s in context.sources} == {"TSLA"}
+    assert {s.section for s in context.sources} == {"Risk Factors"}

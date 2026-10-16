@@ -1,7 +1,8 @@
 """The generation harness: answer Golden Set cases end to end and score the answers.
 
-Each case's conversation goes through the full pipeline: `prepare_answer_context`, then
-one Answer Call to the generator under test. The answer is then scored three ways:
+Each case's conversation goes through the full pipeline: `prepare_answer_context`, with
+the ranker of the retrieval Arm under test (the Shipped Arm by default), then one Answer
+Call to the generator under test. The answer is then scored three ways:
 
 - **In code** (`edgar_eval.answer_checks`): citation validity, figure exactness and
   Coverage Gap statements.
@@ -13,7 +14,8 @@ one Answer Call to the generator under test. The answer is then scored three way
 `make eval-generation` runs it on the dev split with the default generator, prints the
 scores and writes them, with every answer, as JSON under `data/derived/eval/`:
 
-    python -m edgar_eval.generation [--split dev|holdout|all] [--model MODEL] [--json PATH]
+    python -m edgar_eval.generation [--split dev|holdout|all] [--model MODEL] [--arm ARM]
+        [--json PATH]
 
 It calls the generator and Jev, so it needs `OPENAI_API_KEY` and `JEV_API_KEY`, and it
 costs money: about a cent per case with `gpt-6-luna`.
@@ -46,7 +48,7 @@ from edgar_eval.answer_checks import (
     claims,
 )
 from edgar_eval.judge import Evidence, Judgments
-from edgar_eval.retrieval import conversation
+from edgar_eval.retrieval import Arm, Prepare, conversation
 from edgar_rag.answer_model import DEFAULT_ANSWER_LOG, AnswerCall, AnswerModel
 from edgar_rag.golden_set import DEFAULT_GOLDEN_SET, GoldenCase, load_golden_set
 from edgar_rag.retrieval import DEFAULT_INDEX, prepare_answer_context
@@ -170,6 +172,8 @@ class GenerationReport:
     cases: tuple[CaseResult, ...]
     errors: dict[str, str]
     """Cases that could not be answered or judged, with the error."""
+    arm: str | None = None
+    """The retrieval Arm the Answer Contexts came from."""
 
     def to_dict(self) -> dict:
         """The report as plain JSON-ready data, with each case's derived scores."""
@@ -195,13 +199,16 @@ def evaluate(
     fact_values: FactValues,
     log_path: str | Path | None = DEFAULT_ANSWER_LOG,
     workers: int = 4,
+    prepare: Prepare = prepare_answer_context,
+    arm: str | None = None,
 ) -> GenerationReport:
     """Answer every case with the model, score each answer, and summarise the scores
-    overall and per question type. Cases run `workers` at a time."""
+    overall and per question type. Cases run `workers` at a time. `prepare` is the
+    retrieval Arm's (`arm`) way of preparing the Answer Context."""
 
     def run(case: GoldenCase) -> CaseResult | str:
         try:
-            return _run_case(case, model, judge, Path(index), names, fact_values, log_path)
+            return _run_case(case, model, judge, Path(index), names, fact_values, log_path, prepare)
         except Exception as error:  # noqa: BLE001 - a failed case is reported, not fatal
             return f"{type(error).__name__}: {error}"
 
@@ -220,6 +227,7 @@ def evaluate(
         by_type={kind: _summarise(group) for kind, group in sorted(by_type.items())},
         cases=results,
         errors=errors,
+        arm=arm,
     )
 
 
@@ -231,8 +239,9 @@ def _run_case(
     names: dict[str, tuple[str, ...]],
     fact_values: FactValues,
     log_path: str | Path | None,
+    prepare: Prepare = prepare_answer_context,
 ) -> CaseResult:
-    context = prepare_answer_context(conversation(case), index)
+    context = prepare(conversation(case), index)
     call = AnswerCall(context, model, log_path=log_path)
     answer = "".join(call)
     record = call.record
@@ -376,12 +385,14 @@ def main(
     model: AnswerModel | None = None,
     judge: Judge | None = None,
     fact_values: FactValues | None = None,
+    arms: Sequence[Arm] | None = None,
     out: TextIO | None = None,
 ) -> int:
     out = out or sys.stdout
     parser = argparse.ArgumentParser(description="Score generated answers on the Golden Set.")
     parser.add_argument("--split", choices=("dev", "holdout", "all"), default="dev")
     parser.add_argument("--model", help="the generator's model id (default: OPENAI_MODEL)")
+    parser.add_argument("--arm", help="the retrieval Arm (default: the Shipped Arm)")
     parser.add_argument("--case", action="append", metavar="ID", help="only these cases")
     parser.add_argument("--workers", type=int, default=4, help="cases answered at once")
     parser.add_argument("--index", type=Path, default=DEFAULT_INDEX)
@@ -390,6 +401,16 @@ def main(
     parser.add_argument("--json", type=Path, help="also write the report as JSON here")
     args = parser.parse_args(argv)
 
+    if arms is None:
+        from edgar_eval.arms import ARMS
+
+        arms = ARMS
+    by_name = {a.name: a for a in arms}
+    if args.arm and args.arm not in by_name:
+        parser.error(f"no such Arm: {args.arm} (one of {', '.join(by_name)})")
+    arm = by_name[args.arm] if args.arm else next(a for a in arms if a.shipped)
+    if arm.prepare is None:
+        parser.error(f"the {arm.name} Arm cannot prepare an Answer Context")
     golden = load_golden_set(args.golden_set)
     cases = golden.cases if args.split == "all" else golden.split(args.split)
     if args.case:
@@ -413,6 +434,8 @@ def main(
         fact_values=fact_values or corpus_fact_values,
         log_path=args.log,
         workers=args.workers,
+        prepare=arm.prepare,
+        arm=arm.name,
     )
     _print_report(report, args.split, out)
     if args.json:
@@ -443,7 +466,8 @@ def _share(value: float | None) -> str:
 def _print_report(report: GenerationReport, split: str, out: TextIO) -> None:
     print(
         f"Generation on the {split} split: {report.overall.cases} cases answered by "
-        f"{report.model} (prompt {report.prompt_version}), judged by {report.judge_model}",
+        f"{report.model} (prompt {report.prompt_version}) on the {report.arm or '?'} Arm, "
+        f"judged by {report.judge_model}",
         file=out,
     )
     headers = ["", *(name for name, _ in _COLUMNS)]

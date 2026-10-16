@@ -14,5 +14,5 @@ The retrieval harness scores retrieval Arms on the Golden Set, and the generatio
 ## Consequences
 
 - `make eval-retrieval` runs `python -m edgar_eval.retrieval`. Arms are listed in `edgar_eval.arms.ARMS`, exactly one marked shipped.
-- An Arm sees only the conversation and the index and returns ranked (Filing ID, Section) pairs, so a challenger can be measured before it is wired into the retrieval seam. Only the Arm that wins the comparison is moved into the shipped seam.
+- An Arm sees only the conversation and the index and returns ranked (Filing ID, Section) pairs, so a challenger can be measured before it is wired into the retrieval seam. Only the Arm that wins the comparison is moved into the shipped seam. (Amended by [ADR 0008](0008-fts5-stays-the-shipped-arm.md): an Arm is now the shipped seam with its own ranker, passed through an optional `Ranker` hook of `prepare_answer_context`. The ranker's code and model packages stay in `edgar_eval`.)
 - Model-dependent Arms and their packages go into a dev dependency group, so the product's install does not pull them in.

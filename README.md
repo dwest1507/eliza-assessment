@@ -16,7 +16,7 @@ The work runs in phases. The exploratory data analysis (EDA) phase is complete. 
 | Final prompt template | v5 in place; the final version follows the prompt iterations | [`docs/prompt-iterations.md`](docs/prompt-iterations.md), [`backend/src/edgar_rag/_prompt.py`](backend/src/edgar_rag/_prompt.py) |
 | Front-end | Started: the research workspace streams answers, opens each `[Sn]` citation's passage (or, for a Financial Facts Source, its table of figures) in a Sources panel, shows each answer's Query Scope as chips and its Coverage Gaps as a callout, and offers the six starter prompts. The conversation is kept for the browser session, and a "New conversation" control clears it. A "How it works" page shows the architecture, the evaluation scoreboard (from `make eval-export`) and the Corpus coverage grid. | [`frontend/`](frontend/), [Running the full stack](#running-the-full-stack) |
 | Example request, ready to execute | Done: `make ask` answers a question from the command line, and `backend/scripts/chat.sh` calls the chat API with `curl` | [Asking a question](#asking-a-question), [The chat API](#the-chat-api) |
-| Notes on how quality was evaluated | Partly done: Financial Facts extraction is measured against SEC XBRL data, the Golden Set of 30 labelled questions is written and checked against the Corpus, the retrieval harness scores the FTS5 Arm on it (hit@10 0.88 on dev), and the generation harness scores the answers in code and with the Jev judge (Fact Recall 0.50, Faithfulness 0.90 and Coverage Gaps stated 1.00 on dev with prompt v5, at $0.0024 per answer). | [`docs/evaluation.md`](docs/evaluation.md), [`docs/findings.md`](docs/findings.md) (findings 21–24), notebook analysis 7, [`docs/golden-set.md`](docs/golden-set.md) |
+| Notes on how quality was evaluated | Partly done: Financial Facts extraction is measured against SEC XBRL data, the Golden Set of 30 labelled questions is written and checked against the Corpus, the retrieval harness scores the FTS5 Arm on it (hit@10 0.88 on dev), three challenger Arms (dense, hybrid, cross-encoder re-ranking) were measured in both harnesses and none beat FTS5 ([ADR 0008](docs/adr/0008-fts5-stays-the-shipped-arm.md)), and the generation harness scores the answers in code and with the Jev judge (Fact Recall 0.50, Faithfulness 0.90 and Coverage Gaps stated 1.00 on dev with prompt v5, at $0.0024 per answer). | [`docs/evaluation.md`](docs/evaluation.md), [`docs/findings.md`](docs/findings.md) (findings 21–24), notebook analysis 7, [`docs/golden-set.md`](docs/golden-set.md) |
 | Documented assumptions and decisions | Done for the EDA | [`docs/findings.md`](docs/findings.md), [`docs/assumptions.md`](docs/assumptions.md), [`docs/adr/`](docs/adr/) |
 
 ## What the EDA found
@@ -86,9 +86,11 @@ Every command runs through the root `Makefile` (`make help` lists them):
 | `make index` | Rebuild the retrieval index (`data/derived/edgar_rag.sqlite`) from the Corpus |
 | `make ask Q="..."` | Answer a question from the command line, without a server (needs `OPENAI_API_KEY`) |
 | `make api` | Run the chat API on http://localhost:8000 (`API_PORT` to change; answers need `OPENAI_API_KEY`) |
-| `make eval-retrieval` | Score the retrieval Arms on the Golden Set's dev split (`SPLIT=holdout` or `all` to change it); no LLM call |
+| `make embeddings` | Embed every chunk for the dense and hybrid challenger Arms (evaluation only; needs `OPENAI_API_KEY`, about 35 cents) |
+| `make eval-retrieval` | Score the retrieval Arms on the Golden Set's dev split (`SPLIT=holdout` or `all` to change it, `ARMS=` to pick Arms); no LLM call |
 | `make dev` | Run the chat API and the research workspace together on http://localhost:3000 (`WEB_PORT` to change) |
 | `make eval-generation` | Answer the Golden Set's dev split and score the answers, with cost and latency (`SPLIT=`, `MODEL=`; needs `OPENAI_API_KEY` and `JEV_API_KEY`, costs money) |
+| `make eval-arms` | Answer the dev split through every retrieval Arm and choose the Shipped Arm by the selection rule (needs `OPENAI_API_KEY` and `JEV_API_KEY`, costs money) |
 | `make eval-export` | Export the harnesses' latest results and the Corpus coverage for the workspace's "How it works" page (`SPLIT=` to change the split); no LLM call |
 
 ### Asking a question
@@ -150,7 +152,7 @@ The browser never calls the API directly. It posts to the workspace's own route 
 make eval-retrieval
 ```
 
-runs every Golden Set case on the dev split through each retrieval Arm (today only FTS5, the Shipped Arm), with no LLM call, and prints hit@k, recall@k and MRR overall and per question type, then each challenger Arm's comparison with the Shipped Arm by McNemar's exact test. The report is also written to `data/derived/eval/retrieval-dev.json`. The method and the first numbers are in [`docs/evaluation.md`](docs/evaluation.md).
+runs every Golden Set case on the dev split through each retrieval Arm (FTS5, the Shipped Arm, and three challengers: dense embeddings, a reciprocal-rank-fusion hybrid and a cross-encoder re-ranker), with no LLM call, and prints hit@k, recall@k and MRR overall and per question type, then each challenger Arm's comparison with the Shipped Arm by McNemar's exact test. The report is also written to `data/derived/eval/retrieval-dev.json`. The method and the first numbers are in [`docs/evaluation.md`](docs/evaluation.md). The dense and hybrid Arms need chunk embeddings, which `make embeddings` builds once (OpenAI `text-embedding-3-small`; it needs `OPENAI_API_KEY`, costs about 35 cents and runs automatically when they are missing); `ARMS=fts5` skips them. `make eval-arms` answers the dev split through every Arm and applies the spec's selection rule. The comparison, which kept FTS5, is in [`docs/evaluation.md`](docs/evaluation.md#arm-comparison) and [ADR 0008](docs/adr/0008-fts5-stays-the-shipped-arm.md).
 
 
 ### Measuring answers
@@ -231,7 +233,7 @@ context.messages  # the rendered prompt for the Answer Call
 │   │   └── golden_set.py      loads and validates the Golden Set and its dev/holdout split
 │   ├── src/edgar_answer/      provider implementations (OpenAI) and the `make ask` CLI
 │   ├── src/edgar_api/         the FastAPI chat API (`make api`)
-│   ├── src/edgar_eval/        evaluation harnesses: retrieval Arms and metrics, answer checks, the Jev judge, the export
+│   ├── src/edgar_eval/        evaluation harnesses: retrieval Arms, their rankers and embeddings, metrics, the selection rule, answer checks, the Jev judge, the export
 │   ├── scripts/chat.sh        the `curl` example against the chat API
 │   ├── tests/                 pytest suite
 │   └── notebooks/             eda.py (source) and eda.ipynb (executed)

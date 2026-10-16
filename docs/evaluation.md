@@ -7,9 +7,10 @@ How the system's quality is measured. Everything is scored against the [Golden S
 ```sh
 make eval-retrieval              # the dev split
 make eval-retrieval SPLIT=all    # dev and holdout together; SPLIT=holdout only once, at the end
+make eval-retrieval ARMS=fts5    # only some Arms (the Shipped Arm always runs)
 ```
 
-It needs the index (`make index`, built automatically when missing) and no LLM or network call. It prints the scores and writes them as JSON to `data/derived/eval/retrieval-<split>.json`, for the evaluation export. The code is [`backend/src/edgar_eval/retrieval.py`](../backend/src/edgar_eval/retrieval.py); the Arms are in [`backend/src/edgar_eval/arms.py`](../backend/src/edgar_eval/arms.py).
+It needs the index (`make index`, built automatically when missing) and no LLM call. The dense and hybrid Arms also need the chunk embeddings (`make embeddings`, built automatically when missing; see [Arm comparison](#arm-comparison)), and embed each question once, caching the vector, so a rerun makes no network call. It prints the scores and writes them as JSON to `data/derived/eval/retrieval-<split>.json`, for the evaluation export. The code is [`backend/src/edgar_eval/retrieval.py`](../backend/src/edgar_eval/retrieval.py); the Arms are in [`backend/src/edgar_eval/arms.py`](../backend/src/edgar_eval/arms.py).
 
 ### Method
 
@@ -31,8 +32,11 @@ All Arms are defined in one tuple, `ARMS`, and the harness requires exactly one 
 | Arm | What it does | Status |
 |---|---|---|
 | `fts5` | The retrieval seam as shipped: `bm25()` over the FTS5 index within each Company's hard filter ([ADR 0002](adr/0002-fts5-retrieval-in-one-derived-sqlite-file.md)) | **Shipped** |
+| `dense` | OpenAI `text-embedding-3-small` embeddings of every chunk inside the hard filters, ranked by exact inner product with the question's embedding | Challenger |
+| `hybrid` | Weighted reciprocal-rank fusion of the `bm25()` and dense rankings: each chunk scores `w / (1 + rank)` in each, with equal weights | Challenger |
+| `rerank` | The first 20 chunks of the `bm25()` ranking re-ordered by the cross-encoder `cross-encoder/ms-marco-MiniLM-L6-v2` (ONNX, CPU, pinned to a Hugging Face commit); the rest follow in `bm25()` order | Challenger |
 
-The challengers of the spec (OpenAI dense embeddings, a reciprocal-rank-fusion hybrid, FTS5 re-ranked by a cross-encoder) are added to `ARMS` in the Arm comparison task.
+Every Arm is the shipped retrieval seam with its own ranker in place of `bm25()` (the `Ranker` hook of `prepare_answer_context`), so the Query Scope, hard filters, Section plan, per-Company budget, deduplication and change routing are the same for all four, and only the ranking differs. A ranker can return only chunks inside the hard filters. [ADR 0008](adr/0008-fts5-stays-the-shipped-arm.md) records the comparison and its result: FTS5 stays shipped.
 
 **How the FTS5 ranking is read.** The retrieval seam retrieves each Company separately, with its own share of the context budget, and numbers each Company's Sources after the previous Company's. Ranking by Source number would put the last-named Company's best Source behind every other Company's worst, which would penalise multi-Company questions for the order the Companies were named in. The `fts5` Arm instead takes each Company's next-best Source in turn.
 
@@ -161,11 +165,68 @@ Computed Coverage Gaps now match the labels on all 20 dev cases: `followup-regul
 
 The holdout split has not been scored.
 
+### Arm comparison
+
+Golden Set version 1, dev split, prompt v5, `gpt-6-luna`, judged by `jev-1.13.0`, 2026-10-16, on the retrieval as of [follow-up inheritance](#after-follow-up-inheritance). The three challengers of the spec were run through both harnesses, and the Shipped Arm was chosen by the spec's rule ([ADR 0008](adr/0008-fts5-stays-the-shipped-arm.md)).
+
+```sh
+make embeddings      # once: the dense and hybrid Arms' chunk embeddings (about 35 cents, about 25 minutes)
+make eval-retrieval  # every Arm, no LLM call
+make eval-arms       # every Arm through the generation harness, then the selection rule (about $0.07 per Arm)
+```
+
+**The rule** (`backend/src/edgar_eval/selection.py`). For each challenger, the dev cases both it and the Shipped Arm answered are paired, and an exact sign test is run on each score: Fact Recall and Faithfulness per case, and whether the case stated every expected Coverage Gap. Cases where the two tie, or that either could not score, are left out, as McNemar's test leaves out concordant cases. A challenger **qualifies** only if the test puts it **ahead** on Fact Recall (p < 0.05) and **behind** on neither Faithfulness nor Coverage Gaps. When several qualify, the cheapest per answer wins. When none does, the Shipped Arm stays. The rule is applied in code to the reports `make eval-arms` writes (`generation-arms-<split>-<arm>.json`), and the choice is written to `data/derived/eval/arm-choice-<split>.json`.
+
+**The embeddings.** `make embeddings` embeds all 48,448 chunks of the index (17.4 million tokens) with `text-embedding-3-small` and stores them beside the index in `data/derived/embeddings/`, as a unit-length float32 matrix (300 MB) and its metadata, including a fingerprint of the index's chunks. Embeddings from a different index are refused, with a message to rebuild them. Batches are saved as they return, so a run stopped by OpenAI's rate limit resumes where it stopped, and the build is paced to stay under a 1M tokens-per-minute limit.
+
+#### Retrieval
+
+| Arm | hit@5 | hit@10 | hit@20 | hit@all | recall@10 | recall@all | MRR | Sources |
+|---|---|---|---|---|---|---|---|---|
+| **`fts5`** (shipped) | 0.82 | **0.88** | 0.94 | 0.94 | 0.82 | 0.91 | 0.73 | 12.3 |
+| `dense` | 0.76 | 0.88 | 0.88 | 0.94 | 0.82 | 0.89 | 0.76 | 10.6 |
+| `hybrid` | 0.82 | 0.88 | 0.88 | 0.94 | 0.82 | 0.87 | 0.80 | 11.6 |
+| `rerank` | 0.76 | 0.88 | 0.94 | 0.94 | 0.82 | 0.91 | 0.68 | 12.3 |
+
+All four Arms hit and miss exactly the same cases at hit@10, so McNemar's test finds no discordant case for any challenger (p = 1.000, indistinguishable). The two misses are the same for every Arm: Tesla's net income over three years, whose three expected 10-K MD&As rank behind the 10-Q MD&As' new text (the figures come from the Financial Facts table instead), and the topic-change follow-up that inherits Apple, the known weakness of ADR 0003. The FTS5 numbers are unchanged from [follow-up inheritance](#after-follow-up-inheritance), so adding the ranker hook changed nothing for the Shipped Arm.
+
+- **Most of the work is done before ranking.** The hard filters and the Section plan leave each risk question only its Companies' latest Risk Factors, where every Arm finds the same Sources. Ranking only differs on the questions that search whole Filings.
+- **The hybrid ranks the first expected Source highest (MRR 0.80)**, mainly on the outlook cases, where dense similarity puts the MD&A's forward-looking passages first. The dense Arm alone moves the stale GE Capital Filing's expected Section from rank 1 to 2 and Tesla's outlook from rank 1 to 7.
+- **The cross-encoder lowers MRR (0.68).** It reads question and passage together, cut to 512 tokens, so a 600–800-token chunk is judged on its opening, and the model was trained on web search queries, not 10-K prose. On the outlook cases it moves the expected Sections down (Tesla rank 1 → 4, Meta 4 → 6).
+
+#### Answers
+
+| Arm | cases | citations valid | figures exact | gaps stated | Fact Recall | Faithfulness | $ per answer | latency s |
+|---|---|---|---|---|---|---|---|---|
+| **`fts5`** (shipped) | 19 | 0.84 | 0.95 | 1.00 | **0.54** | **0.95** | 0.0023 | 5.4 |
+| `fts5` again (control) | 19 | 0.89 | 0.95 | 1.00 | 0.53 | 0.93 | 0.0023 | 5.7 |
+| `dense` | 20 | 0.90 | 0.85 | 1.00 | 0.40 | 0.88 | 0.0026 | 5.9 |
+| `hybrid` | 20 | 0.85 | 0.90 | 1.00 | 0.55 | 0.93 | 0.0026 | 5.9 |
+| `rerank` | 19 | 0.89 | 0.95 | 1.00 | 0.55 | 0.94 | 0.0023 | 5.4 |
+
+Jev refused to judge `trend-jpm-revenue-snapshot` on the `fts5` and `rerank` runs (`max_tokens_exceeded`, as in v3), so those runs score 19 cases. The comparisons below pair the 19 cases both sides scored.
+
+| Challenger vs `fts5` | Fact Recall (higher / lower, exact p) | Faithfulness | Coverage Gaps | Qualifies |
+|---|---|---|---|---|
+| `dense` | 1 / 6, p = 0.125 | 2 / 8, p = 0.109 | 0 / 0, p = 1.000 | no |
+| `hybrid` | 3 / 2, p = 1.000 | 2 / 7, p = 0.180 | 0 / 0, p = 1.000 | no |
+| `rerank` | 2 / 2, p = 1.000 | 3 / 5, p = 0.727 | 0 / 0, p = 1.000 | no |
+| `fts5` again (control) | 1 / 1, p = 1.000 | 3 / 5, p = 0.727 | 0 / 0, p = 1.000 | no |
+
+**Chosen: `fts5`.** No challenger is ahead on Fact Recall, so none qualifies, and the Shipped Arm stays.
+
+- **The control row is the noise floor.** Rerunning FTS5 against itself moves Faithfulness 3 cases up and 5 down, and Fact Recall 1 and 1, with nothing changed. The hybrid's and re-ranker's differences are that size. The dense Arm's are the largest (Fact Recall 1 up, 6 down) and point against it, though they are not significant either.
+- **Dense retrieval loses the outlook facts.** Meta's capital expenditure outlook and Tesla's 2026 outlook fall from 1.00 and 0.50 Fact Recall to 0.00: the dense Arm reaches the right MD&A Sections but ranks general forward-looking passages above the specific sentences the Required Facts quote, which name the exact terms ("capital expenditures", "2026") that `bm25()` matches. It also states fewer figures exactly (0.85), since fewer of the passages it retrieves hold them.
+- **Cost does not decide it.** Every Arm costs about a quarter of a cent per answer. The dense and hybrid Arms add an embedding call per question (a fraction of a thousandth of a cent, plus 0.2 to 0.6 seconds measured), a 300 MB matrix to rebuild whenever the chunks change, and an OpenAI dependency in retrieval. The cross-encoder adds about 1.4 seconds of CPU per Company searched (20 passages, measured on the development laptop). FTS5 adds nothing.
+
+The holdout split has not been scored.
+
 ## Generation harness
 
 ```sh
 make eval-generation                       # the dev split, with the default generator (gpt-6-luna)
 make eval-generation MODEL=gpt-6.1-sol     # another generator
+make eval-generation ARM=hybrid            # another retrieval Arm (see Arm comparison)
 ```
 
 It runs each Golden Set case through the whole pipeline, one real Answer Call per case, and scores the answers. It calls the generator and the Jev judge, so it needs `OPENAI_API_KEY` and `JEV_API_KEY` in `backend/.env`, and it costs money: about $0.07 for the 20 dev cases with `gpt-6-luna`, Jev included. It prints the scores and writes them, with every answer, every check's findings and every judgment, to `data/derived/eval/generation-<split>[-<model>].json`. The Answer Calls are logged to `data/derived/logs/answer_calls.jsonl` like any other. The code is [`backend/src/edgar_eval/generation.py`](../backend/src/edgar_eval/generation.py), with the checks in [`answer_checks.py`](../backend/src/edgar_eval/answer_checks.py) and the judge in [`judge.py`](../backend/src/edgar_eval/judge.py).
@@ -287,6 +348,6 @@ make eval-export                 # the dev split's latest reports
 make eval-export SPLIT=holdout   # once the holdout has been scored
 ```
 
-The export reads the harnesses' latest reports for the split from `data/derived/eval/`: `retrieval-<split>.json` (required; the retrieval harness runs first if it is missing, since it makes no LLM call) and every `generation-<split>[-<model>].json` (one scoreboard row per generator; none until `make eval-generation` has run, since that costs money). It adds the Corpus coverage grid, each Company's Filings by the calendar quarter of their Report Period, and writes everything to `frontend/data/eval-export.json` for the workspace's "How it works" page. The code is [`backend/src/edgar_eval/export.py`](../backend/src/edgar_eval/export.py).
+The export reads the harnesses' latest reports for the split from `data/derived/eval/`: `retrieval-<split>.json` (required; the retrieval harness runs first if it is missing, since it makes no LLM call) and every `generation-<split>[-<model>].json` (one scoreboard row per generator; none until `make eval-generation` has run, since that costs money). The Arm comparison's answer reports (`generation-arms-<split>-<arm>.json`) are not generator rows and are left out; the challengers show on the page through the retrieval report. It adds the Corpus coverage grid, each Company's Filings by the calendar quarter of their Report Period, and writes everything to `frontend/data/eval-export.json` for the workspace's "How it works" page. The code is [`backend/src/edgar_eval/export.py`](../backend/src/edgar_eval/export.py).
 
 The page shows what the reports hold, nothing more: per Arm, hit@k, recall@k at the gating k, recall@all, MRR and the mean number of Sources, with each challenger's McNemar verdict and the cases the Shipped Arm misses; per generator, the code checks, the Jev judgments, cost and latency, overall and per question type. The export is committed, so the page shows the last results exported, dated on the page; the numbers in this document remain the record of each run.

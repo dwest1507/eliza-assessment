@@ -62,3 +62,33 @@ def test_importing_every_core_module_loads_no_web_framework_or_api_module():
     ).stdout.split()
 
     assert not set(loaded) & (WEB_FRAMEWORKS | OUTSIDE_CORE | {"openai", "anthropic"})
+
+
+# The challenger Arms' model packages: only the evaluation harnesses use them.
+DEV_ONLY = {"numpy", "onnxruntime", "tokenizers", "huggingface_hub"}
+
+
+def test_the_challenger_arms_packages_are_in_the_dev_dependency_group_only():
+    import re
+    import tomllib
+
+    project = tomllib.loads((CORE.parents[1] / "pyproject.toml").read_text(encoding="utf-8"))
+
+    def names(requirements):
+        return {re.split(r"[<>=!~\[ ;]", r)[0].replace("-", "_") for r in requirements}
+
+    assert not names(project["project"]["dependencies"]) & DEV_ONLY
+    assert DEV_ONLY <= names(project["dependency-groups"]["dev"])
+
+
+def test_the_product_loads_none_of_the_challenger_arms_packages():
+    code = (
+        "import sys, edgar_api.app, edgar_answer.ask, edgar_rag.retrieval\n"
+        "print('\\n'.join(sorted({m.split('.')[0] for m in sys.modules})))"
+    )
+
+    loaded = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True, check=True
+    ).stdout.split()
+
+    assert not set(loaded) & DEV_ONLY

@@ -50,6 +50,12 @@ Question text is reduced to quoted terms before it reaches FTS5 `MATCH`, so FTS5
 operators in a question (`NOT`, `NEAR`, `*`, quotes, colons) are searched as words,
 never run.
 
+The ranking step can be swapped: `prepare_answer_context` takes an optional `Ranker`,
+which is given the question, every chunk inside the hard filters and the `bm25()`
+ranking of them, and returns its own ranking. The evaluation's challenger Arms (dense
+embeddings, a hybrid, a re-ranker) plug in here, so they are measured on exactly the
+pipeline the product runs; without a ranker the `bm25()` ranking is used as it stands.
+
 This module and everything it imports stay on the standard library.
 """
 
@@ -113,6 +119,8 @@ __all__ = [
     "MissingCompany",
     "PromptMessage",
     "QueryScope",
+    "RankRequest",
+    "Ranker",
     "STUB_TOKENS",
     "ScopeCompany",
     "ScopeFiling",
@@ -313,6 +321,30 @@ class Source:
 
 
 @dataclass(frozen=True)
+class RankRequest:
+    """What a ranker is given for one Company's search (or the whole Corpus's, for a
+    question naming no Company)."""
+
+    question: str
+    """The question as retrieval reads it: the latest message, after the message whose
+    topic it inherits when it has none of its own."""
+    ticker: str | None
+    """The Company searched, or None for every Company."""
+    eligible: tuple[int, ...]
+    """Every chunk id inside the hard filters (the Company, the time window and the
+    Section plan), ascending. Risk pointers are cited by rule and never ranked."""
+    lexical: tuple[int, ...]
+    """The eligible chunks the question's terms match, best `bm25()` score first, cut to
+    the candidates the shipped seam considers."""
+
+
+Ranker = Callable[[RankRequest], Sequence[int]]
+"""Ranks the chunks of a `RankRequest`, best first. Ids outside `eligible` are ignored,
+so a ranker can never reach past the hard filters; at most the first
+`_CANDIDATES_PER_COMPANY` are used."""
+
+
+@dataclass(frozen=True)
 class AnswerContext:
     """Everything the Answer Call needs, prepared deterministically."""
 
@@ -407,13 +439,16 @@ def build_index(filings: Iterable[Filing], path: str | Path = DEFAULT_INDEX) -> 
 
 
 def prepare_answer_context(
-    messages: Sequence[Message], index: str | Path = DEFAULT_INDEX
+    messages: Sequence[Message],
+    index: str | Path = DEFAULT_INDEX,
+    ranker: Ranker | None = None,
 ) -> AnswerContext:
     """The Answer Context for the latest user message of a conversation.
 
     `messages` is the conversation so far, oldest first, ending with the user message
     to answer. Its earlier user messages supply the parts of the Query Scope the latest
-    one does not name, and the last turns go into the prompt as history.
+    one does not name, and the last turns go into the prompt as history. `ranker`
+    replaces the `bm25()` ranking inside the hard filters; None keeps it.
     """
     if not messages or messages[-1].role != "user" or not messages[-1].content.strip():
         raise ValueError("the conversation must end with a non-empty user message")
@@ -478,7 +513,12 @@ def prepare_answer_context(
         fact_sources, rows = _facts_sources(db, facts)
         terms = _terms(*(s.words for s in asked))
         sources = fact_sources + _sources(
-            db, scope, filings, terms, explicit=bool(left_out), first_number=len(fact_sources) + 1
+            db,
+            scope,
+            filings,
+            _Search(focus, terms, ranker),
+            explicit=bool(left_out),
+            first_number=len(fact_sources) + 1,
         )
     by_ticker = {c.ticker: c for c in known}
     covered = list(companies) or [by_ticker[t] for t in dict.fromkeys(s.ticker for s in sources)]
@@ -685,6 +725,16 @@ def _terms(*words: Iterable[str]) -> str | None:
 
 
 @dataclass(frozen=True)
+class _Search:
+    """What retrieval searches for: the question, its FTS5 terms (None if it has none)
+    and the ranker, if any, that replaces `bm25()`."""
+
+    question: str
+    terms: str | None
+    ranker: Ranker | None = None
+
+
+@dataclass(frozen=True)
 class _Plan:
     """Where retrieval may look: (Filing ID, Section) pairs, with a Section of None for
     a whole Filing, and the risk pointers to cite as they stand. `None` places means
@@ -737,7 +787,7 @@ def _sources(
     db: sqlite3.Connection,
     scope: QueryScope,
     filings: dict[str, list[ScopeFiling]],
-    terms: str | None,
+    search: _Search,
     explicit: bool = False,
     first_number: int = 1,
 ) -> tuple[Source, ...]:
@@ -767,7 +817,7 @@ def _sources(
         pointers = _pointer_rows(db, plan.pointers)
         chosen: list[_Row] = []
         spent = sum(row["tokens"] for row in pointers)
-        for row in _without_near_duplicates(_candidates(db, scope, ticker, terms, plan)):
+        for row in _without_near_duplicates(_candidates(db, scope, ticker, search, plan)):
             if spent + row["tokens"] > budget:
                 break
             spent += row["tokens"]
@@ -791,14 +841,14 @@ def _pointer_rows(db: sqlite3.Connection, pointers: list[tuple[str, str]]) -> li
 def _ranked(
     db: sqlite3.Connection,
     ticker: str | None,
-    terms: str | None,
+    search: _Search,
     places: list[tuple[str, str | None]] | None,
 ) -> list[sqlite3.Row]:
-    """The Company's best chunks for the terms within the planned places, best first,
+    """The Company's best chunks for the search within the planned places, best first,
     with one row for each planned Filing a chunk appears in, most recent first. Risk
     pointers ("no material changes since the 10-K") are cited by the risk route but
-    never ranked (finding 16)."""
-    if terms is None or places == []:
+    never ranked (finding 16). The ranking is `bm25()`'s, or the search's ranker's."""
+    if search.terms is None or places == []:
         return []
     company_filter = "AND c.ticker = :ticker" if ticker else ""
     place_filter = listing_filter = ""
@@ -814,22 +864,48 @@ def _ranked(
             f"AND EXISTS (SELECT 1 FROM chunk_filings f WHERE f.chunk_id = c.id AND {in_place})"
         )
         listing_filter = f"AND {in_place}"
-    return db.execute(
-        f"""
-        WITH ranked AS (
-            SELECT c.id, bm25(chunks_fts) AS score
+    params = {"terms": search.terms, "ticker": ticker, "limit": _CANDIDATES_PER_COMPANY}
+    ranking = [
+        row["id"]
+        for row in db.execute(
+            f"""
+            SELECT c.id
             FROM chunks_fts JOIN chunks c ON c.id = chunks_fts.rowid
             WHERE chunks_fts MATCH :terms AND c.kind != 'risk_pointer' {company_filter}
             {place_filter}
-            ORDER BY score
+            ORDER BY bm25(chunks_fts), c.id
             LIMIT :limit
+            """,
+            params,
         )
-        SELECT f.*, r.score
-        FROM ranked r JOIN filing_chunks f ON f.id = r.id
+    ]
+    if search.ranker is not None:
+        eligible = tuple(
+            row["id"]
+            for row in db.execute(
+                f"""
+                SELECT c.id FROM chunks c
+                WHERE c.kind != 'risk_pointer' {company_filter} {place_filter}
+                ORDER BY c.id
+                """,
+                params,
+            )
+        )
+        allowed = set(eligible)
+        ranked = search.ranker(RankRequest(search.question, ticker, eligible, tuple(ranking)))
+        ranking = [i for i in dict.fromkeys(ranked) if i in allowed][:_CANDIDATES_PER_COMPANY]
+    db.execute("CREATE TEMP TABLE IF NOT EXISTS ranking (id INTEGER, position INTEGER)")
+    db.execute("DELETE FROM temp.ranking")
+    db.executemany(
+        "INSERT INTO temp.ranking VALUES (?, ?)", ((i, n) for n, i in enumerate(ranking))
+    )
+    return db.execute(
+        f"""
+        SELECT f.*
+        FROM temp.ranking r JOIN filing_chunks f ON f.id = r.id
         WHERE 1 {listing_filter}
-        ORDER BY r.score, r.id, f.report_period DESC
-        """,
-        {"terms": terms, "ticker": ticker, "limit": _CANDIDATES_PER_COMPANY},
+        ORDER BY r.position, f.report_period DESC
+        """
     ).fetchall()
 
 
@@ -854,7 +930,7 @@ def _candidates(
     db: sqlite3.Connection,
     scope: QueryScope,
     ticker: str | None,
-    terms: str | None,
+    search: _Search,
     plan: _Plan,
 ) -> list[_Candidate]:
     """The ranked chunks, each cited from one Filing: on the change route the Filing it
@@ -862,7 +938,7 @@ def _candidates(
     most recent. On the change route the chunks holding new paragraphs rank first, cut
     down to those paragraphs."""
     listings: dict[int, list[sqlite3.Row]] = {}
-    for row in _ranked(db, ticker, terms, plan.places):
+    for row in _ranked(db, ticker, search, plan.places):
         listings.setdefault(row["id"], []).append(row)
     candidates = []
     for rows in listings.values():

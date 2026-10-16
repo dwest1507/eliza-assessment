@@ -36,12 +36,13 @@ from edgar_eval.metrics import (
     reciprocal_rank,
 )
 from edgar_rag.golden_set import DEFAULT_GOLDEN_SET, GoldenCase, load_golden_set
-from edgar_rag.retrieval import DEFAULT_INDEX, Message
+from edgar_rag.retrieval import DEFAULT_INDEX, AnswerContext, Message
 
 DEFAULT_KS = (5, 10, 20)
 DEFAULT_GATE_K = 10
 
 Retrieve = Callable[[Sequence[Message], Path], list[Pair]]
+Prepare = Callable[[Sequence[Message], Path], AnswerContext]
 
 
 @dataclass(frozen=True)
@@ -55,6 +56,9 @@ class Arm:
     (Filing ID, Section) pairs out, best first, one per Source."""
     shipped: bool = False
     """True for the Arm the product uses, which every challenger is compared with."""
+    prepare: Prepare | None = None
+    """The Answer Context the Arm gives the Answer Call, for the generation harness;
+    None for an Arm measured by retrieval only."""
 
 
 @dataclass(frozen=True)
@@ -216,6 +220,9 @@ def main(
     out = out or sys.stdout
     parser = argparse.ArgumentParser(description="Score retrieval Arms on the Golden Set.")
     parser.add_argument("--split", choices=("dev", "holdout", "all"), default="dev")
+    parser.add_argument(
+        "--arm", action="append", metavar="NAME", help="only these Arms (and the shipped one)"
+    )
     parser.add_argument("--k", type=int, nargs="+", default=list(DEFAULT_KS), metavar="K")
     parser.add_argument("--gate-k", type=int, default=DEFAULT_GATE_K, metavar="K")
     parser.add_argument("--index", type=Path, default=DEFAULT_INDEX)
@@ -227,6 +234,11 @@ def main(
 
         arms = ARMS
 
+    if args.arm:
+        unknown = set(args.arm) - {arm.name for arm in arms}
+        if unknown:
+            parser.error(f"no such Arm: {', '.join(sorted(unknown))}")
+        arms = [arm for arm in arms if arm.shipped or arm.name in args.arm]
     golden = load_golden_set(args.golden_set)
     cases = golden.cases if args.split == "all" else golden.split(args.split)
     report = evaluate(cases, arms, args.index, ks=args.k, gate_k=args.gate_k)
