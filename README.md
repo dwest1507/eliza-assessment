@@ -16,7 +16,7 @@ The work runs in phases. The exploratory data analysis (EDA) phase is complete; 
 | Final prompt template | Not started | Planned with the Answer Call |
 | Front-end | Not started | [`frontend/`](frontend/) (reserved for Next.js) |
 | Example request, ready to execute | Not started | Planned with the API |
-| Notes on how quality was evaluated | Partly done: Financial Facts extraction is measured against SEC XBRL data. Retrieval and answer evaluation are next. | [`docs/findings.md`](docs/findings.md) (findings 21–24), notebook analysis 7 |
+| Notes on how quality was evaluated | Partly done: Financial Facts extraction is measured against SEC XBRL data, and the Golden Set of 30 labelled questions is written and checked against the Corpus. The retrieval and answer harnesses are next. | [`docs/findings.md`](docs/findings.md) (findings 21–24), notebook analysis 7, [`docs/golden-set.md`](docs/golden-set.md) |
 | Documented assumptions and decisions | Done for the EDA | [`docs/findings.md`](docs/findings.md), [`docs/assumptions.md`](docs/assumptions.md), [`docs/adr/`](docs/adr/) |
 
 ## What the EDA found
@@ -125,18 +125,21 @@ for fact in extract_financial_facts(latest):
 │   ├── src/edgar_rag/
 │   │   ├── corpus.py          the Corpus seam: Filings with metadata, cleaned body, Sections
 │   │   ├── financial_facts.py the Financial Facts seam: revenue, net income, segment revenue
-│   │   └── sec_reference.py   fetches and reads the SEC company-facts evaluation reference
+│   │   ├── sec_reference.py   fetches and reads the SEC company-facts evaluation reference
+│   │   └── golden_set.py      loads and validates the Golden Set and its dev/holdout split
 │   ├── tests/                 pytest suite
 │   └── notebooks/             eda.py (source) and eda.ipynb (executed)
 ├── frontend/                  reserved for the Next.js front-end
 ├── data/
 │   ├── edgar_corpus/          the Corpus, read-only, exactly as supplied
 │   ├── reference/sectors.csv  the curated Sector table, one row per Company
+│   ├── eval/golden_set.json   the Golden Set: labelled evaluation questions and starter prompts
 │   └── derived/               anything built from the Corpus (gitignored)
 ├── docs/
 │   ├── AI-RAG Assessment.md   the assessment brief
 │   ├── findings.md            EDA findings and recommendations for retrieval
 │   ├── assumptions.md         working assumptions, confirmed or not by the Client
+│   ├── golden-set.md          the Golden Set's fields, split rule and review
 │   └── adr/                   architecture decision records
 ├── CONTEXT.md                 domain glossary
 └── Makefile                   single entry point

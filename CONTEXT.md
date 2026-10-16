@@ -28,6 +28,16 @@ _Avoid_: Reference, document, context item
 A part of a question the Corpus cannot answer (a trend asked of a Snapshot Company, a Company not in the Corpus, a stale Filing, guidance the Filings don't contain), stated in the answer with a fixed wording instead of being filled from general knowledge.
 _Avoid_: Limitation, missing data, caveat
 
+### Evaluation
+
+**Golden Set**:
+The labelled questions retrieval and answers are scored against, each with its expected (Filing ID, Section) pairs, Required Facts and expected Coverage Gaps, split into dev and holdout by a hash of the case id.
+_Avoid_: Test set, benchmark, eval data
+
+**Required Fact**:
+A self-contained sentence, naming its Company, that a good answer to a Golden Set question must state, with an evidence quote from the Section that supports it.
+_Avoid_: Expected answer, key point
+
 ### Filings
 
 **Company**:

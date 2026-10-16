@@ -20,7 +20,8 @@ Single-context: one root `CONTEXT.md` plus `docs/adr/`. See `docs/agents/domain.
 - `frontend/`: reserved for the Next.js front-end.
 - `data/edgar_corpus/`: the Corpus, read-only (see `data/README.md`). Derived files go in `data/derived/` (gitignored).
 - `data/reference/sectors.csv`: the curated Sector table, one row per Company (see `data/README.md`).
-- `backend/src/edgar_rag/`: `corpus.py` (the Corpus seam), `financial_facts.py` (the Financial Facts seam), `sec_reference.py` (fetches and reads the SEC company-facts evaluation reference).
+- `data/eval/golden_set.json`: the Golden Set, the evaluation's labelled questions, including the front-end's starter prompts (see `docs/golden-set.md`). Its tests check every label against the Corpus.
+- `backend/src/edgar_rag/`: `corpus.py` (the Corpus seam), `financial_facts.py` (the Financial Facts seam), `sec_reference.py` (fetches and reads the SEC company-facts evaluation reference), `golden_set.py` (loads and validates the Golden Set, and computes its dev/holdout split).
 - `docs/findings.md`: EDA findings, each as Finding → Implication → Design decision, ending with recommendations for the retrieval phase.
 - `docs/assumptions.md`: every assumption we build under, each marked `confirmed` or `not confirmed` by the Client. `docs/client-email.md` (gitignored, local only) is the draft email asking the Client about the three that matter most, sent by the developer, never by an agent.
 - `docs/adr/`: architecture decisions, numbered `NNNN-slug.md` (0001: the SQLite Financial Facts store).

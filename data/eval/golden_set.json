@@ -1,0 +1,1033 @@
+{
+  "version": 1,
+  "split_rule": "Sort the case ids by the SHA-256 hex digest of each id (UTF-8). The first third, rounded to the nearest whole case, are holdout; the rest are dev.",
+  "cases": [
+    {
+      "id": "risk-aapl-tsla-jpm",
+      "question": "What are the primary risk factors facing Apple, Tesla, and JPMorgan, and how do they compare?",
+      "history": [],
+      "question_type": "risk",
+      "split": "dev",
+      "starter": {"order": 1, "label": "Compare the risk factors of Apple, Tesla and JPMorgan"},
+      "tags": ["brief_example"],
+      "notes": "Brief example 1 (EDA 8.1). Latest 10-K Item 1A for each, plus Apple's later 10-Q, which reports no material changes. Apple's fiscal year ends a quarter before the other two.",
+      "expected_sources": [
+        {"filing_id": "AAPL_10-K_2025-09-27", "section": "Risk Factors"},
+        {"filing_id": "AAPL_10-Q_2025-12-27", "section": "Risk Factors"},
+        {"filing_id": "TSLA_10-K_2025-12-31", "section": "Risk Factors"},
+        {"filing_id": "JPM_10-K_2025-12-31", "section": "Risk Factors"}
+      ],
+      "required_facts": [
+        {
+          "fact": "Apple says a significant majority of its manufacturing is performed by outsourcing partners located primarily in China mainland, India, Japan, South Korea, Taiwan and Vietnam.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "A significant majority of the Company’s manufacturing is performed in whole or in part by outsourcing partners located primarily in China mainland, India, Japan, South Korea, Taiwan and Vietnam"
+        },
+        {
+          "fact": "Apple reports that new U.S. tariffs on imports, including from China, India and the EU, were announced beginning in the second quarter of fiscal 2025.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Beginning in the second quarter of 2025, new tariffs were announced on imports to the U.S. (“U.S. Tariffs”), including additional tariffs on imports from China, India, Japan, South Korea, Taiwan, Vietnam and the European Union (“EU”), among others."
+        },
+        {
+          "fact": "Apple's Q1 FY2026 10-Q reports no material changes to its risk factors since its 2025 Form 10-K.",
+          "filing_id": "AAPL_10-Q_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "There have been no material changes to the Company’s risk factors since the 2025 Form 10-K."
+        },
+        {
+          "fact": "Tesla says it is highly dependent on the services of Elon Musk, its Chief Executive Officer.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We are highly dependent on the services of Elon Musk, Technoking of Tesla and our Chief Executive Officer."
+        },
+        {
+          "fact": "Tesla says its future business depends on developing driver assistance and autonomous driving and on increasing production of mass-market vehicles, including Cybercab.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "our future business depends on development of our driver assistance systems and autonomous driving solutions and increasing the production of mass-market vehicles, including Cybercab"
+        },
+        {
+          "fact": "JPMorgan lists legal and regulatory risks, including the impact of extensive supervision and regulation, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Legal and Regulatory risks, including the impact of extensive supervision and regulation"
+        },
+        {
+          "fact": "JPMorgan says its ability to distribute capital to shareholders could be limited if it does not satisfy regulatory capital requirements.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Capital risks, including the risk that JPMorganChase’s ability to distribute capital to shareholders or to support its business activities could be limited if it does not satisfy applicable regulatory capital requirements."
+        }
+      ],
+      "expected_coverage_gaps": [
+        {"kind": "periods_differ", "companies": ["AAPL", "TSLA", "JPM"]}
+      ]
+    },
+    {
+      "id": "outlook-nvda-revenue-two-years",
+      "question": "How has NVIDIA's revenue and growth outlook changed over the last two years?",
+      "history": [],
+      "question_type": "outlook",
+      "split": "holdout",
+      "starter": {"order": 2, "label": "How has NVIDIA's revenue and outlook changed?"},
+      "tags": ["brief_example"],
+      "notes": "Brief example 2 (EDA 8.2). The last two years are NVIDIA's eight Filings from Q4 FY2024 (FY2024 10-K) to Q3 FY2026. Revenue guidance is in earnings releases, not in the Filings.",
+      "expected_sources": [
+        {"filing_id": "NVDA_10-K_2024-01-28", "section": "MD&A"},
+        {"filing_id": "NVDA_10-K_2025-01-26", "section": "MD&A"},
+        {"filing_id": "NVDA_10-Q_2025-10-26", "section": "MD&A"}
+      ],
+      "required_facts": [
+        {
+          "fact": "NVIDIA's revenue for fiscal year 2024 was $60.9 billion, up 126% from a year earlier.",
+          "filing_id": "NVDA_10-K_2024-01-28",
+          "section": "MD&A",
+          "evidence": "Revenue for fiscal year 2024 was $60.9 billion, up 126% from a year ago."
+        },
+        {
+          "fact": "NVIDIA's revenue for fiscal year 2025 was $130.5 billion, up 114% from a year earlier.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A",
+          "evidence": "Revenue for fiscal year 2025 was $130.5 billion, up 114% from a year ago."
+        },
+        {
+          "fact": "NVIDIA's revenue for the third quarter of fiscal 2026 was $57.0 billion, up 62% from a year earlier and 22% sequentially.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "Revenue was $57.0 billion, up 62% from a year ago and up 22% sequentially."
+        },
+        {
+          "fact": "NVIDIA took a $4.5 billion charge in the first quarter of fiscal 2026 after the U.S. government required a license to export its H20 product to China.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "we incurred a $4.5 billion charge in the first quarter of fiscal year 2026 associated with H20 for excess inventory and purchase obligations"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {"kind": "no_guidance", "companies": ["NVDA"]}
+      ]
+    },
+    {
+      "id": "sector-pharma-regulatory",
+      "question": "What regulatory risks do the major pharmaceutical companies face, and how are they addressing them?",
+      "history": [],
+      "question_type": "sector",
+      "split": "dev",
+      "starter": {"order": 3, "label": "Regulatory risks at the major pharmaceutical companies"},
+      "tags": ["brief_example"],
+      "notes": "Brief example 3 (EDA 8.3). The Sector table resolves the phrase to AbbVie, Johnson & Johnson, Eli Lilly, Merck and Pfizer. AbbVie, Merck and Pfizer's latest 10-Ks are FY2024; J&J's and Lilly's are FY2025.",
+      "expected_sources": [
+        {"filing_id": "ABBV_10-K_2024-12-31", "section": "Risk Factors"},
+        {"filing_id": "JNJ_10-K_2025-12-28", "section": "Risk Factors"},
+        {"filing_id": "LLY_10-K_2025-12-31", "section": "Risk Factors"},
+        {"filing_id": "MRK_10-K_2024-12-31", "section": "Risk Factors"},
+        {"filing_id": "PFE_10-K_2024-12-31", "section": "Risk Factors"}
+      ],
+      "required_facts": [
+        {
+          "fact": "AbbVie says the Inflation Reduction Act will reduce prices and reimbursements for certain of its products, which could significantly affect its results.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "In particular, the IRA will have the effect of reducing prices and reimbursements for certain of our products, which could significantly impact AbbVie’s results of operations."
+        },
+        {
+          "fact": "Johnson & Johnson says the Inflation Reduction Act has subjected certain of its products to government-established pricing beginning in 2026.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "the Inflation Reduction Act of 2022 (IRA) has changed Medicare Part D benefit design and has subjected certain of the Company's products to government-established pricing beginning in 2026"
+        },
+        {
+          "fact": "Eli Lilly announced preliminary voluntary agreements with the U.S. government in November 2025 to lower Medicaid and certain other drug prices for U.S. patients.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In November 2025, we announced preliminary voluntary agreements with the U.S. government in which, among other arrangements, we agreed to implement measures to lower Medicaid and certain other drug prices for U.S. patients"
+        },
+        {
+          "fact": "Merck expects U.S. sales of Keytruda to decline beginning in January 2028 when government pricing under the Inflation Reduction Act takes effect.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "the Company expects U.S. sales of Keytruda to decline beginning in January 2028 upon implementation of government pricing under the IRA"
+        },
+        {
+          "fact": "Pfizer says it may face greater pricing pressure from private payors as Inflation Reduction Act prices become publicly available.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "as the IRA prices become publicly available, we may face greater pricing pressure from private third-party payors"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {"kind": "periods_differ", "companies": ["ABBV", "JNJ", "LLY", "MRK", "PFE"]}
+      ]
+    },
+    {
+      "id": "sector-banks-risks",
+      "question": "What are the main risks facing the major banks?",
+      "history": [],
+      "question_type": "sector",
+      "split": "holdout",
+      "starter": {"order": 4, "label": "What are the main risks facing the major banks?"},
+      "tags": [],
+      "notes": "EDA variant V3. The Sector table's Banks industry is Bank of America and JPMorgan; Goldman Sachs and Morgan Stanley are Capital Markets. Bank of America's latest 10-K is FY2024 and its 2025 10-Qs report no material changes.",
+      "expected_sources": [
+        {"filing_id": "BAC_10-K_2024-12-31", "section": "Risk Factors"},
+        {"filing_id": "BAC_10-Q_2025-09-30", "section": "Risk Factors"},
+        {"filing_id": "JPM_10-K_2025-12-31", "section": "Risk Factors"}
+      ],
+      "required_facts": [
+        {
+          "fact": "Bank of America says it may be adversely affected by the financial markets, fiscal, monetary and regulatory policies, and economic conditions.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "We may be adversely affected by the financial markets, fiscal, monetary, and regulatory policies, and economic conditions."
+        },
+        {
+          "fact": "Bank of America says the Federal Reserve could limit or prohibit its capital actions, such as dividends and share repurchases.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "The Federal Reserve could also limit or prohibit capital actions (e.g., impacts to dividends and common stock repurchases) as a result of economic disruptions or events."
+        },
+        {
+          "fact": "Bank of America's Q3 2025 10-Q reports no material changes from the risk factors in its 2024 Form 10-K.",
+          "filing_id": "BAC_10-Q_2025-09-30",
+          "section": "Risk Factors",
+          "evidence": "There are no material changes from the risk factors set forth under Part 1, Item 1A. Risk Factors of the Corporation’s 2024 Annual Report on Form 10-K."
+        },
+        {
+          "fact": "JPMorgan lists legal and regulatory risks, including the impact of extensive supervision and regulation, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Legal and Regulatory risks, including the impact of extensive supervision and regulation"
+        },
+        {
+          "fact": "JPMorgan lists liquidity risks, including the potential effect of credit rating downgrades on its liquidity and cost of funding.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "the potential adverse effects that any downgrades of JPMorganChase’s credit ratings could have on its liquidity and cost of funding"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {"kind": "periods_differ", "companies": ["BAC", "JPM"]}
+      ]
+    },
+    {
+      "id": "trend-jpm-revenue-snapshot",
+      "question": "How has JPMorgan's revenue changed over the last two years?",
+      "history": [],
+      "question_type": "figure_trend",
+      "split": "dev",
+      "starter": {"order": 5, "label": "How has JPMorgan's revenue changed over two years?"},
+      "tags": [],
+      "notes": "EDA variant V1. JPMorgan is a Snapshot Company: four Filings, all 2025. Its 10-Qs have no MD&A Item heading (text is Unsectioned) and its 10-K's financial review sits after Item 15 (Other).",
+      "expected_sources": [
+        {"filing_id": "JPM_10-K_2025-12-31", "section": "Other"},
+        {"filing_id": "JPM_10-Q_2025-09-30", "section": "Unsectioned"}
+      ],
+      "required_facts": [
+        {
+          "fact": "JPMorgan's total net revenue was $182.4 billion for 2025, up 3% from 2024.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Other",
+          "evidence": "Total net revenue was $182.4 billion, up 3%"
+        },
+        {
+          "fact": "JPMorgan's total net revenue for the third quarter of 2025 was $46.4 billion, up 9% from a year earlier.",
+          "filing_id": "JPM_10-Q_2025-09-30",
+          "section": "Unsectioned",
+          "evidence": "Total net revenue was $46.4 billion, up 9%"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {"kind": "snapshot_trend", "companies": ["JPM"]}
+      ]
+    },
+    {
+      "id": "missing-wells-fargo-vs-jpm",
+      "question": "Compare the risk factors of JPMorgan and Wells Fargo.",
+      "history": [],
+      "question_type": "missing_company",
+      "split": "dev",
+      "starter": {"order": 6, "label": "Compare JPMorgan and Wells Fargo"},
+      "tags": [],
+      "notes": "Wells Fargo is not in the Corpus (assumption 9). The answer covers JPMorgan only and names Wells Fargo as missing.",
+      "expected_sources": [
+        {"filing_id": "JPM_10-K_2025-12-31", "section": "Risk Factors"}
+      ],
+      "required_facts": [
+        {
+          "fact": "JPMorgan lists legal and regulatory risks, including the impact of extensive supervision and regulation, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Legal and Regulatory risks, including the impact of extensive supervision and regulation"
+        },
+        {
+          "fact": "JPMorgan says its ability to distribute capital to shareholders could be limited if it does not satisfy regulatory capital requirements.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Capital risks, including the risk that JPMorganChase’s ability to distribute capital to shareholders or to support its business activities could be limited if it does not satisfy applicable regulatory capital requirements."
+        }
+      ],
+      "expected_coverage_gaps": [
+        {"kind": "missing_company", "companies": ["Wells Fargo"]}
+      ]
+    },
+    {
+      "id": "stale-ge-recent-performance",
+      "question": "How has General Electric performed recently?",
+      "history": [],
+      "question_type": "stale_filing",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "EDA variant V5. The only GE Filing is GE Capital's FY2014 10-K, which is kept out of answers about General Electric today, so nothing should be retrieved and the answer is the Coverage Gap.",
+      "expected_sources": [],
+      "required_facts": [],
+      "expected_coverage_gaps": [
+        {"kind": "stale_filing", "companies": ["GE"]}
+      ]
+    },
+    {
+      "id": "stale-gecc-eni-2014",
+      "question": "What did GE Capital's 2014 annual report say about reducing the size of its balance sheet?",
+      "history": [],
+      "question_type": "stale_filing",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "Asks about GE Capital's 2014 report by name, so the stale Filing may be cited, but the answer still says it is GE Capital's 2014 report and not General Electric today.",
+      "expected_sources": [
+        {"filing_id": "GE_10-K_2014-12-31", "section": "MD&A"}
+      ],
+      "required_facts": [
+        {
+          "fact": "GE Capital reduced its ending net investment, excluding liquidity, to $363 billion at December 31, 2014.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "MD&A",
+          "evidence": "GE Capital reduced its ending net investment (ENI), excluding liquidity, to $363 billion at December 31, 2014."
+        },
+        {
+          "fact": "GE Capital said it was targeting an ending net investment, excluding liquidity, of less than $300 billion.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "MD&A",
+          "evidence": "We have communicated our goal of reducing our ENI, excluding liquidity, most recently targeting a balance of less than $300 billion."
+        }
+      ],
+      "expected_coverage_gaps": [
+        {"kind": "stale_filing", "companies": ["GE"]}
+      ]
+    },
+    {
+      "id": "trend-meta-revenue-two-years",
+      "question": "How has Meta's revenue changed over the last two years?",
+      "history": [],
+      "question_type": "figure_trend",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "EDA variant V2. Meta is the borderline Tracked Company: exactly eight Filings, 2024Q1 to 2025Q4.",
+      "expected_sources": [
+        {"filing_id": "META_10-K_2024-12-31", "section": "MD&A"},
+        {"filing_id": "META_10-K_2025-12-31", "section": "MD&A"}
+      ],
+      "required_facts": [
+        {
+          "fact": "Meta's total revenue for 2024 was $164.50 billion, an increase of 22% compared to 2023.",
+          "filing_id": "META_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Total revenue for 2024 was $164.50 billion, an increase of 22% compared to 2023, due to an increase in advertising revenue."
+        },
+        {
+          "fact": "Meta's total revenue for 2025 was $200.97 billion, an increase of 22% compared to 2024.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Total revenue for 2025 was $200.97 billion, an increase of 22% compared to 2024, due to an increase in advertising revenue."
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "trend-aapl-revenue-fy2025",
+      "question": "How did Apple's net sales change in fiscal 2025 compared with fiscal 2024?",
+      "history": [],
+      "question_type": "figure_trend",
+      "split": "holdout",
+      "starter": null,
+      "tags": [],
+      "notes": "Named fiscal years, so the window is explicit. The net sales figures sit in a flattened MD&A table.",
+      "expected_sources": [
+        {"filing_id": "AAPL_10-K_2025-09-27", "section": "MD&A"}
+      ],
+      "required_facts": [
+        {
+          "fact": "Apple's total net sales were $416,161 million in fiscal 2025, up 6% from $391,035 million in fiscal 2024.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Total net sales | $ | 416,161 | | | 6 | % | | $ | 391,035"
+        },
+        {
+          "fact": "Apple's Services net sales were $109,158 million in fiscal 2025, up 14%.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Services(1) | 109,158 | | | 14 | %"
+        },
+        {
+          "fact": "Apple's Greater China net sales decreased in fiscal 2025 compared to 2024, primarily due to lower net sales of iPhone.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Greater China net sales decreased during 2025 compared to 2024 primarily due to lower net sales of iPhone, partially offset by higher net sales of Mac."
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "trend-tsla-net-income-three-years",
+      "question": "How has Tesla's net income changed over the past three years?",
+      "history": [],
+      "question_type": "figure_trend",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "Three fiscal years of 10-Ks. The 2023 figure includes a one-time tax benefit that an answer should mention.",
+      "expected_sources": [
+        {"filing_id": "TSLA_10-K_2023-12-31", "section": "MD&A"},
+        {"filing_id": "TSLA_10-K_2024-12-31", "section": "MD&A"},
+        {"filing_id": "TSLA_10-K_2025-12-31", "section": "MD&A"}
+      ],
+      "required_facts": [
+        {
+          "fact": "Tesla's net income attributable to common stockholders was $15.00 billion in 2023, including a one-time non-cash tax benefit of $5.93 billion.",
+          "filing_id": "TSLA_10-K_2023-12-31",
+          "section": "MD&A",
+          "evidence": "In 2023, our net income attributable to common stockholders was $15.00 billion, representing a favorable change of $2.44 billion, compared to the prior year. This included a one-time non-cash tax benefit of $5.93 billion"
+        },
+        {
+          "fact": "Tesla's net income attributable to common stockholders was $7.09 billion in 2024, a decrease of $7.91 billion from 2023.",
+          "filing_id": "TSLA_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "In 2024, our net income attributable to common stockholders was $7.09 billion, representing a decrease of $7.91 billion compared to the prior year"
+        },
+        {
+          "fact": "Tesla's net income attributable to common stockholders was $3.79 billion in 2025, a decrease of $3.30 billion from 2024.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "In 2025, our net income attributable to common stockholders was $3.79 billion, representing a decrease of $3.30 billion compared to the prior year."
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "trend-amzn-aws-two-years",
+      "question": "How has Amazon's AWS segment revenue grown over the last two years?",
+      "history": [],
+      "question_type": "figure_trend",
+      "split": "holdout",
+      "starter": null,
+      "tags": [],
+      "notes": "Segment revenue, a Financial Facts metric. The FY2025 10-K carries both years.",
+      "expected_sources": [
+        {"filing_id": "AMZN_10-K_2024-12-31", "section": "MD&A"},
+        {"filing_id": "AMZN_10-K_2025-12-31", "section": "MD&A"}
+      ],
+      "required_facts": [
+        {
+          "fact": "Amazon's AWS sales increased 19% in 2024 compared to the prior year.",
+          "filing_id": "AMZN_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "AWS sales increased 19% in 2024, compared to the prior year."
+        },
+        {
+          "fact": "Amazon's AWS net sales were $128,725 million in 2025, up from $107,556 million in 2024.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "AWS | 107,556 | | | 128,725 |"
+        },
+        {
+          "fact": "Amazon's AWS sales increased 20% in 2025, primarily reflecting increased customer usage.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "AWS sales increased 20% in 2025, compared to the prior year. The sales growth primarily reflects increased customer usage"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "risk-aapl-legal-proceedings",
+      "question": "What legal proceedings does Apple disclose in its latest Filings?",
+      "history": [],
+      "question_type": "risk",
+      "split": "holdout",
+      "starter": null,
+      "tags": [],
+      "notes": "Section hint: Legal Proceedings. \"Latest\" is the FY2025 10-K plus the Q1 FY2026 10-Q, which adds the Ninth Circuit ruling.",
+      "expected_sources": [
+        {"filing_id": "AAPL_10-K_2025-09-27", "section": "Legal Proceedings"},
+        {"filing_id": "AAPL_10-Q_2025-12-27", "section": "Legal Proceedings"}
+      ],
+      "required_facts": [
+        {
+          "fact": "Apple was fined €500 million by the European Commission on April 23, 2025 under the Digital Markets Act, and has appealed.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Legal Proceedings",
+          "evidence": "On April 23, 2025, the Commission fined the Company €500 million in the Article 5(4) Investigation"
+        },
+        {
+          "fact": "Apple faces a civil antitrust lawsuit filed by the DOJ and state attorneys general on March 21, 2024 alleging monopolization of smartphone markets.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Legal Proceedings",
+          "evidence": "On March 21, 2024, the DOJ and a number of state and district attorneys general filed a civil antitrust lawsuit"
+        },
+        {
+          "fact": "In the Epic Games case, a California court found on April 30, 2025 that Apple had violated the 2021 Injunction.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Legal Proceedings",
+          "evidence": "On April 30, 2025, the California District Court found the Company to be in violation of the 2021 Injunction"
+        },
+        {
+          "fact": "On December 11, 2025 the Ninth Circuit upheld the Epic Games injunction against Apple in part and held that Apple can charge a commission on link-out purchases.",
+          "filing_id": "AAPL_10-Q_2025-12-27",
+          "section": "Legal Proceedings",
+          "evidence": "On December 11, 2025, the Ninth Circuit Court issued an order upholding the 2025 Injunction in part"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "risk-ko-market-risk",
+      "question": "What foreign currency and interest rate risks does Coca-Cola disclose in its latest annual report?",
+      "history": [],
+      "question_type": "risk",
+      "split": "holdout",
+      "starter": null,
+      "tags": [],
+      "notes": "Section hint: Market Risk (10-K Item 7A). Coca-Cola's latest 10-K is FY2024.",
+      "expected_sources": [
+        {"filing_id": "KO_10-K_2024-12-31", "section": "Market Risk"}
+      ],
+      "required_facts": [
+        {
+          "fact": "Coca-Cola generated $28.7 billion of its 2024 net operating revenues from operations outside the United States.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Market Risk",
+          "evidence": "In 2024, we generated $28.7 billion of our net operating revenues from operations outside the United States."
+        },
+        {
+          "fact": "Coca-Cola's foreign currency derivatives had a total notional value of $18,442 million at December 31, 2024.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Market Risk",
+          "evidence": "The total notional values of our foreign currency derivatives were $18,442 million and $17,505 million as of December 31, 2024 and 2023, respectively."
+        },
+        {
+          "fact": "Coca-Cola says it is subject to interest rate volatility on existing and future debt and uses interest rate swaps to manage it.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Market Risk",
+          "evidence": "The Company is subject to interest rate volatility with regard to existing and future issuances of debt."
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "risk-unh-cybersecurity",
+      "question": "What cybersecurity risks does UnitedHealth describe in its latest annual report?",
+      "history": [],
+      "question_type": "risk",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "UnitedHealth's latest 10-K is FY2024; the Change Healthcare cyberattack is in both Risk Factors and MD&A.",
+      "expected_sources": [
+        {"filing_id": "UNH_10-K_2024-12-31", "section": "Risk Factors"},
+        {"filing_id": "UNH_10-K_2024-12-31", "section": "MD&A"}
+      ],
+      "required_facts": [
+        {
+          "fact": "UnitedHealth says its Change Healthcare business was subject to a cyberattack in 2024 in which the data involved contained protected health information or personally identifiable information.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "we previously reported our Change Healthcare business, which we had recently acquired, was subject to a cyberattack in 2024, in which the data involved contained protected health information or personally identifiable information."
+        },
+        {
+          "fact": "UnitedHealth identified on February 21, 2024 that cybercrime threat actors had gained access to certain Change Healthcare systems.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "on February 21, 2024, we identified that cybercrime threat actors had gained access to certain Change Healthcare information technology systems."
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "outlook-tsla-2026",
+      "question": "What is Tesla's outlook for 2026?",
+      "history": [],
+      "question_type": "outlook",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "Tesla's FY2025 MD&A has a 2026 Outlook section with spending and strategy, but no revenue or delivery guidance.",
+      "expected_sources": [
+        {"filing_id": "TSLA_10-K_2025-12-31", "section": "MD&A"}
+      ],
+      "required_facts": [
+        {
+          "fact": "Tesla expects its capital expenditures to exceed $20 billion in 2026, driven by its AI initiatives.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "We currently expect our capital expenditures to be in excess of $20 billion in 2026, driven by our AI initiatives"
+        },
+        {
+          "fact": "Tesla believes the launch of its Robotaxi service unlocks the potential for significant business growth.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "we believe the launch of our Robotaxi service unlocks the potential for significant business growth to advance a service-driven business model."
+        }
+      ],
+      "expected_coverage_gaps": [
+        {"kind": "no_guidance", "companies": ["TSLA"]}
+      ]
+    },
+    {
+      "id": "outlook-msft-cloud",
+      "question": "What is the growth outlook for Microsoft's cloud business?",
+      "history": [],
+      "question_type": "outlook",
+      "split": "holdout",
+      "starter": null,
+      "tags": [],
+      "notes": "Microsoft's latest Filing is its Q2 FY2026 10-Q. Its commentary and backlog speak to the outlook; no guidance is given.",
+      "expected_sources": [
+        {"filing_id": "MSFT_10-Q_2025-12-31", "section": "MD&A"}
+      ],
+      "required_facts": [
+        {
+          "fact": "Microsoft's Azure and other cloud services revenue increased 39% in the second quarter of fiscal 2026.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Azure and other cloud services revenue increased 39%."
+        },
+        {
+          "fact": "Microsoft's commercial remaining performance obligation increased 110% to $625 billion.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Commercial remaining performance obligation increased 110% to $625 billion."
+        },
+        {
+          "fact": "Microsoft says it will continue to invest in capital expenditures to support growth in its cloud offerings and AI infrastructure.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A",
+          "evidence": "We will continue to invest in capital expenditures to support growth in our cloud offerings and our investments in AI infrastructure and training."
+        }
+      ],
+      "expected_coverage_gaps": [
+        {"kind": "no_guidance", "companies": ["MSFT"]}
+      ]
+    },
+    {
+      "id": "outlook-meta-capex-2026",
+      "question": "What does Meta expect to spend on capital expenditures in 2026?",
+      "history": [],
+      "question_type": "outlook",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "An outlook question the Filings do answer: Meta's FY2025 10-K states its expected 2026 capital expenditures. No no_guidance gap is expected; the generation harness checks only the gaps listed, so a system that adds one anyway is not penalised here.",
+      "expected_sources": [
+        {"filing_id": "META_10-K_2025-12-31", "section": "MD&A"}
+      ],
+      "required_facts": [
+        {
+          "fact": "Meta anticipates capital expenditures of approximately $115 billion to $135 billion in 2026 to support its AI efforts and core business.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "We anticipate making capital expenditures of approximately $115 billion to $135 billion in 2026 to support our AI efforts and core business."
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "sector-software-ai-risks",
+      "question": "What AI-related risks do the major software companies describe?",
+      "history": [],
+      "question_type": "sector",
+      "split": "holdout",
+      "starter": null,
+      "tags": [],
+      "notes": "The Sector table's Software industry is Adobe, Microsoft, Oracle and Salesforce. Their latest fiscal years end in November 2025, June 2025, May 2025 and January 2025.",
+      "expected_sources": [
+        {"filing_id": "ADBE_10-K_2025-11-28", "section": "Risk Factors"},
+        {"filing_id": "CRM_10-K_2025-01-31", "section": "Risk Factors"},
+        {"filing_id": "MSFT_10-K_2025-06-30", "section": "Risk Factors"},
+        {"filing_id": "ORCL_10-K_2025-05-31", "section": "Risk Factors"}
+      ],
+      "required_facts": [
+        {
+          "fact": "Adobe says there can be no assurance that its new or enhanced AI solutions will be successful, adopted or monetizable.",
+          "filing_id": "ADBE_10-K_2025-11-28",
+          "section": "Risk Factors",
+          "evidence": "there can be no assurance that our new or enhanced solutions and AI innovations will be successful, adopted or monetizable"
+        },
+        {
+          "fact": "Salesforce offers Agentforce and Data Cloud through a consumption-based business model whose pricing strategies remain relatively new and uncertain.",
+          "filing_id": "CRM_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "we offer certain products, including Agentforce and Data Cloud, through a consumption-based business model"
+        },
+        {
+          "fact": "Microsoft says issues in the development, deployment and use of AI may result in reputational or competitive harm or liability.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "Issues in the development, deployment, and use of AI may result in reputational or competitive harm or liability."
+        },
+        {
+          "fact": "Oracle says its AI products may not operate as anticipated, which could hurt its reputation, revenues and profitability.",
+          "filing_id": "ORCL_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "Our AI products may not operate as anticipated, which could adversely affect our reputation, revenues and profitability."
+        }
+      ],
+      "expected_coverage_gaps": [
+        {"kind": "periods_differ", "companies": ["ADBE", "CRM", "MSFT", "ORCL"]}
+      ]
+    },
+    {
+      "id": "sector-aerospace-government",
+      "question": "How dependent are the aerospace and defense companies on U.S. government contracts?",
+      "history": [],
+      "question_type": "sector",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "The Sector table's Aerospace & Defense industry is Boeing, Lockheed Martin and RTX, all with FY2025 10-Ks.",
+      "expected_sources": [
+        {"filing_id": "BA_10-K_2025-12-31", "section": "Risk Factors"},
+        {"filing_id": "LMT_10-K_2025-12-31", "section": "Risk Factors"},
+        {"filing_id": "RTX_10-K_2025-12-31", "section": "Risk Factors"}
+      ],
+      "required_facts": [
+        {
+          "fact": "Boeing earned 35% of its 2025 revenues under U.S. government contracts, including Foreign Military Sales.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In 2025, 35% of our revenues were earned pursuant to U.S. government contracts, which include FMS."
+        },
+        {
+          "fact": "Lockheed Martin derived 72% of its 2025 consolidated sales from the U.S. Government.",
+          "filing_id": "LMT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We derived 72% of our total consolidated sales from the U.S. Government in 2025"
+        },
+        {
+          "fact": "RTX says U.S. government sales are a significant portion of its consolidated sales and that changes in U.S. defense spending could hurt its results.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Changes in U.S. government defense spending could negatively impact our financial position, results of operations, liquidity, and overall business. U.S. government sales constitute a significant portion of our consolidated sales."
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "risk-aapl-nvda-supply-chain",
+      "question": "Compare the supply chain risks of Apple and NVIDIA.",
+      "history": [],
+      "question_type": "risk",
+      "split": "holdout",
+      "starter": null,
+      "tags": [],
+      "notes": "Apple's latest 10-K is FY2025 (year to September 2025); NVIDIA's is FY2025 (year to January 2025), followed by three 10-Qs with full risk factors.",
+      "expected_sources": [
+        {"filing_id": "AAPL_10-K_2025-09-27", "section": "Risk Factors"},
+        {"filing_id": "NVDA_10-K_2025-01-26", "section": "Risk Factors"},
+        {"filing_id": "NVDA_10-Q_2025-10-26", "section": "Risk Factors"}
+      ],
+      "required_facts": [
+        {
+          "fact": "Apple says a significant majority of its manufacturing is performed by outsourcing partners located primarily in China mainland, India, Japan, South Korea, Taiwan and Vietnam.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "A significant majority of the Company’s manufacturing is performed in whole or in part by outsourcing partners located primarily in China mainland, India, Japan, South Korea, Taiwan and Vietnam"
+        },
+        {
+          "fact": "NVIDIA says its business depends on consistent and reliable supply from overseas partners, especially in Taiwan and South Korea.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Risk Factors",
+          "evidence": "Finally, our business depends on our ability to receive consistent and reliable supply from our overseas partners, especially in Taiwan and South Korea."
+        },
+        {
+          "fact": "NVIDIA says export controls have disrupted and could in the future disrupt its supply chain and distribution channels.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "Risk Factors",
+          "evidence": "Export controls have and could in the future disrupt our supply chain and distribution channels, negatively impacting our ability to serve demand"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {"kind": "periods_differ", "companies": ["AAPL", "NVDA"]}
+      ]
+    },
+    {
+      "id": "risk-bac-change-snapshot",
+      "question": "How have Bank of America's risk factors changed over the last two years?",
+      "history": [],
+      "question_type": "risk",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "A trend asked of a Snapshot Company: one FY2024 10-K and three 2025 10-Qs, each reporting no material changes.",
+      "expected_sources": [
+        {"filing_id": "BAC_10-K_2024-12-31", "section": "Risk Factors"},
+        {"filing_id": "BAC_10-Q_2025-09-30", "section": "Risk Factors"}
+      ],
+      "required_facts": [
+        {
+          "fact": "Bank of America's Q3 2025 10-Q reports no material changes from the risk factors in its 2024 Form 10-K.",
+          "filing_id": "BAC_10-Q_2025-09-30",
+          "section": "Risk Factors",
+          "evidence": "There are no material changes from the risk factors set forth under Part 1, Item 1A. Risk Factors of the Corporation’s 2024 Annual Report on Form 10-K."
+        }
+      ],
+      "expected_coverage_gaps": [
+        {"kind": "snapshot_trend", "companies": ["BAC"]}
+      ]
+    },
+    {
+      "id": "missing-citigroup",
+      "question": "What are Citigroup's main risk factors?",
+      "history": [],
+      "question_type": "missing_company",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "Citigroup is not in the Corpus. Nothing should be retrieved and nothing answered from general knowledge.",
+      "expected_sources": [],
+      "required_facts": [],
+      "expected_coverage_gaps": [
+        {"kind": "missing_company", "companies": ["Citigroup"]}
+      ]
+    },
+    {
+      "id": "missing-bms-with-merck",
+      "question": "What regulatory risks do Merck and Bristol Myers Squibb face?",
+      "history": [],
+      "question_type": "missing_company",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "Bristol Myers Squibb is not in the Corpus; Merck is (FY2024 10-K).",
+      "expected_sources": [
+        {"filing_id": "MRK_10-K_2024-12-31", "section": "Risk Factors"}
+      ],
+      "required_facts": [
+        {
+          "fact": "Merck expects U.S. sales of Keytruda to decline beginning in January 2028 when government pricing under the Inflation Reduction Act takes effect.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "the Company expects U.S. sales of Keytruda to decline beginning in January 2028 upon implementation of government pricing under the IRA"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {"kind": "missing_company", "companies": ["Bristol Myers Squibb"]}
+      ]
+    },
+    {
+      "id": "followup-regulatory-exposure",
+      "question": "Which of them has the most regulatory exposure?",
+      "history": [
+        {"role": "user", "content": "What are the primary risk factors facing Apple, Tesla, and JPMorgan?"},
+        {"role": "assistant", "content": "Apple's main risks centre on manufacturing outsourced mostly to partners in Asia and on new U.S. tariffs (AAPL_10-K_2025-09-27, Risk Factors). Tesla's centre on ramping new products such as Cybercab and on its dependence on Elon Musk (TSLA_10-K_2025-12-31, Risk Factors). JPMorgan's principal risks are legal and regulatory, political, market, credit, liquidity and capital risks (JPM_10-K_2025-12-31, Risk Factors). Apple's fiscal year ended on 27 September 2025; Tesla's and JPMorgan's ended on 31 December 2025."}
+      ],
+      "question_type": "risk",
+      "split": "dev",
+      "starter": null,
+      "tags": ["inherits_companies"],
+      "notes": "Names no Company, so it inherits Apple, Tesla and JPMorgan and the Risk Factors Section (ADR 0003).",
+      "expected_sources": [
+        {"filing_id": "AAPL_10-K_2025-09-27", "section": "Risk Factors"},
+        {"filing_id": "TSLA_10-K_2025-12-31", "section": "Risk Factors"},
+        {"filing_id": "JPM_10-K_2025-12-31", "section": "Risk Factors"}
+      ],
+      "required_facts": [
+        {
+          "fact": "Apple says the EU Digital Markets Act provides for significant fines and penalties for noncompliance.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "The DMA provides for significant fines and penalties for noncompliance."
+        },
+        {
+          "fact": "Tesla says it has faced, and expects to continue to face, claims and regulatory scrutiny related to its driver assistance and autonomous driving features.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We have experienced, and we expect to continue to face, claims and regulatory scrutiny arising from or related to misuse or claimed failures"
+        },
+        {
+          "fact": "JPMorgan lists legal and regulatory risks, including the impact of extensive supervision and regulation, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Legal and Regulatory risks, including the impact of extensive supervision and regulation"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {"kind": "periods_differ", "companies": ["AAPL", "TSLA", "JPM"]}
+      ]
+    },
+    {
+      "id": "followup-switch-to-msft",
+      "question": "And what about Microsoft?",
+      "history": [
+        {"role": "user", "content": "How has NVIDIA's revenue changed over the last two years?"},
+        {"role": "assistant", "content": "NVIDIA's revenue grew from $60.9 billion in fiscal 2024 (NVDA_10-K_2024-01-28, MD&A) to $130.5 billion in fiscal 2025 (NVDA_10-K_2025-01-26, MD&A). Revenue for the third quarter of fiscal 2026 was $57.0 billion, up 62% from a year earlier (NVDA_10-Q_2025-10-26, MD&A)."}
+      ],
+      "question_type": "figure_trend",
+      "split": "dev",
+      "starter": null,
+      "tags": ["switches_company"],
+      "notes": "Names a new Company, so Microsoft replaces NVIDIA while the metric (revenue) and time window (last two years) are inherited (ADR 0003).",
+      "expected_sources": [
+        {"filing_id": "MSFT_10-K_2024-06-30", "section": "MD&A"},
+        {"filing_id": "MSFT_10-K_2025-06-30", "section": "MD&A"},
+        {"filing_id": "MSFT_10-Q_2025-12-31", "section": "MD&A"}
+      ],
+      "required_facts": [
+        {
+          "fact": "Microsoft's revenue increased $33.2 billion or 16% in fiscal 2024.",
+          "filing_id": "MSFT_10-K_2024-06-30",
+          "section": "MD&A",
+          "evidence": "Revenue increased $33.2 billion or 16% driven by growth across each of our segments."
+        },
+        {
+          "fact": "Microsoft's revenue increased $36.6 billion or 15% in fiscal 2025, with growth across each of its segments.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "MD&A",
+          "evidence": "Revenue increased $36.6 billion or 15% with growth across each of our segments."
+        },
+        {
+          "fact": "Microsoft's revenue for the quarter ended December 31, 2025 increased $11.6 billion or 17% from a year earlier.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Revenue increased $11.6 billion or 17% driven by Intelligent Cloud and Productivity and Business Processes"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "followup-tsla-risk-change",
+      "question": "How did that change over the last two years?",
+      "history": [
+        {"role": "user", "content": "What are Tesla's main risk factors?"},
+        {"role": "assistant", "content": "Tesla's main risks are delays in developing and ramping new products such as Cybercab and its AI-based services, supplier failures, and its dependence on Elon Musk (TSLA_10-K_2025-12-31, Risk Factors)."}
+      ],
+      "question_type": "risk",
+      "split": "dev",
+      "starter": null,
+      "tags": ["inherits_companies"],
+      "notes": "Names no Company and refers back with \"that\": inherits Tesla and Risk Factors, and adds a two-year window. The 2025 10-Qs add risk factors on tariffs, protests and lost tax credits.",
+      "expected_sources": [
+        {"filing_id": "TSLA_10-K_2025-12-31", "section": "Risk Factors"},
+        {"filing_id": "TSLA_10-Q_2025-03-31", "section": "Risk Factors"},
+        {"filing_id": "TSLA_10-Q_2025-06-30", "section": "Risk Factors"}
+      ],
+      "required_facts": [
+        {
+          "fact": "In its Q1 2025 10-Q, Tesla added a risk factor on U.S. trade policy changes, including significantly higher tariffs on imports.",
+          "filing_id": "TSLA_10-Q_2025-03-31",
+          "section": "Risk Factors",
+          "evidence": "the United States has recently announced changes to U.S. trade policy, including increasing tariffs on imports, in many cases significantly"
+        },
+        {
+          "fact": "In its Q1 2025 10-Q, Tesla said commentary about the company has incited protests, some escalating to violence targeting its operations, products and personnel.",
+          "filing_id": "TSLA_10-Q_2025-03-31",
+          "section": "Risk Factors",
+          "evidence": "has incited protests, some escalating to violence targeting our operations, products and personnel"
+        },
+        {
+          "fact": "In its Q2 2025 10-Q, Tesla said recent government actions have repealed or restricted consumer, manufacturing and charging infrastructure tax credits.",
+          "filing_id": "TSLA_10-Q_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "recent governmental and regulatory actions have repealed and/or restricted consumer, manufacturing and charging infrastructure tax credits"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "followup-topic-change-export-controls",
+      "question": "Which companies took charges because of new U.S. export controls on products sold to China?",
+      "history": [
+        {"role": "user", "content": "What are Apple's main risk factors?"},
+        {"role": "assistant", "content": "Apple's main risks centre on manufacturing outsourced mostly to partners in China mainland, India and other Asian countries, new U.S. tariffs announced from the second quarter of fiscal 2025, and compliance with the EU Digital Markets Act (AAPL_10-K_2025-09-27, Risk Factors)."}
+      ],
+      "question_type": "risk",
+      "split": "dev",
+      "starter": null,
+      "tags": ["topic_change_without_company"],
+      "notes": "The known weakness of ADR 0003: the question changes topic but names no Company or Sector phrase, so the rules inherit Apple. The intended scope is the whole Corpus; the Companies that report such charges are NVIDIA and AMD.",
+      "expected_sources": [
+        {"filing_id": "NVDA_10-Q_2025-10-26", "section": "MD&A"},
+        {"filing_id": "AMD_10-K_2025-12-27", "section": "MD&A"}
+      ],
+      "required_facts": [
+        {
+          "fact": "NVIDIA took a $4.5 billion charge in the first quarter of fiscal 2026 after the U.S. government required a license to export its H20 product to China.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "In April 2025, the U.S. government, or USG, informed us that a license is required for exports of our H20 product into the China market. As a result of these new requirements, we incurred a $4.5 billion charge in the first quarter of fiscal year 2026"
+        },
+        {
+          "fact": "AMD recorded about $800 million of inventory and related charges on its MI308 GPUs in the second quarter of fiscal 2025 because of new U.S. export restrictions to China.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "MD&A",
+          "evidence": "During the second quarter of fiscal year 2025, the Company recorded approximately $800 million of inventory and related charges on AMD Instinct MI308 Data Center GPU products due to new U.S. export restrictions on certain semiconductors to China."
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "followup-pharma-to-oil-majors",
+      "question": "And the oil majors?",
+      "history": [
+        {"role": "user", "content": "What regulatory risks do the major pharmaceutical companies face, and how are they addressing them?"},
+        {"role": "assistant", "content": "The major pharmaceutical companies (AbbVie, Johnson & Johnson, Eli Lilly, Merck and Pfizer, from the Sector table's Pharmaceuticals and Biotechnology industries) all describe drug pricing pressure from the Inflation Reduction Act. Merck expects U.S. Keytruda sales to decline from January 2028 under government pricing (MRK_10-K_2024-12-31, Risk Factors), and Eli Lilly announced preliminary voluntary pricing agreements with the U.S. government in November 2025 (LLY_10-K_2025-12-31, Risk Factors). AbbVie's, Merck's and Pfizer's latest 10-Ks are for FY2024; J&J's and Lilly's are for FY2025."}
+      ],
+      "question_type": "sector",
+      "split": "holdout",
+      "starter": null,
+      "tags": ["switches_company"],
+      "notes": "EDA variant V4 as a follow-up. A new Sector phrase replaces the pharma Companies with Chevron and ExxonMobil; the regulatory topic and Section are inherited. Chevron's latest 10-K is FY2024, ExxonMobil's FY2025.",
+      "expected_sources": [
+        {"filing_id": "CVX_10-K_2024-12-31", "section": "Risk Factors"},
+        {"filing_id": "XOM_10-K_2025-12-31", "section": "Risk Factors"}
+      ],
+      "required_facts": [
+        {
+          "fact": "Chevron says legislation and regulation to limit or reduce greenhouse gas emissions are in various stages of implementation and could reduce demand for its products and raise its costs.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "International agreements and national, regional, and state legislation and regulatory measures that aim to directly or indirectly limit or reduce GHG emissions are in various stages of implementation."
+        },
+        {
+          "fact": "ExxonMobil says a number of countries have adopted or are considering broad regulatory frameworks to report on or reduce greenhouse gas emissions, including from oil and gas.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "a number of countries have adopted, or are considering the adoption of, broad-reaching regulatory frameworks seeking to report on or reduce greenhouse gas emissions, including emissions from the production and use of oil and gas and their products"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {"kind": "periods_differ", "companies": ["CVX", "XOM"]}
+      ]
+    },
+    {
+      "id": "followup-ge-to-honeywell",
+      "question": "What about Honeywell?",
+      "history": [
+        {"role": "user", "content": "How has General Electric performed recently?"},
+        {"role": "assistant", "content": "The only General Electric Filing is GE Capital's 10-K for 2014; it does not describe General Electric today. The Filings provided cannot say how General Electric has performed recently."}
+      ],
+      "question_type": "missing_company",
+      "split": "dev",
+      "starter": null,
+      "tags": ["switches_company"],
+      "notes": "Honeywell is not in the Corpus. It replaces General Electric in the Query Scope, so the stale GE Filing must not come back either.",
+      "expected_sources": [],
+      "required_facts": [],
+      "expected_coverage_gaps": [
+        {"kind": "missing_company", "companies": ["Honeywell"]}
+      ]
+    }
+  ]
+}

@@ -43,6 +43,10 @@ Sources:
 
 The GE row describes the Filing in the Corpus, GE Capital's FY2014 10-K, not today's General Electric. Unlike the Corpus, this table is ours to edit; a test checks it has exactly one row per Company and an explanation for every disagreement.
 
+## Golden Set (`eval/golden_set.json`)
+
+The evaluation's ground truth: 30 labelled questions, each with the (Filing ID, Section) pairs that should be retrieved, the Required Facts an answer must state (each with an evidence quote from its Section) and the Coverage Gaps it must state. Six of them are the front-end's starter prompts. Like the Sector table it is ours to edit, and tests check every label against the Corpus. Its fields, split rule and review are described in [`docs/golden-set.md`](../docs/golden-set.md).
+
 ## Derived files
 
 Anything built from the Corpus (cleaned Sections, a Financial Facts database, indexes) is written to `data/derived/`, which is gitignored and rebuilt by Makefile targets.
