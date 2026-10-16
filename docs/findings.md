@@ -193,19 +193,19 @@ _Analysis 7: whether Financial Facts can be extracted (net income)._
 - **Implication:** Taking the first "net income" row is wrong for six Companies, and a per-share row is a million times too small. Both are easy mistakes for any reader of flattened text.
 - **Design decision:** The attributable row wins over the total; per-share, continuing/discontinued and noncontrolling rows never count. Earnings per share is not extracted.
 
-## 23. Segment revenue is exact where found, but found for only half the Filings
+## 23. Segment revenue is exact where found, and found for two Filings in three
 
 _Analysis 7: whether Financial Facts can be extracted (segment revenue, 7.2)._
 
-- **Finding:** Segment revenue is extracted from 101 of 197 Filings (51%), covering 7 of 13 Companies (Apple, Amazon, Alphabet, Meta, Microsoft, Tesla, Disney). Each set adds up to the SEC-matched revenue and ten hand-checked values agree; the SEC data has no segment breakdown to check against. Segment tables come in at least five layouts, and product or geographic tables also add up to revenue. Disney reorganised its segments in FY2023.
-- **Implication:** Exact segment figures exist for seven Companies, not the other six, and a segment trend cannot cross a reorganisation.
-- **Design decision:** Report segments only when the table's introduction calls them segments and they add up to revenue. Segment questions for the other six Companies fall back to retrieved text and say so; a segment trend stops at a reorganisation and says so.
+- **Finding:** Segment revenue is extracted from 137 of 197 Filings (70%), covering 10 of 13 Companies: Apple, Amazon, Alphabet, Meta, Microsoft, Tesla, Coca-Cola and NVIDIA in every Filing, Disney in 15 of 17 and ExxonMobil in 5 of 16. Coca-Cola, NVIDIA and ExxonMobil lay their segments out as table columns, one block of rows per period; ExxonMobil also splits each segment into U.S. and non-U.S. columns. Each set adds up to the SEC-matched revenue and 16 hand-checked values agree; the SEC data has no segment breakdown to check against. Segment tables come in at least five layouts, and product or geographic tables also add up to revenue. ExxonMobil's segment tables before 2025 add up to "Sales and other operating revenue", not to the revenue the SEC reports, and nothing in them reconciles the two. Disney reorganised its segments in FY2023, and Coca-Cola stopped reporting Global Ventures as a segment in 2025.
+- **Implication:** Exact segment figures exist for ten Companies, not for J&J, Pfizer or UnitedHealth, nor for ExxonMobil before 2025, and a segment trend cannot cross a reorganisation.
+- **Design decision:** Report segments only when the table's introduction (or, for columns, its header) calls them segments and they add up to revenue, directly or through a reconciliation printed in the same table. A segment split into U.S. and non-U.S. columns is reported as their sum. Segment questions the store has no facts for fall back to retrieved text and say so; a segment trend stops at a reorganisation and says so.
 
 ## 24. Build a SQLite Financial Facts store, queried before the Answer Call
 
 _Analysis 7: whether Financial Facts can be extracted._
 
-- **Finding:** Rules extract revenue and net income exactly from every Tracked Company Filing and segment revenue for seven Companies. Read from text instead, a two-year trend needs the income statements of eight Filings.
+- **Finding:** Rules extract revenue and net income exactly from every Tracked Company Filing and segment revenue for ten Companies. Read from text instead, a two-year trend needs the income statements of eight Filings.
 - **Implication:** Exact figures can reach the Answer Call for a few hundred tokens, as long as they are selected without an LLM: the single-call rule leaves no room for text-to-SQL.
 - **Design decision:** Build a SQLite Financial Facts store of the Tracked Companies' revenue, net income and segment revenue, rebuilt at index time under `data/derived/`. The rule-based query parser picks metric, Companies and window and runs a fixed, parameterised query; the rows go into the Answer Call with their Filing IDs and periods. Every other figure comes from retrieved text, and the answer says so. See [ADR 0001](adr/0001-sqlite-financial-facts-store.md).
 

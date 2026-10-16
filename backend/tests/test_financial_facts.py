@@ -464,9 +464,195 @@ def test_revenue_and_net_income_of_real_tracked_company_filings(
                 "AWS": 30_873_000_000,
             },
         ),
+        # Segments as columns.
+        (
+            "KO_10Q_2025Q2_2025-07-24_full.txt",
+            {
+                "Europe, Middle East & Africa": 3_176_000_000,
+                "Latin America": 1_587_000_000,
+                "North America": 5_029_000_000,
+                "Asia Pacific": 1_572_000_000,
+                "Bottling Investments": 1_411_000_000,
+            },
+        ),
+        (
+            "NVDA_10K_2025-02-26_full.txt",
+            {"Compute & Networking": 116_193_000_000, "Graphics": 14_304_000_000},
+        ),
+        # Each segment's U.S. and non-U.S. columns added: Upstream is 12,267 + 13,433.
+        (
+            "XOM_10Q_2025Q2_2025-08-04_full.txt",
+            {
+                "Upstream": 25_700_000_000,
+                "Energy Products": 71_147_000_000,
+                "Chemical Products": 8_298_000_000,
+                "Specialty Products": 5_262_000_000,
+            },
+        ),
     ],
 )
 def test_segment_revenue_of_real_tracked_company_filings(name, segments):
     facts = extract_financial_facts(load_filing(DEFAULT_CORPUS_DIR / name))
 
     assert {f.segment: f.value for f in facts if f.metric == "segment_revenue"} == segments
+
+
+# Segment tables laid out in columns: one column per segment, one block of rows per
+# period, each block headed by a row naming its period.
+
+_KO_INCOME_STATEMENT = (
+    "CONDENSED CONSOLIDATED STATEMENTS OF INCOME (In millions)\n"
+    "| Three Months Ended |  | Six Months Ended\n"
+    "| June 27,2025 | June 28,2024 |  | June 27,2025 | June 28,2024\n"
+    "Net Operating Revenues | $ | 12,535 |  | $ | 12,363 |  |  | $ | 23,664 |  | $ | 23,663 |\n"
+    "Net income | $ | 3,810 |  | $ | 2,411 |  |  | $ | 7,140 |  | $ | 5,588 |\n"
+    "Prose between the statements and the notes.\n"
+)
+
+
+@pytest.fixture(scope="module")
+def ko_quarterly():
+    """Coca-Cola's Q2 2025 10-Q (Report Period 2025-06-27), as a carrier for excerpts."""
+    return load_filing(DEFAULT_CORPUS_DIR / "KO_10Q_2025Q2_2025-07-24_full.txt")
+
+
+def test_segments_as_columns_with_a_block_of_rows_per_period(ko_quarterly):
+    # Coca-Cola's layout: Corporate and Eliminations reconcile the segments to the
+    # Consolidated column, which equals revenue. None of the three is a segment.
+    excerpt = _KO_INCOME_STATEMENT + (
+        "NOTE 17: OPERATING SEGMENTS Information about our Company's operations by operating"
+        " segment and Corporate is as follows (in millions):\n"
+        "| Europe, Middle East & Africa | LatinAmerica | NorthAmerica | Corporate |"
+        " Eliminations | Consolidated\n"
+        "Three Months Ended June 27, 2025 |  |  |  |  |  |\n"
+        "Net operating revenues: |  |  |  |  |  |\n"
+        "Third party | $ | 3,008 |  | $ | 1,587 |  | $ | 7,901 |  | $ | 39 |  | $ | — |  |"
+        " $ | 12,535 |\n"
+        "Intersegment | 168 |  | — |  | 111 |  | — |  | (279) |  | — |\n"
+        "Total net operating revenues | 3,176 |  | 1,587 |  | 8,012 |  | 39 |  | (279) |  |"
+        " 12,535 |\n"
+        "Operating income (loss) | 1,000 |  | 900 |  | 2,000 |  | (300) |  | — |  | 3,600 |\n"
+        "Three Months Ended June 28, 2024 |  |  |  |  |  |\n"
+        "Net operating revenues: |  |  |  |  |  |\n"
+        "Total net operating revenues | 3,028 |  | 1,652 |  | 7,970 |  | 35 |  | (322) |  |"
+        " 12,363 |\n"
+    )
+
+    facts = _facts(ko_quarterly, excerpt, "segment_revenue")
+
+    # Header cells flattened from wrapped lines ("LatinAmerica") get their space back.
+    assert {f.segment: f.value for f in facts} == {
+        "Europe, Middle East & Africa": 3_176_000_000,
+        "Latin America": 1_587_000_000,
+        "North America": 8_012_000_000,
+    }
+    assert {(f.label, f.period_months, f.unit) for f in facts} == {
+        ("Total net operating revenues", 3, "USD")
+    }
+
+
+def test_the_period_block_is_chosen_by_its_heading_not_its_position(annual):
+    # NVIDIA's layout, with the prior year's block first: the 2024 block must be read.
+    excerpt = (
+        "CONSOLIDATED STATEMENTS OF INCOME (In millions)\n"
+        "| 2024 |  | 2023\n"
+        "Revenue | $ | 130,497 |  |  | $ | 60,922 |\n"
+        "Net income | $ | 72,880 |  |  | $ | 29,760 |\n"
+        "The table below presents details of our reportable segments.\n"
+        "| Compute & Networking |  | Graphics |  | All Other |  | Consolidated\n"
+        "| (In millions)\n"
+        "Year Ended Sep 30, 2023 |  |  |  |  |  |  |\n"
+        "Revenue | $ | 47,405 |  |  | $ | 13,517 |  |  | $ | — |  |  | $ | 60,922 |\n"
+        "Year Ended Sep 28, 2024 |  |  |  |  |  |  |\n"
+        "Revenue | $ | 116,193 |  |  | $ | 14,304 |  |  | $ | — |  |  | $ | 130,497 |\n"
+        "Operating income (loss) | $ | 82,875 |  |  | $ | 5,085 |  |  | $ | (6,507) |  |  |"
+        " $ | 81,453 |\n"
+    )
+
+    # "All Other" has a dash for revenue: nil, not a segment with revenue of zero.
+    assert _segments(annual, excerpt) == {
+        "Compute & Networking": 116_193_000_000,
+        "Graphics": 14_304_000_000,
+    }
+
+
+def test_no_segment_revenue_when_the_segment_columns_do_not_add_up_to_revenue(ko_quarterly):
+    excerpt = _KO_INCOME_STATEMENT + (
+        "Information about our Company's operations by operating segment is as follows"
+        " (in millions):\n"
+        "| North America | Asia Pacific | Consolidated\n"
+        "Three Months Ended June 27, 2025 |  |  |\n"
+        "Total net operating revenues | 5,000 |  | 1,500 |  | 6,500 |\n"
+    )
+
+    assert _segments(ko_quarterly, excerpt) == {}
+
+
+def test_no_segment_revenue_from_columns_not_introduced_as_segments(ko_quarterly):
+    # Columns that add up to revenue but are not called segments: sales channels, say.
+    excerpt = _KO_INCOME_STATEMENT + (
+        "Net operating revenues by channel are as follows (in millions):\n"
+        "| Concentrate | Finished goods | Consolidated\n"
+        "Three Months Ended June 27, 2025 |  |  |\n"
+        "Total net operating revenues | 7,000 |  | 5,535 |  | 12,535 |\n"
+    )
+
+    assert _segments(ko_quarterly, excerpt) == {}
+
+
+def test_segments_split_into_sub_columns_and_reconciled_to_revenue_below(quarterly):
+    # ExxonMobil's layout: each segment split U.S. / non-U.S., a Segment Total column
+    # that includes intersegment revenue, and a reconciliation of that total to revenue
+    # further down the table. A segment's revenue is the sum of its two columns.
+    excerpt = (
+        "CONDENSED CONSOLIDATED STATEMENT OF INCOME\n"
+        "(millions of dollars) | Three Months EndedSeptember 30, | Nine Months Ended"
+        "September 30,\n"
+        "2025 | 2024 | 2025 | 2024\n"
+        "Total revenues and other income | 81,506 |  | 93,060 |  | 164,636 |  | 176,143 |\n"
+        "Net income attributable to ExxonMobil | 7,082 |  | 9,240 |  | 14,795 |  | 17,460 |\n"
+        "Note 8. Disclosures about Segments and Related Information\n"
+        "(millions of dollars) | Upstream | Energy Products | Segment Total\n"
+        "U.S. | Non-U.S. | U.S. | Non-U.S.\n"
+        "Three Months Ended September 30, 2025 |  |  |  |  |\n"
+        "Revenues and other income |  |  |  |  |\n"
+        "Sales and other operating revenue | 5,939 |  | 3,286 |  | 25,072 |  | 34,917 |  |"
+        " 69,214 |\n"
+        "Intersegment revenue | 6,230 |  | 8,824 |  | 4,502 |  | 6,512 |  | 26,068 |\n"
+        "Segment revenues and other income | 12,169 |  | 12,110 |  | 29,574 |  | 41,429 |  |"
+        " 95,282 |\n"
+        "Segment income (loss) | 1,212 |  | 4,190 |  | 825 |  | 541 |  | 6,768 |\n"
+        "Reconciliation of consolidated revenues |  |  |  |  |\n"
+        "Segment revenues and other income | 95,282 |  |  |  |\n"
+        "Other revenues(2) | 12,292 |  |  |  |\n"
+        "Elimination of intersegment revenues | (26,068) |  |  |  |\n"
+        "Total consolidated revenues and other income | 81,506 |  |  |  |\n"
+    )
+
+    facts = _facts(quarterly, excerpt, "segment_revenue")
+
+    assert {f.segment: f.value for f in facts} == {
+        "Upstream": 24_279_000_000,
+        "Energy Products": 71_003_000_000,
+    }
+    assert {f.label for f in facts} == {"Segment revenues and other income"}
+
+
+def test_no_segment_revenue_when_the_reconciliation_below_does_not_reach_revenue(quarterly):
+    excerpt = (
+        "CONDENSED CONSOLIDATED STATEMENT OF INCOME\n"
+        "(millions of dollars) | Three Months EndedSeptember 30,\n"
+        "2025 | 2024\n"
+        "Total revenues and other income | 81,506 |  | 93,060 |\n"
+        "Net income attributable to ExxonMobil | 7,082 |  | 9,240 |\n"
+        "Note 8. Disclosures about Segments and Related Information\n"
+        "(millions of dollars) | Upstream | Energy Products | Segment Total\n"
+        "Three Months Ended September 30, 2025 |  |  |  |\n"
+        "Segment revenues and other income | 24,279 |  | 71,003 |  | 95,282 |\n"
+        "Reconciliation of consolidated revenues |  |  |\n"
+        "Segment revenues and other income | 95,282 |  |  |\n"
+        "Elimination of intersegment revenues | (26,068) |  |  |\n"
+        "Total consolidated revenues and other income | 81,506 |  |  |\n"
+    )
+
+    assert _segments(quarterly, excerpt) == {}

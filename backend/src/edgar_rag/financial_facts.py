@@ -47,6 +47,16 @@ Segment revenue is read from the first segment table that reconciles to revenue:
    products, geographies and end markets that also add up to revenue.
 10. Their figures, with reconciling rows (eliminations, hedging, corporate), must add
    up to revenue. The reconciling rows are not segments and yield no facts.
+11. Failing rows, segments are read from a table that lays them out as columns
+   (Coca-Cola, NVIDIA, ExxonMobil): a header row names the columns and a row naming a
+   period ("Three Months Ended June 27, 2025") heads each block of rows. The block is
+   the first headed with the Report Period's year, and its revenue row gives each
+   column's figure. A segment split into U.S. and non-U.S. sub-columns gets their sum.
+   The same rules apply: the header or the text above it calls them segments, total
+   columns are left out, reconciling columns count towards the sum without yielding
+   facts, and the segments must add up to revenue, directly or through a
+   reconciliation further down the table (ExxonMobil's segment total, plus other
+   revenues, less intersegment revenue).
 
 A Filing yields no fact rather than a guessed one when any step is ambiguous: no
 revenue row, header years that don't line up with the figures, no scale, or segments
@@ -140,6 +150,12 @@ _INTRO_ROWS = 8
 _SHORT_TEXT = 120
 _SENTENCE_BREAK = re.compile(r"[.:•]\s*(?=[A-Z(\u201c])|\.\s")
 _TOTAL_HEADING = re.compile(r"total|consolidated(?:\s+totals?)?|total\s+consolidated")
+# Columns of a segment table that total it rather than being a segment.
+_TOTAL_COLUMN = re.compile(
+    r"(?:segment\s+|corporate\s+)?total|consolidated(?:\s+totals?)?|total\s+consolidated"
+)
+# The revenue row of a segment table laid out in columns, besides the revenue labels.
+_SEGMENT_REVENUE_LABEL = re.compile(r"(?:total\s+)?segment\s+revenues?(?:\s+and\s+other\s+income)?")
 _STATEMENT_TITLE = re.compile(
     r"statements?\s+of\s+(?:consolidated\s+)?(?:income|operations|earnings)"
     r"|income\s+statements?",
@@ -207,20 +223,25 @@ class _Table:
         return values[len(values) - self.years + self.column] is None
 
     def fact(self, metric: str, i: int, segment: str | None = None) -> FinancialFact:
-        filing = self.filing
-        return FinancialFact(
-            ticker=filing.ticker,
-            report_period=filing.report_period,
-            metric=metric,
-            value=self.value(i),
-            unit="USD",
-            filing_id=filing.filing_id,
-            period_months=12 if filing.form_type == "10-K" else 3,
-            label=self.rows[i].label,
-            scale=self.scale,
-            offset=self.rows[i].offset,
-            segment=segment,
-        )
+        return _fact(self.filing, metric, self.rows[i], self.value(i), self.scale, segment)
+
+
+def _fact(
+    filing: Filing, metric: str, row: _Row, value: int, scale: int, segment: str | None = None
+) -> FinancialFact:
+    return FinancialFact(
+        ticker=filing.ticker,
+        report_period=filing.report_period,
+        metric=metric,
+        value=value,
+        unit="USD",
+        filing_id=filing.filing_id,
+        period_months=12 if filing.form_type == "10-K" else 3,
+        label=row.label,
+        scale=scale,
+        offset=row.offset,
+        segment=segment,
+    )
 
 
 def _income_statement(filing: Filing) -> _Table | None:
@@ -275,7 +296,8 @@ def _segment_revenue(
 
     Either way the text that introduces them must call them segments, and they must
     add up to revenue. Reconciling rows (eliminations, hedging, corporate) count
-    towards the sum but are not segments.
+    towards the sum but are not segments. Failing both, segments are read from a table
+    that lays them out as columns (`_column_segments`).
     """
     for table, start, end in _sub_tables(filing, rows):
         candidates = [
@@ -293,7 +315,181 @@ def _segment_revenue(
                     for name, j in segments
                     if not _RECONCILING.search(name)
                 ]
+    return _column_segments(filing, rows, revenue)
+
+
+def _column_segments(
+    filing: Filing, rows: list[_Row], revenue: FinancialFact
+) -> list[FinancialFact]:
+    """Segment revenue from the first table whose columns are segments that reconcile.
+
+    The layout (Coca-Cola, NVIDIA, ExxonMobil): a header row names the columns, then a
+    block of rows per period, each block headed by a row naming its period ("Three
+    Months Ended June 27, 2025"). The block for the Report Period is the first whose
+    heading has its year, as with year columns. Its revenue row gives each column's
+    figure. A segment split into sub-columns by a second header row (ExxonMobil's U.S.
+    and non-U.S.) gets the sum of its sub-columns.
+
+    Total columns ("Consolidated", "Segment Total") are not segments, and reconciling
+    columns (corporate, eliminations) count towards the sum but are not segments. The
+    segments must add up to revenue, either directly or through a reconciliation
+    further down the table: a row equal to their sum, then rows of single figures down
+    to a row equal to revenue (ExxonMobil adds other revenues and eliminates
+    intersegment revenue there).
+    """
+    for h, header in enumerate(rows):
+        names = _column_names(header)
+        if names is None:
+            continue
+        end = next((j for j in range(h + 1, len(rows)) if not rows[j].cells), len(rows))
+        block = _period_block(rows, h, end, filing.report_period)
+        if block is None:
+            continue
+        period, block_end = block
+        scale = _scale(filing.body, rows, h, period)
+        if scale is None or not _introduced_as_segments(rows, h):
+            continue
+        sub = _sub_header(rows, h)
+        for r in range(period + 1, block_end):
+            label = _norm(rows[r].label)
+            if not (_REVENUE_LABEL.fullmatch(label) or _SEGMENT_REVENUE_LABEL.fullmatch(label)):
+                continue
+            columns = _columns(names, sub, _values(rows[r].cells))
+            if columns is None:
+                continue
+            segments = [
+                (name, value)
+                for name, value in columns
+                if not _TOTAL_COLUMN.fullmatch(name.lower()) and value is not None
+            ]
+            total = int(sum(value for _, value in segments) * scale)
+            if (
+                len(segments) - sum(1 for n, _ in segments if _RECONCILING.search(n)) >= 2
+                and all(
+                    abs(total - value * scale) < len(segments) * scale
+                    for name, value in columns
+                    if _TOTAL_COLUMN.fullmatch(name.lower()) and value is not None
+                )
+                and (
+                    abs(total - revenue.value) < len(segments) * scale
+                    or _bridged(rows, r + 1, end, total, revenue, scale)
+                )
+            ):
+                return [
+                    _fact(filing, "segment_revenue", rows[r], int(value * scale), scale, name)
+                    for name, value in segments
+                    if not _RECONCILING.search(name)
+                ]
     return []
+
+
+def _column_names(row: _Row) -> list[str] | None:
+    """The column names of a header row of segment columns, or None if it isn't one.
+
+    Two or more names in the cells, none of them a figure or a year.
+    """
+    if _is_data(row) or any(_YEAR.search(c) for c in row.cells):
+        return None
+    names = [_column_name(c) for c in row.cells if c]
+    return names if len(names) >= 2 else None
+
+
+def _column_name(cell: str) -> str:
+    """A column name with the spaces lost where its header wrapped put back.
+
+    "LatinAmerica" is "Latin America", "Europe,Middle East" is "Europe, Middle East".
+    """
+    name = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", _segment_name(cell))
+    return re.sub(r",(?=\S)", ", ", name)
+
+
+def _sub_header(rows: list[_Row], h: int) -> list[str]:
+    """The sub-column names on the row under header row `h`: "U.S." and "Non-U.S."."""
+    if h + 1 >= len(rows):
+        return []
+    row = rows[h + 1]
+    items = [c for c in (row.label, *row.cells) if c]
+    if not row.cells or _is_data(row) or any(_YEAR.search(c) for c in items):
+        return []
+    return items
+
+
+def _period_block(
+    rows: list[_Row], h: int, end: int, report_period: date
+) -> tuple[int, int] | None:
+    """The block of rows under header row `h` for the Report Period.
+
+    A period row names its period in its label and has empty cells. The block is the
+    first whose period row has the Report Period's year; it runs to the next period
+    row or header row.
+    """
+    starts = []
+    for j in range(h + 1, end):
+        row = rows[j]
+        if j > h + 1 and _column_names(row) is not None:
+            end = j
+            break
+        if _YEAR.search(row.label) and not any(row.cells):
+            starts.append(j)
+    for k, j in enumerate(starts):
+        years = [int(y) for y in _YEAR.findall(rows[j].label)]
+        if _column(years, report_period) is not None:
+            return j, min([*starts[k + 1 :], end])
+    return None
+
+
+def _columns(
+    names: list[str], sub: list[str], values: list[Decimal | None]
+) -> list[tuple[str, Decimal | None]] | None:
+    """Each column's name and figure, or None if the figures don't line up with them.
+
+    With a sub-header, the first names each head an equal share of the sub-columns
+    and their figure is the sum of those; the rest head one column each. A dash is
+    nil, and a name whose figures are all dashes has no figure.
+    """
+    if len(values) == len(names):
+        spans = [1] * len(names)
+    elif sub:
+        split = len(names) - (len(values) - len(sub))
+        if not 0 < split <= len(names) or len(sub) % split:
+            return None
+        spans = [len(sub) // split] * split + [1] * (len(names) - split)
+    else:
+        return None
+    columns = []
+    i = 0
+    for name, span in zip(names, spans, strict=True):
+        figures = [v for v in values[i : i + span] if v is not None]
+        columns.append((name, sum(figures) if figures else None))
+        i += span
+    return columns
+
+
+def _bridged(
+    rows: list[_Row], start: int, end: int, total: int, revenue: FinancialFact, scale: int
+) -> bool:
+    """Whether rows `start` to `end` reconcile the segments' `total` to revenue.
+
+    A row whose one figure is the total, then rows of one figure each, ending in a row
+    equal to revenue that the total and the figures between add up to.
+    """
+    running = None
+    for row in rows[start:end]:
+        if _column_names(row) is not None:
+            return False
+        values = [v for v in _values(row.cells) if v is not None]
+        if len(values) != 1:
+            running = None
+            continue
+        value = int(values[0] * scale)
+        if running is None:
+            if value == total:
+                running = value
+            continue
+        if value == revenue.value and abs(running - value) < scale:
+            return True
+        running += value
+    return False
 
 
 def _listed_segments(

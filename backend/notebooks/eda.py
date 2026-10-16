@@ -1786,14 +1786,19 @@ for metric, filing_id in hand_checked[["metric", "filing_id"]].itertuples(index=
 # %% [markdown]
 # ### 7.2 Segment revenue
 #
-# A segment's revenue is read from the Filing's segment table: either rows of figures
-# above a row equal to revenue (Microsoft, Alphabet, Apple, Disney), or a heading per
-# segment followed by its own revenue row (Amazon, Meta, Tesla). The text introducing
-# the table must call them segments, which keeps out tables of products, geographies
-# and end markets that also add up to revenue (Apple's net sales by category,
-# NVIDIA's revenue by market platform). The segments, with any reconciling rows
-# (eliminations, hedging), must add up to the Filing's revenue fact, which 7 has
-# matched to the SEC for every Filing.
+# A segment's revenue is read from the Filing's segment table, in one of three
+# layouts: rows of figures above a row equal to revenue (Microsoft, Alphabet, Apple,
+# Disney); a heading per segment followed by its own revenue row (Amazon, Meta,
+# Tesla); or one column per segment, with a block of rows per period (Coca-Cola,
+# NVIDIA, ExxonMobil). ExxonMobil splits each segment into U.S. and non-U.S. columns,
+# which are added. The text introducing the table (or, for columns, its header) must
+# call them segments, which keeps out tables of products, geographies and end markets
+# that also add up to revenue (Apple's net sales by category, NVIDIA's revenue by
+# market platform). The segments, with any reconciling rows or columns (eliminations,
+# hedging, corporate), must add up to the Filing's revenue fact, which 7 has matched
+# to the SEC for every Filing: directly, or through a reconciliation printed further
+# down the table (ExxonMobil's segment total, plus other revenues, less intersegment
+# revenue).
 #
 # Without an SEC reference, accuracy is checked two ways: every extracted set
 # reconciles to SEC-matched revenue by construction, and values read by hand from the
@@ -1846,7 +1851,9 @@ segment_sets
 # %%
 # The segments add up to the Filing's revenue (with any reconciling rows), which is
 # what the extractor requires. Shown here as the share of revenue the named segments
-# account for: the rest is eliminations, hedging and similar rows.
+# account for: the rest is eliminations, hedging, corporate and similar rows. A share
+# above 1 means the segments include sales to each other, eliminated on the way to
+# revenue (Coca-Cola's intersegment revenue; ExxonMobil's, over a third of revenue).
 segment_share = (
     segment_facts.groupby("filing_id")["value"]
     .sum()
@@ -1869,6 +1876,13 @@ segment_hand_checked = pd.DataFrame(
         ("TSLA_10-Q_2025-06-30", "Energy generation and storage segment", "2,789"),
         ("AAPL_10-Q_2025-06-28", "Greater China", "15,369"),
         ("DIS_10-K_2023-09-30", "Experiences", "32,549"),
+        ("KO_10-Q_2025-06-27", "North America", "5,029"),
+        ("KO_10-K_2024-12-31", "Europe, Middle East & Africa", "8,122"),
+        ("NVDA_10-Q_2025-07-27", "Compute & Networking", "41,331"),
+        ("NVDA_10-K_2025-01-26", "Graphics", "14,304"),
+        # U.S. plus non-U.S. columns: 12,267 + 13,433 and 51,489 + 55,662.
+        ("XOM_10-Q_2025-06-30", "Upstream", "25,700"),
+        ("XOM_10-K_2025-12-31", "Upstream", "107,151"),
     ],
     columns=["filing_id", "segment", "figure_in_millions"],
 )
@@ -1884,26 +1898,31 @@ segment_hand_checked["extracted_ok"] = (
 segment_hand_checked
 
 # %% [markdown]
-# Six Companies yield no segment revenue. Each was inspected by hand; none is a
+# Three Companies yield no segment revenue. Each was inspected by hand; none is a
 # misread, each is a layout the rules don't handle:
 #
-# - **KO, NVDA, XOM:** segments are the **columns** of the segment table, not its
-#   rows (Coca-Cola's regions; NVIDIA's Compute & Networking and Graphics;
-#   ExxonMobil's Upstream, Energy, Chemical and Specialty Products, each split U.S. /
-#   non-U.S.).
 # - **JNJ:** segment sales are broken down by franchise and by U.S. / International
-#   rows; the segment totals sit in columns of a later table.
+#   rows; the segment totals sit in columns of a later table, but with the periods as
+#   column groups side by side rather than blocks of rows, and no total for sales.
 # - **PFE:** revenues, earnings and depreciation sit side by side in one table, and
 #   the reconciling rows leave the revenue column empty, so the rows don't line up.
 # - **UNH:** the MD&A table's percentage-change cells carry a `%` on some rows and not
-#   others, so rows of one table have different widths; the note gives segments as
-#   columns.
+#   others, so rows of one table have different widths. The note gives segments as
+#   columns, but its Optum column subtotals Optum Health, Optum Insight and Optum Rx,
+#   so the columns counted once each don't add up to revenue.
 #
 # Two Disney Filings (the FY2022 10-K and the Q2 FY2022 10-Q) are missed for a
 # different reason, and rightly: their segments add up to "segment revenues", which a
 # separate table reconciles to total revenue through a $1,023 million content-licence
 # termination charged outside the segments. The segment table alone does not add up to
 # revenue, so the extractor returns nothing rather than a set it cannot check.
+#
+# ExxonMobil yields segments only from its 2025 Filings (the FY2024 and FY2025 10-Ks
+# and the 2025 10-Qs), for the same reason. Before them, its segment tables (columns
+# in the 10-Ks, U.S. / non-U.S. rows under each segment in the 10-Qs) add up to
+# "Sales and other operating revenue", which leaves out income from equity
+# affiliates and other income, not to "Total revenues and other income", the revenue
+# the SEC reports. No table reconciles the two, so those 11 Filings yield none.
 
 # %% [markdown]
 # ### 7.3 A 10-K reports the year, not its fourth quarter
@@ -1940,26 +1959,27 @@ nvda.round(3)
 #   SEC's `NetIncomeLoss` is the attributable figure, and so is what a reader means by
 #   "net income". Per-share rows ("Net income per share - diluted") sit in the same
 #   table under the same "in millions" title and must never be read as net income.
-# - **Segment revenue: exact where found, found for half the Filings.** It is
-#   extracted from 101 of the 197 Filings (51%), for 7 of the 13 Companies: Apple,
-#   Amazon, Alphabet, Meta, Microsoft and Tesla in every Filing, Disney in 15 of 17.
-#   Every extracted set adds up to the SEC-matched revenue (with eliminations or
-#   hedging) and all 10 hand-checked values agree. The other six Companies (J&J,
-#   Coca-Cola, NVIDIA, Pfizer, UnitedHealth, ExxonMobil) yield nothing: their segments
-#   are the columns of a table, or are split across rows the rules can't add up. The
+# - **Segment revenue: exact where found, found for two Filings in three.** It is
+#   extracted from 137 of the 197 Filings (70%), for 10 of the 13 Companies: Apple,
+#   Amazon, Alphabet, Meta, Microsoft, Tesla, Coca-Cola and NVIDIA in every Filing,
+#   Disney in 15 of 17, ExxonMobil in 5 of 16. Every extracted set adds up to the
+#   SEC-matched revenue (with eliminations, hedging or corporate) and all 16
+#   hand-checked values agree. The other three Companies (J&J, Pfizer, UnitedHealth)
+#   yield nothing: their segments are split across rows the rules can't add up. The
 #   SEC's company-facts data has no segment breakdown, so a wider check needs the
 #   hand-checked values or another reference.
 # - **Segments change.** Disney reorganised from two segments (Disney Media and
 #   Entertainment Distribution; Disney Parks, Experiences and Products) to three
-#   (Entertainment, Sports, Experiences) from FY2023, so a segment trend can't run
-#   across the change.
+#   (Entertainment, Sports, Experiences) from FY2023, and Coca-Cola's 2025 Filings no
+#   longer report Global Ventures as a segment, so a segment trend can't run across
+#   the change.
 # - **Rules are enough, but they encode the Corpus.** Thirteen Companies use eight
 #   revenue labels and 17 net income labels, put the current year in the first or
 #   the last column, add note-reference or percent-of-sales columns, state the scale in
 #   the title, a header row or in capitals, write negatives as `(68)` or `$(68)`, and
-#   lay segment tables out three different ways. These rules were written against
-#   these 13 Companies; the 41 Snapshot Companies are not measured here. The extractor
-#   returns nothing rather than a guess when a step is ambiguous.
+#   lay segment tables out in rows, under headings or in columns. These rules were
+#   written against these 13 Companies; the 41 Snapshot Companies are not measured
+#   here. The extractor returns nothing rather than a guess when a step is ambiguous.
 # - **The SEC's own tagging varies too.** Revenue is `Revenues` for some Companies and
 #   `RevenueFromContractWithCustomerExcludingAssessedTax` for others, and Alphabet and
 #   Pfizer switch between them from one Filing to the next. A reference built on one
@@ -1981,7 +2001,7 @@ nvda.round(3)
 #   printed, next to the retrieved MD&A text. Quarterly series derive the fourth
 #   quarter from the 10-K and say so.
 # - **Fall back to text, and say so, where the store has no fact.** Segment questions
-#   for the six Companies without segment facts, any other metric, and every Snapshot
+#   for the Companies and Filings without segment facts, any other metric, and every Snapshot
 #   Company are answered from retrieved table and MD&A chunks, and the answer says the
 #   figure was read from the Filing text rather than from extracted Financial Facts.
 # - **Never answer from the SEC data.** It stays an evaluation reference, cached under
