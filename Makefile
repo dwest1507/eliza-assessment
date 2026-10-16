@@ -5,6 +5,7 @@ UV := cd $(BACKEND) && uv run
 
 SEC_FACTS_INDEX := data/derived/sec_companyfacts/index.json
 INDEX := data/derived/edgar_rag.sqlite
+API_PORT ?= 8000
 
 # Local settings for the backend (copy backend/.env.example). Optional; the variables
 # it defines are exported to the recipes. Make syntax, so values are unquoted.
@@ -12,7 +13,7 @@ ENV_FILE := $(BACKEND)/.env
 -include $(ENV_FILE)
 export $(shell sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' $(ENV_FILE) 2>/dev/null)
 
-.PHONY: help install test lint format eda sec-facts index ask
+.PHONY: help install test lint format eda sec-facts index ask api
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-10s %s\n", $$1, $$2}'
@@ -55,7 +56,10 @@ ask: $(INDEX) ## Answer a question from the command line: make ask Q="..." (need
 	fi
 	$(UV) python -m edgar_answer.ask "$$Q"
 
-# `make ask` builds the index first when it is missing.
+api: $(INDEX) ## Run the chat API on http://localhost:8000, or API_PORT (answers need OPENAI_API_KEY)
+	$(UV) uvicorn edgar_api.app:create_app --factory --host 127.0.0.1 --port $(API_PORT)
+
+# `make ask` and `make api` build the index first when it is missing.
 $(INDEX):
 	@$(MAKE) --no-print-directory index
 

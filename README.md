@@ -6,7 +6,7 @@ This repo is a take-home assessment for a Forward Deployed Engineer (AI Engineer
 
 ## Status
 
-The work runs in phases. The exploratory data analysis (EDA) phase is complete. The retrieval phase has its tracer bullet: a question asked from the command line is answered end to end, from the index through one Answer Call. The query parser's full rules, Coverage Gaps, Financial Facts in the context, the evaluation harnesses, the API and the front-end come next.
+The work runs in phases. The exploratory data analysis (EDA) phase is complete. The retrieval phase has its tracer bullet: a question asked from the command line or over the chat API is answered end to end, from the index through one Answer Call. The query parser's full rules, Coverage Gaps, Financial Facts in the context, the evaluation harnesses and the front-end come next.
 
 | Deliverable (from the brief) | Status | Where |
 |---|---|---|
@@ -15,7 +15,7 @@ The work runs in phases. The exploratory data analysis (EDA) phase is complete. 
 | Log of prompt iterations | Started: v1 | [`docs/prompt-iterations.md`](docs/prompt-iterations.md) |
 | Final prompt template | v1 in place; the final version follows the prompt iterations | [`docs/prompt-iterations.md`](docs/prompt-iterations.md), [`backend/src/edgar_rag/_prompt.py`](backend/src/edgar_rag/_prompt.py) |
 | Front-end | Not started | [`frontend/`](frontend/) (reserved for Next.js) |
-| Example request, ready to execute | Partly done: `make ask` answers a question from the command line. The API and its `curl` example are next. | [Asking a question](#asking-a-question) |
+| Example request, ready to execute | Done: `make ask` answers a question from the command line, and `backend/scripts/chat.sh` calls the chat API with `curl` | [Asking a question](#asking-a-question), [The chat API](#the-chat-api) |
 | Notes on how quality was evaluated | Partly done: Financial Facts extraction is measured against SEC XBRL data, and the Golden Set of 30 labelled questions is written and checked against the Corpus. The retrieval and answer harnesses are next. | [`docs/findings.md`](docs/findings.md) (findings 21–24), notebook analysis 7, [`docs/golden-set.md`](docs/golden-set.md) |
 | Documented assumptions and decisions | Done for the EDA | [`docs/findings.md`](docs/findings.md), [`docs/assumptions.md`](docs/assumptions.md), [`docs/adr/`](docs/adr/) |
 
@@ -84,6 +84,7 @@ Every command runs through the root `Makefile` (`make help` lists them):
 | `make sec-facts` | Fetch the SEC XBRL company-facts reference for the Tracked Companies |
 | `make index` | Rebuild the retrieval index (`data/derived/edgar_rag.sqlite`) from the Corpus |
 | `make ask Q="..."` | Answer a question from the command line, without a server (needs `OPENAI_API_KEY`) |
+| `make api` | Run the chat API on http://localhost:8000 (`API_PORT` to change; answers need `OPENAI_API_KEY`) |
 
 ### Asking a question
 
@@ -96,6 +97,31 @@ make ask Q="What are the primary risk factors facing Apple, Tesla, and JPMorgan,
 ```
 
 `make ask` builds the index first if it is missing. It prints the Query Scope (the Companies the question names), the numbered Sources the answer may cite, then the answer as it streams, and a last line with the model, prompt version, token usage and latency. The model defaults to `gpt-6-luna`; set `OPENAI_MODEL` in `backend/.env` to try another. Every Answer Call is also logged as one JSON line in `data/derived/logs/answer_calls.jsonl`.
+
+### The chat API
+
+`make api` serves the same pipeline over HTTP with FastAPI, for the front-end (it builds the index first if it is missing). With it running, the `curl` example asks the brief's first question and prints the stream as it arrives:
+
+```sh
+make api                                   # terminal 1
+backend/scripts/chat.sh                    # terminal 2: the brief's first example question
+backend/scripts/chat.sh "What are NVIDIA's main supply chain risks?"
+API_URL=http://localhost:8001 backend/scripts/chat.sh   # another server
+```
+
+The script is a single `curl` call:
+
+```sh
+curl --no-buffer -X POST http://localhost:8000/api/chat \
+  -H 'Content-Type: application/json' \
+  -d '{"messages": [{"role": "user", "content": "What are the primary risk factors facing Apple, Tesla, and JPMorgan, and how do they compare?"}]}'
+```
+
+- **`POST /api/chat`** takes the whole conversation, oldest first, ending with the question: `{"messages": [{"role": "user" | "assistant", "content": "..."}]}`. Messages in the AI SDK's `useChat` shape (`parts: [{"type": "text", "text": "..."}]`) are read too. It answers with the [Vercel AI SDK UI message stream](https://ai-sdk.dev/docs/ai-sdk-ui/stream-protocol) (server-sent events, header `x-vercel-ai-ui-message-stream: v1`): first a `data-query-scope` part with the Companies the question resolved to, then a `data-sources` part with every numbered Source (`tag`, `filingId`, `company`, `ticker`, `formType`, `reportPeriod`, `fiscalPeriod`, `section`, `item`, `label`, `text`), so citations are clickable before the answer arrives, then the answer as `text-delta` parts, `finish` and `[DONE]`. If the provider fails mid-answer, an `error` part replaces `finish`.
+- An empty latest message, one longer than 4,000 characters, or a conversation that does not end with the user's question is rejected with `400`; a body of the wrong shape with `422`. If the index is missing or the answer model can't be created (no key), the API answers `503`.
+- **`GET /api/health`** returns `{"status": "ok"}` and needs no key.
+
+The backend is stateless: nothing is kept between requests, so the browser sends the whole conversation each time. Cross-origin browser calls are refused unless their origin is listed in `CORS_ALLOWED_ORIGINS` in `backend/.env` (comma-separated). The front-end will call the API through its own server-side route, which needs none. Each Answer Call is logged like `make ask`'s.
 
 ### Running the EDA
 
@@ -155,6 +181,8 @@ context.messages  # the rendered prompt for the Answer Call
 │   │   ├── sec_reference.py   fetches and reads the SEC company-facts evaluation reference
 │   │   └── golden_set.py      loads and validates the Golden Set and its dev/holdout split
 │   ├── src/edgar_answer/      provider implementations (OpenAI) and the `make ask` CLI
+│   ├── src/edgar_api/         the FastAPI chat API (`make api`)
+│   ├── scripts/chat.sh        the `curl` example against the chat API
 │   ├── tests/                 pytest suite
 │   └── notebooks/             eda.py (source) and eda.ipynb (executed)
 ├── frontend/                  reserved for the Next.js front-end
@@ -174,7 +202,7 @@ context.messages  # the rendered prompt for the Answer Call
 └── Makefile                   single entry point
 ```
 
-The core package depends on nothing outside the Python standard library and must not depend on a web framework, so the API and front-end can sit on top of it; a guard test enforces this. Code that needs a provider's SDK lives in `edgar_answer` ([ADR 0005](docs/adr/0005-provider-sdks-outside-the-core-package.md)).
+The core package depends on nothing outside the Python standard library and must not depend on a web framework, so the API and front-end can sit on top of it; a guard test enforces this. Code that needs a provider's SDK lives in `edgar_answer` ([ADR 0005](docs/adr/0005-provider-sdks-outside-the-core-package.md)), and the web API in `edgar_api`.
 
 ## Data
 
