@@ -16,13 +16,14 @@ Filing's own period are read from the Filing's income statement:
    before its first `|`, or its first cell when a row of figures starts with a `|`
    (Chevron's statements).
 2. A revenue row is a row whose label is one of the revenue labels the Companies use
-   ("Revenues", "Total net sales", "Net Operating Revenues", "Sales to customers"...)
-   and which holds figures. Within a table a label starting with "Total" wins over its
-   parts ("Products", "Services").
+   ("Revenues", "Total net sales", "Net Operating Revenues", "Total sales and
+   revenues"...) and which holds figures. Within a table a label starting with "Total"
+   wins over its parts ("Products", "Services").
 3. The income statement is the first table titled as one ("Consolidated Statements of
-   Operations", "Income Statements"...) with a revenue row and a net income row;
-   failing that, the first table with both rows (a summary table); failing that, the
-   first table with a revenue row.
+   Operations", "Income Statements", Caterpillar's "Consolidated Results of Operations
+   for the Years Ended"...) with a revenue row and a net income row; failing that, the
+   first table with both rows (a summary table); failing that, the first table with a
+   revenue row.
 4. The column comes from the nearest header row above the revenue row whose years
    line up with its figures: the first column of the Report Period's year, which in a
    10-Q is the three months ended. Columns are never taken by position alone, because
@@ -33,9 +34,10 @@ Filing's own period are read from the Filing's income statement:
 5. The scale ("in millions", "(millions of dollars)", "(MILLIONS") is the one stated
    nearest above the revenue row: in the header rows, else in the title above them.
 6. Net income is the row below revenue, in the same table and column, labelled net
-   income or net earnings. Net income attributable to the Company ("... attributable
-   to ExxonMobil") wins over the total including noncontrolling interests, matching
-   what the SEC reports as `NetIncomeLoss`. Rows per share, for continuing or
+   income or net earnings (Caterpillar's "Profit"). Net income attributable to the
+   Company ("... attributable to ExxonMobil") wins over the total including
+   noncontrolling interests, matching what the SEC reports as `NetIncomeLoss`. Rows
+   per share (even "... attributable to PepsiCo per common share"), for continuing or
    discontinued operations, or attributable to noncontrolling interests never count.
 
 Segment revenue is read from the first segment table that reconciles to revenue:
@@ -43,14 +45,16 @@ Segment revenue is read from the first segment table that reconciles to revenue:
 7. A table is split at each of its header rows, since a page footer containing a `|`
    can glue separate tables into one run of lines.
 8. Segments are either rows of figures directly above a row equal to revenue (a
-   subtotal replaces the rows it adds up; a dash for the period is nil), or heading
-   rows each followed by its own revenue row ("North America", then "Net sales").
+   subtotal replaces the rows it adds up, but a "Total" of all of them is left out; a
+   dash for the period is nil), or heading rows each followed by its own revenue row
+   ("North America", then "Net sales").
 9. The text introducing them (the label rows above them, or the last sentence of the
    paragraph above the table) must call them segments, which keeps out tables of
    products, geographies and end markets that also add up to revenue. A sentence that
    only points to segments elsewhere ("... see Business Segment Operations") does not.
 10. Their figures, with reconciling rows (eliminations, hedging, corporate), must add
-   up to revenue. The reconciling rows are not segments and yield no facts.
+   up to revenue. The reconciling rows are not segments and yield no facts, and at
+   least two segments must remain.
 11. Failing rows, segments are read from a table that lays them out as columns
    (Coca-Cola, NVIDIA, ExxonMobil): a header row names the columns and a row naming a
    period ("Three Months Ended June 27, 2025") heads each block of rows. The block is
@@ -131,17 +135,21 @@ _REVENUE_LABEL = re.compile(
     r"|(?:total\s+)?net\s+operating\s+revenues?"
     r"|sales\s+to\s+customers"
     r"|sales\s+and\s+other\s+operating\s+revenues?"
+    r"|(?:total\s+)?sales\s+and\s+revenues"
     r"|total\s+revenues?\s+and\s+other\s+income"
     r"|total\s+revenues?,?\s+net\s+of\s+interest\s+expense"
 )
 # The net income row itself: "Net income", "Net earnings/(loss)", "Consolidated net
-# income", "Net income including noncontrolling interests", or net income attributable
-# to the Company ("... attributable to ExxonMobil"), never to noncontrolling interests
-# ("non-controlling", "the noncontrolling interest", "minority interests").
+# income", "Net income including noncontrolling interests", Caterpillar's "Profit", or
+# net income attributable to the Company ("... attributable to ExxonMobil"), never to
+# noncontrolling interests ("non-controlling", "the noncontrolling interest", "minority
+# interests") and never per share ("... attributable to P&G (Diluted)").
 _NET_INCOME_ROW = re.compile(
     r"(?:consolidated\s+)?net\s+(?:\(loss\)\s+)?(?:income|earnings)(?:\s*/?\s*\(loss\))?"
-    r"(?:\s+(?P<attributable>attributable\s+to\s+(?!(?:the\s+)?(?:non-?controlling|minority)).+)"
+    r"(?:\s+(?P<attributable>attributable\s+to\s+"
+    r"(?!(?:the\s+)?(?:non-?controlling|minority))(?!.*\b(?:per|basic|diluted)\b).+)"
     r"|\s+(?:including|before\s+allocation\s+to)\s+noncontrolling\s+interests)?"
+    r"|profit"
 )
 _SEGMENT = re.compile(r"\bsegments?\b", re.IGNORECASE)
 # Rows in a segment table that reconcile segments to the total but are not segments.
@@ -171,7 +179,10 @@ _TOTAL_COLUMN = re.compile(
 _SEGMENT_REVENUE_LABEL = re.compile(r"(?:total\s+)?segment\s+revenues?(?:\s+and\s+other\s+income)?")
 _STATEMENT_TITLE = re.compile(
     r"statements?\s+of\s+(?:consolidated\s+)?(?:income|operations|earnings)"
-    r"|income\s+statements?",
+    r"|income\s+statements?"
+    # Caterpillar's "Consolidated Results of Operations for the Years Ended ...", not an
+    # MD&A heading ("Supplemental Data for Results of Operations").
+    r"|consolidated\s+results\s+of\s+operations\s+for",
     re.IGNORECASE,
 )
 
@@ -192,8 +203,11 @@ _STATEMENT_ROWS = 40
 _YEAR = re.compile(r"(?<!\d)((?:19|20)\d{2})(?!\d)")
 _NUMBER = re.compile(r"\$?\s*\(?-?\$?\s*\d[\d,]*(?:\.\d+)?\s*\)?")
 _DASHES = {"—", "–", "-"}
-# Footnote marks and note references: "(1)", "(a)", "(Note 9)", a trailing "*".
-_FOOTNOTE = re.compile(r"\s*\((?:\d{1,2}|[a-z]|note\s*\d+)\)|\s*\*+$", re.IGNORECASE)
+# Footnote marks and note references: "(1)", "(a)", "(Note 9)", a trailing "*", or a
+# digit glued to the last word ("Profit1").
+_FOOTNOTE = re.compile(r"\s*\((?:\d{1,2}|[a-z]|note\s*\d+)\)|\s*\*+$|(?<=[a-z])\d$", re.IGNORECASE)
+# A cell that can be a row's label: it holds a word, not just "$", "—" or "(a)".
+_WORD = re.compile(r"[A-Za-z]{2}")
 
 
 @dataclass(frozen=True)
@@ -328,7 +342,7 @@ def _segment_revenue(
         ]
         for intro, segments in candidates:
             if (
-                len(segments) >= 2
+                _enough_segments([name for name, _ in segments])
                 and _introduced_as_segments(rows, intro)
                 and _reconciles([table.value(j) for _, j in segments], revenue, table)
             ):
@@ -386,7 +400,7 @@ def _column_segments(
             ]
             total = int(sum(value for _, value in segments) * scale)
             if (
-                len(segments) - sum(1 for n, _ in segments if _RECONCILING.search(n)) >= 2
+                _enough_segments([name for name, _ in segments])
                 and all(
                     abs(total - value * scale) < len(segments) * scale
                     for name, value in columns
@@ -403,6 +417,11 @@ def _column_segments(
                     if not _RECONCILING.search(name)
                 ]
     return []
+
+
+def _enough_segments(names: list[str]) -> bool:
+    """Whether at least two of these names are segments, not reconciling rows."""
+    return sum(1 for name in names if not _RECONCILING.search(name)) >= 2
 
 
 def _column_names(row: _Row) -> list[str] | None:
@@ -596,11 +615,16 @@ def _collapse_subtotals(run: list[int], table: _Table) -> list[int]:
     """The top level of a run of rows: a subtotal replaces the rows it adds up.
 
     A row is a subtotal when it equals the sum of two or more rows directly above it
-    (UnitedHealth's "Optum" over Optum Health, Optum Insight, Optum Rx).
+    (UnitedHealth's "Optum" over Optum Health, Optum Insight, Optum Rx). A "Total" row
+    equal to all the rows above it is their total, not a segment (RTX's "Total
+    segment"), and is left out.
     """
     kept: list[int] = []
     for i in run:
         value = table.value(i)
+        total_of_all = len(kept) > 1 and sum(table.value(j) for j in kept) == value
+        if total_of_all and _norm(table.rows[i].label).startswith("total"):
+            continue
         for n in range(len(kept), 1, -1):
             if sum(table.value(j) for j in kept[-n:]) == value:
                 del kept[-n:]
@@ -653,7 +677,7 @@ def _rows(body: str, start: int) -> list[_Row]:
     """Every line from `start` on, split into a label and cells at its `|`s.
 
     A line without a `|` (prose, or a table title) has no cells. A row of figures that
-    starts with a `|` takes its first cell as its label.
+    starts with a `|` takes its first cell as its label, if that cell holds a word.
     """
     rows = []
     offset = start
@@ -661,8 +685,9 @@ def _rows(body: str, start: int) -> list[_Row]:
         label, *cells = (cell.strip() for cell in line.split("|"))
         if (
             not label
+            and cells
+            and _WORD.search(cells[0])
             and _is_data(_Row("", tuple(cells[1:]), offset))
-            and not _is_data(_Row("", tuple(cells[:1]), offset))
         ):
             label, *cells = cells  # Chevron's "| Sales ... | 193,414 |": the label is a cell
         rows.append(_Row(label, tuple(cells), offset))

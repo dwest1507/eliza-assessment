@@ -392,6 +392,59 @@ def test_per_share_values_are_neither_net_income_nor_scaled_to_millions(quarterl
     assert _net_income(quarterly, per_share_only) is None
 
 
+@pytest.mark.parametrize(
+    "label",
+    [
+        "Net income attributable to PepsiCo per common share – diluted",
+        "Net Income Attributable to PepsiCo per Common Share",
+        "Net earnings attributable to P&G (Diluted)",
+    ],
+)
+def test_a_per_share_row_attributable_to_the_company_is_not_net_income(annual, label):
+    # PepsiCo's and P&G's per-share rows name the Company they are attributable to, so
+    # they must not win over the net income total as an attributable row would.
+    excerpt = (
+        "CONSOLIDATED STATEMENTS OF INCOME (in millions, except per share amounts)\n"
+        "| 2024 |  | 2023\n"
+        "Total revenues | 1,000 |  |  | 900 |\n"
+        "Net income | 120 |  |  | 100 |\n"
+        f"{label} | 1.20 |  |  | 1.00 |\n"
+    )
+
+    assert _net_income(annual, excerpt).value == 120_000_000
+
+
+def test_revenue_and_profit_labelled_the_caterpillar_way(annual):
+    # Caterpillar's "Total sales and revenues", and its net income "Profit" with the
+    # footnote mark glued on. "Profit of consolidated ... companies" includes the
+    # noncontrolling interests, like "Net income including noncontrolling interests".
+    # Its statement is titled "Consolidated Results of Operations for the Years Ended",
+    # and wins over the MD&A's supplemental table with the same rows.
+    excerpt = (
+        "Supplemental Data for Results of Operations\n"
+        "(Millions of dollars) |  | 2024 |  | 2023\n"
+        "Total sales and revenues | 67,589 |  |  | 64,809 |\n"
+        "Profit7 | $ | 8,884 |  |  | $ | 10,792 |\n"
+        "Prose between the tables.\n"
+        "Consolidated Results of Operations for the Years Ended December 31, |  |\n"
+        "(Dollars in millions except per share data) |  |  |  |  |\n"
+        "| 2024 |  | 2023\n"
+        "Sales of Machinery, Power & Energy | $ | 63,980 |  |  | $ | 61,363 |\n"
+        "Revenues of Financial Products | 3,609 |  |  | 3,446 |\n"
+        "Total sales and revenues | 67,589 |  |  | 64,809 |\n"
+        "Profit of consolidated and affiliated companies | 8,882 |  |  | 10,788 |\n"
+        "Less: Profit (loss) attributable to noncontrolling interests | (2) |  |  | (4) |\n"
+        "Profit1 | $ | 8,884 |  |  | $ | 10,792 |\n"
+        "Profit per common share | $ | 18.90 |  |  | $ | 22.17 |\n"
+    )
+
+    assert _revenue(annual, excerpt).value == 67_589_000_000
+    assert (_net_income(annual, excerpt).label, _net_income(annual, excerpt).value) == (
+        "Profit1",
+        8_884_000_000,
+    )
+
+
 _INCOME_STATEMENT = (
     "CONSOLIDATED STATEMENTS OF INCOME(in millions, except per share amounts)\n"
     "| Three Months Ended |  | Nine Months Ended\n"
@@ -454,6 +507,54 @@ def test_a_subtotal_of_segments_is_one_segment_not_added_twice(quarterly):
         "UnitedHealthcare": 60_000_000_000,
         "Optum": 62_346_000_000,
     }
+
+
+def test_a_total_of_all_the_segments_does_not_replace_them(annual):
+    # RTX's layout: the segments, their total, then eliminations down to revenue. The
+    # total is not one segment standing in for the three.
+    excerpt = _ANNUAL_INCOME_STATEMENT + (
+        "Total net sales by segment were as follows:\n"
+        "(dollars in millions) | 2024 |  | 2023\n"
+        "Collins Aerospace | $ | 30,000 |  |  | $ | 28,000 |\n"
+        "Pratt & Whitney | 32,000 |  |  | 30,000 |\n"
+        "Raytheon | 42,000 |  |  | 42,581 |\n"
+        "Total segment | 104,000 |  |  | 100,581 |\n"
+        "Eliminations and other | (2,113) |  |  | (2,000) |\n"
+        "Consolidated | $ | 101,887 |  |  | $ | 98,581 |\n"
+    )
+
+    assert _segments(annual, excerpt) == {
+        "Collins Aerospace": 30_000_000_000,
+        "Pratt & Whitney": 32_000_000_000,
+        "Raytheon": 42_000_000_000,
+    }
+
+
+def test_no_segment_revenue_from_one_segment_and_the_rows_reconciling_it(annual):
+    # Berkshire's: its operating businesses' total, and corporate and eliminations.
+    excerpt = _ANNUAL_INCOME_STATEMENT + (
+        "Reconciliations of revenues of our business segments to the consolidated amounts"
+        " follow (in millions).\n"
+        "| 2024 |  | 2023\n"
+        "Total operating businesses | $ | 101,346 |  |  | $ | 98,000 |\n"
+        "Corporate, eliminations and other | 541 |  |  | 581 |\n"
+        "| $ | 101,887 |  |  | $ | 98,581 |\n"
+    )
+
+    assert _segments(annual, excerpt) == {}
+
+
+def test_a_row_without_a_label_is_not_a_segment(annual):
+    # "| $ | 41,887 |": the first cell holds only the dollar sign, not a label.
+    excerpt = _ANNUAL_INCOME_STATEMENT + (
+        "The following table presents revenues by reportable segment (in millions):\n"
+        "| 2024 |  | 2023\n"
+        "U.S. | $ | 60,000 |  |  | $ | 58,000 |\n"
+        "| $ | 41,887 |  |  | $ | 40,581 |\n"
+        "Total revenues | $ | 101,887 |  |  | $ | 98,581 |\n"
+    )
+
+    assert "$" not in _segments(annual, excerpt)
 
 
 def test_a_row_with_a_dash_for_the_period_does_not_end_the_segment_rows(annual):
@@ -702,6 +803,9 @@ def test_revenue_and_net_income_of_a_real_filing_whose_statement_rows_start_with
         # From the statement ("Consolidated net income attributable to Walmart"), not
         # the net sales of an MD&A table.
         ("WMT_10K_2025-03-14_full.txt", 680_985_000_000, 19_436_000_000),
+        # Caterpillar's "Total sales and revenues" and "Profit" from Statement 1, not
+        # the Power & Energy segment's "Total Sales" in MD&A.
+        ("CAT_10K_2026-02-13_full.txt", 67_589_000_000, 8_884_000_000),
     ],
 )
 def test_revenue_and_net_income_of_real_snapshot_company_filings(name, revenue, net_income):
@@ -711,6 +815,37 @@ def test_revenue_and_net_income_of_real_snapshot_company_filings(name, revenue, 
         "revenue": revenue,
         "net_income": net_income,
     }
+
+
+@pytest.mark.parametrize(
+    "name, segments",
+    [
+        # Values read by hand from each Filing's segment table, whose total of the
+        # segments sits above the rows reconciling it to revenue.
+        (
+            "RTX_10K_2026-02-06_full.txt",
+            {
+                "Collins Aerospace": 30_196_000_000,
+                "Pratt & Whitney": 32_916_000_000,
+                "Raytheon": 28_043_000_000,
+            },
+        ),
+        (
+            "GE_10K_2015-02-27_full.txt",
+            {
+                "CLL": 14_630_000_000,
+                "Consumer": 15_023_000_000,
+                "Real Estate": 2_969_000_000,
+                "Energy Financial Services": 1_697_000_000,
+                "GECAS": 5_242_000_000,
+            },
+        ),
+    ],
+)
+def test_segment_revenue_of_real_filings_with_a_total_of_the_segments(name, segments):
+    facts = extract_financial_facts(load_filing(DEFAULT_CORPUS_DIR / name))
+
+    assert {f.segment: f.value for f in facts if f.metric == "segment_revenue"} == segments
 
 
 def test_segment_revenue_of_a_real_filing_with_a_segment_named_corporate():
@@ -731,6 +866,8 @@ def test_segment_revenue_of_a_real_filing_with_a_segment_named_corporate():
         "BAC_10K_2025-02-25_full.txt",
         # Sales by geographic region.
         "AMD_10K_2026-02-04_full.txt",
+        # One segment total, "Total operating businesses", and the rows reconciling it.
+        "BRK_10K_2025-02-24_full.txt",
     ],
 )
 def test_no_segment_revenue_from_real_tables_that_are_not_segments(name):
