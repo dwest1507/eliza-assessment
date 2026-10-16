@@ -9,6 +9,9 @@ Fiscal year ends are a Company-level fact, derived from the Company's 10-K Repor
 Periods, so `load_corpus` sets the Fiscal Period of every Filing. `load_filing` sets it
 only when it knows the fiscal year end: from a 10-K's own Report Period, or when one
 is passed in.
+
+The body is cleaned: the XBRL noise in front of the cover page is removed and the
+table of contents is located.
 """
 
 from __future__ import annotations
@@ -16,10 +19,12 @@ from __future__ import annotations
 import json
 import re
 from collections import Counter, defaultdict
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from datetime import date, timedelta
 from pathlib import Path
 from typing import Literal
+
+from edgar_rag._body import Span, clean_body
 
 DEFAULT_CORPUS_DIR = Path(__file__).resolve().parents[3] / "data" / "edgar_corpus"
 
@@ -69,6 +74,13 @@ class Filing:
     calendar_quarter: str | None
     source_url: str
     path: Path
+    body: str = field(repr=False)
+    """The cleaned body: the Filing text after the header, with the XBRL noise removed."""
+    xbrl_noise_chars: int
+    """How many characters of XBRL noise were removed from the front of the raw body."""
+    toc: Span | None
+    """Where the table of contents sits in the cleaned body, or None if it has none.
+    Section detection must skip it: TOC rows repeat the real Item headings."""
     fiscal_year_end_month: int | None = None
     fiscal_period: str | None = None
     diagnostics: tuple[Diagnostic, ...] = ()
@@ -133,6 +145,7 @@ def load_filing(path: str | Path, fiscal_year_end_month: int | None = None) -> F
         form_type=form_type,
         name=path.name,
     )
+    body = clean_body(_raw_body(text))
     filing = Filing(
         company=header["Company"],
         ticker=header["Ticker"],
@@ -145,6 +158,9 @@ def load_filing(path: str | Path, fiscal_year_end_month: int | None = None) -> F
         source_url=url,
         path=path,
         diagnostics=diagnostics,
+        body=body.text,
+        xbrl_noise_chars=body.xbrl_noise_chars,
+        toc=body.toc,
     )
     if fiscal_year_end_month is None and form_type == "10-K":
         fiscal_year_end_month = _period_month(report_period)[1]
@@ -180,6 +196,12 @@ def _parse_header(text: str, path: Path) -> dict[str, str]:
         if sep:
             fields[key.strip()] = value.strip()
     return fields
+
+
+def _raw_body(text: str) -> str:
+    """Everything after the header separator line."""
+    end = text.find("\n", text.find(_HEADER_END))
+    return text[end + 1 :] if end != -1 else ""
 
 
 def _resolve_report_period(

@@ -55,3 +55,35 @@ _Analysis 2: metadata integrity._
 - **Finding:** Keyed on Report Period, 48 Filings fall outside 2023–2025: GE Capital's FY2014 10-K and 47 Filings from 2022 across 12 Companies (AAPL, AMZN, DIS, GOOG, JNJ, KO, MSFT, NVDA, PFE, TSLA, UNH, XOM), including J&J's FY2021 10-K, whose year ended 2 January 2022. A further 27 Filings are inside the window by Report Period but were filed in 2026 (24 FY2025 10-Ks and 3 10-Qs for quarters ending in December 2025).
 - **Implication:** "2023–2025" in the brief does not describe the Corpus by Report Period or by Filing Date. What "the last two years" or "latest" means depends on the Client's intent.
 - **Design decision:** Keep every Filing and show the Report Period in every citation, so the time scope of each answer is visible. The full list is in Client question 3, with this as the working assumption.
+
+## 7. A seventh of the raw text is XBRL noise
+
+_Analysis 3: text anatomy._
+
+- **Finding:** Every Filing body opens with machine-readable XBRL residue (context IDs, taxonomy URLs such as `http://fasb.org/us-gaap/2024#...`, unit tags, hidden facts) glued in front of the SEC cover page. It is 13.6% of all raw body text (11.1M characters): 16% of 10-Q text and 12% of 10-K text, over 20% in 31 Filings and 52% in IBM's 10-K. The residue always ends where the cover page begins ("UNITED STATES SECURITIES AND EXCHANGE COMMISSION"); no XBRL signature appears after that point in any Filing. The GE Filing (GE Capital's FY2014 10-K) is the exception: it predates inline XBRL, and its only preamble is an EDGAR document header.
+- **Implication:** Left in, the noise would fill chunks with strings that look like nothing a question would match, yet still cost embedding and context budget, and could surface in an Answer Call as garbage.
+- **Design decision:** The Corpus seam cuts everything before the cover page, so `Filing.body` is the cleaned body and `Filing.xbrl_noise_chars` records how much was removed. A Corpus-level test checks that no cleaned body contains an XBRL signature. Only the cleaned body is ever indexed.
+
+## 8. The table of contents repeats every Item heading
+
+_Analysis 3: text anatomy._
+
+- **Finding:** 237 of the 246 Filings have a table of contents within the first tenth of the body. Its rows repeat the real Item headings ("Item 1A. | Risk Factors | 5"), but the layout varies by Company: page number last or first (Mastercard), the Item number in its own column (Chevron, AT&T, Morgan Stanley), the Item label on one row and its heading on the next (Pfizer), page references like "K-24" (Berkshire) or "Pages37-51" (Intel), or the Company's own headings with the Item mapping in a cross-reference index at the end (Intel, McDonald's). Disney's nine 10-Qs before 2025 have no TOC at all. The TOC is under 1% of the text.
+- **Implication:** A Section splitter that looks for Item headings would find each one twice, first in the TOC, and could cut Risk Factors down to one TOC row. A retrieved TOC row would look like an answer about Risk Factors without containing any.
+- **Design decision:** The Corpus seam locates the TOC and exposes its position as `Filing.toc` (a span in the cleaned body, or None). Section detection skips that span, and the TOC is never indexed. Cross-reference indexes at the end of a Filing are left to Section detection to handle (analysis 4).
+
+## 9. A fifth of the text is flattened tables
+
+_Analysis 3: text anatomy._
+
+- **Finding:** About 20% of the raw text is rows of `|`-separated cells, the remains of HTML tables: 24% of 10-Q text, and a quarter of the text of the largest Filings. These rows hold most of the figures (revenue, segment results, balance sheet lines). Column headers sit on rows of their own above the figures. Exhibit indexes and signature blocks add another 3% (4% of 10-K text) with no business content.
+- **Implication:** A figure separated from its row label and column header (which period, which unit) cannot be read correctly, so naive fixed-size chunking would hand the Answer Call numbers it cannot interpret. Exhibit lists and signatures would only dilute retrieval.
+- **Design decision:** Chunk tables as whole tables, or as row groups that repeat the table's header rows, never splitting a row from its labels, and tag them as table chunks so the Answer Call knows it is reading one. Leave exhibit indexes and signatures out of the index. The flattened tables are also the input to the Financial Facts experiment (analysis 7).
+
+## 10. Line breaks are not paragraph breaks
+
+_Analysis 3: text anatomy._
+
+- **Finding:** 135 Filings have a single line over 20,000 characters; META's longest is 287,855. Whole pages of prose are glued together, with page footers ("Apple Inc. | 2024 Form 10-K | 20"), page numbers and "Table of Contents" running headers embedded mid-line (7,813 running headers across 204 Filings, e.g. "2Table of ContentsAMAZON.COM, INC.").
+- **Implication:** A chunker that splits on newlines would produce a handful of enormous chunks for these Filings. Page furniture inside the text would end up in chunks and embeddings, and a page footer with a `|` makes a prose line look like a table.
+- **Design decision:** Split prose on sentence boundaries within a token budget, not on line breaks. Strip running page headers, page footers and bare page numbers before chunking.

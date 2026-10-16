@@ -394,3 +394,197 @@ print("By Form Type:", dict(Counter(f.form_type for f in filed_after)))
 #   years", "latest") on Report Period.
 # - Keep all 48 out-of-window Filings, but flag GE Capital's FY2014 10-K as stale and
 #   attribute it to GE Capital, not General Electric, in any answer that uses it.
+
+# %% [markdown]
+# ## 3. Text anatomy
+#
+# What is each Filing actually made of? Every character of the raw body (the text
+# after the header) is put in one of five classes:
+#
+# - **XBRL noise**: the machine-readable residue in front of the cover page, which the
+#   Corpus seam removes (`Filing.xbrl_noise_chars`).
+# - **TOC**: the table of contents the seam locates (`Filing.toc`).
+# - **Exhibits and signatures**: exhibit-index rows ("31.1 | Certification of ...") and
+#   signature lines ("/s/ ...", "SIGNATURES", "duly caused this report to be signed").
+# - **Flattened tables**: any other line made of `|`-separated cells, the remains of
+#   HTML tables. A line counts only if none of its cells is longer than 500
+#   characters: some Filings glue whole pages of prose into one line around a page
+#   footer such as "Apple Inc. | 2024 Form 10-K | 20", and that prose is not a table.
+# - **Prose**: everything else.
+#
+# The last three are line-level heuristics written for this analysis, not part of the
+# core package; they are good enough to size cleaning priorities, not to cut text.
+
+# %%
+EXHIBIT_ROW = re.compile(
+    r"^\s*\|?\s*(?:\d{1,3}(?:\.[0-9A-Z]{1,4}){1,2}|10[14])\s*[*†‡#+^]*\s*(?:\(\w\))?\s*\|"
+)
+SIGNATURE_LINE = re.compile(
+    r"/s/|^\s*SIGNATURES?\s*$|duly caused this report to be signed", re.IGNORECASE
+)
+RUNNING_HEADER = re.compile(r"Table of Contents", re.IGNORECASE)
+MAX_TABLE_CELL = 500
+CLASSES = ["XBRL noise", "TOC", "Exhibits and signatures", "Flattened tables", "Prose"]
+
+
+def anatomy(filing):
+    """Characters of the raw body in each class."""
+    chars = dict.fromkeys(CLASSES, 0)
+    chars["XBRL noise"] = filing.xbrl_noise_chars
+    toc_start, toc_end = (filing.toc.start, filing.toc.end) if filing.toc else (0, 0)
+    pos = 0
+    for line in filing.body.split("\n"):
+        size = len(line) + 1
+        if toc_start <= pos < toc_end:
+            chars["TOC"] += size
+        elif EXHIBIT_ROW.match(line) or SIGNATURE_LINE.search(line):
+            chars["Exhibits and signatures"] += size
+        elif "|" in line and max(len(cell) for cell in line.split("|")) <= MAX_TABLE_CELL:
+            chars["Flattened tables"] += size
+        else:
+            chars["Prose"] += size
+        pos += size
+    return chars
+
+
+def running_headers(filing):
+    """'Table of Contents' page headers left in the text outside the TOC itself."""
+    toc_text = filing.body[filing.toc.start : filing.toc.end] if filing.toc else ""
+    return len(RUNNING_HEADER.findall(filing.body)) - len(RUNNING_HEADER.findall(toc_text))
+
+
+anat = pd.DataFrame(
+    {
+        "ticker": f.ticker,
+        "form_type": f.form_type,
+        "file": f.path.name,
+        "raw_chars": f.xbrl_noise_chars + len(f.body),
+        "has_toc": f.toc is not None,
+        "running_headers": running_headers(f),
+        "longest_line": max(len(line) for line in f.body.split("\n")),
+        **anatomy(f),
+    }
+    for f in filings
+)
+assert (anat[CLASSES].sum(axis=1) == anat["raw_chars"] + 1).all()  # +1: the final newline
+
+
+def shares(frame):
+    """Character-weighted share of each class, in percent."""
+    return (frame[CLASSES].sum() / frame[CLASSES].sum().sum() * 100).round(1)
+
+
+by_form = pd.DataFrame(
+    {
+        "Corpus": shares(anat),
+        "10-K": shares(anat[anat["form_type"] == "10-K"]),
+        "10-Q": shares(anat[anat["form_type"] == "10-Q"]),
+    }
+).T
+by_form
+
+# %%
+size_bins = [0, 200_000, 400_000, 800_000, float("inf")]
+size_labels = ["< 200k chars", "200k–400k", "400k–800k", "≥ 800k"]
+anat["size_bin"] = pd.cut(anat["raw_chars"], size_bins, labels=size_labels, right=False)
+by_size = anat.groupby("size_bin", observed=True)[CLASSES].sum()
+by_size = by_size.div(by_size.sum(axis=1), axis=0) * 100
+filings_per_bin = anat["size_bin"].value_counts().reindex(size_labels)
+
+class_colours = ["#bdbdbd", "#fd8d3c", "#8c6bb1", "#6baed6", "#31a354"]
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 4.5), sharex=True)
+for ax, frame, title, ylabels in [
+    (ax1, by_form, "By Form Type", by_form.index),
+    (
+        ax2,
+        by_size,
+        "By Filing size (raw body characters)",
+        [f"{b} ({filings_per_bin[b]} Filings)" for b in by_size.index],
+    ),
+]:
+    left = np.zeros(len(frame))
+    for cls, colour in zip(CLASSES, class_colours, strict=True):
+        ax.barh(range(len(frame)), frame[cls], left=left, color=colour, label=cls)
+        left += frame[cls].to_numpy()
+    ax.set_yticks(range(len(frame)), ylabels)
+    ax.invert_yaxis()
+    ax.set_title(title)
+    ax.set_xlabel("Share of raw body characters (%)")
+fig.legend(*ax1.get_legend_handles_labels(), loc="lower center", ncol=5, frameon=False)
+fig.suptitle("Text anatomy: what the Filings are made of")
+fig.tight_layout(rect=(0, 0.07, 1, 1))
+plt.show()
+
+by_size.round(1).assign(Filings=filings_per_bin)
+
+# %%
+per_filing = anat.assign(
+    **{f"{c} %": (anat[c] / anat["raw_chars"] * 100).round(1) for c in CLASSES}
+)
+pct = [f"{c} %" for c in CLASSES]
+fig, ax = plt.subplots(figsize=(11, 4))
+ax.boxplot([per_filing[c] for c in pct], orientation="horizontal", tick_labels=CLASSES)
+ax.invert_yaxis()
+ax.set_xlabel("Share of the Filing's raw body (%)")
+ax.set_title("Spread of each class across the 246 Filings")
+fig.tight_layout()
+plt.show()
+
+per_filing.sort_values("XBRL noise %", ascending=False)[["file", "raw_chars", *pct]].head(8)
+
+# %%
+print(f"XBRL noise removed: {anat['XBRL noise'].sum() / 1e6:.1f}M characters in total")
+print(
+    "Filings where XBRL noise is over 20% of the raw body: "
+    f"{(per_filing['XBRL noise %'] > 20).sum()}"
+)
+print(f"Filings without a table of contents: {(~anat['has_toc']).sum()}")
+print(", ".join(anat.loc[~anat["has_toc"], "file"]))
+print(
+    "Filings with 'Table of Contents' running page headers left in the text: "
+    f"{(anat['running_headers'] > 0).sum()} "
+    f"({anat['running_headers'].sum()} headers in total)"
+)
+print(
+    "Filings with a single line over 20,000 characters: "
+    f"{(anat['longest_line'] > 20_000).sum()} "
+    f"(longest: {anat['longest_line'].max():,} characters, "
+    f"{anat.loc[anat['longest_line'].idxmax(), 'file']})"
+)
+
+# %% [markdown]
+# **What the anatomy shows**
+#
+# - XBRL noise is 13.6% of all raw text (11.1M characters), more in 10-Qs (16%) than
+#   10-Ks (12%), over 20% in 31 Filings and 52% in IBM's 10-K. It is pure machine
+#   residue (context IDs, taxonomy URLs, hidden facts) glued in front of the cover
+#   page. The Corpus seam strips it, and a Corpus-level test checks that no cleaned
+#   body contains an XBRL signature.
+# - Flattened tables are about a fifth of the text (24% in 10-Qs, a quarter of the
+#   largest Filings). They hold most of the numbers the Client will ask about, but as
+#   rows of `|`-separated cells, so a value cut away from its row and column labels
+#   means nothing.
+# - The TOC is small (under 1%) but dangerous: its rows repeat every Item heading.
+#   The seam locates it in all but nine Filings (Disney 10-Qs before 2025, which have
+#   none), always in the first tenth of the body.
+# - Exhibit indexes and signatures are about 3% (4% of 10-Ks) and carry no business
+#   content.
+# - Line breaks are not paragraph breaks. 135 Filings have a single line over 20,000
+#   characters (META's longest is 287,855): whole pages of prose glued together, with
+#   page footers ("Apple Inc. | 2024 Form 10-K | 20") and "Table of Contents" running
+#   headers (7,813 of them, in 204 Filings) embedded mid-line.
+#
+# **So the design does:**
+#
+# - Index only the cleaned body: XBRL noise never reaches a chunk or a prompt.
+# - Skip the TOC span in Section detection (next analysis) and leave it out of the
+#   index, so a TOC row like "Item 1A. | Risk Factors | 5" is never retrieved as if it
+#   were the Risk Factors.
+# - Leave exhibit indexes and signatures out of the index.
+# - Chunk tables as whole tables (or row groups that repeat the table's header rows),
+#   never splitting a row from its labels, and tag them as table chunks so the Answer
+#   Call knows it is reading a table. Their numbers are also the input to the Financial
+#   Facts experiment (analysis 7).
+# - Split prose on sentence boundaries within a token budget, not on line breaks, and
+#   strip running page headers and page footers before chunking so they do not pollute
+#   chunk text and embeddings.

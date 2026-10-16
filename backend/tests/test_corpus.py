@@ -1,5 +1,6 @@
 """Tests through the Corpus seam, using real Corpus files as fixtures."""
 
+import re
 import shutil
 from datetime import date
 
@@ -153,3 +154,97 @@ def test_manifest_check_reports_missing_and_extra_files(tmp_path):
     assert "missing on disk: AAPL_10K_2022Q3_2022-10-28_full.txt" in problems
     assert "missing on disk: AAPL_10K_2025-10-31_full.txt" not in problems
     assert len(problems) == 1 + 245
+
+
+# --- Body cleaning: XBRL noise and table of contents ---------------------------
+
+APPLE_10K = DEFAULT_CORPUS_DIR / "AAPL_10K_2024Q3_2024-11-01_full.txt"
+
+
+def test_cleaned_body_starts_at_the_cover_page_without_xbrl_noise():
+    filing = load_filing(APPLE_10K)
+
+    assert filing.body.startswith("UNITED STATESSECURITIES AND EXCHANGE COMMISSION")
+    assert "aapl-20240928false2024FY" not in filing.body
+    assert "http://fasb.org/us-gaap/" not in filing.body
+    assert filing.body.rstrip().endswith("Apple Inc. | 2024 Form 10-K | 57")
+
+
+# Fragments that only occur in XBRL residue: taxonomy URLs, unit and context tags.
+XBRL_NOISE = re.compile(r"fasb\.org/us-gaap|xbrli:|iso4217:|us-gaap:\w+Member")
+
+
+def test_no_cleaned_body_in_the_corpus_contains_xbrl_noise(corpus):
+    filings = corpus
+
+    raw_with_noise = [f for f in filings if XBRL_NOISE.search(f.path.read_text(encoding="utf-8"))]
+    # The GE Filing (GE Capital's FY2014 10-K) predates inline XBRL: its only preamble is an
+    # EDGAR document header.
+    assert {f.path.name for f in filings} - {f.path.name for f in raw_with_noise} == {
+        "GE_10K_2015-02-27_full.txt"
+    }
+    assert [f.path.name for f in filings if XBRL_NOISE.search(f.body)] == []
+    assert all(f.xbrl_noise_chars > 0 for f in filings)
+
+
+def test_table_of_contents_of_a_10k_is_located_in_the_cleaned_body():
+    filing = load_filing(APPLE_10K)
+
+    toc = filing.body[filing.toc.start : filing.toc.end]
+    assert toc.startswith("| Page\nPart I\nItem 1. | Business | 1\nItem 1A. | Risk Factors | 5\n")
+    assert toc.endswith("Item 16. | Form 10-K Summary | 56")
+    assert filing.body[filing.toc.end :].lstrip().startswith("This Annual Report on Form 10-K")
+
+
+def test_table_of_contents_of_a_10q_with_item_labels_on_their_own_rows():
+    # Pfizer lists "Item 1. |" on one row and the heading and page on the next ones.
+    filing = load_filing(DEFAULT_CORPUS_DIR / "PFE_10Q_2024Q1_2024-05-08_full.txt")
+
+    toc = filing.body[filing.toc.start : filing.toc.end]
+    assert filing.body[: filing.toc.start].endswith("TABLE OF CONTENTS\n")
+    assert toc.startswith(
+        "PART I.\xa0\xa0FINANCIAL INFORMATION | Page\nItem 1. |\nFinancial Statements |\n"
+    )
+    assert "Item 1A. |\nRisk Factors | 54\n" in toc
+    assert toc.endswith("Item6. |\nExhibits | 55\nSignature | 55")
+
+
+def test_large_jpmorgan_10k_is_cleaned_and_its_toc_located():
+    filing = load_filing(DEFAULT_CORPUS_DIR / "JPM_10K_2026-02-13_full.txt")
+
+    assert filing.xbrl_noise_chars > 200_000
+    assert filing.body.startswith("UNITED STATES")
+    assert XBRL_NOISE.search(filing.body) is None
+
+    toc = filing.body[filing.toc.start : filing.toc.end]
+    assert toc.startswith("Part I |  | Page\nItem 1. | Business. | 1\n")
+    assert toc.endswith("Item 15. | Exhibits, Financial Statement Schedules. | 39-42")
+    # The first real Item heading follows straight after the TOC.
+    assert filing.body[filing.toc.end :].startswith("\nPart IItem 1. Business.Overview")
+
+
+def test_filing_without_a_table_of_contents_has_none():
+    # Disney's 10-Qs before 2025 go straight from the cover page to the statements.
+    filing = load_filing(DEFAULT_CORPUS_DIR / "DIS_10Q_2024Q1_2024-05-07_full.txt")
+
+    assert filing.toc is None
+
+
+def test_every_toc_in_the_corpus_sits_near_the_front_of_the_body(corpus):
+    filings = corpus
+
+    without_toc = sorted(f.path.name for f in filings if f.toc is None)
+    assert without_toc == [
+        "DIS_10Q_2022Q1_2022-02-09_full.txt",
+        "DIS_10Q_2022Q2_2022-05-11_full.txt",
+        "DIS_10Q_2022Q3_2022-08-10_full.txt",
+        "DIS_10Q_2022Q4_2023-02-08_full.txt",
+        "DIS_10Q_2023Q2_2023-05-10_full.txt",
+        "DIS_10Q_2023Q3_2023-08-09_full.txt",
+        "DIS_10Q_2023Q4_2024-02-07_full.txt",
+        "DIS_10Q_2024Q1_2024-05-07_full.txt",
+        "DIS_10Q_2024Q2_2024-08-07_full.txt",
+    ]
+    for f in filings:
+        if f.toc is not None:
+            assert 0 < f.toc.start < f.toc.end < len(f.body) / 10, f.path.name
