@@ -10,9 +10,23 @@ A question-answering system for a private equity client that answers natural-lan
 The fictitious private equity firm the system is built for, played by the interview panel.
 _Avoid_: Customer, user, company
 
+### Answering
+
 **Answer Call**:
 The single LLM request that produces the final answer to a business question. Everything before it (indexing, retrieval) is preparation, not an Answer Call.
 _Avoid_: LLM call (unqualified), API call
+
+**Query Scope**:
+What the rules resolve from a question before retrieval: the Companies (including those a Sector phrase resolves to), the time window, any Section hints and any metric.
+_Avoid_: Filters, entities, intent
+
+**Source**:
+One numbered, citable item in an Answer Call's context: the retrieved text of one Section of one Filing, or the Financial Facts taken from one Filing.
+_Avoid_: Reference, document, context item
+
+**Coverage Gap**:
+A part of a question the Corpus cannot answer (a trend asked of a Snapshot Company, a Company not in the Corpus, a stale Filing, guidance the Filings don't contain), stated in the answer with a fixed wording instead of being filled from general knowledge.
+_Avoid_: Limitation, missing data, caveat
 
 ### Filings
 
