@@ -21,6 +21,7 @@ Status:
 | 8 | Answers are written for a PE analyst, in a fixed structure | No | not confirmed |
 | 9 | Companies missing from the Corpus are named as missing, never answered | No | not confirmed |
 | 10 | A mainstream hosted LLM API is acceptable for the demo | No | not confirmed |
+| 11 | Questions are asked in a chat, and follow-ups build on earlier ones | No | not confirmed |
 
 ## 1. One generative LLM call per question
 
@@ -121,5 +122,12 @@ Status:
 
 - **Assumption:** For the demo, a mainstream hosted LLM API whose terms exclude training on and retaining API data is acceptable for the Answer Call and the embeddings. The provider sits behind one interface, so it can be swapped, or replaced with a locally hosted model, without changing retrieval.
 - **Why it matters:** The Filings are public, but the questions a deal team asks can reveal what it is looking at. It decides which models we can choose and whether the demo depends on an outside service.
+- **Asked in email:** No.
+- **Status:** not confirmed
+
+## 11. Questions are asked in a chat
+
+- **Assumption:** The Client asks questions in a conversation, not one at a time: an analyst asks about Apple, Tesla and JPMorgan's risks, then "Which of them has the most regulatory exposure?". Each user message is a question and gets exactly one Answer Call, which sees the last 10 turns of the conversation. Earlier answers help the model understand the question but are never evidence: every claim cites a Source retrieved for the current message. A follow-up that leaves out the Companies, time window, Section or metric inherits them from earlier messages by rules ([ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md)), and each answer shows the Query Scope it used.
+- **Why it matters:** The brief asks for "a natural-language business question as input", which reads as one question at a time. A chat is closer to how an analyst works, but it makes follow-up handling part of retrieval and of what we evaluate.
 - **Asked in email:** No.
 - **Status:** not confirmed
