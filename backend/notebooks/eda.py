@@ -32,7 +32,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import tiktoken
-from IPython.display import display
+from IPython.display import HTML, display
 from matplotlib.colors import ListedColormap
 from matplotlib.patches import Patch
 
@@ -2335,7 +2335,13 @@ gaps = pd.DataFrame(
     ],
     columns=["gap", "where it shows", "how the answer states it"],
 )
-gaps.style.hide(axis="index").set_properties(**{"text-align": "left", "white-space": "pre-wrap"})
+# Rendered to HTML with a fixed id, so re-running the notebook reproduces this output exactly.
+HTML(
+    gaps.style.set_uuid("gaps")
+    .hide(axis="index")
+    .set_properties(**{"text-align": "left", "white-space": "pre-wrap"})
+    .to_html()
+)
 
 # %% [markdown]
 # **What the coverage check shows**

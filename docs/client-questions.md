@@ -1,6 +1,6 @@
 # Client Questions
 
-Open questions for the Client, collected while building the system. Each one carries the assumption we work under until the Client answers. This list becomes the email sent once the EDA is done.
+Open questions for the Client, collected while building the system. Each one carries the assumption we work under until the Client answers. The list is final for the EDA: it was checked against the assessment brief, and every question has its working assumption. They are raised in one email, drafted in [`client-email.md`](client-email.md) for the developer to send; when it is sent, mark each question `sent`.
 
 Status: `open` (not yet sent), `sent`, `answered`.
 
@@ -76,4 +76,25 @@ Status: `open` (not yet sent), `sent`, `answered`.
 - **Question:** Your second example asks how NVIDIA's "growth outlook" has changed. NVIDIA, like most Companies, publishes its revenue outlook in its earnings releases, which are not 10-K or 10-Q Filings and are not in the Corpus. Is an answer built from the Filings' MD&A commentary and risk factors what you want, or should the system decline outlook questions it cannot support with guidance figures?
 - **Why it matters:** An answer that sounds like guidance but isn't would mislead an investment discussion, and an LLM may fill the gap with remembered figures that are not grounded in the Corpus.
 - **Our assumption:** Answer from MD&A commentary and risk factors, and say plainly that the Company's own guidance is not in the Filings provided.
+- **Status:** open
+
+## 8. What should a good answer look like, and how will you judge it?
+
+- **Question:** The brief asks for "a well-structured answer grounded in the filing data". Who reads the answer (an analyst, a deal team, an investment committee), how long should it be, and what structure do you expect? Do you have reference answers or criteria you will judge quality against?
+- **Why it matters:** It sets the Answer Call's prompt template and output format, and what we measure when we evaluate quality (one of the deliverables).
+- **Our assumption:** The reader is a PE analyst. An answer opens with a two- or three-sentence direct answer, then gives the points per Company (or a comparison table when several Companies are compared), and ends with a short coverage note listing the gaps. Every claim cites its Filing ID, Section and Report Period, and figures come from extracted Financial Facts where they exist. It runs to about 300–600 words. With no reference answers from you, we judge quality on our own test set, built from the example and variant questions traced in the EDA: are the right Filings retrieved, is every claim cited and supported by its source, are the figures exact, and is every gap stated.
+- **Status:** open
+
+## 9. How should the system answer about Companies the Corpus does not cover?
+
+- **Question:** The Corpus holds 54 Companies, and some well-known peers are missing: for example, Wells Fargo and Citigroup among banks, and Bristol Myers Squibb and Amgen among drug makers. If a demo question names a Company that is not in the Corpus, or a sector phrase would normally include one, should the system decline that part, or answer from what it has and say what is missing?
+- **Why it matters:** An LLM asked about a missing Company will happily answer from what it remembers, which is not grounded in the Filings and cannot be cited.
+- **Our assumption:** Answer for the Companies the Corpus covers, and say plainly which named Companies have no Filings in it, e.g. "Wells Fargo is not in the Filings provided." Sector phrases resolve only to Companies in the Sector table (question 5), and the answer names them. Nothing is answered from general knowledge.
+- **Status:** open
+
+## 10. Are there constraints on which LLM we use?
+
+- **Question:** The Filings are public, but the questions a deal team asks can reveal what it is looking at. Is there any restriction on sending questions and retrieved text to a hosted LLM API (a particular provider, data-retention or training terms, region), or a preference for one provider or for a locally hosted model?
+- **Why it matters:** It decides which models we can choose for the Answer Call and the embeddings, and whether the demo depends on an outside service.
+- **Our assumption:** For the demo, a mainstream hosted API whose terms exclude training on and retaining API data is acceptable. The provider sits behind one interface, so it can be swapped, or replaced with a locally hosted model, without changing retrieval.
 - **Status:** open
