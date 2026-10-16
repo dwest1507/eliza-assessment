@@ -158,6 +158,35 @@ def test_each_source_carries_its_tag_filing_metadata_and_passage(client, index):
     assert {s["ticker"] for s in sources} == {"AAPL", "TSLA", "JPM"}
 
 
+def test_coverage_gaps_stream_as_a_data_part_before_any_text(client):
+    question = "How has JPMorgan's revenue trended over the last three years?"
+
+    parts = events(chat(client, user(question)))
+
+    types = [p["type"] if isinstance(p, dict) else p for p in parts]
+    assert types.index("data-sources") < types.index("data-coverage-gaps")
+    assert types.index("data-coverage-gaps") < types.index("text-start")
+    [gap] = part_of(parts, "data-coverage-gaps")["data"]["gaps"]
+    assert gap["kind"] == "snapshot_trend"
+    assert gap["label"] == "Trend unavailable"
+    assert gap["companies"] == ["JPM"]
+    assert gap["text"].startswith("Trend unavailable: JPMorgan Chase is a Snapshot Company.")
+
+
+def test_a_question_with_no_gaps_streams_an_empty_list(client):
+    parts = events(chat(client, user("What are Apple's main risk factors?")))
+
+    assert part_of(parts, "data-coverage-gaps")["data"] == {"gaps": []}
+
+
+def test_a_missing_company_streams_its_gap_and_no_sources(client):
+    parts = events(chat(client, user("What are Citigroup's main risk factors?")))
+
+    assert part_of(parts, "data-sources")["data"] == {"sources": []}
+    [gap] = part_of(parts, "data-coverage-gaps")["data"]["gaps"]
+    assert (gap["kind"], gap["companies"]) == ("missing_company", ["Citigroup"])
+
+
 def test_the_answer_comes_from_one_answer_call_on_the_whole_conversation(client, model):
     chat(
         client,

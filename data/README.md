@@ -45,6 +45,19 @@ The GE row describes the Filing in the Corpus, GE Capital's FY2014 10-K, not tod
 
 **Sector phrases resolve only through this table** (assumption 5). The query parser ([`_query_scope.py`](../backend/src/edgar_rag/_query_scope.py)) maps a phrase to values of the `industry` or `sector` column, never to Companies, and the Companies are whichever rows hold those values. "The major pharmaceutical companies" (or "drugmakers", "big pharma") is industry Pharmaceuticals or Biotechnology: JNJ, LLY, MRK, PFE and ABBV. "The major banks" is industry Banks: BAC and JPM. "The oil majors" (or "oil and gas companies") is industry Oil, Gas & Consumable Fuels: CVX and XOM. Software, semiconductor, aerospace and defense, retail, auto, telecom and beverage companies are read on the industry column the same way, and technology, health care, financial, energy and industrial companies, consumer staples, consumer discretionary and communication services on the sector column. A sector word needs a group noun ("oil companies", not "oil prices"). Every answer names the Companies a phrase resolved to, and the front-end shows them as a chip, so a disputed mapping is visible and is fixed here, in the table.
 
+## Companies missing from the Corpus (`reference/missing_companies.csv`)
+
+A question about a Company the Corpus does not hold must name it as missing, never answer it from general knowledge (assumption 9). The query parser can only recognise a name it knows, so this small curated list names notable US Companies that are **not** among the Corpus's 54: peers a question is likely to compare with a Company that is in it (Wells Fargo and Citigroup beside the banks, Bristol Myers Squibb and Amgen beside the drug makers, Honeywell beside General Electric, and so on). Like the Sector table it is disclosed and ours to edit; a test checks that none of its rows is a Company in the Corpus.
+
+| Column | Meaning |
+|---|---|
+| `name` | How Coverage Gaps name the Company, e.g. "Wells Fargo" |
+| `ticker` | Its exchange ticker, for reference |
+| `aliases` | Other names to recognise, separated by `;`. An alias written in capitals (`WFC`, `BMS`, `3M`) is matched as a ticker, in capitals only, so a ticker is recognised only when it is listed here and short tickers that are everyday words (`C`, `F`, `LOW`, `NOW`) are left out |
+| `sector`, `industry` | GICS-style labels, as in the Sector table, for reference only: Sector phrases resolve only to Companies in the Corpus |
+
+Names match in any case, with spaces or hyphens between words ("Bristol-Myers Squibb"), except names that are also everyday words ("Ford", "Anthem"), which must be capitalised. A matched name is taken out of the search terms, and a question that names only missing Companies retrieves no Sources. The answer states each one with the fixed wording "Not in the Corpus: Wells Fargo is not in the Filings provided, so this answer does not cover it." A Company not on the list is not recognised at all, so its name is searched as words; the list is a safety net for the likely questions, not a register of every company.
+
 ## Golden Set (`eval/golden_set.json`)
 
 The evaluation's ground truth: 30 labelled questions, each with the (Filing ID, Section) pairs that should be retrieved, the Required Facts an answer must state (each with an evidence quote from its Section) and the Coverage Gaps it must state. Six of them are the front-end's starter prompts. Like the Sector table it is ours to edit, and tests check every label against the Corpus. Its fields, split rule and review are described in [`docs/golden-set.md`](../docs/golden-set.md).

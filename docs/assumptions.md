@@ -112,7 +112,7 @@ Status:
 
 ## 9. Companies missing from the Corpus are named as missing
 
-- **Assumption:** If a question names a Company that is not in the Corpus, or a sector phrase would normally include one, the system answers for the Companies the Corpus covers and says plainly which named Companies have no Filings in it, e.g. "Wells Fargo is not in the Filings provided." Sector phrases resolve only to Companies in the Sector table (assumption 5), and the answer names them. Nothing is answered from general knowledge.
+- **Assumption:** If a question names a Company that is not in the Corpus, or a sector phrase would normally include one, the system answers for the Companies the Corpus covers and says plainly which named Companies have no Filings in it, e.g. "Wells Fargo is not in the Filings provided." Sector phrases resolve only to Companies in the Sector table (assumption 5), and the answer names them. Nothing is answered from general knowledge. Missing Companies are recognised through a small curated, disclosed list of notable Companies not in the Corpus (`data/reference/missing_companies.csv`, described in `data/README.md`); a Company not on it is not recognised as missing.
 - **Evidence:** The Corpus holds 54 Companies, and some well-known peers are missing: for example, Wells Fargo and Citigroup among banks, and Bristol Myers Squibb and Amgen among drug makers.
 - **Why it matters:** An LLM asked about a missing Company will happily answer from what it remembers, which is not grounded in the Filings and cannot be cited.
 - **Asked in email:** No.

@@ -51,11 +51,16 @@ const QUERY_SCOPE = {
   metric: null,
 }
 
-function uiMessageStream(answer: string[] = ANSWER, scope: object = QUERY_SCOPE): Response {
+function uiMessageStream(
+  answer: string[] = ANSWER,
+  scope: object = QUERY_SCOPE,
+  gaps: object[] = []
+): Response {
   const parts = [
     { type: 'start', messageId: 'msg-1' },
     { type: 'data-query-scope', data: scope },
     { type: 'data-sources', data: { sources: SOURCES } },
+    { type: 'data-coverage-gaps', data: { gaps } },
     { type: 'start-step' },
     { type: 'text-start', id: 'text-1' },
     ...answer.map((delta) => ({ type: 'text-delta', id: 'text-1', delta })),
@@ -260,6 +265,52 @@ describe('Workspace', () => {
       'title',
       'Sector phrase resolved through the Sector table (industry: Banks)'
     )
+  })
+
+  it('shows each Coverage Gap in a callout beside the answer', async () => {
+    const gaps = [
+      {
+        kind: 'missing_company',
+        label: 'Not in the Corpus',
+        companies: ['Wells Fargo'],
+        text: 'Not in the Corpus: Wells Fargo is not in the Filings provided, so this answer does not cover it.',
+      },
+      {
+        kind: 'snapshot_trend',
+        label: 'Trend unavailable',
+        companies: ['JPM'],
+        text: 'Trend unavailable: JPMorgan Chase is a Snapshot Company. The Corpus holds 4 JPMorgan Chase Filings.',
+      },
+    ]
+    fetchMock.mockImplementation(async () => uiMessageStream(ANSWER, QUERY_SCOPE, gaps))
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByText('trade policy')
+
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    const callout = within(answer).getByRole('note', { name: 'Coverage Gaps' })
+    const items = within(callout).getAllByRole('listitem')
+    expect(items).toHaveLength(2)
+    expect(within(items[0]).getByText('Not in the Corpus')).toBeInTheDocument()
+    expect(items[0]).toHaveTextContent(
+      'Wells Fargo is not in the Filings provided, so this answer does not cover it.'
+    )
+    // The label is shown once, as the gap's heading, not repeated from its wording.
+    expect(items[0].textContent?.match(/Not in the Corpus/g)).toHaveLength(1)
+    expect(within(items[1]).getByText('Trend unavailable')).toBeInTheDocument()
+    // The callout comes before the answer text, so it cannot be missed.
+    const text = within(answer).getByText('trade policy')
+    expect(callout.compareDocumentPosition(text) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('shows no Coverage Gap callout when the answer has none', async () => {
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByText('trade policy')
+
+    expect(screen.queryByRole('note', { name: 'Coverage Gaps' })).not.toBeInTheDocument()
   })
 
   it('says so when the answer cannot be loaded, without leaking the error', async () => {

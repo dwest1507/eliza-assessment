@@ -1,6 +1,6 @@
 """`make ask`: answer one question from the command line, without a server.
 
-Prints the Query Scope and the numbered Sources, then streams the answer from the
+Prints the Query Scope, the numbered Sources and the Coverage Gaps, then streams the answer from the
 Answer Call, then one line with the model, prompt version, token usage and latency.
 
     python -m edgar_answer.ask "What are the primary risk factors facing Apple?"
@@ -89,6 +89,11 @@ def _print_context(context: AnswerContext, out: TextIO) -> None:
     print(f"\nSources ({len(context.sources)})", file=out)
     for source in context.sources:
         print(f"  [{source.tag}] {source.label}", file=out)
+    print(f"\nCoverage Gaps ({len(context.coverage_gaps)})", file=out)
+    for gap in context.coverage_gaps:
+        print(f"  {gap.text}", file=out)
+    if not context.coverage_gaps:
+        print("  none", file=out)
 
 
 if __name__ == "__main__":

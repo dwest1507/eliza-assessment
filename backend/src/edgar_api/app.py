@@ -11,9 +11,11 @@ front-end's `useChat` reads it as is:
    time window, the Section hints and the metric;
 3. `data-sources`: every numbered Source with its tag, Filing metadata and passage, so
    citations are clickable before the answer arrives;
-4. `start-step`, `text-start`, one `text-delta` per streamed piece of the answer,
+4. `data-coverage-gaps`: every Coverage Gap (its kind, label, Companies and fixed
+   wording), shown as a callout beside the answer; an empty list when there is none;
+5. `start-step`, `text-start`, one `text-delta` per streamed piece of the answer,
    `text-end`, `finish-step`, `finish`;
-5. `[DONE]`.
+6. `[DONE]`.
 
 If the provider fails mid-answer, the text ends and an `error` part replaces the finish.
 
@@ -47,6 +49,7 @@ from edgar_rag.answer_model import DEFAULT_ANSWER_LOG, AnswerCall, AnswerModel
 from edgar_rag.retrieval import (
     DEFAULT_INDEX,
     AnswerContext,
+    CoverageGap,
     Message,
     QueryScope,
     Source,
@@ -166,6 +169,7 @@ def _ui_message_stream(
     yield _event({"type": "start", "messageId": f"msg-{uuid4().hex}"})
     yield _event({"type": "data-query-scope", "data": _query_scope(context.query_scope)})
     yield _event({"type": "data-sources", "data": {"sources": _sources(context.sources)}})
+    yield _event({"type": "data-coverage-gaps", "data": {"gaps": _gaps(context.coverage_gaps)}})
     yield _event({"type": "start-step"})
     text_id = f"text-{uuid4().hex}"
     yield _event({"type": "text-start", "id": text_id})
@@ -228,6 +232,13 @@ def _sources(sources: Sequence[Source]) -> list[dict[str, Any]]:
             "text": s.text,
         }
         for s in sources
+    ]
+
+
+def _gaps(gaps: Sequence[CoverageGap]) -> list[dict[str, Any]]:
+    return [
+        {"kind": g.kind, "label": g.label, "companies": list(g.companies), "text": g.text}
+        for g in gaps
     ]
 
 

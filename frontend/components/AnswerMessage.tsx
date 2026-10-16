@@ -1,6 +1,7 @@
 import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { citedTag, linkCitations, type QueryScope, type Source } from '@/lib/chat'
+import { citedTag, linkCitations, type CoverageGap, type QueryScope, type Source } from '@/lib/chat'
+import CoverageGaps from '@/components/CoverageGaps'
 import QueryScopeChips from '@/components/QueryScopeChips'
 import { shortLabel } from '@/components/SourcesPanel'
 
@@ -9,21 +10,24 @@ interface AnswerMessageProps {
   sources: Source[]
   /** What the rules resolved from the question; it arrives before the text. */
   scope: QueryScope | null
+  /** What the Filings cannot answer; it arrives before the text. */
+  gaps: CoverageGap[]
   /** The tag open in the Sources panel, if this answer's Sources are shown there. */
   openTag: string | null
   onCite: (tag: string) => void
 }
 
 /**
- * One answer: the Query Scope chips, its Markdown, with every `[Sn]` a link that opens
+ * One answer: the Query Scope chips, the Coverage Gap callout, its Markdown, with every `[Sn]` a link that opens
  * the Sources panel at that Source, and the list of Sources it was given. The Query
- * Scope and Sources arrive before the text, so they show while the answer is still
+ * Scope, Coverage Gaps and Sources arrive before the text, so they show while the answer is still
  * streaming.
  */
 export default function AnswerMessage({
   text,
   sources,
   scope,
+  gaps,
   openTag,
   onCite,
 }: AnswerMessageProps) {
@@ -77,6 +81,7 @@ export default function AnswerMessage({
   return (
     <article aria-label="Answer" className="flex flex-col gap-3">
       {scope && <QueryScopeChips scope={scope} />}
+      {gaps.length > 0 && <CoverageGaps gaps={gaps} />}
       {text && (
         <div className="answer text-[14.5px] leading-relaxed text-ink">
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>

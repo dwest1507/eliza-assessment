@@ -90,3 +90,37 @@ Everything else is unchanged from v1. A question with no Sector phrase gets no b
 **Why.** The analyst must be able to dispute a mapping (user story 15, assumption 5), so the answer has to say which Companies "the major pharmaceutical companies" meant. Under v1 the model saw only Sources grouped by Company and could name some Companies and skip the ones whose Sources said little, or add a company it remembered as a drug maker.
 
 **Scores.** Retrieval on dev, from the retrieval harness: hit@10 0.71 → 0.71, recall@10 0.58 → 0.65, MRR 0.56 → 0.59; the two sector cases go from recall@10 0.47 to 1.00 ([evaluation notes](evaluation.md#after-sector-phrases)). The retrieval gain comes from resolving the phrase, not from the template. The generation harness is not built yet, so there are no answer scores before and after. Hand check on the brief's third example ("What regulatory risks do the major pharmaceutical companies face?", `make ask`, `gpt-6-luna`): the answer opens "The Sector table defines the companies in scope as Johnson & Johnson (JNJ), Eli Lilly and Company (LLY), Merck & Co. (MRK), Pfizer (PFE), and AbbVie (ABBV)", covers those five and no other company, and cites a Source from each. About 21.5k input and 1,000 output tokens, 13.5 seconds.
+
+## v3: Coverage Gaps and each Company's coverage
+
+**What.** The user message gains two blocks, so it now runs: Coverage Gaps, Companies in scope (when the question uses a Sector phrase), Coverage, Sources, earlier conversation, question.
+
+- `# Coverage Gaps` comes first, one bullet per gap, or `None.` Code computes every gap ([`_coverage.py`](../backend/src/edgar_rag/_coverage.py)) and words it the same way every time, after EDA notebook section 8.6. Each wording starts with a fixed label:
+  - **Trend unavailable** (a trend asked of a Snapshot Company): "Trend unavailable: JPMorgan Chase is a Snapshot Company. The Corpus holds 4 JPMorgan Chase Filings, Q1 FY2025 to FY2025 (JPM_10-Q_2025-03-31, JPM_10-Q_2025-06-30, JPM_10-Q_2025-09-30, JPM_10-K_2025-12-31), so this answer covers Report Periods 2025-03-31 to 2025-12-31 only." A trend is a change or trend word ("changed", "evolved", "trend", "grew", "over time", "year over year") or a time window longer than a quarter. "How do they differ" compares Companies and is not a trend.
+  - **Not in the Corpus** (a Company on the curated list of notable missing Companies, [`data/README.md`](../data/README.md#companies-missing-from-the-corpus-referencemissing_companiescsv)): "Not in the Corpus: Wells Fargo is not in the Filings provided, so this answer does not cover it."
+  - **Stale Filing** (GE Capital's FY2014 10-K, whenever General Electric is in scope): "Stale Filing: the only General Electric Filing is GE Capital's 10-K for FY2014 (Report Period 2014-12-31); it does not describe General Electric today, so it is left out of this answer." When the question asks for GE Capital or 2014 by name, the Filing is retrieved and the wording ends "so it is cited here only as GE Capital's report for FY2014." instead.
+  - **No guidance in the Filings** (a question about the outlook, guidance, forecasts, projections or next year): "No guidance in the Filings: NVIDIA's own guidance is not in the Filings provided; the outlook below is drawn from MD&A commentary and risk factors."
+  - **Periods differ** (two or more Companies whose latest 10-Ks in scope, or latest Filings when the window holds no 10-K, end more than 20 days apart): "Periods differ: the Companies' latest Filings here cover different periods (Apple: 10-K FY2025, year to 2025-09-27; Tesla: 10-K FY2025, year to 2025-12-31; JPMorgan Chase: 10-K FY2025, year to 2025-12-31), so the comparison is not of the same period."
+- `# Coverage` gives one paragraph per Company in scope (or, for a question naming no Company, per Company a Source came from): its coverage class, how many Filings the Corpus holds and over which Fiscal Periods, every Filing in the time window with its Form Type, Fiscal Period and Report Period, and any stale Filing left out:
+
+```text
+# Coverage
+
+JPMorgan Chase & Co (JPM): Snapshot Company; 4 Filings in the Corpus, Q1 FY2025 to FY2025.
+In scope: JPM_10-K_2025-12-31 (10-K FY2025, Report Period 2025-12-31).
+```
+
+Two system rules change and one is added:
+
+```text
+4. When you use a Company's filings, give the filing's form type, fiscal period and report period, as listed under "Coverage", and say so when the Companies you compare report for different periods.
+7. "Coverage Gaps" lists what the filings cannot answer: a trend asked of a company with only a snapshot of filings, a company not in the filings, a stale filing, guidance the filings do not contain, or periods that differ. State every gap listed there, in the words given, near the start of the answer. Never fill a gap from general knowledge: say nothing about a company the filings do not include, never use a filing listed as left out, and never present MD&A commentary as the company's guidance.
+```
+
+and the closing structure line becomes `- End with a short "Coverage" note repeating the Coverage Gaps and saying what else the Sources could not answer.`
+
+Retrieval changes with it: the stale GE Capital Filing is kept out of every Answer Context unless the question asks for GE Capital or its period by name, and a question that names only missing Companies retrieves no Sources (before, "What are Citigroup's main risk factors?" searched every Company and brought 47 Sources from 36 other Companies).
+
+**Why.** Under v2 the model wrote its own coverage note, so whether a Snapshot trend, a missing Company or the stale GE Filing was mentioned, and in what words, depended on the model (user stories 20–26, assumptions 3, 4, 6, 7 and 9). The gaps are facts about the Corpus, so code can compute them exactly and the prompt only has to ask for them to be stated. The coverage block gives the model the Report Period and Fiscal Period of every Filing it may cite, so it can state them beside each Company's points without reading them out of Source labels. The same gaps stream to the workspace as a `data-coverage-gaps` part and show as a callout beside the answer, so they are visible even if an answer leaves one out.
+
+**Scores.** Retrieval on dev, from the retrieval harness: unchanged (hit@10 0.71, recall@10 0.65, MRR 0.59 over 17 scored cases). The three dev cases with no expected Source now get none: `stale-ge-recent-performance` 7 → 0 Sources (all from GE Capital's FY2014 10-K before), `missing-citigroup` 47 → 0, `followup-ge-to-honeywell` 0 → 0. Computed gaps against the Golden Set's expected Coverage Gaps on dev: 19 of 20 cases get every expected gap, with no gap the labels do not expect. The miss is `followup-regulatory-exposure` ("Which of them has the most regulatory exposure?"), which names no Company and needs follow-up inheritance (ADR 0003) before its periods can be compared. The generation harness is not on this branch yet, and no Answer Call was run for this version, so there are no answer scores before and after.

@@ -292,7 +292,7 @@ def test_a_source_carries_its_citation_metadata_and_passage(index):
 def test_the_prompt_renders_rules_sources_and_question(index):
     context = _ask(index, BRIEF_QUESTION)
 
-    assert context.prompt_version == PROMPT_VERSION == "v2"
+    assert context.prompt_version == PROMPT_VERSION == "v3"
     system, user = context.messages
     assert system.role == "system"
     assert "[S3]" in system.content and "general knowledge" in system.content
@@ -871,3 +871,227 @@ def test_words_that_only_mention_a_sector_are_not_sector_phrases(sector_index, q
 )
 def test_metric_words_name_the_metric_of_the_query_scope(index, question, metric):
     assert _ask(index, question).query_scope.metric == metric
+
+
+# --- Coverage Gaps -----------------------------------------------------------------------
+
+JPM_FILINGS = (
+    "JPM_10-Q_2025-03-31",
+    "JPM_10-Q_2025-06-30",
+    "JPM_10-Q_2025-09-30",
+    "JPM_10-K_2025-12-31",
+)
+GE_FILING = "GE_10-K_2014-12-31"
+
+
+def _gaps(context, kind):
+    return [g for g in context.coverage_gaps if g.kind == kind]
+
+
+def _section(prompt, heading):
+    """The text of one `# heading` block of the prompt's user message."""
+    match = re.search(rf"^# {re.escape(heading)}\n\n(.*?)(?=^# |\Z)", prompt, re.M | re.S)
+    assert match, f"no '# {heading}' block in the prompt"
+    return match.group(1)
+
+
+def test_a_trend_asked_of_a_snapshot_company_names_the_filings_the_corpus_holds(index):
+    context = _ask(index, "How has JPMorgan's revenue trended over the last three years?")
+
+    [gap] = _gaps(context, "snapshot_trend")
+    assert gap.companies == ("JPM",)
+    assert gap.text.startswith("Trend unavailable: JPMorgan Chase is a Snapshot Company.")
+    assert all(filing_id in gap.text for filing_id in JPM_FILINGS)
+    assert "Q1 FY2025 to FY2025" in gap.text
+    assert "2025-03-31 to 2025-12-31 only" in gap.text
+    assert gap.text in _section(context.messages[1].content, "Coverage Gaps")
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "How have JPMorgan's risk factors changed?",
+        "How has JPMorgan's net income evolved over the past two years?",
+        "What is the trend in JPMorgan's credit card lending?",
+    ],
+)
+def test_change_and_multi_period_questions_ask_a_snapshot_company_for_a_trend(index, question):
+    assert [g.companies for g in _gaps(_ask(index, question), "snapshot_trend")] == [("JPM",)]
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "What are JPMorgan's main risk factors?",
+        "What did JPMorgan report in its latest 10-K?",
+        "How do Apple's and JPMorgan's risk factors differ?",
+        "How has NVIDIA's revenue changed over the last two years?",
+    ],
+)
+def test_point_in_time_questions_and_tracked_trends_have_no_trend_gap(index, question):
+    assert _gaps(_ask(index, question), "snapshot_trend") == []
+
+
+def test_a_company_missing_from_the_corpus_is_named_and_the_rest_answered(gap_index):
+    context = _ask(gap_index, "Compare Wells Fargo and Bank of America's capital positions")
+
+    assert [c.ticker for c in context.query_scope.companies] == ["BAC"]
+    assert context.query_scope.missing_companies == ("Wells Fargo",)
+    [gap] = _gaps(context, "missing_company")
+    assert gap.companies == ("Wells Fargo",)
+    assert gap.text == (
+        "Not in the Corpus: Wells Fargo is not in the Filings provided, so this answer "
+        "does not cover it."
+    )
+    assert context.sources
+    assert {s.ticker for s in context.sources} == {"BAC"}
+    assert gap.text in _section(context.messages[1].content, "Coverage Gaps")
+
+
+def test_a_question_about_only_missing_companies_retrieves_nothing(index):
+    context = _ask(index, "What are Citigroup's main risk factors?")
+
+    assert context.query_scope.companies == ()
+    assert context.query_scope.missing_companies == ("Citigroup",)
+    assert context.sources == ()
+    assert [g.companies for g in _gaps(context, "missing_company")] == [("Citigroup",)]
+
+
+@pytest.mark.parametrize(
+    ("question", "missing"),
+    [
+        ("What risks do Merck and Bristol-Myers Squibb face?", ("Bristol Myers Squibb",)),
+        ("How does WFC compare with JPM?", ("Wells Fargo",)),
+        ("Compare Citi, Amgen and Honeywell", ("Citigroup", "Amgen", "Honeywell")),
+        ("What does Apple say about shell companies?", ()),
+        ("What are Apple's main risk factors?", ()),
+    ],
+)
+def test_missing_companies_are_recognised_by_name_alias_and_ticker(index, question, missing):
+    assert _ask(index, question).query_scope.missing_companies == missing
+
+
+def test_the_curated_missing_companies_are_none_of_the_corpus_companies():
+    from edgar_rag.corpus import load_sector_table
+    from edgar_rag.retrieval import load_missing_companies
+
+    missing = load_missing_companies()
+    in_corpus = {row.ticker for row in load_sector_table()}
+    names = [m.name for m in missing]
+    assert len(names) == len(set(names)) >= 20
+    assert not in_corpus & {m.ticker for m in missing}
+    assert {"Wells Fargo", "Citigroup", "Bristol Myers Squibb", "Amgen", "Honeywell"} <= set(names)
+
+
+def test_general_electric_today_is_answered_without_ge_capitals_stale_filing(gap_index):
+    context = _ask(gap_index, "How has General Electric performed recently?")
+
+    assert [c.ticker for c in context.query_scope.companies] == ["GE"]
+    assert context.sources == ()
+    assert GE_FILING not in {f.filing_id for f in context.query_scope.filings}
+    [gap] = _gaps(context, "stale_filing")
+    assert gap.companies == ("GE",)
+    assert gap.text == (
+        "Stale Filing: the only General Electric Filing is GE Capital's 10-K for FY2014 "
+        "(Report Period 2014-12-31); it does not describe General Electric today, so it is "
+        "left out of this answer."
+    )
+    assert gap.text in _section(context.messages[1].content, "Coverage Gaps")
+
+
+def test_the_stale_filing_is_left_out_of_a_question_naming_no_company(gap_index):
+    context = _ask(gap_index, "Which companies are reducing the size of their balance sheet?")
+
+    assert context.sources
+    assert GE_FILING not in {s.filing_id for s in context.sources}
+
+
+def test_ge_capitals_2014_report_asked_for_by_name_is_cited_and_still_flagged(gap_index):
+    context = _ask(
+        gap_index,
+        "What did GE Capital's 2014 annual report say about reducing the size of its "
+        "balance sheet?",
+    )
+
+    assert {s.filing_id for s in context.sources} == {GE_FILING}
+    [gap] = _gaps(context, "stale_filing")
+    assert gap.text.endswith(
+        "it does not describe General Electric today, so it is cited here only as GE "
+        "Capital's report for FY2014."
+    )
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "What is Tesla's outlook for 2026?",
+        "What guidance has Tesla given for deliveries?",
+        "What does Tesla expect for next year?",
+    ],
+)
+def test_an_outlook_question_states_that_guidance_is_not_in_the_filings(index, question):
+    context = _ask(index, question)
+
+    [gap] = _gaps(context, "no_guidance")
+    assert gap.companies == ("TSLA",)
+    assert gap.text == (
+        "No guidance in the Filings: Tesla's own guidance is not in the Filings provided; "
+        "the outlook below is drawn from MD&A commentary and risk factors."
+    )
+
+
+def test_a_question_that_is_not_about_the_outlook_has_no_guidance_gap(index):
+    assert _gaps(_ask(index, "What are Tesla's main risk factors?"), "no_guidance") == []
+
+
+def test_compared_companies_whose_latest_filings_cover_different_periods_are_flagged(index):
+    context = _ask(index, BRIEF_QUESTION)
+
+    [gap] = _gaps(context, "periods_differ")
+    assert gap.companies == ("AAPL", "TSLA", "JPM")
+    assert gap.text.startswith("Periods differ:")
+    assert "Apple: 10-K FY2025, year to 2025-09-27" in gap.text
+    assert "Tesla: 10-K FY2025, year to 2025-12-31" in gap.text
+    assert "JPMorgan Chase: 10-K FY2025, year to 2025-12-31" in gap.text
+
+
+def test_a_single_company_question_has_no_periods_gap(index):
+    assert _gaps(_ask(index, "What are Apple's main risk factors?"), "periods_differ") == []
+
+
+def test_the_prompt_gives_each_companys_coverage_report_periods_and_fiscal_periods(index):
+    context = _ask(index, BRIEF_QUESTION)
+    coverage = _section(context.messages[1].content, "Coverage")
+
+    assert "Apple Inc (AAPL): Tracked Company" in coverage
+    assert "Tesla Inc (TSLA): Tracked Company" in coverage
+    assert "JPMorgan Chase & Co (JPM): Snapshot Company" in coverage
+    for company in context.coverage:
+        assert company.in_scope
+        for filing in company.in_scope:
+            assert (
+                f"{filing.filing_id} ({filing.form_type} {filing.fiscal_period}, "
+                f"Report Period {filing.report_period})"
+            ) in coverage
+
+
+def test_the_prompt_says_what_the_stale_filing_is_in_the_coverage_block(gap_index):
+    context = _ask(gap_index, "How has General Electric performed recently?")
+    coverage = _section(context.messages[1].content, "Coverage")
+
+    assert "General Electric Company (GE): Snapshot Company" in coverage
+    assert f"left out: {GE_FILING}" in coverage
+
+
+def test_a_question_with_no_gaps_says_so_in_the_prompt(index):
+    context = _ask(index, "What are Apple's main risk factors?")
+
+    assert context.coverage_gaps == ()
+    assert _section(context.messages[1].content, "Coverage Gaps").strip() == "None."
+
+
+def test_coverage_gaps_are_worded_the_same_way_every_time(index, gap_index):
+    first = _ask(index, "How has JPMorgan's revenue changed over the last two years?")
+    again = _ask(index, "Has JPMorgan's net income changed over the past three years?")
+
+    assert _gaps(first, "snapshot_trend") == _gaps(again, "snapshot_trend")

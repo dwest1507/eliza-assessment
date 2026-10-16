@@ -51,7 +51,7 @@ def test_an_answer_call_logs_model_prompt_version_usage_and_latency(context, tmp
     [line] = log.read_text().splitlines()
     record = json.loads(line)
     assert record["model"] == "fake-model"
-    assert record["prompt_version"] == "v2"
+    assert record["prompt_version"] == "v3"
     assert (record["input_tokens"], record["output_tokens"], record["reasoning_tokens"]) == (
         1200,
         300,
@@ -169,7 +169,7 @@ def test_ask_prints_the_query_scope_the_sources_and_the_streamed_answer(index, t
     sources, answer = rest.split("\nAnswer\n", 1)
     assert "TSLA " in sources and "JPM " in sources
     assert "Apple faces supply chain risk [S1]." in answer
-    assert "fake-model · prompt v2 · 1200 input / 300 output tokens" in answer
+    assert "fake-model · prompt v3 · 1200 input / 300 output tokens" in answer
 
 
 def test_ask_prints_a_named_period_and_the_change_route(index, tmp_path):
@@ -200,3 +200,34 @@ def test_ask_prints_the_companies_a_sector_phrase_resolved_to(sector_index, tmp_
     scope = out.getvalue().split("\nSources", 1)[0]
     assert 'Sector phrase: "banks" → BAC, JPM (industry: Banks)' in scope
     assert "Metric: revenue" in scope
+
+
+def test_ask_prints_the_coverage_gaps_before_the_answer(index, tmp_path):
+    out = io.StringIO()
+
+    ask.main(
+        ["Compare the risk factors of JPMorgan and Wells Fargo.", "--index", str(index)],
+        model=FakeModel(),
+        out=out,
+        log_path=tmp_path / "calls.jsonl",
+    )
+
+    before_answer = out.getvalue().split("\nAnswer\n", 1)[0]
+    gaps = before_answer.split("\nCoverage Gaps (1)\n", 1)[1]
+    assert (
+        "  Not in the Corpus: Wells Fargo is not in the Filings provided, so this answer "
+        "does not cover it." in gaps
+    )
+
+
+def test_ask_says_when_there_are_no_coverage_gaps(index, tmp_path):
+    out = io.StringIO()
+
+    ask.main(
+        ["What are Apple's main risk factors?", "--index", str(index)],
+        model=FakeModel(),
+        out=out,
+        log_path=tmp_path / "calls.jsonl",
+    )
+
+    assert "\nCoverage Gaps (0)\n  none\n" in out.getvalue()

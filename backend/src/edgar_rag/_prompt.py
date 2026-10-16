@@ -4,10 +4,11 @@ One fixed template with a version constant. Every change to it bumps `PROMPT_VER
 and gets an entry in `docs/prompt-iterations.md`, with what changed, why, and its dev
 scores before and after.
 
-v2 renders, in this order: the system rules, the Companies each Sector phrase resolved
-to (when the question uses one), the Sources grouped by Company, the earlier
-conversation, and the latest question. Coverage Gaps and the Financial Facts table join
-it in later versions, between the rules and the Sources.
+v3 renders, in this order: the system rules, the Coverage Gaps the answer must state,
+the Companies each Sector phrase resolved to (when the question uses one), each
+Company's coverage (its class, Filings, Report Periods and Fiscal Periods), the Sources
+grouped by Company, the earlier conversation, and the latest question. The Financial
+Facts table joins it in a later version, between the coverage and the Sources.
 """
 
 from __future__ import annotations
@@ -17,11 +18,14 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING
 
 from edgar_rag._chunks import count_tokens
+from edgar_rag._coverage import COVERAGE_LABELS
 
 if TYPE_CHECKING:
+    from edgar_rag._coverage import CompanyCoverage, CoverageGap
+    from edgar_rag._query_scope import ScopeFiling
     from edgar_rag.retrieval import Message, QueryScope, Source
 
-PROMPT_VERSION = "v2"
+PROMPT_VERSION = "v3"
 
 HISTORY_TURNS = 10
 HISTORY_MAX_TOKENS = 6_000
@@ -40,19 +44,27 @@ listed in this turn's Sources.
 3. The earlier conversation is there to help you understand the question. It is not \
 evidence: never repeat a claim from an earlier answer unless a Source in this turn \
 supports it, and then cite that Source.
-4. When you use a Company's filings, give the filing's form type and fiscal period, and \
-say so when the Companies you compare report for different periods.
+4. When you use a Company's filings, give the filing's form type, fiscal period and \
+report period, as listed under "Coverage", and say so when the Companies you compare \
+report for different periods.
 5. Quote figures exactly as the Sources give them, with their units and periods.
 6. When the question names a group of companies ("the major banks"), it was resolved \
 through a curated Sector table to the Companies listed under "Companies in scope". Name \
 those Companies near the start of the answer, say they come from the Sector table, and \
 cover no other company for that group.
+7. "Coverage Gaps" lists what the filings cannot answer: a trend asked of a company \
+with only a snapshot of filings, a company not in the filings, a stale filing, guidance \
+the filings do not contain, or periods that differ. State every gap listed there, in \
+the words given, near the start of the answer. Never fill a gap from general \
+knowledge: say nothing about a company the filings do not include, never use a filing \
+listed as left out, and never present MD&A commentary as the company's guidance.
 
 Structure the answer for a PE analyst, in Markdown:
 - Open with a direct answer in two or three sentences.
 - Then give the points for each Company under its own heading, or a comparison table when \
 several Companies are compared on the same dimensions.
-- End with a short "Coverage" note saying what the Sources could not answer.
+- End with a short "Coverage" note repeating the Coverage Gaps and saying what else \
+the Sources could not answer.
 - Aim for 300 to 600 words."""
 
 # A Source tag in an earlier answer. It pointed at that turn's Sources, not this turn's.
@@ -60,14 +72,21 @@ _SOURCE_TAG = re.compile(r"\s*\[S\d+\](?:\s*\[S\d+\])*")
 
 
 def render(
-    sources: Sequence[Source], history: Sequence[Message], question: str, scope: QueryScope
+    sources: Sequence[Source],
+    history: Sequence[Message],
+    question: str,
+    scope: QueryScope,
+    coverage: Sequence[CompanyCoverage] = (),
+    gaps: Sequence[CoverageGap] = (),
 ) -> list[tuple[str, str]]:
     """The prompt as (role, content) messages: the system rules, then one user message
-    holding the Companies each Sector phrase resolved to, the Sources, the earlier
-    conversation and the question."""
-    parts = []
+    holding the Coverage Gaps, the Companies each Sector phrase resolved to, each
+    Company's coverage, the Sources, the earlier conversation and the question."""
+    parts = ["# Coverage Gaps", "\n".join(f"- {gap.text}" for gap in gaps) or "None."]
     if scope.sector_phrases:
         parts += ["# Companies in scope", _render_sector_phrases(scope)]
+    if coverage:
+        parts += ["# Coverage", _render_coverage(coverage)]
     parts += ["# Sources", _render_sources(sources)]
     if earlier := _render_history(history):
         parts += ["# Earlier conversation (context only, not evidence)", earlier]
@@ -86,6 +105,43 @@ def _render_sector_phrases(scope: QueryScope) -> str:
             f"{basis}) to: {covered}."
         )
     return "\n".join(lines)
+
+
+def _render_coverage(coverage: Sequence[CompanyCoverage]) -> str:
+    """One paragraph per Company: its coverage class, the span of its Filings in the
+    Corpus, the Filings in the time window with their Report and Fiscal Periods, and any
+    stale Filing left out."""
+    blocks = []
+    for company in coverage:
+        kind = COVERAGE_LABELS.get(company.coverage or "", "coverage unknown")
+        held = company.filings
+        if len(held) > 1:
+            span = f"{len(held)} Filings in the Corpus, {_period(held[0])} to {_period(held[-1])}"
+        elif held:
+            span = f"1 Filing in the Corpus, {_period(held[0])}"
+        else:
+            span = "no Filings in the Corpus"
+        lines = [f"{company.name} ({company.ticker}): {kind}; {span}."]
+        if company.in_scope:
+            lines.append(
+                "In scope: "
+                + "; ".join(
+                    f"{f.filing_id} ({f.form_type} {_period(f)}, Report Period {f.report_period})"
+                    for f in company.in_scope
+                )
+                + "."
+            )
+        else:
+            lines.append("In scope: none.")
+        if company.left_out:
+            ids = ", ".join(f.filing_id for f in company.left_out)
+            lines.append(f"Stale, left out: {ids}.")
+        blocks.append("\n".join(lines))
+    return "\n\n".join(blocks)
+
+
+def _period(filing: ScopeFiling) -> str:
+    return filing.fiscal_period or f"period to {filing.report_period}"
 
 
 def _render_sources(sources: Sequence[Source]) -> str:

@@ -39,10 +39,24 @@ export interface QueryScope {
   metric: string | null
 }
 
+/**
+ * A part of the question the Corpus cannot answer, as the chat API streams it in its
+ * `data-coverage-gaps` part. `text` is the fixed wording the answer states, starting
+ * with `label`.
+ */
+export interface CoverageGap {
+  kind: 'snapshot_trend' | 'missing_company' | 'stale_filing' | 'no_guidance' | 'periods_differ'
+  label: string
+  /** Tickers, or names for Companies missing from the Corpus. */
+  companies: string[]
+  text: string
+}
+
 /** The data parts the chat API sends before the answer text. */
 export type ResearchDataParts = {
   'query-scope': QueryScope
   sources: { sources: Source[] }
+  'coverage-gaps': { gaps: CoverageGap[] }
 }
 
 export type ResearchMessage = UIMessage<unknown, ResearchDataParts>
@@ -69,6 +83,20 @@ export function messageQueryScope(message: ResearchMessage): QueryScope | null {
     if (part.type === 'data-query-scope') return part.data
   }
   return null
+}
+
+/** The Coverage Gaps an answer must state, from its `data-coverage-gaps` part. */
+export function messageCoverageGaps(message: ResearchMessage): CoverageGap[] {
+  for (const part of message.parts) {
+    if (part.type === 'data-coverage-gaps') return part.data.gaps
+  }
+  return []
+}
+
+/** A gap's wording without its leading label, which the callout shows as a heading. */
+export function gapWording(gap: CoverageGap): string {
+  const prefix = `${gap.label}: `
+  return gap.text.startsWith(prefix) ? gap.text.slice(prefix.length) : gap.text
 }
 
 /** The href a citation link carries. */

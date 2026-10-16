@@ -75,7 +75,7 @@ _ALIASES: dict[str, tuple[str, ...]] = {
 }
 
 # Names that are also everyday words: matched only when capitalised.
-_COMMON_WORDS = {"apple", "target", "meta", "visa", "oracle", "intel", "chevron"}
+_COMMON_WORDS = {"apple", "target", "meta", "visa", "oracle", "intel", "chevron", "ford", "anthem"}
 
 _SUFFIX = re.compile(
     r"(?:,?\s+(?:(?:&|and)\s+)?(?:Inc|Incorporated|Corp|Corporation|Company|Co|Group|Holdings"
@@ -116,17 +116,41 @@ def _find_named(
 def _patterns(companies: Iterable[ScopeCompany]) -> list[tuple[str, re.Pattern[str]]]:
     patterns = []
     for company in companies:
-        patterns.append((company.ticker, re.compile(rf"(?<![\w$&]){re.escape(company.ticker)}\b")))
-        for name in _names(company):
-            flags = 0 if name.lower() in _COMMON_WORDS else re.I
-            body = r"[\s\-]+".join(re.escape(word) for word in name.split())
-            patterns.append((company.ticker, re.compile(rf"(?<!\w){body}(?!\w)", flags)))
+        patterns.append((company.ticker, _ticker_pattern(company.ticker)))
+        patterns += [(company.ticker, _name_pattern(name)) for name in _names(company)]
     return patterns
+
+
+def company_patterns(name: str, aliases: Iterable[str]) -> list[re.Pattern[str]]:
+    """Patterns for a Company's name and aliases. An alias in capitals ("WFC", "3M") is
+    matched as a ticker, in capitals only; the rest as names."""
+    return [
+        _ticker_pattern(alias) if alias.isupper() else _name_pattern(alias)
+        for alias in dict.fromkeys([name, *aliases])
+    ]
+
+
+def _ticker_pattern(ticker: str) -> re.Pattern[str]:
+    return re.compile(rf"(?<![\w$&]){re.escape(ticker)}\b")
+
+
+def _name_pattern(name: str) -> re.Pattern[str]:
+    """A name in any case, with spaces or hyphens between its words, unless it is also an
+    everyday word, which must be capitalised."""
+    flags = 0 if name.lower() in _COMMON_WORDS else re.I
+    body = r"[\s\-]+".join(re.escape(word) for word in name.split())
+    return re.compile(rf"(?<!\w){body}(?!\w)", flags)
+
+
+def short_name(name: str) -> str:
+    """A Company's name without its legal suffix or a leading "The": "JPMorgan Chase &
+    Co" → "JPMorgan Chase"."""
+    return _THE.sub("", _SUFFIX.sub("", name.strip())).strip() or name
 
 
 def _names(company: ScopeCompany) -> set[str]:
     full = company.name.strip()
-    short = _THE.sub("", _SUFFIX.sub("", full)).strip()
+    short = short_name(full)
     names = {full, short, *_ALIASES.get(company.ticker, ())}
     if short.endswith(".com"):
         names.add(short.removesuffix(".com"))

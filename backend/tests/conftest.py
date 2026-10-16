@@ -39,3 +39,15 @@ def sector_index(tmp_path_factory):
     since = date(2024, 6, 30)
     filings = [f for f in load_corpus() if f.ticker in SECTOR_TICKERS and f.report_period >= since]
     return build_index(filings, tmp_path_factory.mktemp("sector_index") / "edgar_rag.sqlite")
+
+
+# The Coverage Gap Companies the shared index leaves out: General Electric, whose only
+# Filing is GE Capital's FY2014 10-K (a stale Filing of a different legal entity), and
+# Bank of America, a Snapshot Company that a missing peer (Wells Fargo) is compared with.
+GAP_TICKERS = {"GE", "BAC"}
+
+
+@pytest.fixture(scope="session")
+def gap_index(tmp_path_factory):
+    filings = [f for f in load_corpus() if f.ticker in GAP_TICKERS]
+    return build_index(filings, tmp_path_factory.mktemp("gap_index") / "edgar_rag.sqlite")

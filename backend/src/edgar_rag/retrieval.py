@@ -48,6 +48,16 @@ from pathlib import Path
 from typing import Any, Literal
 
 from edgar_rag._chunks import Chunk, _sentences, chunk_filing, count_tokens
+from edgar_rag._coverage import (
+    DEFAULT_MISSING_COMPANIES,
+    CompanyCoverage,
+    CoverageGap,
+    MissingCompany,
+    coverage_gaps,
+    find_missing,
+    load_missing_companies,
+    stale_filings_left_out,
+)
 from edgar_rag._prompt import PROMPT_VERSION, render
 from edgar_rag._query_scope import (
     LATEST,
@@ -70,11 +80,15 @@ from edgar_rag.corpus import Filing
 __all__ = [
     "CONTEXT_BUDGET_TOKENS",
     "DEFAULT_INDEX",
+    "DEFAULT_MISSING_COMPANIES",
     "NEAR_DUPLICATE",
     "NEW_TEXT",
     "PROMPT_VERSION",
     "AnswerContext",
+    "CompanyCoverage",
+    "CoverageGap",
     "Message",
+    "MissingCompany",
     "PromptMessage",
     "QueryScope",
     "STUB_TOKENS",
@@ -85,6 +99,7 @@ __all__ = [
     "TimeWindow",
     "build_index",
     "count_tokens",
+    "load_missing_companies",
     "prepare_answer_context",
 ]
 
@@ -221,6 +236,10 @@ class QueryScope:
     metric: str | None = None
     """The Financial Facts metric the question asks about (`revenue` or `net_income`),
     or None."""
+    missing_companies: tuple[str, ...] = ()
+    """Companies the question names that are not in the Corpus, from the curated list
+    of notable missing Companies, in the order it names them. They are Coverage Gaps,
+    never answered."""
 
 
 @dataclass(frozen=True)
@@ -262,6 +281,12 @@ class AnswerContext:
     sources: tuple[Source, ...]
     prompt_version: str
     messages: tuple[PromptMessage, ...]
+    coverage: tuple[CompanyCoverage, ...] = ()
+    """What the Corpus holds for each Company in scope (or, for a question naming no
+    Company, each Company a Source came from): its coverage class, its Filings, those in
+    the time window and any stale Filing left out."""
+    coverage_gaps: tuple[CoverageGap, ...] = ()
+    """What the Corpus cannot answer, in fixed wordings the answer must state."""
 
 
 def build_index(filings: Iterable[Filing], path: str | Path = DEFAULT_INDEX) -> Path:
@@ -343,12 +368,22 @@ def prepare_answer_context(
         raise ValueError("the conversation must end with a non-empty user message")
     question = messages[-1].content
     with _connect(index) as db:
-        companies, sector_phrases, spans = resolve_companies(question, _companies(db))
+        known = _companies(db)
+        companies, sector_phrases, spans = resolve_companies(question, known)
+        missing, missing_spans = find_missing(question, load_missing_companies(), spans)
         sections = find_section_hints(question)
         window = find_time_window(question) or (
             LATEST if RISK_FACTORS in sections else TimeWindow("all")
         )
-        filings = _filings(db, [c.ticker for c in companies] or None)
+        periods = find_periods(question)
+        everything = _filings(db, [c.ticker for c in companies] or None)
+        left_out = stale_filings_left_out(
+            question, periods, (f for own in everything.values() for f in own)
+        )
+        filings = {
+            ticker: [f for f in own if f.filing_id not in left_out]
+            for ticker, own in everything.items()
+        }
         scope = QueryScope(
             companies=companies,
             sector_phrases=sector_phrases,
@@ -357,18 +392,35 @@ def prepare_answer_context(
             filings=tuple(
                 f for c in companies for f in in_window(window, filings.get(c.ticker, []))
             ),
-            periods=find_periods(question),
+            periods=periods,
             change=is_change_question(question),
             metric=find_metric(question),
+            missing_companies=missing,
         )
-        terms = _terms(_without_spans(question, spans))
-        sources = _sources(db, scope, filings, terms)
-    rendered = render(sources, messages[:-1], question, scope)
+        terms = _terms(_without_spans(question, spans + missing_spans))
+        sources = _sources(db, scope, filings, terms, explicit=bool(left_out))
+    by_ticker = {c.ticker: c for c in known}
+    covered = list(companies) or [by_ticker[t] for t in dict.fromkeys(s.ticker for s in sources)]
+    coverage = tuple(
+        CompanyCoverage(
+            ticker=c.ticker,
+            name=c.name,
+            coverage=c.coverage,
+            filings=tuple(everything.get(c.ticker, ())),
+            in_scope=tuple(in_window(window, filings.get(c.ticker, []))),
+            left_out=tuple(f for f in everything.get(c.ticker, ()) if f.filing_id in left_out),
+        )
+        for c in covered
+    )
+    gaps = coverage_gaps(question, scope, coverage)
+    rendered = render(sources, messages[:-1], question, scope, coverage, gaps)
     return AnswerContext(
         query_scope=scope,
         sources=sources,
         prompt_version=PROMPT_VERSION,
         messages=tuple(PromptMessage(role, content) for role, content in rendered),
+        coverage=coverage,
+        coverage_gaps=gaps,
     )
 
 
@@ -510,8 +562,17 @@ def _sources(
     scope: QueryScope,
     filings: dict[str, list[ScopeFiling]],
     terms: str | None,
+    explicit: bool = False,
 ) -> tuple[Source, ...]:
-    tickers: list[str | None] = [c.ticker for c in scope.companies] or [None]
+    """The numbered Sources for the Query Scope. `filings` holds the Filings retrieval
+    may use; with `explicit`, some were left out (a stale Filing), so retrieval is held
+    to the Filings listed even when the scope would otherwise search anywhere. A
+    question that names only Companies missing from the Corpus gets no Sources."""
+    tickers: list[str | None] = [c.ticker for c in scope.companies]
+    if not tickers:
+        if scope.missing_companies:
+            return ()
+        tickers = [None]
     budget = CONTEXT_BUDGET_TOKENS // len(tickers)
     sources: list[Source] = []
     for ticker in tickers:
@@ -521,7 +582,11 @@ def _sources(
             if ticker in (None, t)
             for f in in_window(scope.time_window, own)
         ]
+        if not windowed:
+            continue  # every Filing of the Company was left out
         plan = _plan(db, scope, windowed)
+        if explicit and plan.places is None:
+            plan = _Plan(places=[(f.filing_id, None) for f in windowed], pointers=[])
         pointers = _pointer_rows(db, plan.pointers)
         chosen: list[_Row] = []
         spent = sum(row["tokens"] for row in pointers)
