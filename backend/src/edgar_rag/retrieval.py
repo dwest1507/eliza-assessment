@@ -3,10 +3,13 @@
 Two entry points:
 
 - `build_index(filings)` chunks every Filing from the Corpus seam and writes the derived
-  SQLite file (ADR 0002): a `chunks` table with each chunk's metadata, an FTS5 table over
-  its text with the `porter` tokenizer, and the `companies`, `filings` and `sections`
-  tables the Query Scope and retrieval plan read. `make index` runs it over the whole
-  Corpus.
+  SQLite file (ADR 0002): a `chunks` table holding each Company's distinct chunk texts
+  once, a `chunk_filings` table listing every Filing (and Section and position) each
+  chunk appears in, with the text of it that is new since the previous Filing of the
+  same Form Type, an FTS5 table over the chunk text with the `porter` tokenizer, and the
+  `companies`, `filings` and `sections` tables the Query Scope and retrieval plan read.
+  The `filing_chunks` view joins them back into one row per chunk per Filing. `make
+  index` runs it over the whole Corpus.
 - `prepare_answer_context(messages)` resolves the latest user message's Query Scope,
   retrieves chunks for each Company in it, groups them into numbered Sources and renders
   the Answer Call's prompt. It is deterministic and makes no network calls.
@@ -17,9 +20,19 @@ hint is a preference: each Filing in the window is searched in the hinted Sectio
 whole when that Section is missing or a stub (finding 14). A risk question is routed to
 the latest 10-K's Risk Factors plus any later 10-Q that states risk text; a later 10-Q
 whose Risk Factors only point back to the 10-K is cited as it stands, never ranked
-(finding 16). Question text is reduced to quoted terms before it reaches FTS5 `MATCH`,
-so FTS5 operators in a question (`NOT`, `NEAR`, `*`, quotes, colons) are searched as
-words, never run.
+(finding 16).
+
+Repeated text costs the budget once (finding 17). A chunk repeated across a Company's
+Filings is stored once and cited from the most recent Filing in the plan that holds it,
+or from a Filing of a period the question names. Retrieved chunks that are near-
+duplicates of more recent retrieved chunks are dropped, and the more recent chunk takes
+their place in the ranking. A change question ("how have the risks changed") ranks the
+chunks holding paragraphs new since the previous Filing of the same Form Type first, and
+cites only those paragraphs, from the Filing they are new in.
+
+Question text is reduced to quoted terms before it reaches FTS5 `MATCH`, so FTS5
+operators in a question (`NOT`, `NEAR`, `*`, quotes, colons) are searched as words,
+never run.
 
 This module and everything it imports stay on the standard library.
 """
@@ -29,12 +42,12 @@ from __future__ import annotations
 import os
 import re
 import sqlite3
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal
 
-from edgar_rag._chunks import Chunk, chunk_filing, count_tokens
+from edgar_rag._chunks import Chunk, _sentences, chunk_filing, count_tokens
 from edgar_rag._prompt import PROMPT_VERSION, render
 from edgar_rag._query_scope import (
     LATEST,
@@ -42,15 +55,21 @@ from edgar_rag._query_scope import (
     ScopeFiling,
     TimeWindow,
     find_companies,
+    find_periods,
     find_section_hints,
     find_time_window,
     in_window,
+    is_change_question,
+    names_period,
 )
+from edgar_rag._repeats import GAP, NEAR_DUPLICATE, NEW_TEXT, new_text, shingles
 from edgar_rag.corpus import Filing
 
 __all__ = [
     "CONTEXT_BUDGET_TOKENS",
     "DEFAULT_INDEX",
+    "NEAR_DUPLICATE",
+    "NEW_TEXT",
     "PROMPT_VERSION",
     "AnswerContext",
     "Message",
@@ -79,9 +98,10 @@ RISK_FACTORS = "Risk Factors"
 
 _CANDIDATES_PER_COMPANY = 200
 
-INDEX_VERSION = 2
+INDEX_VERSION = 3
 """Bumped whenever the index's tables change, so an older index is rebuilt, not misread.
-Version 2 adds the `filings` and `sections` tables."""
+Version 2 adds the `filings` and `sections` tables; version 3 stores each Company's
+repeated chunks once, listing their Filings in `chunk_filings`."""
 
 _SCHEMA = """
 CREATE TABLE companies (
@@ -93,23 +113,34 @@ CREATE TABLE companies (
 );
 CREATE TABLE chunks (
     id INTEGER PRIMARY KEY,
-    filing_id TEXT NOT NULL,
     ticker TEXT NOT NULL,
     company TEXT NOT NULL,
     sector TEXT,
     industry TEXT,
-    form_type TEXT NOT NULL,
-    report_period TEXT NOT NULL,
-    fiscal_period TEXT,
     coverage TEXT,
-    section TEXT NOT NULL,
-    item TEXT,
     kind TEXT NOT NULL,
-    ordinal INTEGER NOT NULL,
     tokens INTEGER NOT NULL,
     text TEXT NOT NULL
 );
 CREATE INDEX chunks_ticker ON chunks (ticker);
+CREATE TABLE chunk_filings (
+    chunk_id INTEGER NOT NULL REFERENCES chunks (id),
+    filing_id TEXT NOT NULL,
+    form_type TEXT NOT NULL,
+    report_period TEXT NOT NULL,
+    fiscal_period TEXT,
+    section TEXT NOT NULL,
+    item TEXT,
+    ordinal INTEGER NOT NULL,
+    new_text TEXT,
+    PRIMARY KEY (filing_id, ordinal)
+);
+CREATE INDEX chunk_filings_chunk ON chunk_filings (chunk_id);
+CREATE VIEW filing_chunks AS
+SELECT c.id, f.filing_id, c.ticker, c.company, c.sector, c.industry, f.form_type,
+       f.report_period, f.fiscal_period, c.coverage, f.section, f.item, c.kind, f.ordinal,
+       c.tokens, c.text, f.new_text
+FROM chunk_filings f JOIN chunks c ON c.id = f.chunk_id;
 CREATE TABLE filings (
     filing_id TEXT PRIMARY KEY,
     ticker TEXT NOT NULL,
@@ -129,10 +160,6 @@ CREATE VIRTUAL TABLE chunks_fts USING fts5(
 );
 """
 
-_CHUNK_COLUMNS = (
-    "filing_id, ticker, company, sector, industry, form_type, report_period, fiscal_period, "
-    "coverage, section, item, kind, ordinal, tokens, text"
-)
 
 # Words that carry no topic. Company names are taken out separately.
 _STOPWORDS = frozenset(
@@ -177,6 +204,12 @@ class QueryScope:
     filings: tuple[ScopeFiling, ...]
     """The named Companies' Filings inside the window, by Company and then oldest
     first. A question naming no Company searches every Company's window."""
+    periods: tuple[str, ...] = ()
+    """The Fiscal Periods the question names ("FY2024", "Q2 FY2025"). A passage repeated
+    across Filings is cited from one of these periods rather than the most recent."""
+    change: bool = False
+    """Whether the question asks how something changed, which routes it to the
+    paragraphs new between periods."""
 
 
 @dataclass(frozen=True)
@@ -224,7 +257,10 @@ def build_index(filings: Iterable[Filing], path: str | Path = DEFAULT_INDEX) -> 
     """Chunk every Filing and write the index to `path`, replacing any index there.
 
     The file is written beside `path` first and moved into place when complete, so a
-    failed build never leaves a half-written index.
+    failed build never leaves a half-written index. Within each Company, a chunk whose
+    kind and text repeat an earlier chunk is stored once and listed under every Filing
+    it appears in. Each listing records the chunk's new text: its paragraphs absent from
+    the Company's previous Filing of the same Form Type.
     """
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -234,26 +270,45 @@ def build_index(filings: Iterable[Filing], path: str | Path = DEFAULT_INDEX) -> 
     try:
         db.executescript(_SCHEMA)
         companies: dict[str, tuple] = {}
-        for filing in filings:
+        stored: dict[tuple[str, str, str], int] = {}  # (ticker, kind, text) → chunk id
+        previous: dict[tuple[str, str], set[int]] = {}  # (ticker, Form Type) → shingles
+        for filing in sorted(filings, key=lambda f: (f.ticker, f.report_period, f.filing_id)):
             companies.setdefault(
                 filing.ticker,
                 (filing.ticker, filing.company, filing.sector, filing.industry, filing.coverage),
             )
-            db.executemany(
-                f"INSERT INTO chunks ({_CHUNK_COLUMNS}) VALUES ({', '.join('?' * 15)})",
-                (_row(chunk) for chunk in chunk_filing(filing)),
-            )
+            earlier = previous.get((filing.ticker, filing.form_type))
+            seen: set[int] = set()
+            for chunk in chunk_filing(filing):
+                key = (chunk.ticker, chunk.kind, chunk.text)
+                if key not in stored:
+                    stored[key] = len(stored) + 1
+                    db.execute(
+                        "INSERT INTO chunks VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                        (stored[key],) + _chunk_row(chunk),
+                    )
+                seen |= shingles(chunk.text)
+                new = (
+                    None
+                    if chunk.kind == "risk_pointer"
+                    else new_text(_sentences(chunk.text), earlier)
+                )
+                db.execute(
+                    "INSERT INTO chunk_filings VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (stored[key],) + _listing_row(chunk) + (new,),
+                )
+            previous[(filing.ticker, filing.form_type)] = seen
         db.executemany("INSERT INTO companies VALUES (?, ?, ?, ?, ?)", companies.values())
         db.executescript(
             """
             INSERT INTO filings
             SELECT DISTINCT filing_id, ticker, form_type, report_period, fiscal_period
-            FROM chunks;
+            FROM filing_chunks;
             INSERT INTO sections
             SELECT filing_id, section,
                    SUM(CASE WHEN kind = 'risk_pointer' THEN 0 ELSE tokens END),
                    MAX(kind = 'risk_pointer')
-            FROM chunks GROUP BY filing_id, section;
+            FROM filing_chunks GROUP BY filing_id, section;
             """
         )
         db.execute("INSERT INTO chunks_fts (chunks_fts) VALUES ('rebuild')")
@@ -290,6 +345,8 @@ def prepare_answer_context(
             filings=tuple(
                 f for c in companies for f in in_window(window, filings.get(c.ticker, []))
             ),
+            periods=find_periods(question),
+            change=is_change_question(question),
         )
         terms = _terms(_without_spans(question, spans))
         sources = _sources(db, scope, filings, terms)
@@ -302,23 +359,28 @@ def prepare_answer_context(
     )
 
 
-def _row(chunk: Chunk) -> tuple:
+def _chunk_row(chunk: Chunk) -> tuple:
     return (
-        chunk.filing_id,
         chunk.ticker,
         chunk.company,
         chunk.sector,
         chunk.industry,
+        chunk.coverage,
+        chunk.kind,
+        count_tokens(chunk.text),
+        chunk.text,
+    )
+
+
+def _listing_row(chunk: Chunk) -> tuple:
+    return (
+        chunk.filing_id,
         chunk.form_type,
         chunk.report_period,
         chunk.fiscal_period,
-        chunk.coverage,
         chunk.section,
         chunk.item,
-        chunk.kind,
         chunk.ordinal,
-        count_tokens(chunk.text),
-        chunk.text,
     )
 
 
@@ -446,15 +508,11 @@ def _sources(
         ]
         plan = _plan(db, scope, windowed)
         pointers = _pointer_rows(db, plan.pointers)
-        chosen: list[sqlite3.Row] = []
-        seen_text: set[str] = set()
+        chosen: list[_Row] = []
         spent = sum(row["tokens"] for row in pointers)
-        for row in _ranked(db, ticker, terms, plan.places):
-            if row["text"] in seen_text:
-                continue  # the same passage in an older Filing
+        for row in _without_near_duplicates(_candidates(db, scope, ticker, terms, plan)):
             if spent + row["tokens"] > budget:
                 break
-            seen_text.add(row["text"])
             spent += row["tokens"]
             chosen.append(row)
         sources += _group(chosen + pointers, first_number=len(sources) + 1)
@@ -466,7 +524,8 @@ def _pointer_rows(db: sqlite3.Connection, pointers: list[tuple[str, str]]) -> li
     rows: list[sqlite3.Row] = []
     for filing_id, section in pointers:
         rows += db.execute(
-            "SELECT * FROM chunks WHERE filing_id = ? AND section = ? AND kind = 'risk_pointer'",
+            "SELECT * FROM filing_chunks "
+            "WHERE filing_id = ? AND section = ? AND kind = 'risk_pointer'",
             (filing_id, section),
         ).fetchall()
     return sorted(rows, key=lambda r: r["report_period"], reverse=True)
@@ -478,37 +537,151 @@ def _ranked(
     terms: str | None,
     places: list[tuple[str, str | None]] | None,
 ) -> list[sqlite3.Row]:
-    """The Company's best chunks for the terms within the planned places, best first. A
-    repeated passage ranks its most recent Filing first. Risk pointers ("no material
-    changes since the 10-K") are cited by the risk route but never ranked (finding 16)."""
+    """The Company's best chunks for the terms within the planned places, best first,
+    with one row for each planned Filing a chunk appears in, most recent first. Risk
+    pointers ("no material changes since the 10-K") are cited by the risk route but
+    never ranked (finding 16)."""
     if terms is None or places == []:
         return []
     company_filter = "AND c.ticker = :ticker" if ticker else ""
-    place_filter = ""
+    place_filter = listing_filter = ""
     if places is not None:
         db.execute("CREATE TEMP TABLE IF NOT EXISTS places (filing_id TEXT, section TEXT)")
         db.execute("DELETE FROM temp.places")
         db.executemany("INSERT INTO temp.places VALUES (?, ?)", places)
-        place_filter = """AND EXISTS (
+        in_place = """EXISTS (
             SELECT 1 FROM temp.places p
-            WHERE p.filing_id = c.filing_id AND (p.section IS NULL OR p.section = c.section)
+            WHERE p.filing_id = f.filing_id AND (p.section IS NULL OR p.section = f.section)
         )"""
+        place_filter = (
+            f"AND EXISTS (SELECT 1 FROM chunk_filings f WHERE f.chunk_id = c.id AND {in_place})"
+        )
+        listing_filter = f"AND {in_place}"
     return db.execute(
         f"""
-        SELECT c.*, bm25(chunks_fts) AS score
-        FROM chunks_fts JOIN chunks c ON c.id = chunks_fts.rowid
-        WHERE chunks_fts MATCH :terms AND c.kind != 'risk_pointer' {company_filter}
-        {place_filter}
-        ORDER BY score, c.report_period DESC
-        LIMIT :limit
+        WITH ranked AS (
+            SELECT c.id, bm25(chunks_fts) AS score
+            FROM chunks_fts JOIN chunks c ON c.id = chunks_fts.rowid
+            WHERE chunks_fts MATCH :terms AND c.kind != 'risk_pointer' {company_filter}
+            {place_filter}
+            ORDER BY score
+            LIMIT :limit
+        )
+        SELECT f.*, r.score
+        FROM ranked r JOIN filing_chunks f ON f.id = r.id
+        WHERE 1 {listing_filter}
+        ORDER BY r.score, r.id, f.report_period DESC
         """,
         {"terms": terms, "ticker": ticker, "limit": _CANDIDATES_PER_COMPANY},
     ).fetchall()
 
 
-def _group(rows: list[sqlite3.Row], first_number: int) -> list[Source]:
+_Row = Mapping[str, Any]
+
+
+@dataclass
+class _Candidate:
+    """One retrieved chunk, cited from one of the Filings it appears in."""
+
+    row: _Row
+    """The chunk's listing in the cited Filing; on the change route, a new chunk's text
+    is only its new paragraphs."""
+    shingles: set[int]
+    new: bool
+    """Whether the chunk holds paragraphs new in the cited Filing (change route only)."""
+    preference: tuple[bool, str]
+    """Higher is preferred: from a period the question names, then more recent."""
+
+
+def _candidates(
+    db: sqlite3.Connection,
+    scope: QueryScope,
+    ticker: str | None,
+    terms: str | None,
+    plan: _Plan,
+) -> list[_Candidate]:
+    """The ranked chunks, each cited from one Filing: on the change route the Filing it
+    holds new paragraphs in, otherwise a Filing of a period the question names, else the
+    most recent. On the change route the chunks holding new paragraphs rank first, cut
+    down to those paragraphs."""
+    listings: dict[int, list[sqlite3.Row]] = {}
+    for row in _ranked(db, ticker, terms, plan.places):
+        listings.setdefault(row["id"], []).append(row)
+    candidates = []
+    for rows in listings.values():
+        chosen = max(rows, key=lambda r: (_is_new(r, scope), _preference(r, scope)))
+        row: dict[str, Any] = dict(chosen)
+        new = _is_new(chosen, scope)
+        if new:
+            row |= {"text": row["new_text"], "tokens": count_tokens(row["new_text"])}
+        candidates.append(
+            _Candidate(
+                row=row,
+                shingles=shingles(row["text"]),
+                new=new,
+                preference=_preference(chosen, scope),
+            )
+        )
+    if scope.change:
+        candidates.sort(key=lambda c: not c.new)
+    return candidates
+
+
+def _is_new(row: sqlite3.Row, scope: QueryScope) -> bool:
+    return scope.change and row["new_text"] is not None
+
+
+def _preference(row: sqlite3.Row, scope: QueryScope) -> tuple[bool, str]:
+    return names_period(row["fiscal_period"], scope.periods), row["report_period"]
+
+
+def _without_near_duplicates(candidates: list[_Candidate]) -> list[_Row]:
+    """The ranked chunks without near-duplicates, as rows to cite.
+
+    A chunk is a near-duplicate when most of its text is in preferred chunks (more
+    recent, or from a period the question names). Chunk boundaries shift between
+    Filings, so its text is usually spread over two preferred chunks: what is measured
+    is how much of it the preferred chunks hold together. It gives up its place in the
+    ranking to the preferred chunk sharing the most of it. On the change route new
+    paragraphs are kept, since when they appeared is the answer.
+    """
+    covered = [0] * len(candidates)
+    union: set[int] = set()
+    by_preference = sorted(
+        range(len(candidates)), key=lambda i: candidates[i].preference, reverse=True
+    )
+    group: list[int] = []
+    for i in [*by_preference, None]:
+        if group and (i is None or candidates[i].preference != candidates[group[0]].preference):
+            for j in group:
+                union |= candidates[j].shingles
+            group = []
+        if i is not None:
+            covered[i] = len(candidates[i].shingles & union)
+            group.append(i)
+
+    def is_duplicate(i: int) -> bool:
+        c = candidates[i]
+        return not c.new and bool(c.shingles) and covered[i] >= NEAR_DUPLICATE * len(c.shingles)
+
+    def kept(i: int) -> int:
+        while is_duplicate(i):
+            c = candidates[i]
+            i = max(
+                (j for j, d in enumerate(candidates) if d.preference > c.preference),
+                key=lambda j: len(c.shingles & candidates[j].shingles),
+            )
+        return i
+
+    placed: dict[int, None] = {}
+    for i in range(len(candidates)):
+        placed.setdefault(kept(i))
+    return [candidates[i].row for i in placed]
+
+
+def _group(rows: Sequence[_Row], first_number: int) -> list[Source]:
     """One Source per (Filing, Section), numbered in order of each group's best chunk."""
-    groups: dict[tuple[str, str], list[sqlite3.Row]] = {}
+    groups: dict[tuple[str, str], list[_Row]] = {}
     for row in rows:
         groups.setdefault((row["filing_id"], row["section"]), []).append(row)
     sources = []
@@ -526,7 +699,7 @@ def _group(rows: list[sqlite3.Row], first_number: int) -> list[Source]:
                 fiscal_period=first["fiscal_period"],
                 section=first["section"],
                 item=first["item"] if len({r["item"] for r in group}) == 1 else None,
-                text="\n[…]\n".join(r["text"] for r in in_order),
+                text=GAP.join(r["text"] for r in in_order),
             )
         )
     return sources

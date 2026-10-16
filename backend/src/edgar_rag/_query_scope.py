@@ -9,6 +9,10 @@ Rule-based, with no LLM (ADR 0003). It recognises:
   quarters" and the like. A window is anchored on each Company's latest Filing, not on
   today's date (assumption 6).
 - Section hints: risk factors, legal proceedings, MD&A, market risk and business.
+- Named periods: "FY2024", "fiscal 2024", "Q2 FY2025", or a bare year ("in 2023"), read
+  as Fiscal Periods. A named period decides which copy of a repeated passage is cited.
+- Change questions: "how has it changed", "what is new", "how did it evolve", "how do
+  they differ". They are routed to the paragraphs new between periods.
 
 Tickers match only when written in capitals, so "cost" never means Costco. Names match
 in any case, except names that are also everyday words ("Target", "Meta", "Visa"),
@@ -237,3 +241,54 @@ def find_section_hints(question: str) -> tuple[str, ...]:
         if n:
             found.append(section)
     return tuple(found)
+
+
+# --- Named periods -----------------------------------------------------------------------
+
+_YEAR_DIGITS = r"((?:19|20)\d{2})"
+_NAMED_QUARTER = re.compile(
+    rf"\bQ([1-4])\s*(?:of\s+)?(?:FY\s?|fiscal\s+(?:year\s+)?)?{_YEAR_DIGITS}\b", re.I
+)
+_NAMED_FISCAL_YEAR = re.compile(rf"\b(?:FY\s?|fiscal\s+(?:year\s+)?){_YEAR_DIGITS}\b", re.I)
+_NAMED_YEAR = re.compile(rf"\b{_YEAR_DIGITS}\b")
+
+
+def find_periods(question: str) -> tuple[str, ...]:
+    """The Fiscal Periods a question names, in the order it names them: "Q2 FY2025"
+    for a quarter, "FY2024" for a fiscal year or a bare year."""
+    found: list[tuple[int, str]] = []
+    for pattern, label in (
+        (_NAMED_QUARTER, lambda m: f"Q{m.group(1)} FY{m.group(2)}"),
+        (_NAMED_FISCAL_YEAR, lambda m: f"FY{m.group(1)}"),
+        (_NAMED_YEAR, lambda m: f"FY{m.group(1)}"),
+    ):
+        for m in pattern.finditer(question):
+            found.append((m.start(), label(m)))
+        question = pattern.sub(lambda m: " " * len(m.group(0)), question)
+    return tuple(dict.fromkeys(label for _, label in sorted(found)))
+
+
+def names_period(fiscal_period: str | None, periods: Sequence[str]) -> bool:
+    """Whether a Filing's Fiscal Period is one the question names: the quarter itself,
+    or any Filing of a named fiscal year."""
+    if not fiscal_period:
+        return False
+    return any(
+        fiscal_period == p or (p.startswith("FY") and fiscal_period.endswith(" " + p))
+        for p in periods
+    )
+
+
+# --- Change questions --------------------------------------------------------------------
+
+_CHANGE = re.compile(
+    r"\bchang(?:ed|ing)\b|(?<!climate\s)\bchanges\b(?!\s+in\s+(?:the\s+)?climate)"
+    r"|\bevolv(?:e|ed|es|ing)\b|\bdiffer(?:s|ed|ence|ences)?\b|\bshift(?:ed|s)?\b"
+    r"|\b(?:what(?:[’']s|\s+is|\s+was)|anything)\s+new\b",
+    re.I,
+)
+
+
+def is_change_question(question: str) -> bool:
+    """Whether a question asks how something changed between periods."""
+    return bool(_CHANGE.search(question))

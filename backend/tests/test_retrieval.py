@@ -8,6 +8,7 @@ import pytest
 
 from edgar_rag.retrieval import (
     CONTEXT_BUDGET_TOKENS,
+    NEAR_DUPLICATE,
     PROMPT_VERSION,
     STUB_TOKENS,
     Message,
@@ -22,11 +23,13 @@ BRIEF_QUESTION = (
 
 
 def _chunks(index, **where):
+    """Every chunk of every Filing, one row per Filing a chunk appears in."""
     db = sqlite3.connect(index)
     db.row_factory = sqlite3.Row
     clause = " AND ".join(f"{k} = ?" for k in where) or "1"
     rows = db.execute(
-        f"SELECT * FROM chunks WHERE {clause} ORDER BY filing_id, ordinal", tuple(where.values())
+        f"SELECT * FROM filing_chunks WHERE {clause} ORDER BY filing_id, ordinal",
+        tuple(where.values()),
     ).fetchall()
     db.close()
     return rows
@@ -110,7 +113,13 @@ def test_every_chunk_carries_the_filing_metadata(index):
         if "global and regional economic conditions" in c["text"]
     )
 
-    assert dict(chunk) | {"id": None, "ordinal": None, "tokens": None, "text": None} == {
+    assert dict(chunk) | {
+        "id": None,
+        "ordinal": None,
+        "tokens": None,
+        "text": None,
+        "new_text": None,
+    } == {
         "id": None,
         "filing_id": "AAPL_10-K_2024-09-28",
         "ticker": "AAPL",
@@ -127,6 +136,7 @@ def test_every_chunk_carries_the_filing_metadata(index):
         "ordinal": None,
         "tokens": None,
         "text": None,
+        "new_text": None,
     }
 
 
@@ -562,3 +572,198 @@ def test_an_index_built_by_an_older_version_says_to_rebuild_it(tmp_path, index):
 
     with pytest.raises(RuntimeError, match="make index"):
         _ask(old, BRIEF_QUESTION)
+
+
+# --- Deduplication -----------------------------------------------------------------------
+
+_WORD = re.compile(r"[a-z0-9]+")
+
+
+def _shingles(text):
+    """8-word shingles, the EDA's measure of repeated text (notebook section 6)."""
+    words = _WORD.findall(text.lower())
+    return {tuple(words[i : i + 8]) for i in range(len(words) - 7)}
+
+
+def _passages(context):
+    """Each retrieved chunk, with the Source that cites it."""
+    return [(s, p) for s in context.sources for p in s.text.split("\n[…]\n")]
+
+
+def test_a_chunk_repeated_across_a_companys_filings_is_stored_once_with_every_filing(
+    tmp_path, indexed_filings
+):
+    ids = ("TSLA_10-K_2024-12-31", "TSLA_10-K_2025-12-31")
+    filings = [_filing(indexed_filings, i) for i in ids]
+    alone = {
+        f.filing_id: {c["text"] for c in _chunks(build_index([f], tmp_path / f"{f.filing_id}.db"))}
+        for f in filings
+    }
+    shared = alone[ids[0]] & alone[ids[1]]
+    assert any("Cybersecurity Risk Management and Strategy" in t for t in shared)
+
+    path = build_index(filings, tmp_path / "both.sqlite")
+
+    db = sqlite3.connect(path)
+    stored = db.execute("SELECT id, text FROM chunks").fetchall()
+    listed: dict[int, set[str]] = {}
+    for chunk_id, filing_id in db.execute("SELECT chunk_id, filing_id FROM chunk_filings"):
+        listed.setdefault(chunk_id, set()).add(filing_id)
+    db.close()
+    texts = [text for _, text in stored]
+    assert len(texts) == len(set(texts)) == len(alone[ids[0]] | alone[ids[1]])
+    assert all(listed[i] == {f for f in ids if text in alone[f]} for i, text in stored)
+
+
+def test_every_company_stores_each_text_once(index):
+    db = sqlite3.connect(index)
+    stored_twice = db.execute(
+        "SELECT COUNT(*) FROM (SELECT 1 FROM chunks GROUP BY ticker, kind, text "
+        "HAVING COUNT(*) > 1)"
+    ).fetchone()[0]
+    in_several_filings = db.execute(
+        "SELECT COUNT(*) FROM (SELECT 1 FROM chunk_filings GROUP BY chunk_id "
+        "HAVING COUNT(DISTINCT filing_id) > 1)"
+    ).fetchone()[0]
+    db.close()
+
+    assert stored_twice == 0
+    assert in_several_filings > 100
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "What does Apple say about competition?",
+        "What does Tesla say about Gigafactory Texas?",
+        "How did Apple and Tesla describe demand over the past three years?",
+    ],
+)
+def test_retrieved_chunks_hold_no_near_duplicate_of_a_more_recent_one(index, question):
+    passages = _passages(_ask(index, question))
+
+    assert len({s.filing_id for s, _ in passages}) > 1
+    for source, passage in passages:
+        own = _shingles(passage)
+        newer = set().union(
+            *(
+                _shingles(p)
+                for s, p in passages
+                if s.ticker == source.ticker and s.report_period > source.report_period
+            )
+        )
+        assert len(own & newer) < NEAR_DUPLICATE * len(own), (source.filing_id, passage[:80])
+
+
+def _citing(context, phrase):
+    return {s.filing_id for s, p in _passages(context) if phrase in re.sub(r"\s+", " ", p).lower()}
+
+
+# Tesla's 10-Ks for FY2023 to FY2025 open Item 1C with the same passage: word for word in
+# FY2024 and FY2025, and in FY2023 short of one space ("CYBERSECURITYCybersecurity").
+CYBERSECURITY = "cybersecurity risk management and strategy"
+
+
+def test_a_repeated_passage_is_cited_from_the_most_recent_filing(index):
+    context = _ask(index, "What does Tesla say about cybersecurity management and strategy?")
+
+    assert context.query_scope.periods == ()
+    assert _citing(context, CYBERSECURITY) == {"TSLA_10-K_2025-12-31"}
+
+
+@pytest.mark.parametrize(
+    ("period", "filing_id"),
+    [("fiscal 2024", "TSLA_10-K_2024-12-31"), ("FY2023", "TSLA_10-K_2023-12-31")],
+)
+def test_a_repeated_passage_is_cited_from_the_period_the_question_names(index, period, filing_id):
+    context = _ask(
+        index, f"What did Tesla say about cybersecurity management and strategy in {period}?"
+    )
+
+    assert _citing(context, CYBERSECURITY) == {filing_id}
+
+
+@pytest.mark.parametrize(
+    ("question", "periods"),
+    [
+        ("What did Apple report for FY2024?", ("FY2024",)),
+        ("What did Apple report in fiscal year 2024?", ("FY2024",)),
+        ("What did Apple report in Q2 FY2025?", ("Q2 FY2025",)),
+        ("What did Apple report in 2023 and 2024?", ("FY2023", "FY2024")),
+        ("What did Apple report?", ()),
+    ],
+)
+def test_periods_named_in_a_question_are_read_as_fiscal_periods(index, question, periods):
+    assert _ask(index, question).query_scope.periods == periods
+
+
+# --- "How has it changed" routing ----------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("question", "change"),
+    [
+        ("How have Tesla's risk factors changed over the last two years?", True),
+        ("What changed in Apple's risk factors?", True),
+        ("How has NVIDIA's revenue evolved?", True),
+        ("What is new in Tesla's latest risk factors?", True),
+        ("How do Tesla's risks differ from last year?", True),
+        ("What are Tesla's risk factors?", False),
+        ("What does Tesla say about climate change?", False),
+    ],
+)
+def test_change_questions_are_recognised(index, question, change):
+    assert _ask(index, question).query_scope.change is change
+
+
+def _new_text(indexed_filings, ticker):
+    """For each of the Company's Filings, a function telling whether a passage is new:
+    whether at least half its shingles are absent from the previous Filing of the same
+    Form Type."""
+    previous: dict[str, set] = {}
+    last: dict[str, set] = {}
+    for filing in sorted(
+        (f for f in indexed_filings if f.ticker == ticker), key=lambda f: f.report_period
+    ):
+        previous[filing.filing_id] = last.get(filing.form_type, set())
+        last[filing.form_type] = _shingles(filing.body)
+
+    def is_new(source, passage):
+        own = _shingles(passage)
+        return len(own - previous[source.filing_id]) >= len(own) / 2
+
+    return is_new
+
+
+def test_a_change_question_retrieves_paragraphs_new_between_the_compared_periods(
+    index, indexed_filings
+):
+    is_new = _new_text(indexed_filings, "TSLA")
+
+    change = _passages(
+        _ask(index, "How have Tesla's risk factors changed over the last two years?")
+    )
+    plain = _passages(_ask(index, "What are Tesla's risk factors over the last two years?"))
+
+    new = [(s, p) for s, p in change if is_new(s, p)]
+    assert {s.filing_id for s, _ in new} >= {"TSLA_10-K_2024-12-31", "TSLA_10-K_2025-12-31"}
+    assert len(new) / len(change) > 2 * sum(is_new(s, p) for s, p in plain) / len(plain)
+    assert {s.section for s, _ in change} == {"Risk Factors"}
+
+
+def test_a_new_paragraph_is_cited_from_the_filing_it_first_appears_in(index, indexed_filings):
+    is_new = _new_text(indexed_filings, "TSLA")
+    later = _shingles(_filing(indexed_filings, "TSLA_10-K_2025-12-31").body)
+
+    context = _ask(index, "How have Tesla's risk factors changed over the last two years?")
+
+    # New in the FY2024 10-K and still in the FY2025 10-K: a plain question would cite the
+    # FY2025 copy, but a change question cites the Filing that added it.
+    kept = [
+        p
+        for s, p in _passages(context)
+        if s.filing_id == "TSLA_10-K_2024-12-31"
+        and is_new(s, p)
+        and len(_shingles(p) & later) >= NEAR_DUPLICATE * len(_shingles(p))
+    ]
+    assert kept

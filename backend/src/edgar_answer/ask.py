@@ -68,6 +68,10 @@ def _print_context(context: AnswerContext, out: TextIO) -> None:
     scope = context.query_scope
     print(f"  Time window: {scope.time_window.label}", file=out)
     print(f"  Sections: {', '.join(scope.sections) or 'whole Filings'}", file=out)
+    if scope.periods:
+        print(f"  Named periods: {', '.join(scope.periods)}", file=out)
+    if scope.change:
+        print("  Change question: new paragraphs first", file=out)
     for company in companies:
         filings = [f for f in scope.filings if f.ticker == company.ticker]
         print(

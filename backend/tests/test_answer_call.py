@@ -169,3 +169,18 @@ def test_ask_prints_the_query_scope_the_sources_and_the_streamed_answer(index, t
     assert "TSLA " in sources and "JPM " in sources
     assert "Apple faces supply chain risk [S1]." in answer
     assert "fake-model · prompt v1 · 1200 input / 300 output tokens" in answer
+
+
+def test_ask_prints_a_named_period_and_the_change_route(index, tmp_path):
+    out = io.StringIO()
+
+    ask.main(
+        ["How have Apple's risk factors changed since fiscal 2024?", "--index", str(index)],
+        model=FakeModel(),
+        out=out,
+        log_path=tmp_path / "calls.jsonl",
+    )
+
+    scope = out.getvalue().split("\nSources", 1)[0]
+    assert "Named periods: FY2024" in scope
+    assert "Change question: new paragraphs first" in scope

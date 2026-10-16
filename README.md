@@ -11,7 +11,7 @@ The work runs in phases. The exploratory data analysis (EDA) phase is complete. 
 | Deliverable (from the brief) | Status | Where |
 |---|---|---|
 | README with setup and run instructions | Done | This file |
-| Indexing and retrieval code | Partly done: Corpus loading, cleaning, Section splitting, Financial Facts extraction, chunking, the FTS5 index, Company recognition, time windows, Section hints, risk routing and retrieval into numbered Sources budgeted per Company are built and tested. Sector phrases, follow-ups, Coverage Gaps and deduplication are next. | [`backend/src/edgar_rag/`](backend/src/edgar_rag/) |
+| Indexing and retrieval code | Partly done: Corpus loading, cleaning, Section splitting, Financial Facts extraction, chunking, the FTS5 index, Company recognition, time windows, Section hints, risk routing, deduplication of repeated text, "how has it changed" routing and retrieval into numbered Sources budgeted per Company are built and tested. Sector phrases, follow-ups and Coverage Gaps are next. | [`backend/src/edgar_rag/`](backend/src/edgar_rag/) |
 | Log of prompt iterations | Started: v1 | [`docs/prompt-iterations.md`](docs/prompt-iterations.md) |
 | Final prompt template | v1 in place; the final version follows the prompt iterations | [`docs/prompt-iterations.md`](docs/prompt-iterations.md), [`backend/src/edgar_rag/_prompt.py`](backend/src/edgar_rag/_prompt.py) |
 | Front-end | Started: the research workspace streams answers, opens each `[Sn]` citation's passage in a Sources panel and offers the six starter prompts. Query Scope chips, Coverage Gap callouts, session history and the "How it works" page come next. | [`frontend/`](frontend/), [Running the full stack](#running-the-full-stack) |
