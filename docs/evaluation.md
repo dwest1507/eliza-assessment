@@ -198,6 +198,27 @@ The answers averaged 23,900 input and 460 output tokens and cost $0.052 in all; 
 - **Coverage Gaps fell from 0.67 to 0.50**, within noise, and the misses are the same kinds: differing periods, the stale GE Capital Filing and JPMorgan's snapshot, which nothing in the prompt computes yet.
 - Figures and cost are unchanged: the two figure failures are derived figures again, and an answer still costs about a quarter of a cent.
 
+### After Coverage Gaps (prompt v3)
+
+`gpt-6-luna`, `jev-1.13.0`, 2026-10-16, prompt [v3](prompt-iterations.md#v3-coverage-gaps-and-each-companys-coverage), on the retrieval as of [Coverage Gaps](#after-coverage-gaps): Sector phrases are in, and the gaps are computed by code and stated in the prompt with fixed wordings. 19 of the 20 dev cases are scored: Jev refused to judge `trend-jpm-revenue-snapshot` (`max_tokens_exceeded`, its Sources too long for one judging request), so it has no row.
+
+| | cases | citations valid | figures exact | gaps stated | Fact Recall | Faithfulness | $ per answer | latency s | first text s |
+|---|---|---|---|---|---|---|---|---|---|
+| **overall** | 19 | 0.79 | 0.95 | **0.91** | **0.55** | **0.90** | 0.0024 | 6.6 | 2.6 |
+| figure_trend | 3 | 0.33 | 0.67 | – | 0.44 | 0.94 | 0.0027 | 5.3 | 3.1 |
+| missing_company | 4 | 1.00 | 1.00 | 1.00 | 0.50 | 0.97 | 0.0010 | 5.6 | 2.4 |
+| outlook | 2 | 1.00 | 1.00 | 1.00 | 0.75 | 0.95 | 0.0034 | 4.4 | 1.9 |
+| risk | 6 | 0.83 | 1.00 | 0.67 | 0.49 | 0.87 | 0.0028 | 7.7 | 3.0 |
+| sector | 2 | 1.00 | 1.00 | 1.00 | 0.50 | 0.83 | 0.0028 | 11.1 | 3.1 |
+| stale_filing | 2 | 0.50 | 1.00 | 1.00 | 1.00 | 0.90 | 0.0019 | 4.4 | 1.2 |
+
+The answers cost $0.045 in all; the slowest took 15.7 seconds; Jev's judging cost $0.015.
+
+- **Coverage Gaps stated rose from 0.50 to 0.91** (11 scored cases with expected gaps). The stale GE Capital Filing, JPMorgan's and Bank of America's snapshots and the differing periods of the brief's first question, all missed before, are now stated, mostly in the fixed wording. The one miss is `followup-regulatory-exposure` ("Which of them has the most regulatory exposure?"): it names no Company, so until follow-ups inherit their Query Scope (ADR 0003) there are no Companies to compare periods for.
+- **Fewer Sources for questions the Corpus cannot answer.** "What are Citigroup's main risk factors?" no longer carries 47 unrelated Sources, so the missing-Company answers cost $0.0010 on average against $0.0016, and the GE answer is the gap itself rather than a summary of GE Capital in 2014.
+- **Citations fell from 0.95 to 0.79, mostly on the checks' wording rules, not on the answers.** `stale-ge-recent-performance` fails because its opening says the only Filing "is stale and left out of this answer", an absence the citation check does not yet recognise, and there is no Source to cite. `followup-regulatory-exposure` and `followup-switch-to-msft` fail on uncited sentences about earlier turns, and `trend-meta-revenue-two-years` on uncited table rows, as before. The stale-Filing wording should be added to the check's absence rule.
+- Fact Recall (0.55) and Faithfulness (0.90 against 0.93) are within the run-to-run range measured above, and the answers cost about the same.
+
 The holdout split has not been scored.
 
 ## Showing the results
