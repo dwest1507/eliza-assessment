@@ -144,6 +144,85 @@ def test_an_empty_model_variable_keeps_the_default(monkeypatch):
     assert OpenAIAnswerModel(client=FakeOpenAIClient()).model == "gpt-6-luna"
 
 
+# --- The Anthropic implementation -------------------------------------------------------
+
+
+class FakeAnthropicClient:
+    """Stands in for `anthropic.Anthropic`: records the request, streams canned text."""
+
+    def __init__(self, stop_reason="end_turn"):
+        self.request = None
+        self.stop_reason = stop_reason
+        self.messages = SimpleNamespace(stream=self._stream)
+
+    def _stream(self, **request):
+        self.request = request
+        message = SimpleNamespace(
+            stop_reason=self.stop_reason,
+            stop_details=SimpleNamespace(category="cyber")
+            if self.stop_reason == "refusal"
+            else None,
+            usage=SimpleNamespace(
+                input_tokens=900,
+                cache_creation_input_tokens=0,
+                cache_read_input_tokens=0,
+                output_tokens=420,
+                output_tokens_details=SimpleNamespace(thinking_tokens=64),
+            ),
+        )
+
+        class Stream:
+            text_stream = iter(["Apple ", "faces risk [S1]."])
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                return False
+
+            def get_final_message(self):
+                return message
+
+        return Stream()
+
+
+def test_anthropic_model_streams_with_the_same_effort_and_token_cap_as_openai():
+    from edgar_answer.anthropic_model import AnthropicAnswerModel
+
+    client = FakeAnthropicClient()
+    model = AnthropicAnswerModel("claude-sonnet-5-5", client=client)
+
+    parts = list(model.stream([PromptMessage("system", "rules"), PromptMessage("user", "q")]))
+
+    assert model.model == "claude-sonnet-5-5"
+    assert parts == ["Apple ", "faces risk [S1].", Usage(900, 420, 64)]
+    assert client.request == {
+        "model": "claude-sonnet-5-5",
+        "system": "rules",
+        "messages": [{"role": "user", "content": "q"}],
+        "thinking": {"type": "adaptive"},
+        "output_config": {"effort": "low"},
+        "max_tokens": 2500,
+    }
+
+
+def test_anthropic_model_raises_when_the_model_declines_to_answer():
+    from edgar_answer.anthropic_model import AnswerRefused, AnthropicAnswerModel
+
+    model = AnthropicAnswerModel("claude-opus-5-5", client=FakeAnthropicClient("refusal"))
+
+    with pytest.raises(AnswerRefused, match="cyber"):
+        list(model.stream([PromptMessage("user", "q")]))
+
+
+def test_the_anthropic_keys_placeholder_is_in_the_backends_env_example():
+    import re
+    from pathlib import Path
+
+    example = Path(__file__).resolve().parents[1] / ".env.example"
+    assert re.search(r"^ANTHROPIC_API_KEY=your-", example.read_text(), re.M)
+
+
 # --- make ask --------------------------------------------------------------------------
 
 

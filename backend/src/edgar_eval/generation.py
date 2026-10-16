@@ -17,8 +17,9 @@ scores and writes them, with every answer, as JSON under `data/derived/eval/`:
     python -m edgar_eval.generation [--split dev|holdout|all] [--model MODEL] [--arm ARM]
         [--json PATH]
 
-It calls the generator and Jev, so it needs `OPENAI_API_KEY` and `JEV_API_KEY`, and it
-costs money: about a cent per case with `gpt-6-luna`.
+It calls the generator and Jev, so it needs `JEV_API_KEY` and the generator's key
+(`OPENAI_API_KEY`, or `ANTHROPIC_API_KEY` for a `claude-` model), and it costs money:
+about a third of a cent per case with `gpt-6-luna`, Jev included.
 """
 
 from __future__ import annotations
@@ -56,6 +57,7 @@ from edgar_rag.golden_set import DEFAULT_GOLDEN_SET, GoldenCase, load_golden_set
 from edgar_rag.retrieval import DEFAULT_INDEX, prepare_answer_context
 
 __all__ = [
+    "GENERATORS",
     "PRICES",
     "CaseResult",
     "GenerationReport",
@@ -82,11 +84,17 @@ class Price:
 PRICES: dict[str, Price] = {
     "gpt-6-luna": Price(input=0.10, output=0.50),
     "gpt-6.1-sol": Price(input=2.00, output=10.00),
+    "claude-sonnet-5-5": Price(input=2.00, output=10.00),
+    "claude-opus-5-5": Price(input=4.00, output=20.00),
 }
-"""Standard-tier list prices per million tokens (developers.openai.com/api/docs/pricing,
-2026-10-16). Reasoning tokens are billed as output and are already counted in the output
-tokens. Every input token is priced at the full rate, ignoring cached input, so a cost
-is an upper bound. The Anthropic models join with the generator comparison."""
+"""List prices per million tokens on 2026-10-16: OpenAI's standard tier
+(developers.openai.com/api/docs/pricing) and Anthropic's first-party API
+(platform.claude.com/docs/en/about-claude/pricing). Reasoning and thinking tokens are
+billed as output and are already counted in the output tokens. Every input token is
+priced at the full rate, ignoring cached input, so a cost is an upper bound."""
+
+GENERATORS = ("gpt-6-luna", "gpt-6.1-sol", "claude-sonnet-5-5", "claude-opus-5-5")
+"""The generators the comparison measures, the shipped default first."""
 
 
 def answer_cost(model: str, input_tokens: int | None, output_tokens: int | None) -> float | None:
@@ -379,13 +387,18 @@ def corpus_fact_values(tickers: Iterable[str]) -> list[int]:
 
 
 def answer_model(name: str | None) -> AnswerModel:
-    """The generator to test, by model id. OpenAI models only, until the Anthropic
-    implementation joins for the generator comparison."""
+    """The generator to test, by model id, on its provider's implementation: `claude-`
+    models on Anthropic's, `gpt-` models (and the default, `OPENAI_MODEL` or
+    `gpt-6-luna`) on OpenAI's."""
     from edgar_answer.openai_model import MODEL_ENV_VAR, OpenAIAnswerModel
 
     name = name or os.environ.get(MODEL_ENV_VAR)
+    if name and name.startswith("claude-"):
+        from edgar_answer.anthropic_model import AnthropicAnswerModel
+
+        return AnthropicAnswerModel(name)
     if name and not name.startswith("gpt-"):
-        raise SystemExit(f"error: no answer model implementation for {name!r} yet")
+        raise SystemExit(f"error: no answer model implementation for {name!r}")
     return OpenAIAnswerModel(name)
 
 

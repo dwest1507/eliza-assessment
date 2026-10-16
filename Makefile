@@ -20,7 +20,7 @@ ENV_FILE := $(BACKEND)/.env
 -include $(ENV_FILE)
 export $(shell sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' $(ENV_FILE) 2>/dev/null)
 
-.PHONY: help install test lint format eda sec-facts index embeddings ask api eval-retrieval eval-generation eval-arms eval-export dev frontend-deps
+.PHONY: help install test lint format eda sec-facts index embeddings ask api eval-retrieval eval-generation eval-arms eval-generators eval-export dev frontend-deps
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-15s %s\n", $$1, $$2}'
@@ -86,8 +86,9 @@ eval-retrieval: $(INDEX) $(if $(filter dense hybrid,$(or $(ARMS),dense)),$(EMBED
 		--json ../data/derived/eval/retrieval-$(SPLIT).json
 
 eval-generation: $(INDEX) $(if $(filter dense hybrid,$(ARM)),$(EMBEDDINGS)) ## Score answers on the Golden Set: make eval-generation [SPLIT=...] [MODEL=...] [ARM=...] (costs money)
-	@if [ -z "$$OPENAI_API_KEY" ] || [ -z "$$JEV_API_KEY" ]; then \
-		echo 'error: OPENAI_API_KEY and JEV_API_KEY must be set. Copy backend/.env.example' >&2; \
+	@key=$(if $(filter claude-%,$(MODEL)),ANTHROPIC_API_KEY,OPENAI_API_KEY); \
+	if [ -z "$${!key}" ] || [ -z "$$JEV_API_KEY" ]; then \
+		echo "error: $$key and JEV_API_KEY must be set. Copy backend/.env.example" >&2; \
 		echo 'to backend/.env and fill them in.' >&2; \
 		exit 1; \
 	fi
@@ -102,6 +103,14 @@ eval-arms: $(INDEX) $(EMBEDDINGS) ## Answer the split through every Arm and choo
 		exit 1; \
 	fi
 	$(UV) python -m edgar_eval.selection arms --split $(SPLIT)
+
+eval-generators: $(INDEX) ## Answer the split with each of the four generators and choose one by the selection rule (costs money)
+	@if [ -z "$$OPENAI_API_KEY" ] || [ -z "$$ANTHROPIC_API_KEY" ] || [ -z "$$JEV_API_KEY" ]; then \
+		echo 'error: OPENAI_API_KEY, ANTHROPIC_API_KEY and JEV_API_KEY must be set. Copy' >&2; \
+		echo 'backend/.env.example to backend/.env and fill them in.' >&2; \
+		exit 1; \
+	fi
+	$(UV) python -m edgar_eval.selection generators --split $(SPLIT)
 
 SPLIT ?= dev
 RETRIEVAL_REPORT = data/derived/eval/retrieval-$(SPLIT).json

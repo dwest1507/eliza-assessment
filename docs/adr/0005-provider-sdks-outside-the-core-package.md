@@ -4,7 +4,7 @@ status: accepted
 
 # Provider SDKs live outside the core package, which stays on the standard library
 
-ADR 0004 puts the Answer Call behind one protocol with one implementation per provider over its official SDK, and the spec keeps the core package (`edgar_rag`) on the standard library so the API and front-end can sit on top of it. The two meet at the answer model. We split it: the core package holds the protocol (`AnswerModel`), the `Usage` it reports and `AnswerCall`, which streams an answer and logs its model, prompt version, token usage and latency. The implementations that import an SDK (`OpenAIAnswerModel`, later the Anthropic one) live in a second package in the backend project, `edgar_answer`, together with the `make ask` command line. A guard test checks that the core package imports only the standard library and itself, and never a web framework, the API or `edgar_answer`.
+ADR 0004 puts the Answer Call behind one protocol with one implementation per provider over its official SDK, and the spec keeps the core package (`edgar_rag`) on the standard library so the API and front-end can sit on top of it. The two meet at the answer model. We split it: the core package holds the protocol (`AnswerModel`), the `Usage` it reports and `AnswerCall`, which streams an answer and logs its model, prompt version, token usage and latency. The implementations that import an SDK (`OpenAIAnswerModel` and `AnthropicAnswerModel`) live in a second package in the backend project, `edgar_answer`, together with the `make ask` command line. A guard test checks that the core package imports only the standard library and itself, and never a web framework, the API or `edgar_answer`.
 
 ## Considered options
 
@@ -13,5 +13,5 @@ ADR 0004 puts the Answer Call behind one protocol with one implementation per pr
 
 ## Consequences
 
-- The `openai` SDK is a dependency of the backend project, used only by `edgar_answer`. The Anthropic SDK joins it there for the generator comparison.
+- The `openai` and `anthropic` SDKs are dependencies of the backend project, used only by `edgar_answer`. The Anthropic implementation was added for the generator comparison.
 - Retrieval, prompt rendering and the Answer Call log are testable with a fake model and no SDK installed.

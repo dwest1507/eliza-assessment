@@ -23,6 +23,35 @@ def test_answer_cost_prices_input_and_output_tokens_per_million():
     )
 
 
+def test_every_compared_generator_has_a_price():
+    from edgar_eval.generation import GENERATORS
+
+    assert GENERATORS == ("gpt-6-luna", "gpt-6.1-sol", "claude-sonnet-5-5", "claude-opus-5-5")
+    # claude-sonnet-5-5: $2 in, $10 out; claude-opus-5-5: $4 in, $20 out, per million.
+    assert answer_cost("claude-sonnet-5-5", 1_000_000, 100_000) == pytest.approx(3.0)
+    assert answer_cost("claude-opus-5-5", 1_000_000, 100_000) == pytest.approx(6.0)
+    assert all(answer_cost(m, 1, 1) is not None for m in GENERATORS)
+
+
+def test_a_generator_is_built_by_its_providers_implementation(monkeypatch):
+    from edgar_answer.anthropic_model import AnthropicAnswerModel
+    from edgar_answer.openai_model import OpenAIAnswerModel
+    from edgar_eval.generation import answer_model
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test")
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
+    monkeypatch.delenv("OPENAI_MODEL", raising=False)
+
+    claude = answer_model("claude-opus-5-5")
+    gpt = answer_model("gpt-6.1-sol")
+
+    assert isinstance(claude, AnthropicAnswerModel) and claude.model == "claude-opus-5-5"
+    assert isinstance(gpt, OpenAIAnswerModel) and gpt.model == "gpt-6.1-sol"
+    assert answer_model(None).model == "gpt-6-luna"
+    with pytest.raises(SystemExit):
+        answer_model("gemini-9")
+
+
 def test_answer_cost_is_unknown_for_a_model_without_a_price():
     assert answer_cost("some-new-model", input_tokens=1_000, output_tokens=1_000) is None
     assert answer_cost("gpt-6-luna", input_tokens=None, output_tokens=None) is None

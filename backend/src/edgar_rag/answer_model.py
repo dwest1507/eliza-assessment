@@ -2,7 +2,8 @@
 
 No LLM framework (ADR 0004). `AnswerModel` is one small protocol that streams an
 answer's text and reports its token usage, with one implementation per provider over
-its official SDK (`edgar_rag.openai_model` for OpenAI). Tests use a fake.
+its official SDK, outside the core package (`edgar_answer.openai_model` for OpenAI,
+`edgar_answer.anthropic_model` for Anthropic). Tests use a fake.
 
 `AnswerCall` runs one Answer Call for a prepared Answer Context: it streams the text
 through and, when the stream ends, logs the model, prompt version, token usage and
