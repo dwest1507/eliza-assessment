@@ -46,3 +46,17 @@ The GE row describes the Filing in the Corpus, GE Capital's FY2014 10-K, not tod
 ## Derived files
 
 Anything built from the Corpus (cleaned Sections, a Financial Facts database, indexes) is written to `data/derived/`, which is gitignored and rebuilt by Makefile targets.
+
+## SEC company-facts reference (`derived/sec_companyfacts/`)
+
+To measure how accurately Financial Facts are extracted, the EDA compares them with the SEC's XBRL company-facts data (`https://data.sec.gov/api/xbrl/companyfacts/CIK##########.json`), one JSON file per Tracked Company plus an `index.json` recording the retrieval date. **It is an evaluation reference only, never an answer source:** nothing that answers questions reads it.
+
+`make sec-facts` fetches it into `data/derived/sec_companyfacts/` (gitignored). `make eda` fetches it first if the cache is missing, and otherwise works from the cache.
+
+The SEC requires every automated request to carry a User-Agent naming the requester and a contact email. Fetching reads it from the `SEC_USER_AGENT` environment variable and refuses to run without it:
+
+```sh
+SEC_USER_AGENT="Your Name you@example.com" make sec-facts
+```
+
+Set it for the command only. It is never written to a file, so the contact address stays out of the repository.
