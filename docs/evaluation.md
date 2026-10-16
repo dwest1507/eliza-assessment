@@ -1,6 +1,6 @@
 # Evaluation
 
-How the system's quality is measured. Everything is scored against the [Golden Set](golden-set.md): choices are tuned on its dev split, and the holdout split is scored once, at the end. Two harnesses do the measuring: the retrieval harness (below) asks whether the right Sections reach the Answer Call; the generation harness, still to come, asks whether the answers are right.
+How the system's quality is measured. Everything is scored against the [Golden Set](golden-set.md): choices are tuned on its dev split, and the holdout split is scored once, at the end. Two harnesses do the measuring: the [retrieval harness](#retrieval-harness) asks whether the right Sections reach the Answer Call; the [generation harness](#generation-harness) asks whether the answers are right, and what they cost.
 
 ## Retrieval harness
 
@@ -121,3 +121,78 @@ Golden Set version 1, dev split, the same 17 scored cases, on top of deduplicati
 Before → after, overall: hit@10 0.71 → 0.71, recall@10 0.58 → 0.65, MRR 0.56 → 0.59, Sources 18.8 → 16.9. Only the two sector cases change: recall@10 0.47 → 1.00, MRR 0.50 → 0.75, and 26.0 → 9.5 Sources, because each case now searches only its Companies' latest Risk Factors instead of every Company's. The same five cases miss at hit@10, for the reasons above.
 
 The holdout split has not been scored.
+
+## Generation harness
+
+```sh
+make eval-generation                       # the dev split, with the default generator (gpt-6-luna)
+make eval-generation MODEL=gpt-6.1-sol     # another generator
+```
+
+It runs each Golden Set case through the whole pipeline, one real Answer Call per case, and scores the answers. It calls the generator and the Jev judge, so it needs `OPENAI_API_KEY` and `JEV_API_KEY` in `backend/.env`, and it costs money: about $0.07 for the 20 dev cases with `gpt-6-luna`, Jev included. It prints the scores and writes them, with every answer, every check's findings and every judgment, to `data/derived/eval/generation-<split>[-<model>].json`. The Answer Calls are logged to `data/derived/logs/answer_calls.jsonl` like any other. The code is [`backend/src/edgar_eval/generation.py`](../backend/src/edgar_eval/generation.py), with the checks in [`answer_checks.py`](../backend/src/edgar_eval/answer_checks.py) and the judge in [`judge.py`](../backend/src/edgar_eval/judge.py).
+
+### Method
+
+1. **One Answer Call per case.** Each case's conversation (scripted history, then question) goes to `prepare_answer_context` and then to one Answer Call, exactly as `make ask` and the API run it. Multi-turn cases are scored on their final turn. Cases run four at a time.
+2. **Checks in code.** An answer is read as units: each prose paragraph, list item and table body row, since each makes its own claims.
+   - **Citation validity** (pass/fail per answer): every `[Sn]` tag names one of that turn's Sources, and every unit cites at least one. Tags may be grouped (`[S1, S2]`) or ranged (`[S1–S5]`). Exempt units: headings, table header rows, lead-ins ending in a colon, bold-only labels, the closing Coverage note, and units whose every sentence says what the Sources lack ("The Sources contain no Honeywell filings"), since there is nothing to cite for an absence.
+   - **Figure exactness** (pass/fail per answer): every figure (an amount, a percentage or a count) matches a Financial Fact of a Company in the Query Scope or among the Sources, or appears in a passage the answer cites. A figure may be rounded and rescaled: "$416.2 billion" matches a passage reading "416,161" in a table in millions. A percentage must appear as written. Years, dates, single-digit counts and numbers inside labels (FY2025, Q3, 10-K, Item 1A, Filing IDs) are not figures. **Derived figures fail**: a growth rate, a difference or a share the model computed is in no passage and no Financial Fact. The spec asks for derived figures to be labelled as derived; how to check a labelled derivation is left to the Financial Facts task.
+   - **Coverage Gaps** (pass/fail per answer with expected gaps): every expected Coverage Gap is stated. A gap is stated for a Company when one sentence names the Company and says what the gap's kind says: the fixed wordings of EDA section 8.6, or a plain variant ("Wells Fargo is not in the Corpus", "do not include Wells Fargo filings", "guidance is not in the Filings", "the periods differ"). A sentence that names no Company counts for the Company its paragraph names, or for the only Company the gap is about. "Periods differ" is about the comparison, so it is stated once, not per Company. The wording rules are in `_GAP_MARKERS`; extra gaps an answer states are not penalised.
+3. **Judgments by Jev.** Jev is TypeSafe's System One model: it returns typed answers with probabilities, not text, and it is from neither generator's family, so it judges OpenAI and Anthropic answers alike. It is pinned to `jev-1.13.0`, never an alias such as `jev-latest`, which moves with each release; the harness refuses a response from any other version.
+   - **Fact Recall**: one request per answer, with the answer as the state and one yes/no question per Required Fact ("does the answer state this fact, in any wording?"). A fact counts as stated at a probability of at least 0.5. Fact Recall is the share of the case's Required Facts stated, averaged over the cases that have Required Facts.
+   - **Faithfulness**: the answer's claims are its cited sentences; a sentence without a tag of its own rests on its unit's tags, and the Coverage note makes no claim. Claims are grouped by the Sources they cite, one request per group, with those Sources' text as the state and one choice per claim between supported, unsupported and contradicted. Faithfulness is the share of claims supported by the Sources they cite, averaged over answers with claims. A claim citing no Source of the turn is unsupported without asking. Uncited sentences are the citation check's business, not this one's.
+4. **Cost and latency** come from each Answer Call's logged record: input and output tokens priced at the model's list price per million tokens (`PRICES`: `gpt-6-luna` $0.10 in, $0.50 out; `gpt-6.1-sol` $2.00 in, $10.00 out; OpenAI's standard tier on 2026-10-16), and the latency to the first text and to the end of the stream. Every input token is priced at the full rate, ignoring cached input, so the cost is an upper bound. Jev's own cost ($0.042 per million input tokens) is reported separately, since it is the evaluation's cost, not the product's.
+5. **Scores are averaged overall and per question type**, and each failing case is listed by check, so a score can be traced to the answers behind it. A score with nothing to score (no Required Fact, no expected gap) is shown as `–`, not 0.
+
+**How the checks were validated.** The pure parts have unit tests on hand-written answers (`backend/tests/test_answer_checks.py`), and the judge's request shapes and version pin have tests with a fake Jev (`backend/tests/test_generation_harness.py`). Then every failure of the first live runs was read: each was either a real fault of the answer or a wording or format the checks had missed (range tags, a Coverage note opening mid-paragraph, "provide no Bristol Myers Squibb filing evidence"). Each miss became a test and a fix before the run below.
+
+### First scores on dev
+
+Golden Set version 1, dev split (20 cases), prompt v1, `gpt-6-luna`, judged by `jev-1.13.0`, 2026-10-16. The retrieval is the tracer bullet's (as of commit `9b5f720`): Company recognition only, with no time windows, Section hints, deduplication, Sector phrases, follow-up inheritance, Coverage Gaps or Financial Facts in the prompt.
+
+| | cases | citations valid | figures exact | gaps stated | Fact Recall | Faithfulness | $ per answer | latency s | first text s |
+|---|---|---|---|---|---|---|---|---|---|
+| **overall** | 20 | 0.75 | 0.85 | 0.67 | **0.45** | **0.90** | 0.0027 | 6.1 | 2.4 |
+| figure_trend | 4 | 0.25 | 0.50 | 1.00 | 0.38 | 0.87 | 0.0024 | 4.7 | 2.2 |
+| missing_company | 4 | 1.00 | 1.00 | 1.00 | 0.75 | 0.81 | 0.0021 | 5.2 | 2.3 |
+| outlook | 2 | 1.00 | 1.00 | 1.00 | 0.75 | 1.00 | 0.0034 | 3.8 | 1.6 |
+| risk | 6 | 0.83 | 1.00 | 0.33 | 0.25 | 0.89 | 0.0030 | 6.8 | 2.4 |
+| sector | 2 | 0.50 | 0.50 | 1.00 | 0.33 | 0.92 | 0.0029 | 10.1 | 3.0 |
+| stale_filing | 2 | 1.00 | 1.00 | 0.00 | 1.00 | 0.95 | 0.0029 | 6.7 | 2.9 |
+
+Gaps stated is over the 12 dev cases with expected Coverage Gaps. The 20 answers averaged 24,900 input and 490 output tokens and cost $0.055 in all; the slowest took 10.6 seconds. Jev's judging cost $0.012.
+
+- Citations invalid: `risk-aapl-tsla-jpm`, `sector-pharma-regulatory` (an uncited opening summary), `trend-jpm-revenue-snapshot`, `trend-meta-revenue-two-years` (uncited table rows of figures), `trend-tsla-net-income-three-years`.
+- Figures not exact: `trend-meta-revenue-two-years`, `trend-tsla-net-income-three-years`, `sector-aerospace-government`: all derived figures (a two-year increase, a cumulative decline, a share of sales "calculated from those reported figures").
+- Coverage Gaps not stated: `risk-aapl-tsla-jpm` and `followup-regulatory-exposure` (periods differ), `stale-ge-recent-performance` and `stale-gecc-eni-2014` (the GE Capital 2014 Filing is not called stale).
+
+**What the numbers say**, and which later task each points to:
+
+- **Answers are faithful but miss what they should say.** 90% of claims are supported by the Sources they cite, but under half the Required Facts are stated. The gap is mostly retrieval's: the tracer bullet fills the context with older Filings and the wrong Sections (see the retrieval numbers above), so the facts are often not in front of the model. Risk questions recall least (0.25). Time windows and Section hints, then deduplication and routing, are the tasks that should move Fact Recall.
+- **Coverage Gaps are stated only when the Sources make them obvious.** Missing Companies and absent guidance are stated every time; differing periods and the stale GE Capital Filing are not, because nothing in the prompt computes them. Coverage Gaps end to end (fixed wordings in the prompt) should take this to 1.00.
+- **Figures fail on derivations and uncited tables, not on wrong numbers.** No figure was found that contradicts its source; every unmatched one was computed by the model. Prompt work should make the model cite each table row and label derived figures; the Financial Facts task decides how derived figures are checked.
+- **Cost is not a constraint.** About a quarter of a cent per answer with `gpt-6-luna` at about 25k input tokens, and about six seconds per answer, with the first text after about two and a half. This is the baseline the generator comparison prices other models against.
+- **Run-to-run noise is large on 20 cases.** The same configuration run again during the checks' validation moved overall Fact Recall between 0.42 and 0.52 and Faithfulness between 0.88 and 0.94; one case moves a check's share by 0.05. Differences between prompt versions or generators of that size are noise, so the comparisons that choose between them should pair cases, as the retrieval harness does.
+
+### After time windows, Section hints, risk routing and deduplication
+
+The same configuration (prompt v1, `gpt-6-luna`, `jev-1.13.0`, 2026-10-16) on the retrieval of [the sections above](#after-deduplication-and-change-routing).
+
+| | cases | citations valid | figures exact | gaps stated | Fact Recall | Faithfulness | $ per answer | latency s | first text s |
+|---|---|---|---|---|---|---|---|---|---|
+| **overall** | 20 | 0.95 | 0.90 | 0.50 | **0.55** | **0.93** | 0.0026 | 6.1 | 2.3 |
+| figure_trend | 4 | 0.75 | 0.50 | 0.00 | 0.38 | 0.83 | 0.0030 | 5.8 | 3.1 |
+| missing_company | 4 | 1.00 | 1.00 | 1.00 | 0.75 | 1.00 | 0.0016 | 4.3 | 1.6 |
+| outlook | 2 | 1.00 | 1.00 | 1.00 | 0.75 | 1.00 | 0.0033 | 4.6 | 1.1 |
+| risk | 6 | 1.00 | 1.00 | 0.33 | 0.54 | 0.95 | 0.0026 | 6.1 | 1.9 |
+| sector | 2 | 1.00 | 1.00 | 0.00 | 0.33 | 0.90 | 0.0029 | 11.2 | 4.0 |
+| stale_filing | 2 | 1.00 | 1.00 | 0.00 | 1.00 | 0.92 | 0.0029 | 7.0 | 2.5 |
+
+The answers averaged 23,900 input and 460 output tokens and cost $0.052 in all; the slowest took 14.9 seconds; Jev's judging cost $0.016. Citation validity was re-scored on the same answers after reading the failures: two follow-up answers said only that the earlier answer was not evidence, which the absence rule now recognises. Only `trend-meta-revenue-two-years` (uncited table rows) still fails it.
+
+- **Fact Recall rose from 0.45 to 0.55, led by risk questions (0.25 to 0.54)**, as the retrieval numbers predicted: the latest 10-K's Risk Factors now reach the Answer Call. That is about two dev cases' worth, inside the run-to-run range above, so it is a direction, not yet a measured win; the prompt iterations should score both on paired cases.
+- **Coverage Gaps fell from 0.67 to 0.50**, within noise, and the misses are the same kinds: differing periods, the stale GE Capital Filing and JPMorgan's snapshot, which nothing in the prompt computes yet.
+- Figures and cost are unchanged: the two figure failures are derived figures again, and an answer still costs about a quarter of a cent.
+
+The holdout split has not been scored.
+

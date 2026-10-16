@@ -19,7 +19,7 @@ ENV_FILE := $(BACKEND)/.env
 -include $(ENV_FILE)
 export $(shell sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' $(ENV_FILE) 2>/dev/null)
 
-.PHONY: help install test lint format eda sec-facts index ask api eval-retrieval dev frontend-deps
+.PHONY: help install test lint format eda sec-facts index ask api eval-retrieval eval-generation dev frontend-deps
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-15s %s\n", $$1, $$2}'
@@ -75,6 +75,15 @@ api: $(INDEX) ## Run the chat API on http://localhost:8000, or API_PORT (answers
 eval-retrieval: $(INDEX) ## Score retrieval Arms on the Golden Set: make eval-retrieval [SPLIT=dev|holdout|all]
 	$(UV) python -m edgar_eval.retrieval --split $(SPLIT) --json ../data/derived/eval/retrieval-$(SPLIT).json
 
+eval-generation: $(INDEX) ## Score answers on the Golden Set: make eval-generation [SPLIT=...] [MODEL=...] (costs money)
+	@if [ -z "$$OPENAI_API_KEY" ] || [ -z "$$JEV_API_KEY" ]; then \
+		echo 'error: OPENAI_API_KEY and JEV_API_KEY must be set. Copy backend/.env.example' >&2; \
+		echo 'to backend/.env and fill them in.' >&2; \
+		exit 1; \
+	fi
+	$(UV) python -m edgar_eval.generation --split $(SPLIT) $(if $(MODEL),--model $(MODEL)) \
+		--json ../data/derived/eval/generation-$(SPLIT)$(if $(MODEL),-$(MODEL)).json
+
 SPLIT ?= dev
 
 dev: $(INDEX) frontend-deps ## Run the API and the front-end together on http://localhost:3000 (WEB_PORT)
@@ -99,7 +108,7 @@ frontend-deps:
 		(cd $(FRONTEND) && npm ci) && echo "$$want" > "$$stamp"; \
 	fi
 
-# `make ask`, `make api`, `make eval-retrieval` and `make dev` build the index first when it
+# `make ask`, `make api`, the `eval-` targets and `make dev` build the index first when it
 # is missing.
 $(INDEX):
 	@$(MAKE) --no-print-directory index

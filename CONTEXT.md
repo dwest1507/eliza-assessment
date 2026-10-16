@@ -38,6 +38,14 @@ _Avoid_: Test set, benchmark, eval data
 A self-contained sentence, naming its Company, that a good answer to a Golden Set question must state, with an evidence quote from the Section that supports it.
 _Avoid_: Expected answer, key point
 
+**Fact Recall**:
+The share of a Golden Set case's Required Facts that an answer states, as judged by Jev.
+_Avoid_: Recall (unqualified), coverage
+
+**Faithfulness**:
+The share of an answer's cited claims that the Sources they cite support, as judged by Jev.
+_Avoid_: Groundedness, accuracy, hallucination rate
+
 **Arm**:
 One way of choosing an Answer Call's Sources (FTS5, dense embeddings, a hybrid, a re-ranker), scored by the retrieval harness on the Golden Set.
 _Avoid_: Retriever, strategy, variant

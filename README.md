@@ -6,7 +6,7 @@ This repo is a take-home assessment for a Forward Deployed Engineer (AI Engineer
 
 ## Status
 
-The work runs in phases. The exploratory data analysis (EDA) phase is complete. The retrieval phase has its tracer bullet: a question asked from the command line, over the chat API or in the research workspace is answered end to end, from the index through one Answer Call, and the retrieval harness measures it on the Golden Set. The query parser's full rules, Coverage Gaps, Financial Facts in the context and the generation harness come next.
+The work runs in phases. The exploratory data analysis (EDA) phase is complete. The retrieval phase has its tracer bullet: a question asked from the command line, over the chat API or in the research workspace is answered end to end, from the index through one Answer Call, and the retrieval and generation harnesses measure it on the Golden Set. The query parser's full rules, Coverage Gaps and Financial Facts in the context come next.
 
 | Deliverable (from the brief) | Status | Where |
 |---|---|---|
@@ -16,7 +16,7 @@ The work runs in phases. The exploratory data analysis (EDA) phase is complete. 
 | Final prompt template | v2 in place; the final version follows the prompt iterations | [`docs/prompt-iterations.md`](docs/prompt-iterations.md), [`backend/src/edgar_rag/_prompt.py`](backend/src/edgar_rag/_prompt.py) |
 | Front-end | Started: the research workspace streams answers, opens each `[Sn]` citation's passage in a Sources panel, shows each answer's Query Scope as chips and offers the six starter prompts. Coverage Gap callouts, session history and the "How it works" page come next. | [`frontend/`](frontend/), [Running the full stack](#running-the-full-stack) |
 | Example request, ready to execute | Done: `make ask` answers a question from the command line, and `backend/scripts/chat.sh` calls the chat API with `curl` | [Asking a question](#asking-a-question), [The chat API](#the-chat-api) |
-| Notes on how quality was evaluated | Partly done: Financial Facts extraction is measured against SEC XBRL data, the Golden Set of 30 labelled questions is written and checked against the Corpus, and the retrieval harness scores the FTS5 Arm on it (hit@10 0.71 on dev). The answer harness is next. | [`docs/evaluation.md`](docs/evaluation.md), [`docs/findings.md`](docs/findings.md) (findings 21–24), notebook analysis 7, [`docs/golden-set.md`](docs/golden-set.md) |
+| Notes on how quality was evaluated | Partly done: Financial Facts extraction is measured against SEC XBRL data, the Golden Set of 30 labelled questions is written and checked against the Corpus, the retrieval harness scores the FTS5 Arm on it (hit@10 0.71 on dev), and the generation harness scores the answers in code and with the Jev judge (Fact Recall 0.55, Faithfulness 0.93 on dev, at $0.0026 per answer). | [`docs/evaluation.md`](docs/evaluation.md), [`docs/findings.md`](docs/findings.md) (findings 21–24), notebook analysis 7, [`docs/golden-set.md`](docs/golden-set.md) |
 | Documented assumptions and decisions | Done for the EDA | [`docs/findings.md`](docs/findings.md), [`docs/assumptions.md`](docs/assumptions.md), [`docs/adr/`](docs/adr/) |
 
 ## What the EDA found
@@ -87,6 +87,7 @@ Every command runs through the root `Makefile` (`make help` lists them):
 | `make api` | Run the chat API on http://localhost:8000 (`API_PORT` to change; answers need `OPENAI_API_KEY`) |
 | `make eval-retrieval` | Score the retrieval Arms on the Golden Set's dev split (`SPLIT=holdout` or `all` to change it); no LLM call |
 | `make dev` | Run the chat API and the research workspace together on http://localhost:3000 (`WEB_PORT` to change) |
+| `make eval-generation` | Answer the Golden Set's dev split and score the answers, with cost and latency (`SPLIT=`, `MODEL=`; needs `OPENAI_API_KEY` and `JEV_API_KEY`, costs money) |
 
 ### Asking a question
 
@@ -148,6 +149,15 @@ make eval-retrieval
 ```
 
 runs every Golden Set case on the dev split through each retrieval Arm (today only FTS5, the Shipped Arm), with no LLM call, and prints hit@k, recall@k and MRR overall and per question type, then each challenger Arm's comparison with the Shipped Arm by McNemar's exact test. The report is also written to `data/derived/eval/retrieval-dev.json`. The method and the first numbers are in [`docs/evaluation.md`](docs/evaluation.md).
+
+
+### Measuring answers
+
+```sh
+make eval-generation
+```
+
+answers every Golden Set case on the dev split through one real Answer Call each, then scores the answers: citation validity, figure exactness and Coverage Gap statements are checked in code, and Fact Recall and Faithfulness are judged by Jev, TypeSafe's judgment model, pinned to an exact version. Each answer's cost and latency, from the Answer Call log, are reported next to the scores. It needs `OPENAI_API_KEY` and `JEV_API_KEY` in `backend/.env` and costs about $0.07 per run. `MODEL=` picks another generator. The report, with every answer, is written to `data/derived/eval/generation-dev.json`; the method and the first scores are in [`docs/evaluation.md`](docs/evaluation.md#generation-harness).
 
 ### Running the EDA
 
@@ -211,7 +221,7 @@ context.messages  # the rendered prompt for the Answer Call
 │   │   └── golden_set.py      loads and validates the Golden Set and its dev/holdout split
 │   ├── src/edgar_answer/      provider implementations (OpenAI) and the `make ask` CLI
 │   ├── src/edgar_api/         the FastAPI chat API (`make api`)
-│   ├── src/edgar_eval/        evaluation harnesses: retrieval Arms, metrics, the sign test
+│   ├── src/edgar_eval/        evaluation harnesses: retrieval Arms and metrics, answer checks, the Jev judge
 │   ├── scripts/chat.sh        the `curl` example against the chat API
 │   ├── tests/                 pytest suite
 │   └── notebooks/             eda.py (source) and eda.ipynb (executed)

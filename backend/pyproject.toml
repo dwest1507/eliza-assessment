@@ -14,6 +14,7 @@ dev = [
     "httpx>=0.28.1",
     "pytest>=8",
     "ruff>=0.6",
+    "typesafe-sdk>=0.7.5",
 ]
 eda = [
     "ipykernel>=6",
