@@ -17,6 +17,7 @@ eda = [
     "nbconvert>=7",
     "numpy>=2.5.4",
     "pandas>=2.2",
+    "tiktoken>=0.14.0",
 ]
 
 [tool.uv]

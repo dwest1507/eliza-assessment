@@ -25,11 +25,12 @@
 # %%
 import json
 import re
-from collections import Counter
+from collections import Counter, defaultdict
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+import tiktoken
 from IPython.display import display
 from matplotlib.colors import ListedColormap
 from matplotlib.patches import Patch
@@ -1023,3 +1024,538 @@ print(
 # - The standard set is the spec's initial one plus **Cybersecurity** (10-K Item 1C,
 #   required from FY2023 and found in 69 10-Ks). All other Items map to **Other** and
 #   stay addressable by their Item label.
+
+# %% [markdown]
+# ## 5. Token statistics
+#
+# How big is the Corpus in tokens, per Filing and per Section? Chunk size and the
+# context budget of the Answer Call are both set in tokens, not characters.
+#
+# **Tokenizer stand-in.** No LLM has been chosen yet, so every count here uses
+# tiktoken's `o200k_base` encoding as a stand-in that does not depend on any provider.
+# Other tokenizers differ by roughly ±10–20% on English prose and more on numbers and
+# tables, so the counts are for sizing, not for billing. They will be re-measured once
+# the LLM (and its tokenizer) is chosen.
+#
+# Counts are over the cleaned body (`Filing.body`, XBRL noise removed), since that is
+# the only text that can reach an index or a prompt.
+
+# %%
+ENCODING = tiktoken.get_encoding("o200k_base")
+
+
+def token_counts(texts):
+    return [len(t) for t in ENCODING.encode_ordinary_batch(list(texts), num_threads=8)]
+
+
+filing_tokens = pd.DataFrame(
+    {
+        "file": f.path.name,
+        "filing_id": f.filing_id,
+        "ticker": f.ticker,
+        "form_type": f.form_type,
+        "coverage": f.coverage,
+        "chars": len(f.body),
+    }
+    for f in filings
+)
+filing_tokens["tokens"] = token_counts(f.body for f in filings)
+section_tokens = section_rows.assign(
+    tokens=token_counts(s.text for f in filings for s in f.sections),
+    filing_id=[f.filing_id for f in filings for _ in f.sections],
+)
+
+total = filing_tokens["tokens"].sum()
+print(f"Tokenizer: tiktoken {ENCODING.name} (provider-independent stand-in)")
+print(f"Cleaned Corpus: {total / 1e6:.1f}M tokens in {len(filing_tokens)} Filings")
+print(f"Characters per token: {filing_tokens['chars'].sum() / total:.2f}")
+filing_tokens.groupby("form_type")["tokens"].describe(percentiles=[0.1, 0.5, 0.9]).astype(int)[
+    ["count", "min", "10%", "50%", "90%", "max"]
+].assign(total=filing_tokens.groupby("form_type")["tokens"].sum())
+
+# %%
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 4.5))
+bins = np.logspace(np.log10(10_000), np.log10(400_000), 30)
+for form, colour in [("10-K", "#fd8d3c"), ("10-Q", "#6baed6")]:
+    ax1.hist(
+        filing_tokens.loc[filing_tokens["form_type"] == form, "tokens"],
+        bins=bins,
+        alpha=0.7,
+        color=colour,
+        label=form,
+    )
+ax1.set_xscale("log")
+ax1.set_xlabel("Tokens per Filing (o200k_base, log scale)")
+ax1.set_ylabel("Filings")
+ax1.set_title("Filing size in tokens")
+ax1.legend()
+
+named_tokens = section_tokens[section_tokens["section"].isin(REQUIRED["10-K"])]
+for offset, form, colour in [(-0.2, "10-K", "#fd8d3c"), (0.2, "10-Q", "#6baed6")]:
+    present = [n for n in REQUIRED["10-K"] if n in REQUIRED[form]]
+    ax2.boxplot(
+        [
+            named_tokens[(named_tokens["form_type"] == form) & (named_tokens["section"] == n)][
+                "tokens"
+            ]
+            for n in present
+        ],
+        positions=[REQUIRED["10-K"].index(n) + offset for n in present],
+        widths=0.35,
+        orientation="horizontal",
+        patch_artist=True,
+        boxprops={"facecolor": colour, "alpha": 0.7},
+        flierprops={"markersize": 3},
+    )
+ax2.set_xscale("log")
+ax2.set_yticks(range(len(REQUIRED["10-K"])), REQUIRED["10-K"])
+ax2.invert_yaxis()
+ax2.set_xlabel("Tokens per Section (log scale)")
+ax2.set_title("Section size in tokens (orange 10-K, blue 10-Q)")
+fig.tight_layout()
+plt.show()
+
+(
+    named_tokens.groupby(["form_type", "section"])["tokens"]
+    .describe(percentiles=[0.1, 0.5, 0.9])
+    .astype(int)[["count", "min", "10%", "50%", "90%", "max"]]
+)
+
+# %% [markdown]
+# The largest outliers, by Filing and by Section:
+
+# %%
+display(
+    filing_tokens.sort_values("tokens", ascending=False)
+    .head(10)[["filing_id", "coverage", "chars", "tokens"]]
+    .reset_index(drop=True)
+)
+section_tokens.sort_values("tokens", ascending=False).head(10)[
+    ["filing_id", "section", "item", "tokens"]
+].reset_index(drop=True)
+
+# %% [markdown]
+# ### 5.1 What fits in the Answer Call
+#
+# The Answer Call is the only generative call per question, so everything retrieved has
+# to fit in one prompt next to the instructions, the question, the citation metadata
+# and room for the answer. Current long-context models accept 128k–200k tokens or
+# more, but cost, latency and the well-known drop in recall for material in the middle
+# of a long prompt argue for a much smaller retrieved-context budget. The table below
+# assumes a fixed 4k tokens for instructions, question and answer, and about 40 tokens
+# of metadata per chunk (Company, Form Type, Report Period, Fiscal Period, Section,
+# Item), and counts how many chunks of each size fit in budgets from 16k to 128k.
+
+# %%
+OVERHEAD = 4_000  # instructions, question, answer
+CHUNK_HEADER = 40  # citation metadata per chunk
+BUDGETS = [16_000, 32_000, 64_000, 128_000]
+CHUNK_SIZES = [256, 512, 800, 1_024]
+pd.DataFrame(
+    {
+        f"{b // 1000}k budget": {
+            f"{c}-token chunks": (b - OVERHEAD) // (c + CHUNK_HEADER) for c in CHUNK_SIZES
+        }
+        for b in BUDGETS
+    }
+)
+
+# %% [markdown]
+# And how many whole typical (median) Sections or Filings would fit, which is what a
+# "just put the Section in the prompt" design would need:
+
+# %%
+typical = {
+    f"{form} {name}": named_tokens[
+        (named_tokens["form_type"] == form) & (named_tokens["section"] == name)
+    ]["tokens"].median()
+    for form, name in [
+        ("10-K", "Risk Factors"),
+        ("10-K", "MD&A"),
+        ("10-K", "Business"),
+        ("10-K", "Financial Statements"),
+        ("10-Q", "MD&A"),
+        ("10-Q", "Financial Statements"),
+    ]
+}
+typical |= {
+    f"whole {form} Filing": filing_tokens.loc[filing_tokens["form_type"] == form, "tokens"].median()
+    for form in ["10-K", "10-Q"]
+}
+pd.DataFrame(
+    {
+        "median tokens": {k: int(v) for k, v in typical.items()},
+        **{
+            f"fit in {b // 1000}k": {k: round((b - OVERHEAD) / v, 1) for k, v in typical.items()}
+            for b in BUDGETS
+        },
+    }
+)
+
+# %% [markdown]
+# **What the token counts show**
+#
+# - The cleaned Corpus is about 17M tokens (`o200k_base`), roughly 4.1 characters per
+#   token. A median 10-K is about 98k tokens and a median 10-Q about 44k; JPMorgan's
+#   FY2025 10-K is the largest at about 323k tokens, and the large banks (JPM, BAC, GS,
+#   MS) fill the top of the list. Filings span more than an order of magnitude.
+# - Substantive Sections are large: a median 10-K Risk Factors is about 12k tokens,
+#   10-K MD&A about 13k, 10-K Business about 8k and 10-K Financial Statements about 34k.
+#   The largest Sections are the ones that swallow trailing material (JPMorgan's Item
+#   15 at 288k tokens, the Unsectioned bodies of JPMorgan's 10-Qs and Morgan Stanley's
+#   10-K at 187k–221k, ExxonMobil's Item 16 at 108k). Controls and Procedures, 10-Q
+#   Market Risk and most Legal Proceedings Sections are under 1k tokens.
+# - At a 32k budget, 33 chunks of 800 tokens fit, or 50 of 512 tokens. That is about
+#   two typical 10-K Risk Factors Sections, or a third of one typical 10-K. A median
+#   10-K does not fit in any budget under 128k, and even at 128k only one does.
+#
+# **So the design does:**
+#
+# - Never put whole Filings or whole substantive Sections in the Answer Call; always
+#   retrieve chunks. Whole-Section inclusion is only possible for stubs and small
+#   Sections (Controls and Procedures, most 10-Q Market Risk and Legal Proceedings).
+# - Start with prose chunks of about 500–800 tokens with a small overlap, inside Section
+#   boundaries, and a retrieved-context budget of about 32k tokens (roughly 30–50
+#   chunks). That leaves room for a cross-Company question to take 5–10 chunks from each
+#   of five Companies ("the major pharmaceutical companies") without crowding.
+#   Chunk size is tuned in the retrieval phase; this is the starting point.
+# - Tables are chunked as whole tables or header-repeating row groups (finding 9), so
+#   their size is set by the table, capped near the prose chunk size.
+# - Count tokens with the chosen LLM's own tokenizer once it is known and re-check these
+#   budgets; keep the tokenizer behind one function so the swap is a one-line change.
+
+# %% [markdown]
+# ## 6. Repetition between periods
+#
+# Filings repeat themselves: a Company's Risk Factors, accounting policies and controls
+# language change little from one period to the next. Duplicated text wastes the Answer
+# Call's context budget and can crowd out the one Filing that actually differs.
+#
+# Repetition is measured with **8-word shingles**: each text is lower-cased, split
+# into words, and every run of eight consecutive words is one shingle. The share of a
+# text's shingles that already appear in an earlier text is the share of it that
+# repeats. Eight words is long enough that common phrases rarely match by chance and
+# short enough that a small edit only breaks the shingles around it.
+#
+# Only Tracked Companies are measured (they are the ones with a sequence of Filings),
+# in Report Period order.
+
+# %%
+WORD = re.compile(r"[a-z0-9]+")
+SHINGLE_WORDS = 8
+
+
+def shingles(text):
+    words = WORD.findall(text.lower())
+    return {hash(tuple(words[i : i + SHINGLE_WORDS])) for i in range(len(words) - 7)}
+
+
+def repeated_share(text, earlier):
+    own = shingles(text)
+    return len(own & earlier) / len(own) if own else np.nan
+
+
+tracked_filings = sorted(
+    (f for f in filings if f.coverage == "tracked"), key=lambda f: (f.ticker, f.report_period)
+)
+print(
+    f"{len(tracked_filings)} Filings from "
+    f"{len({f.ticker for f in tracked_filings})} Tracked Companies"
+)
+
+# %% [markdown]
+# ### 6.1 What 10-Q Risk Factors contain
+#
+# A 10-Q only has to report *material changes* to the risk factors in the last 10-K, so
+# its Part II, Item 1A takes one of three forms. Each 10-Q's Risk Factors Section is
+# classed as:
+#
+# - **none**: the 10-Q has no Part II, Item 1A at all (J&J, ExxonMobil);
+# - **pointer**: a short paragraph that refers back to the 10-K (sometimes to earlier
+#   10-Qs too) and adds no risk factors of its own. Concretely, a Section under 2,500
+#   characters. The gap is clean: the longest such pointer is about 2,100 characters
+#   (UnitedHealth's, which runs on into Item 2, see below) and the shortest Section that
+#   adds risk factors is about 2,600;
+# - **risk text**: the Section states risk factors itself, either as the changed ones
+#   only ("Other than the risk factors listed below…") or as the full list again.
+#
+# A pointer is further split by whether it names the 10-K / Annual Report.
+
+# %%
+POINTER_MAX_CHARS = 2_500
+NAMES_10K = re.compile(r"10-K|Annual Report", re.IGNORECASE)
+
+
+def risk_factors_text(filing):
+    return "".join(s.text for s in filing.sections if s.name == "Risk Factors")
+
+
+def risk_factors_kind(filing):
+    text = risk_factors_text(filing)
+    if not text:
+        return "none"
+    if len(text) < POINTER_MAX_CHARS:
+        return "pointer to 10-K" if NAMES_10K.search(text) else "pointer elsewhere"
+    return "risk text"
+
+
+rf_10q = pd.DataFrame(
+    {
+        "filing_id": f.filing_id,
+        "ticker": f.ticker,
+        "coverage": f.coverage,
+        "chars": len(risk_factors_text(f)),
+        "kind": risk_factors_kind(f),
+    }
+    for f in filings
+    if f.form_type == "10-Q"
+)
+kinds = ["pointer to 10-K", "pointer elsewhere", "risk text", "none"]
+rf_kinds = (
+    pd.DataFrame(
+        {
+            "All 10-Qs": rf_10q["kind"].value_counts(),
+            "Tracked Companies' 10-Qs": rf_10q.loc[
+                rf_10q["coverage"] == "tracked", "kind"
+            ].value_counts(),
+        }
+    )
+    .reindex(kinds)
+    .fillna(0)
+    .astype(int)
+)
+rf_kinds = pd.concat(
+    [rf_kinds, (rf_kinds / rf_kinds.sum() * 100).round(0).astype(int).add_suffix(" %")], axis=1
+)
+display(rf_kinds)
+
+boundary = rf_10q[rf_10q["kind"] != "none"].sort_values("chars")
+print(
+    "Longest pointer:",
+    boundary[boundary["chars"] < POINTER_MAX_CHARS].iloc[-1][["filing_id", "chars"]].to_dict(),
+)
+print(
+    "Shortest risk text:",
+    boundary[boundary["chars"] >= POINTER_MAX_CHARS].iloc[0][["filing_id", "chars"]].to_dict(),
+)
+rf_10q.pivot_table(index="ticker", columns="kind", values="filing_id", aggfunc="count").reindex(
+    columns=kinds
+).fillna(0).astype(int)
+
+# %% [markdown]
+# UnitedHealth's 10-Q Risk Factors Sections are pointers but run on into Item 2,
+# because UnitedHealth titles it "Unregistered Sale of Equity Securities" and the
+# splitter looks for "Unregistered Sales". That makes them about 1,700–2,100
+# characters instead of a few hundred; it does not change their class here.
+
+# %% [markdown]
+# ### 6.2 Risk Factors, Filing to Filing
+#
+# For each Tracked Company, every Risk Factors Section that states risk text (every
+# 10-K, and 10-Qs classed as risk text) is compared with all the Company's earlier Risk
+# Factors text. The heat map shows the share of each Section that repeats earlier text;
+# pointers and missing Sections are labelled instead. 10-K cells are outlined.
+
+
+# %%
+def period_label(d):
+    d = d - pd.Timedelta(days=7)  # 52/53-week periods ending a few days into a month
+    return f"{d.year}Q{(d.month - 1) // 3 + 1}"
+
+
+rf_rows = []
+earlier_by_ticker = defaultdict(set)
+last_10k = {}
+for f in tracked_filings:
+    text = risk_factors_text(f)
+    kind = "risk text" if f.form_type == "10-K" else risk_factors_kind(f)
+    row = {
+        "ticker": f.ticker,
+        "form_type": f.form_type,
+        "filing_id": f.filing_id,
+        "period": period_label(f.report_period),
+        "kind": kind,
+        "tokens": len(ENCODING.encode_ordinary(text)),
+        "vs_any_earlier": np.nan,
+        "vs_previous_10k": np.nan,
+    }
+    if kind == "risk text":
+        if earlier_by_ticker[f.ticker]:
+            row["vs_any_earlier"] = repeated_share(text, earlier_by_ticker[f.ticker])
+        if f.form_type == "10-K" and f.ticker in last_10k:
+            row["vs_previous_10k"] = repeated_share(text, last_10k[f.ticker])
+        earlier_by_ticker[f.ticker] |= shingles(text)
+        if f.form_type == "10-K":
+            last_10k[f.ticker] = shingles(text)
+    rf_rows.append(row)
+rf_rep = pd.DataFrame(rf_rows)
+
+periods = sorted(rf_rep["period"].unique())
+tickers = sorted(rf_rep["ticker"].unique())
+grid = rf_rep.pivot_table(index="ticker", columns="period", values="vs_any_earlier", aggfunc="max")
+grid = grid.reindex(index=tickers, columns=periods)
+fig, ax = plt.subplots(figsize=(14, 5.5))
+ax.imshow(grid.to_numpy() * 100, cmap="viridis", vmin=0, vmax=100, aspect="auto")
+for r in rf_rep.itertuples():
+    y, x = tickers.index(r.ticker), periods.index(r.period)
+    if r.kind == "risk text":
+        label = "first" if np.isnan(r.vs_any_earlier) else f"{r.vs_any_earlier * 100:.0f}"
+    else:
+        label = {"pointer to 10-K": "ptr", "pointer elsewhere": "ptr", "none": "–"}[r.kind]
+    colour = "white" if r.kind == "risk text" and r.vs_any_earlier < 0.6 else "black"
+    ax.text(x, y, label, ha="center", va="center", fontsize=7, color=colour)
+    if r.form_type == "10-K":
+        ax.add_patch(plt.Rectangle((x - 0.5, y - 0.5), 1, 1, fill=False, lw=1.5, ec="#d62728"))
+ax.set_xticks(range(len(periods)), periods, rotation=90)
+ax.set_yticks(range(len(tickers)), tickers)
+ax.set_title(
+    "Risk Factors: % of 8-word shingles already in the Company's earlier Risk Factors "
+    "(10-K outlined; ptr = pointer, – = none)"
+)
+fig.colorbar(ax.images[0], ax=ax, label="% repeated", fraction=0.02)
+fig.tight_layout()
+plt.show()
+
+# %%
+tenk = rf_rep[rf_rep["form_type"] == "10-K"]
+tenq_text = rf_rep[(rf_rep["form_type"] == "10-Q") & (rf_rep["kind"] == "risk text")]
+by_ticker_10k = tenk.groupby("ticker")
+by_ticker_10q = tenq_text.groupby("ticker")
+summary = pd.DataFrame(
+    {
+        "10-K vs previous 10-K (median %)": by_ticker_10k["vs_previous_10k"].median() * 100,
+        "10-Qs with risk text": by_ticker_10q.size(),
+        "their text already said (median %)": by_ticker_10q["vs_any_earlier"].median() * 100,
+        "10-Q pointers": rf_rep[rf_rep["kind"].str.startswith("pointer")].groupby("ticker").size(),
+        "10-Qs with none": rf_rep[rf_rep["kind"] == "none"].groupby("ticker").size(),
+    }
+).reindex(tickers)
+summary = summary.fillna({c: 0 for c in summary.columns if not c.endswith("(median %)")})
+display(summary.round(0).astype("Int64"))
+
+print(
+    "All Tracked 10-Ks vs their previous 10-K: median "
+    f"{tenk['vs_previous_10k'].median() * 100:.0f}% repeated "
+    f"(range {tenk['vs_previous_10k'].min() * 100:.0f}–{tenk['vs_previous_10k'].max() * 100:.0f}%)"
+)
+print(
+    "Tracked 10-Qs with risk text vs earlier Risk Factors: median "
+    f"{tenq_text['vs_any_earlier'].median() * 100:.0f}% repeated"
+)
+full_repeats = tenq_text[tenq_text["vs_any_earlier"] >= 0.9]
+print(
+    f"10-Qs whose risk text is at least 90% earlier text: {len(full_repeats)} "
+    f"({', '.join(sorted(full_repeats['ticker'].unique()))}), "
+    f"{full_repeats['tokens'].sum() / 1e6:.1f}M tokens"
+)
+
+# %% [markdown]
+# ### 6.3 Boilerplate across all Sections
+#
+# Risk Factors are not the only repeated text. Each Tracked Company Filing is compared
+# with the Company's previous Filing of the same Form Type (10-K with the previous 10-K,
+# 10-Q with the previous 10-Q), Section by Section: what share of each Section's
+# shingles already appear anywhere in that previous Filing?
+
+# %%
+boiler_rows = []
+previous_body = {}
+for f in tracked_filings:
+    key = (f.ticker, f.form_type)
+    if key in previous_body:
+        for s in f.sections:
+            own = shingles(s.text)
+            if own:
+                boiler_rows.append(
+                    {
+                        "ticker": f.ticker,
+                        "form_type": f.form_type,
+                        "section": s.name,
+                        "shingles": len(own),
+                        "repeated": len(own & previous_body[key]),
+                    }
+                )
+    previous_body[key] = shingles(f.body)
+boiler = pd.DataFrame(boiler_rows)
+
+
+def repeat_pct(frame):
+    sums = frame[["shingles", "repeated"]].sum()
+    return round(sums["repeated"] / sums["shingles"] * 100, 1)
+
+
+section_order = [UNSECTIONED, *REQUIRED["10-K"], "Other"]
+by_section = pd.DataFrame(
+    {
+        form: {
+            name: repeat_pct(boiler[(boiler["form_type"] == form) & (boiler["section"] == name)])
+            for name in section_order
+            if ((boiler["form_type"] == form) & (boiler["section"] == name)).any()
+        }
+        for form in ["10-K", "10-Q"]
+    }
+).reindex(section_order)
+by_section.loc["Whole Filing"] = [repeat_pct(boiler[boiler["form_type"] == f]) for f in by_section]
+
+fig, ax = plt.subplots(figsize=(10, 4.5))
+y = np.arange(len(by_section))
+for offset, form, colour in [(-0.2, "10-K", "#fd8d3c"), (0.2, "10-Q", "#6baed6")]:
+    ax.barh(y + offset, by_section[form].fillna(0), height=0.4, color=colour, label=form)
+ax.set_yticks(y, by_section.index)
+ax.invert_yaxis()
+ax.set_xlim(0, 100)
+ax.set_xlabel("% of 8-word shingles already in the previous Filing of the same Form Type")
+ax.set_title("Text repeated from the previous period, by Section (Tracked Companies)")
+ax.legend(loc="lower right")
+fig.tight_layout()
+plt.show()
+
+by_section
+
+# %% [markdown]
+# **What the repetition shows**
+#
+# - **Risk Factors change slowly from year to year.** A Tracked Company's 10-K Risk
+#   Factors repeat a median of 80% of the previous 10-K's text word for word (8-word
+#   shingles), from 94% for Amazon down to 59% for NVIDIA and 64% for Disney, the two
+#   that rewrite most (45–96% across all 10-Ks).
+# - **Most 10-Qs add nothing to the 10-K's risk factors.** Of all 157 10-Qs, 64 (41%)
+#   have a Risk Factors Section that only points back to the 10-K ("There have been no
+#   material changes…"), one (McDonald's) points elsewhere in the same 10-Q, and 24
+#   (15%, every J&J and ExxonMobil 10-Q) have none at all. 68 (43%) state risk text.
+# - **The 10-Qs that do state risk text are mostly repeats.** Their text is a median 94%
+#   already said in the Company's earlier Risk Factors. Amazon, Microsoft and Meta
+#   restate their full Risk Factors in every 10-Q (96–99% repeated), and NVIDIA repeats
+#   long excerpts each quarter. 36 such 10-Qs are at least 90% repeated text, 0.5M
+#   tokens of duplicates. Only a few 10-Qs (Apple, Alphabet, Disney, Pfizer, Tesla)
+#   add a short list of genuinely new or changed risks, for example Pfizer's Seagen
+#   acquisition or Tesla's 2025 tariff risks, and these are where a 10-Q answers a risk
+#   question the 10-K cannot.
+# - The dark cells in the heat map are not rewrites: they are a Company's first 10-K in
+#   the Corpus compared only with a short 10-Q update before it (Alphabet, Coca-Cola,
+#   Pfizer).
+# - **Boilerplate runs through every Section.** Compared with the previous Filing of the
+#   same Form Type, about 60–65% of a Tracked Company's Filing text repeats: about 90%
+#   of Controls and Procedures, 80–85% of the cover page and other Unsectioned text,
+#   79–87% of Risk Factors and 66–81% of Legal Proceedings, but only 53% of MD&A and
+#   55–58% of the Financial Statements, where the figures change each period.
+#
+# **So the design does:**
+#
+# - **Deduplicate at index time.** Hash chunks on their normalised text (or a near-
+#   duplicate key such as MinHash over the same shingles) within each Company. A chunk
+#   that repeats an earlier Filing's chunk is stored once and carries the list of
+#   Filings (Report Periods) it appears in, so retrieval sees one copy and citations can
+#   still name the latest Filing that says it.
+# - **Diversify at query time.** After retrieval, drop near-duplicate chunks (same
+#   Company, high shingle overlap) before building the Answer Call prompt, keeping the
+#   one from the most recent Report Period unless the question asks about a specific
+#   period. This stops one Company's restated Risk Factors filling the 32k budget.
+# - **Route risk questions to the 10-K.** For "what are X's risks" questions, filter
+#   Risk Factors to the Company's latest 10-K, plus any later 10-Q whose Risk Factors
+#   are risk text (the material changes). Pointer-only 10-Q Risk Factors are indexed
+#   but tagged as pointers so they are never retrieved as the answer itself.
+# - **Answer "what changed" questions from the difference.** Questions about how risks
+#   evolved compare consecutive 10-K Risk Factors; the shingle measure above can
+#   pre-compute which paragraphs are new in each 10-K, so retrieval can favour new text
+#   for change questions.
