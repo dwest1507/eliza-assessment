@@ -5,7 +5,7 @@ import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import AnswerMessage from '@/components/AnswerMessage'
 import SourcesPanel from '@/components/SourcesPanel'
-import { messageSources, messageText, type ResearchMessage } from '@/lib/chat'
+import { messageQueryScope, messageSources, messageText, type ResearchMessage } from '@/lib/chat'
 import { STARTERS } from '@/lib/starters'
 
 /** Which answer's Sources the panel shows, and which of them is open. */
@@ -75,6 +75,7 @@ export default function Workspace() {
                       key={message.id}
                       text={messageText(message)}
                       sources={messageSources(message)}
+                      scope={messageQueryScope(message)}
                       openTag={open?.messageId === message.id ? open.tag : null}
                       onCite={(tag) => setOpen({ messageId: message.id, tag })}
                     />

@@ -18,8 +18,25 @@ export interface Source {
   text: string
 }
 
+/** A Sector phrase in the question and the Sector table rows it resolved to. */
+export interface SectorPhrase {
+  phrase: string
+  column: 'sector' | 'industry'
+  values: string[]
+  tickers: string[]
+}
+
+/**
+ * What the rules resolved from the question before retrieval, as the chat API streams
+ * it in its `data-query-scope` part.
+ */
 export interface QueryScope {
-  companies: { ticker: string; name: string; coverage: string }[]
+  companies: { ticker: string; name: string; coverage: string | null }[]
+  sectorPhrases: SectorPhrase[]
+  timeWindow: { kind: string; count: number | null; label: string }
+  sections: string[]
+  /** `revenue`, `net_income`, or null when the question names no metric. */
+  metric: string | null
 }
 
 /** The data parts the chat API sends before the answer text. */
@@ -44,6 +61,14 @@ export function messageSources(message: ResearchMessage): Source[] {
     if (part.type === 'data-sources') return part.data.sources
   }
   return []
+}
+
+/** The Query Scope an answer was given, from its `data-query-scope` part. */
+export function messageQueryScope(message: ResearchMessage): QueryScope | null {
+  for (const part of message.parts) {
+    if (part.type === 'data-query-scope') return part.data
+  }
+  return null
 }
 
 /** The href a citation link carries. */

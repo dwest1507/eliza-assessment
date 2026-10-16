@@ -292,7 +292,7 @@ def test_a_source_carries_its_citation_metadata_and_passage(index):
 def test_the_prompt_renders_rules_sources_and_question(index):
     context = _ask(index, BRIEF_QUESTION)
 
-    assert context.prompt_version == PROMPT_VERSION == "v1"
+    assert context.prompt_version == PROMPT_VERSION == "v2"
     system, user = context.messages
     assert system.role == "system"
     assert "[S3]" in system.content and "general knowledge" in system.content
@@ -767,3 +767,107 @@ def test_a_new_paragraph_is_cited_from_the_filing_it_first_appears_in(index, ind
         and len(_shingles(p) & later) >= NEAR_DUPLICATE * len(_shingles(p))
     ]
     assert kept
+
+
+# --- Sector phrases ----------------------------------------------------------------------
+
+PHARMA_QUESTION = "What regulatory risks do the major pharmaceutical companies face?"
+PHARMA = ["JNJ", "LLY", "MRK", "PFE", "ABBV"]
+
+
+@pytest.mark.parametrize(
+    ("question", "tickers"),
+    [
+        (PHARMA_QUESTION, PHARMA),
+        ("What are the main risks facing the major banks?", ["BAC", "JPM"]),
+        ("How do the oil majors describe climate regulation?", ["CVX", "XOM"]),
+        ("What do the big drugmakers say about drug pricing?", PHARMA),
+        ("What do oil and gas companies say about energy transition?", ["CVX", "XOM"]),
+    ],
+)
+def test_a_sector_phrase_resolves_through_the_sector_table(sector_index, question, tickers):
+    context = _ask(sector_index, question)
+
+    assert [c.ticker for c in context.query_scope.companies] == tickers
+    assert {s.ticker for s in context.sources} == set(tickers)
+
+
+def test_a_resolved_sector_phrase_records_the_phrase_and_the_table_rows_it_used(sector_index):
+    context = _ask(sector_index, PHARMA_QUESTION)
+
+    [phrase] = context.query_scope.sector_phrases
+    assert phrase.phrase == "pharmaceutical companies"
+    assert phrase.column == "industry"
+    assert phrase.values == ("Pharmaceuticals", "Biotechnology")
+    assert phrase.tickers == tuple(PHARMA)
+
+
+def test_the_prompt_tells_the_answer_to_name_the_companies_a_sector_phrase_resolved_to(
+    sector_index,
+):
+    context = _ask(sector_index, PHARMA_QUESTION)
+
+    system, user = context.messages
+    assert "Sector table" in system.content
+    resolved = user.content.split("# Sources")[0]
+    assert '"pharmaceutical companies"' in resolved
+    for name in ("Johnson & Johnson", "Eli Lilly and Company", "Merck", "Pfizer", "AbbVie"):
+        assert name in resolved
+    assert "Thermo Fisher" not in resolved and "UnitedHealth" not in resolved
+
+
+def test_a_question_with_no_sector_phrase_has_no_resolution_block(sector_index):
+    context = _ask(sector_index, "What are the main risks facing Pfizer?")
+
+    assert context.query_scope.sector_phrases == ()
+    assert "Sector table" not in context.messages[1].content
+
+
+def test_a_named_company_and_a_sector_phrase_cover_both_without_repeats(sector_index):
+    question = "How does Pfizer's pricing risk compare with the other pharmaceutical companies?"
+
+    context = _ask(sector_index, question)
+
+    assert [c.ticker for c in context.query_scope.companies] == [
+        "PFE",
+        "JNJ",
+        "LLY",
+        "MRK",
+        "ABBV",
+    ]
+
+
+@pytest.mark.parametrize(
+    ("question", "tickers"),
+    [
+        ("What does Bank of America say about credit risk?", ["BAC"]),
+        ("How do central banks' rate decisions affect JPMorgan?", ["JPM"]),
+        ("What does Goldman Sachs say about investment banks' competition?", ["GS"]),
+        ("What does Merck say about its biggest pharmaceutical product?", ["MRK"]),
+        ("What does Exxon say about oil prices?", ["XOM"]),
+    ],
+)
+def test_words_that_only_mention_a_sector_are_not_sector_phrases(sector_index, question, tickers):
+    context = _ask(sector_index, question)
+
+    assert [c.ticker for c in context.query_scope.companies] == tickers
+    assert context.query_scope.sector_phrases == ()
+
+
+# --- Metric ------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("question", "metric"),
+    [
+        ("How has NVIDIA's revenue changed over the last two years?", "revenue"),
+        ("How have Apple's sales grown?", "revenue"),
+        ("What drove Tesla's top line in 2025?", "revenue"),
+        ("How has Tesla's net income changed over three years?", "net_income"),
+        ("Were NVIDIA's earnings up last year?", "net_income"),
+        ("Is Target's profit growing?", "net_income"),
+        ("What are Apple's main risk factors?", None),
+    ],
+)
+def test_metric_words_name_the_metric_of_the_query_scope(index, question, metric):
+    assert _ask(index, question).query_scope.metric == metric

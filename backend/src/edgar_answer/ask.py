@@ -66,12 +66,19 @@ def _print_context(context: AnswerContext, out: TextIO) -> None:
         file=out,
     )
     scope = context.query_scope
+    for phrase in scope.sector_phrases:
+        print(
+            f'  Sector phrase: "{phrase.phrase}" → {", ".join(phrase.tickers) or "none"} '
+            f"({phrase.column}: {', '.join(phrase.values)})",
+            file=out,
+        )
     print(f"  Time window: {scope.time_window.label}", file=out)
     print(f"  Sections: {', '.join(scope.sections) or 'whole Filings'}", file=out)
     if scope.periods:
         print(f"  Named periods: {', '.join(scope.periods)}", file=out)
     if scope.change:
         print("  Change question: new paragraphs first", file=out)
+    print(f"  Metric: {(scope.metric or 'none').replace('_', ' ')}", file=out)
     for company in companies:
         filings = [f for f in scope.filings if f.ticker == company.ticker]
         print(

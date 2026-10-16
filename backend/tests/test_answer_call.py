@@ -51,7 +51,7 @@ def test_an_answer_call_logs_model_prompt_version_usage_and_latency(context, tmp
     [line] = log.read_text().splitlines()
     record = json.loads(line)
     assert record["model"] == "fake-model"
-    assert record["prompt_version"] == "v1"
+    assert record["prompt_version"] == "v2"
     assert (record["input_tokens"], record["output_tokens"], record["reasoning_tokens"]) == (
         1200,
         300,
@@ -163,12 +163,13 @@ def test_ask_prints_the_query_scope_the_sources_and_the_streamed_answer(index, t
     assert "JPMorgan Chase & Co (JPM, snapshot)" in scope
     assert "Time window: latest" in scope
     assert "Sections: Risk Factors" in scope
+    assert "Metric: none" in scope
     assert "AAPL: AAPL_10-K_2025-09-27 (FY2025), AAPL_10-Q_2025-12-27 (Q1 FY2026)" in scope
     assert "[S1] AAPL " in rest
     sources, answer = rest.split("\nAnswer\n", 1)
     assert "TSLA " in sources and "JPM " in sources
     assert "Apple faces supply chain risk [S1]." in answer
-    assert "fake-model · prompt v1 · 1200 input / 300 output tokens" in answer
+    assert "fake-model · prompt v2 · 1200 input / 300 output tokens" in answer
 
 
 def test_ask_prints_a_named_period_and_the_change_route(index, tmp_path):
@@ -184,3 +185,18 @@ def test_ask_prints_a_named_period_and_the_change_route(index, tmp_path):
     scope = out.getvalue().split("\nSources", 1)[0]
     assert "Named periods: FY2024" in scope
     assert "Change question: new paragraphs first" in scope
+
+
+def test_ask_prints_the_companies_a_sector_phrase_resolved_to(sector_index, tmp_path):
+    out = io.StringIO()
+
+    ask.main(
+        ["How has revenue changed at the major banks?", "--index", str(sector_index)],
+        model=FakeModel(),
+        out=out,
+        log_path=tmp_path / "calls.jsonl",
+    )
+
+    scope = out.getvalue().split("\nSources", 1)[0]
+    assert 'Sector phrase: "banks" → BAC, JPM (industry: Banks)' in scope
+    assert "Metric: revenue" in scope

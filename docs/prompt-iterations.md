@@ -68,3 +68,25 @@ Assistant: <earlier answer, Source tags removed>
 ```
 
 The earlier-conversation block is left out when there is no history.
+
+## v2: Companies a Sector phrase resolved to
+
+**What.** When the question uses a Sector phrase, a `# Companies in scope` block goes before the Sources, one line per phrase:
+
+```text
+# Companies in scope
+
+"pharmaceutical companies" was resolved through the Sector table (industry: Pharmaceuticals or Biotechnology) to: Johnson & Johnson (JNJ), Eli Lilly and Company (LLY), Merck & Co Inc (MRK), Pfizer Inc (PFE), AbbVie Inc (ABBV).
+```
+
+A sixth system rule tells the model what the block means:
+
+```text
+6. When the question names a group of companies ("the major banks"), it was resolved through a curated Sector table to the Companies listed under "Companies in scope". Name those Companies near the start of the answer, say they come from the Sector table, and cover no other company for that group.
+```
+
+Everything else is unchanged from v1. A question with no Sector phrase gets no block.
+
+**Why.** The analyst must be able to dispute a mapping (user story 15, assumption 5), so the answer has to say which Companies "the major pharmaceutical companies" meant. Under v1 the model saw only Sources grouped by Company and could name some Companies and skip the ones whose Sources said little, or add a company it remembered as a drug maker.
+
+**Scores.** Retrieval on dev, from the retrieval harness: hit@10 0.71 → 0.71, recall@10 0.58 → 0.65, MRR 0.56 → 0.59; the two sector cases go from recall@10 0.47 to 1.00 ([evaluation notes](evaluation.md#after-sector-phrases)). The retrieval gain comes from resolving the phrase, not from the template. The generation harness is not built yet, so there are no answer scores before and after. Hand check on the brief's third example ("What regulatory risks do the major pharmaceutical companies face?", `make ask`, `gpt-6-luna`): the answer opens "The Sector table defines the companies in scope as Johnson & Johnson (JNJ), Eli Lilly and Company (LLY), Merck & Co. (MRK), Pfizer (PFE), and AbbVie (ABBV)", covers those five and no other company, and cites a Source from each. About 21.5k input and 1,000 output tokens, 13.5 seconds.

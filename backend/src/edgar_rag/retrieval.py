@@ -53,14 +53,16 @@ from edgar_rag._query_scope import (
     LATEST,
     ScopeCompany,
     ScopeFiling,
+    SectorPhrase,
     TimeWindow,
-    find_companies,
+    find_metric,
     find_periods,
     find_section_hints,
     find_time_window,
     in_window,
     is_change_question,
     names_period,
+    resolve_companies,
 )
 from edgar_rag._repeats import GAP, NEAR_DUPLICATE, NEW_TEXT, new_text, shingles
 from edgar_rag.corpus import Filing
@@ -78,6 +80,7 @@ __all__ = [
     "STUB_TOKENS",
     "ScopeCompany",
     "ScopeFiling",
+    "SectorPhrase",
     "Source",
     "TimeWindow",
     "build_index",
@@ -196,6 +199,11 @@ class QueryScope:
     """What the rules resolved from the question before retrieval."""
 
     companies: tuple[ScopeCompany, ...]
+    """The Companies the question names, by name, ticker or Sector phrase, in the order
+    it first names them."""
+    sector_phrases: tuple[SectorPhrase, ...]
+    """The Sector phrases the question uses, each with the Sector table rows and the
+    Companies it resolved to, so the answer and the front-end can name them."""
     time_window: TimeWindow
     """The window each Company's Filings are filtered to. A risk question that names no
     time phrase gets the latest window."""
@@ -210,6 +218,9 @@ class QueryScope:
     change: bool = False
     """Whether the question asks how something changed, which routes it to the
     paragraphs new between periods."""
+    metric: str | None = None
+    """The Financial Facts metric the question asks about (`revenue` or `net_income`),
+    or None."""
 
 
 @dataclass(frozen=True)
@@ -332,7 +343,7 @@ def prepare_answer_context(
         raise ValueError("the conversation must end with a non-empty user message")
     question = messages[-1].content
     with _connect(index) as db:
-        companies, spans = find_companies(question, _companies(db))
+        companies, sector_phrases, spans = resolve_companies(question, _companies(db))
         sections = find_section_hints(question)
         window = find_time_window(question) or (
             LATEST if RISK_FACTORS in sections else TimeWindow("all")
@@ -340,6 +351,7 @@ def prepare_answer_context(
         filings = _filings(db, [c.ticker for c in companies] or None)
         scope = QueryScope(
             companies=companies,
+            sector_phrases=sector_phrases,
             time_window=window,
             sections=sections,
             filings=tuple(
@@ -347,10 +359,11 @@ def prepare_answer_context(
             ),
             periods=find_periods(question),
             change=is_change_question(question),
+            metric=find_metric(question),
         )
         terms = _terms(_without_spans(question, spans))
         sources = _sources(db, scope, filings, terms)
-    rendered = render(sources, messages[:-1], question)
+    rendered = render(sources, messages[:-1], question, scope)
     return AnswerContext(
         query_scope=scope,
         sources=sources,
@@ -410,8 +423,10 @@ class _connect:
 
 def _companies(db: sqlite3.Connection) -> list[ScopeCompany]:
     return [
-        ScopeCompany(row["ticker"], row["name"], row["coverage"])
-        for row in db.execute("SELECT ticker, name, coverage FROM companies ORDER BY ticker")
+        ScopeCompany(row["ticker"], row["name"], row["coverage"], row["sector"], row["industry"])
+        for row in db.execute(
+            "SELECT ticker, name, coverage, sector, industry FROM companies ORDER BY ticker"
+        )
     ]
 
 

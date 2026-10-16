@@ -40,13 +40,21 @@ const ANSWER = [
   'Tesla is exposed to tariffs [S2].',
 ]
 
-function uiMessageStream(answer: string[] = ANSWER): Response {
+const QUERY_SCOPE = {
+  companies: [
+    { ticker: 'AAPL', name: 'Apple Inc', coverage: 'tracked' },
+    { ticker: 'TSLA', name: 'Tesla Inc', coverage: 'tracked' },
+  ],
+  sectorPhrases: [],
+  timeWindow: { kind: 'latest', count: null, label: 'latest' },
+  sections: ['Risk Factors'],
+  metric: null,
+}
+
+function uiMessageStream(answer: string[] = ANSWER, scope: object = QUERY_SCOPE): Response {
   const parts = [
     { type: 'start', messageId: 'msg-1' },
-    {
-      type: 'data-query-scope',
-      data: { companies: [{ ticker: 'AAPL', name: 'Apple Inc.', coverage: 'tracked' }] },
-    },
+    { type: 'data-query-scope', data: scope },
     { type: 'data-sources', data: { sources: SOURCES } },
     { type: 'start-step' },
     { type: 'text-start', id: 'text-1' },
@@ -193,6 +201,65 @@ describe('Workspace', () => {
 
     const roles = sentMessages(1).map((m) => m.role)
     expect(roles).toEqual(['user', 'assistant', 'user'])
+  })
+
+  it('shows the Query Scope as chips above the answer', async () => {
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByText('trade policy')
+
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    const chips = within(answer).getByRole('list', { name: 'Query Scope' })
+    expect(
+      within(chips)
+        .getAllByRole('listitem')
+        .map((chip) => chip.textContent)
+    ).toEqual(['AAPL', 'TSLA', 'latest', 'Risk Factors'])
+    expect(within(chips).getByText('AAPL').closest('li')).toHaveAttribute(
+      'title',
+      'Company: Apple Inc (tracked)'
+    )
+    // The chips come before the answer text.
+    const text = within(answer).getByText('trade policy')
+    expect(chips.compareDocumentPosition(text) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('shows a Sector phrase with the Companies it resolved to, and the metric', async () => {
+    fetchMock.mockImplementation(async () =>
+      uiMessageStream(ANSWER, {
+        companies: [
+          { ticker: 'BAC', name: 'Bank of America Corporation', coverage: 'tracked' },
+          { ticker: 'JPM', name: 'JPMorgan Chase & Co', coverage: 'snapshot' },
+        ],
+        sectorPhrases: [
+          { phrase: 'banks', column: 'industry', values: ['Banks'], tickers: ['BAC', 'JPM'] },
+        ],
+        timeWindow: { kind: 'years', count: 2, label: 'last 2 years' },
+        sections: [],
+        metric: 'net_income',
+      })
+    )
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.type(
+      screen.getByRole('textbox', { name: 'Question' }),
+      'How has net income changed at the major banks over the last two years?{Enter}'
+    )
+    await screen.findByText('trade policy')
+
+    const chips = within(screen.getByRole('article', { name: 'Answer' })).getByRole('list', {
+      name: 'Query Scope',
+    })
+    expect(
+      within(chips)
+        .getAllByRole('listitem')
+        .map((chip) => chip.textContent)
+    ).toEqual(['“banks” → BAC, JPM', 'last 2 years', 'net income'])
+    expect(within(chips).getByText('“banks” → BAC, JPM').closest('li')).toHaveAttribute(
+      'title',
+      'Sector phrase resolved through the Sector table (industry: Banks)'
+    )
   })
 
   it('says so when the answer cannot be loaded, without leaking the error', async () => {

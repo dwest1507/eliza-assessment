@@ -108,6 +108,33 @@ def test_the_query_scope_names_the_companies_in_the_question(client):
     assert scope["companies"][0]["name"] == "Apple Inc"
 
 
+def test_the_query_scope_carries_time_window_sections_and_metric(client):
+    question = "How has Tesla's revenue changed over the last two years?"
+
+    scope = part_of(events(chat(client, user(question))), "data-query-scope")["data"]
+
+    assert [c["ticker"] for c in scope["companies"]] == ["TSLA"]
+    assert scope["sectorPhrases"] == []
+    assert scope["timeWindow"] == {"kind": "years", "count": 2, "label": "last 2 years"}
+    assert scope["sections"] == []
+    assert scope["metric"] == "revenue"
+
+
+def test_the_query_scope_carries_the_companies_a_sector_phrase_resolved_to(sector_index):
+    client = TestClient(create_app(index=sector_index, model=FakeModel(), log_path=None))
+
+    parts = events(chat(client, user("What are the main risks facing the major banks?")))
+
+    scope = part_of(parts, "data-query-scope")["data"]
+    assert [c["ticker"] for c in scope["companies"]] == ["BAC", "JPM"]
+    assert scope["sectorPhrases"] == [
+        {"phrase": "banks", "column": "industry", "values": ["Banks"], "tickers": ["BAC", "JPM"]}
+    ]
+    assert scope["timeWindow"]["label"] == "latest"
+    assert scope["sections"] == ["Risk Factors"]
+    assert scope["metric"] is None
+
+
 def test_each_source_carries_its_tag_filing_metadata_and_passage(client, index):
     expected = prepare_answer_context([Message("user", QUESTION)], index).sources
 

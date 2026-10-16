@@ -1,22 +1,32 @@
 import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { citedTag, linkCitations, type Source } from '@/lib/chat'
+import { citedTag, linkCitations, type QueryScope, type Source } from '@/lib/chat'
+import QueryScopeChips from '@/components/QueryScopeChips'
 import { shortLabel } from '@/components/SourcesPanel'
 
 interface AnswerMessageProps {
   text: string
   sources: Source[]
+  /** What the rules resolved from the question; it arrives before the text. */
+  scope: QueryScope | null
   /** The tag open in the Sources panel, if this answer's Sources are shown there. */
   openTag: string | null
   onCite: (tag: string) => void
 }
 
 /**
- * One answer: its Markdown, with every `[Sn]` a link that opens the Sources panel at
- * that Source, and the list of Sources it was given. The Sources arrive before the
- * text, so they are clickable while the answer is still streaming.
+ * One answer: the Query Scope chips, its Markdown, with every `[Sn]` a link that opens
+ * the Sources panel at that Source, and the list of Sources it was given. The Query
+ * Scope and Sources arrive before the text, so they show while the answer is still
+ * streaming.
  */
-export default function AnswerMessage({ text, sources, openTag, onCite }: AnswerMessageProps) {
+export default function AnswerMessage({
+  text,
+  sources,
+  scope,
+  openTag,
+  onCite,
+}: AnswerMessageProps) {
   const tags = new Set(sources.map((s) => s.tag))
 
   const components: Components = {
@@ -66,6 +76,7 @@ export default function AnswerMessage({ text, sources, openTag, onCite }: Answer
 
   return (
     <article aria-label="Answer" className="flex flex-col gap-3">
+      {scope && <QueryScopeChips scope={scope} />}
       {text && (
         <div className="answer text-[14.5px] leading-relaxed text-ink">
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>

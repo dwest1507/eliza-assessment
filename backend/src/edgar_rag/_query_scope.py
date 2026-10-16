@@ -8,11 +8,17 @@ Rule-based, with no LLM (ADR 0003). It recognises:
 - Time phrases: "latest" or "most recent", and "the last two years", "over the past 3
   quarters" and the like. A window is anchored on each Company's latest Filing, not on
   today's date (assumption 6).
+- Sector phrases ("the major pharmaceutical companies", "the major banks", "the oil
+  majors"), resolved only through the sector and industry columns of the curated Sector
+  table (assumption 5). Each phrase names table values, never Companies, so the Companies
+  it covers are whatever the table says.
 - Section hints: risk factors, legal proceedings, MD&A, market risk and business.
 - Named periods: "FY2024", "fiscal 2024", "Q2 FY2025", or a bare year ("in 2023"), read
   as Fiscal Periods. A named period decides which copy of a repeated passage is cited.
 - Change questions: "how has it changed", "what is new", "how did it evolve", "how do
   they differ". They are routed to the paragraphs new between periods.
+- The metric of ADR 0001's vocabulary: "revenue", "sales" and "top line" are revenue;
+  "net income", "earnings" and "profit" are net income.
 
 Tickers match only when written in capitals, so "cost" never means Costco. Names match
 in any case, except names that are also everyday words ("Target", "Meta", "Visa"),
@@ -35,6 +41,8 @@ class ScopeCompany:
     ticker: str
     name: str
     coverage: str | None
+    sector: str | None = None
+    industry: str | None = None
 
 
 # Aliases the Filing names don't yield by dropping a suffix.
@@ -82,6 +90,14 @@ def find_companies(
 ) -> tuple[tuple[ScopeCompany, ...], list[tuple[int, int]]]:
     """The Companies a question names, in the order it first names them, and the
     character spans that name them."""
+    named, spans, _ = _find_named(question, companies)
+    return named, spans
+
+
+def _find_named(
+    question: str, companies: Iterable[ScopeCompany]
+) -> tuple[tuple[ScopeCompany, ...], list[tuple[int, int]], dict[str, int]]:
+    """`find_companies`, plus where each named Company is first named."""
     companies = list(companies)
     found: dict[str, int] = {}
     taken: list[tuple[int, int]] = []
@@ -94,7 +110,7 @@ def find_companies(
             taken.append((m.start(), m.end()))
             found[ticker] = min(found.get(ticker, m.start()), m.start())
     named = tuple(by_ticker[t] for t in sorted(found, key=found.__getitem__))
-    return named, sorted(taken)
+    return named, sorted(taken), found
 
 
 def _patterns(companies: Iterable[ScopeCompany]) -> list[tuple[str, re.Pattern[str]]]:
@@ -115,6 +131,134 @@ def _names(company: ScopeCompany) -> set[str]:
     if short.endswith(".com"):
         names.add(short.removesuffix(".com"))
     return {n for n in names if n}
+
+
+# --- Sector phrases ----------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class SectorPhrase:
+    """A phrase naming a group of Companies, and the Sector table rows it resolved to."""
+
+    phrase: str
+    """The phrase as the question writes it, e.g. "pharmaceutical companies"."""
+    column: Literal["sector", "industry"]
+    """The Sector table column the phrase is read against."""
+    values: tuple[str, ...]
+    """The values of that column the phrase covers, e.g. ("Pharmaceuticals",
+    "Biotechnology")."""
+    tickers: tuple[str, ...]
+    """The Companies whose row holds one of the values, by value and then ticker."""
+
+
+# A word that makes a sector or industry word a group of Companies: "software companies",
+# "the energy sector". Without one, "oil prices" or "software revenue" names no group.
+_GROUP = (
+    r"(?:companies|company\s+names|corporations|firms|groups|majors|makers|names|players"
+    r"|producers|stocks|sector|industry|industries)"
+)
+
+# Each phrase is read against one column of the Sector table, in this order; text matched
+# by an earlier phrase is not read again. The table, not this list, decides which
+# Companies a phrase covers, so a disputed mapping is fixed in `sectors.csv`.
+_SectorRule = tuple[re.Pattern[str], Literal["sector", "industry"], tuple[str, ...]]
+_SECTOR_PHRASES: tuple[_SectorRule, ...] = tuple(
+    (re.compile(pattern, re.I), column, values)
+    for pattern, column, values in (
+        (
+            # AbbVie is Biotechnology in the GICS-style label but a drug maker by SIC
+            # (2834), so it counts as a pharmaceutical company (assumption 5).
+            rf"\bpharma(?:ceuticals?)?(?:\s+(?:and|&)\s+biotech(?:nology)?)?\s+{_GROUP}\b"
+            r"|\bbig\s+pharma\b|\bpharmas\b|\bdrug[\s-]?makers\b|\bdrug\s+companies\b",
+            "industry",
+            ("Pharmaceuticals", "Biotechnology"),
+        ),
+        (rf"\bbiotech(?:nology)?\s+{_GROUP}\b|\bbiotechs\b", "industry", ("Biotechnology",)),
+        (
+            # Central banks are not Companies, and investment banks are Capital Markets.
+            rf"(?<!central\s)(?<!investment\s)\b(?:banks\b|bank(?:ing)?\s+{_GROUP}\b"
+            r"|bank\s+holding\s+companies\b)",
+            "industry",
+            ("Banks",),
+        ),
+        (
+            rf"\boil(?:\s*(?:and|&)\s*gas)?\s+{_GROUP}\b",
+            "industry",
+            ("Oil, Gas & Consumable Fuels",),
+        ),
+        (rf"\bsoftware\s+{_GROUP}\b", "industry", ("Software",)),
+        (
+            rf"\b(?:semiconductor|chip)\s*-?\s*{_GROUP}\b|\bchipmakers\b",
+            "industry",
+            ("Semiconductors & Semiconductor Equipment",),
+        ),
+        (
+            rf"\b(?:aerospace(?:\s+(?:and|&)\s+defen[cs]e)?|defen[cs]e)\s+(?:{_GROUP}|contractors)\b",
+            "industry",
+            ("Aerospace & Defense",),
+        ),
+        (
+            r"\bretailers\b|\bretail\s+" + _GROUP + r"\b",
+            "industry",
+            ("Broadline Retail", "Specialty Retail", "Consumer Staples Distribution & Retail"),
+        ),
+        (
+            rf"\b(?:auto|car)[\s-]?makers\b|\b(?:auto|automotive|car)\s+{_GROUP}\b",
+            "industry",
+            ("Automobiles",),
+        ),
+        (
+            rf"\btelecom(?:munication)?s?\s+{_GROUP}\b|\btelcos\b|\bwireless\s+carriers\b",
+            "industry",
+            ("Diversified Telecommunication Services",),
+        ),
+        (rf"\b(?:beverage|soft\s+drinks?)\s+{_GROUP}\b", "industry", ("Beverages",)),
+        (
+            rf"\b(?:information\s+)?tech(?:nology)?\s+{_GROUP}\b",
+            "sector",
+            ("Information Technology",),
+        ),
+        (rf"\bhealth\s*care\s+{_GROUP}\b", "sector", ("Health Care",)),
+        (
+            rf"\bfinancials\b|\bfinancial\s+(?:{_GROUP}|institutions)\b",
+            "sector",
+            ("Financials",),
+        ),
+        (rf"\benergy\s+{_GROUP}\b", "sector", ("Energy",)),
+        (rf"\bindustrials\b|\bindustrial\s+{_GROUP}\b", "sector", ("Industrials",)),
+        (r"\bconsumer\s+staples\b", "sector", ("Consumer Staples",)),
+        (r"\bconsumer\s+discretionary\b", "sector", ("Consumer Discretionary",)),
+        (r"\bcommunication\s+services\b", "sector", ("Communication Services",)),
+    )
+)
+
+
+def resolve_companies(
+    question: str, companies: Iterable[ScopeCompany]
+) -> tuple[tuple[ScopeCompany, ...], tuple[SectorPhrase, ...], list[tuple[int, int]]]:
+    """The Companies a question covers, by name, ticker or Sector phrase, in the order
+    the question first names them; the Sector phrases it uses; and the character spans
+    of every name and phrase. A Company named both ways is listed once."""
+    companies = sorted(companies, key=lambda c: c.ticker)
+    _, spans, first = _find_named(question, companies)
+    order = [(position, 0, ticker) for ticker, position in first.items()]
+    phrases: list[tuple[int, SectorPhrase]] = []
+    taken = list(spans)
+    for pattern, column, values in _SECTOR_PHRASES:
+        for m in pattern.finditer(question):
+            if any(m.start() < end and start < m.end() for start, end in taken):
+                continue  # part of a Company's name ("Bank of America") or an earlier phrase
+            taken.append((m.start(), m.end()))
+            tickers = tuple(
+                c.ticker for value in values for c in companies if getattr(c, column) == value
+            )
+            phrases.append((m.start(), SectorPhrase(m.group(0), column, values, tickers)))
+            order += [(m.start(), rank, t) for rank, t in enumerate(tickers, start=1)]
+    by_ticker = {c.ticker: c for c in companies}
+    covered = tuple(by_ticker[t] for _, _, t in sorted(order))
+    unique = tuple(dict.fromkeys(covered))
+    phrases.sort(key=lambda p: p[0])
+    return unique, tuple(p for _, p in phrases), sorted(taken)
 
 
 # --- Time windows ------------------------------------------------------------------------
@@ -292,3 +436,22 @@ _CHANGE = re.compile(
 def is_change_question(question: str) -> bool:
     """Whether a question asks how something changed between periods."""
     return bool(_CHANGE.search(question))
+
+
+# --- Metric ------------------------------------------------------------------------------
+
+# ADR 0001's vocabulary. Segment names join it with the Financial Facts store.
+_METRICS: tuple[tuple[str, re.Pattern[str]], ...] = tuple(
+    (metric, re.compile(pattern, re.I))
+    for metric, pattern in (
+        ("net_income", r"\bnet\s+income\b|\bearnings\b|\bprofits?\b"),
+        ("revenue", r"\brevenues?\b|\bsales\b|\btop[\s-]+line\b"),
+    )
+)
+
+
+def find_metric(question: str) -> str | None:
+    """The Financial Facts metric a question asks about (`revenue` or `net_income`), the
+    one it names first if it names both, or None."""
+    found = [(m.start(), metric) for metric, p in _METRICS if (m := p.search(question))]
+    return min(found)[1] if found else None

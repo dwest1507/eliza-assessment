@@ -1,5 +1,7 @@
 """Shared fixtures: an index built from real Corpus Filings."""
 
+from datetime import date
+
 import pytest
 
 from edgar_rag.corpus import load_corpus
@@ -19,3 +21,21 @@ def indexed_filings():
 @pytest.fixture(scope="session")
 def index(tmp_path_factory, indexed_filings):
     return build_index(indexed_filings, tmp_path_factory.mktemp("index") / "edgar_rag.sqlite")
+
+
+# The Companies of the brief's sector example and the other Sector phrases of assumption 5,
+# with the neighbours each phrase must leave out: Thermo Fisher and UnitedHealth (Health
+# Care, not pharmaceutical) and Goldman Sachs and Morgan Stanley (Capital Markets, not
+# Banks). Only Filings from mid-2024 on, which hold every Company's latest 10-K.
+SECTOR_TICKERS = {
+    *("JNJ", "LLY", "MRK", "PFE", "ABBV", "TMO", "UNH"),
+    *("BAC", "JPM", "GS", "MS"),
+    *("CVX", "XOM"),
+}
+
+
+@pytest.fixture(scope="session")
+def sector_index(tmp_path_factory):
+    since = date(2024, 6, 30)
+    filings = [f for f in load_corpus() if f.ticker in SECTOR_TICKERS and f.report_period >= since]
+    return build_index(filings, tmp_path_factory.mktemp("sector_index") / "edgar_rag.sqlite")

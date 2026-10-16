@@ -6,7 +6,9 @@ message stream (server-sent events, header `x-vercel-ai-ui-message-stream: v1`),
 front-end's `useChat` reads it as is:
 
 1. `start`;
-2. `data-query-scope`: the Companies the question resolved to;
+2. `data-query-scope`: the Query Scope the rules resolved, shown as chips above the
+   answer: the Companies, the Sector phrases and the Companies each resolved to, the
+   time window, the Section hints and the metric;
 3. `data-sources`: every numbered Source with its tag, Filing metadata and passage, so
    citations are clickable before the answer arrives;
 4. `start-step`, `text-start`, one `text-delta` per streamed piece of the answer,
@@ -190,10 +192,23 @@ def _event(part: dict[str, Any]) -> str:
 
 
 def _query_scope(scope: QueryScope) -> dict[str, Any]:
+    window = scope.time_window
     return {
         "companies": [
             {"ticker": c.ticker, "name": c.name, "coverage": c.coverage} for c in scope.companies
-        ]
+        ],
+        "sectorPhrases": [
+            {
+                "phrase": p.phrase,
+                "column": p.column,
+                "values": list(p.values),
+                "tickers": list(p.tickers),
+            }
+            for p in scope.sector_phrases
+        ],
+        "timeWindow": {"kind": window.kind, "count": window.count, "label": window.label},
+        "sections": list(scope.sections),
+        "metric": scope.metric,
     }
 
 
