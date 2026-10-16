@@ -1,6 +1,6 @@
 # Evaluation
 
-How the system's quality is measured. Everything is scored against the [Golden Set](golden-set.md): choices are tuned on its dev split, and the holdout split is scored once, at the end. Two harnesses do the measuring: the [retrieval harness](#retrieval-harness) asks whether the right Sections reach the Answer Call; the [generation harness](#generation-harness) asks whether the answers are right, and what they cost.
+How the system's quality is measured. Everything is scored against the [Golden Set](golden-set.md): choices are tuned on its dev split, and the holdout split is scored once, at the end. Two harnesses do the measuring: the [retrieval harness](#retrieval-harness) asks whether the right Sections reach the Answer Call; the [generation harness](#generation-harness) asks whether the answers are right, and what they cost. `make eval-export` puts their latest results in the workspace's "How it works" page ([Showing the results](#showing-the-results)).
 
 ## Retrieval harness
 
@@ -196,3 +196,13 @@ The answers averaged 23,900 input and 460 output tokens and cost $0.052 in all; 
 
 The holdout split has not been scored.
 
+## Showing the results
+
+```sh
+make eval-export                 # the dev split's latest reports
+make eval-export SPLIT=holdout   # once the holdout has been scored
+```
+
+The export reads the harnesses' latest reports for the split from `data/derived/eval/`: `retrieval-<split>.json` (required; the retrieval harness runs first if it is missing, since it makes no LLM call) and every `generation-<split>[-<model>].json` (one scoreboard row per generator; none until `make eval-generation` has run, since that costs money). It adds the Corpus coverage grid, each Company's Filings by the calendar quarter of their Report Period, and writes everything to `frontend/data/eval-export.json` for the workspace's "How it works" page. The code is [`backend/src/edgar_eval/export.py`](../backend/src/edgar_eval/export.py).
+
+The page shows what the reports hold, nothing more: per Arm, hit@k, recall@k at the gating k, recall@all, MRR and the mean number of Sources, with each challenger's McNemar verdict and the cases the Shipped Arm misses; per generator, the code checks, the Jev judgments, cost and latency, overall and per question type. The export is committed, so the page shows the last results exported, dated on the page; the numbers in this document remain the record of each run.

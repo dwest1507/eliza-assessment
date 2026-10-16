@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import Link from 'next/link'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import AnswerMessage from '@/components/AnswerMessage'
@@ -58,6 +59,12 @@ export default function Workspace() {
         <p className="hidden text-[13px] text-muted sm:block">
           Answers from 10-K and 10-Q Filings, every claim cited to its passage
         </p>
+        <Link
+          href="/how-it-works"
+          className="ml-auto text-[13px] font-medium text-accent hover:text-accent-strong"
+        >
+          How it works
+        </Link>
       </header>
 
       <div className="flex min-h-0 flex-1">

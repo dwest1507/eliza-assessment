@@ -19,7 +19,7 @@ ENV_FILE := $(BACKEND)/.env
 -include $(ENV_FILE)
 export $(shell sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' $(ENV_FILE) 2>/dev/null)
 
-.PHONY: help install test lint format eda sec-facts index ask api eval-retrieval eval-generation dev frontend-deps
+.PHONY: help install test lint format eda sec-facts index ask api eval-retrieval eval-generation eval-export dev frontend-deps
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-15s %s\n", $$1, $$2}'
@@ -85,6 +85,10 @@ eval-generation: $(INDEX) ## Score answers on the Golden Set: make eval-generati
 		--json ../data/derived/eval/generation-$(SPLIT)$(if $(MODEL),-$(MODEL)).json
 
 SPLIT ?= dev
+RETRIEVAL_REPORT = data/derived/eval/retrieval-$(SPLIT).json
+
+eval-export: $(RETRIEVAL_REPORT) ## Export the latest eval results and Corpus coverage for the "How it works" page [SPLIT=...]
+	$(UV) python -m edgar_eval.export --split $(SPLIT)
 
 dev: $(INDEX) frontend-deps ## Run the API and the front-end together on http://localhost:3000 (WEB_PORT)
 	@echo "API on http://127.0.0.1:$(API_PORT), workspace on http://localhost:$(WEB_PORT). Ctrl+C stops both."
@@ -112,6 +116,11 @@ frontend-deps:
 # is missing.
 $(INDEX):
 	@$(MAKE) --no-print-directory index
+
+# `make eval-export` runs the retrieval harness first when its report is missing (it makes no
+# LLM call). The generation harness costs money, so it only ever runs when asked for.
+$(RETRIEVAL_REPORT):
+	@$(MAKE) --no-print-directory eval-retrieval SPLIT=$(SPLIT)
 
 # The EDA reads the cached company-facts; fetch them only when the cache is missing.
 $(SEC_FACTS_INDEX):

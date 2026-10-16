@@ -16,15 +16,23 @@ The stream carries the Query Scope and the numbered Sources as data parts before
 | -------------------------------- | -------------------------------------------------------------------- |
 | `app/page.tsx`                   | The workspace page                                                   |
 | `app/api/chat/route.ts`          | The server-side proxy to the chat API                                |
+| `app/how-it-works/page.tsx`      | The "How it works" page, rendered from the evaluation export         |
 | `components/Workspace.tsx`       | The conversation thread, starter prompts and question box            |
 | `components/AnswerMessage.tsx`   | One answer: Markdown with `[Sn]` citations as links, and its Sources |
 | `components/QueryScopeChips.tsx` | The Query Scope chips above an answer                                |
 | `components/SourcesPanel.tsx`    | The side panel showing one Source's Filing metadata and passage      |
 | `lib/chat.ts`                    | The stream's data part types and the citation helpers                |
 | `lib/starters.ts`                | The six starter prompts, copied from the Golden Set                  |
+| `components/HowItWorks.tsx`      | The architecture, the evaluation scoreboard and the coverage grid    |
+| `lib/evalExport.ts`              | The evaluation export's types and number formats                     |
+| `data/eval-export.json`          | The evaluation export, written by `make eval-export` (committed)     |
 | `__tests__/`                     | Vitest and React Testing Library tests                               |
 
 The starter prompts are the Golden Set cases that carry a `starter` object (`data/eval/golden_set.json`), so every demo prompt is measured. `__tests__/starters.test.ts` fails if the copy in `lib/starters.ts` drifts from the Golden Set.
+
+## The "How it works" page
+
+`/how-it-works`, linked from the workspace's header, puts the evidence inside the product: the architecture (from the Corpus to the one Answer Call, and how it is measured), the evaluation scoreboard (each retrieval Arm against the Shipped Arm, each generator's scores, cost and latency) and the Corpus coverage grid (each Company's Filings by Report Period, Tracked and Snapshot). It is a static page built from [`data/eval-export.json`](data/eval-export.json), which `make eval-export` writes from the harnesses' latest reports (see the root [README](../README.md#showing-the-results-in-the-workspace)). The file is committed and generated, never edited by hand; Prettier skips it.
 
 ## Commands
 
@@ -37,4 +45,4 @@ From the repo root, `make install`, `make test`, `make lint` and `make format` c
 | `npm run lint` / `npm run typecheck` / `npm run format:check` | ESLint, TypeScript and Prettier checks                          |
 | `npm run build`                                               | A production build                                              |
 
-The tests run against a mocked stream: `fetch` returns the API's UI message stream, so the real `useChat` parses it. They cover a starter sending on click, Markdown rendering, a citation opening its Source in the panel, the Query Scope chips, and the proxy route.
+The tests run against a mocked stream: `fetch` returns the API's UI message stream, so the real `useChat` parses it. They cover a starter sending on click, Markdown rendering, a citation opening its Source in the panel, the Query Scope chips, and the proxy route. The "How it works" page is rendered from a fixture export (`__tests__/fixtures/eval-export.json`).

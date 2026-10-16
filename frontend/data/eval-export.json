@@ -1,0 +1,2343 @@
+{
+  "exportedOn": "2026-10-16",
+  "split": "dev",
+  "goldenSet": {
+    "version": 1,
+    "cases": 30,
+    "splitCases": 20
+  },
+  "retrieval": {
+    "gatingMetric": "hit@10",
+    "ks": [
+      5,
+      10,
+      20
+    ],
+    "scoredCases": 17,
+    "unscored": [
+      "stale-ge-recent-performance",
+      "missing-citigroup",
+      "followup-ge-to-honeywell"
+    ],
+    "arms": [
+      {
+        "name": "fts5",
+        "shipped": true,
+        "overall": {
+          "cases": 17,
+          "hitAt": {
+            "5": 0.6470588235294118,
+            "10": 0.7058823529411765,
+            "20": 0.7647058823529411
+          },
+          "recallAt": {
+            "5": 0.5980392156862745,
+            "10": 0.6470588235294118,
+            "20": 0.6666666666666667
+          },
+          "hitAll": 0.8235294117647058,
+          "recallAll": 0.7647058823529411,
+          "mrr": 0.5898879551820728,
+          "meanSources": 16.88235294117647
+        },
+        "byType": [
+          {
+            "questionType": "figure_trend",
+            "cases": 4,
+            "hitAt": {
+              "5": 0.25,
+              "10": 0.5,
+              "20": 0.75
+            },
+            "recallAt": {
+              "5": 0.25,
+              "10": 0.375,
+              "20": 0.4583333333333333
+            },
+            "hitAll": 0.75,
+            "recallAll": 0.75,
+            "mrr": 0.30952380952380953,
+            "meanSources": 17.25
+          },
+          {
+            "questionType": "missing_company",
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 1.0,
+            "meanSources": 1.0
+          },
+          {
+            "questionType": "outlook",
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 0.625,
+            "meanSources": 26.5
+          },
+          {
+            "questionType": "risk",
+            "cases": 6,
+            "hitAt": {
+              "5": 0.5,
+              "10": 0.5,
+              "20": 0.5
+            },
+            "recallAt": {
+              "5": 0.4166666666666667,
+              "10": 0.4166666666666667,
+              "20": 0.4166666666666667
+            },
+            "hitAll": 0.6666666666666666,
+            "recallAll": 0.5,
+            "mrr": 0.5066666666666667,
+            "meanSources": 22.666666666666668
+          },
+          {
+            "questionType": "sector",
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.8333333333333333,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 0.75,
+            "meanSources": 9.5
+          },
+          {
+            "questionType": "stale_filing",
+            "cases": 1,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 1.0,
+            "meanSources": 8.0
+          }
+        ],
+        "missed": [
+          "trend-tsla-net-income-three-years",
+          "followup-regulatory-exposure",
+          "followup-switch-to-msft",
+          "followup-tsla-risk-change",
+          "followup-topic-change-export-controls"
+        ]
+      }
+    ],
+    "comparisons": []
+  },
+  "generation": [],
+  "coverage": {
+    "periods": [
+      "2014Q4",
+      "2021Q4",
+      "2022Q1",
+      "2022Q2",
+      "2022Q3",
+      "2022Q4",
+      "2023Q1",
+      "2023Q2",
+      "2023Q3",
+      "2023Q4",
+      "2024Q1",
+      "2024Q2",
+      "2024Q3",
+      "2024Q4",
+      "2025Q1",
+      "2025Q2",
+      "2025Q3",
+      "2025Q4"
+    ],
+    "companies": [
+      {
+        "ticker": "DIS",
+        "company": "The Walt Disney Company",
+        "sector": "Communication Services",
+        "coverage": "tracked",
+        "filings": [
+          {
+            "period": "2021Q4",
+            "filingId": "DIS_10-Q_2022-01-01",
+            "formType": "10-Q",
+            "reportPeriod": "2022-01-01",
+            "fiscalPeriod": "Q1 FY2022"
+          },
+          {
+            "period": "2022Q1",
+            "filingId": "DIS_10-Q_2022-04-02",
+            "formType": "10-Q",
+            "reportPeriod": "2022-04-02",
+            "fiscalPeriod": "Q2 FY2022"
+          },
+          {
+            "period": "2022Q2",
+            "filingId": "DIS_10-Q_2022-07-02",
+            "formType": "10-Q",
+            "reportPeriod": "2022-07-02",
+            "fiscalPeriod": "Q3 FY2022"
+          },
+          {
+            "period": "2022Q3",
+            "filingId": "DIS_10-K_2022-10-01",
+            "formType": "10-K",
+            "reportPeriod": "2022-10-01",
+            "fiscalPeriod": "FY2022"
+          },
+          {
+            "period": "2022Q4",
+            "filingId": "DIS_10-Q_2022-12-31",
+            "formType": "10-Q",
+            "reportPeriod": "2022-12-31",
+            "fiscalPeriod": "Q1 FY2023"
+          },
+          {
+            "period": "2023Q1",
+            "filingId": "DIS_10-Q_2023-04-01",
+            "formType": "10-Q",
+            "reportPeriod": "2023-04-01",
+            "fiscalPeriod": "Q2 FY2023"
+          },
+          {
+            "period": "2023Q2",
+            "filingId": "DIS_10-Q_2023-07-01",
+            "formType": "10-Q",
+            "reportPeriod": "2023-07-01",
+            "fiscalPeriod": "Q3 FY2023"
+          },
+          {
+            "period": "2023Q3",
+            "filingId": "DIS_10-K_2023-09-30",
+            "formType": "10-K",
+            "reportPeriod": "2023-09-30",
+            "fiscalPeriod": "FY2023"
+          },
+          {
+            "period": "2023Q4",
+            "filingId": "DIS_10-Q_2023-12-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-12-30",
+            "fiscalPeriod": "Q1 FY2024"
+          },
+          {
+            "period": "2024Q1",
+            "filingId": "DIS_10-Q_2024-03-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-30",
+            "fiscalPeriod": "Q2 FY2024"
+          },
+          {
+            "period": "2024Q2",
+            "filingId": "DIS_10-Q_2024-06-29",
+            "formType": "10-Q",
+            "reportPeriod": "2024-06-29",
+            "fiscalPeriod": "Q3 FY2024"
+          },
+          {
+            "period": "2024Q3",
+            "filingId": "DIS_10-K_2024-09-28",
+            "formType": "10-K",
+            "reportPeriod": "2024-09-28",
+            "fiscalPeriod": "FY2024"
+          },
+          {
+            "period": "2024Q4",
+            "filingId": "DIS_10-Q_2024-12-28",
+            "formType": "10-Q",
+            "reportPeriod": "2024-12-28",
+            "fiscalPeriod": "Q1 FY2025"
+          },
+          {
+            "period": "2025Q1",
+            "filingId": "DIS_10-Q_2025-03-29",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-29",
+            "fiscalPeriod": "Q2 FY2025"
+          },
+          {
+            "period": "2025Q2",
+            "filingId": "DIS_10-Q_2025-06-28",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-28",
+            "fiscalPeriod": "Q3 FY2025"
+          },
+          {
+            "period": "2025Q3",
+            "filingId": "DIS_10-K_2025-09-27",
+            "formType": "10-K",
+            "reportPeriod": "2025-09-27",
+            "fiscalPeriod": "FY2025"
+          },
+          {
+            "period": "2025Q4",
+            "filingId": "DIS_10-Q_2025-12-27",
+            "formType": "10-Q",
+            "reportPeriod": "2025-12-27",
+            "fiscalPeriod": "Q1 FY2026"
+          }
+        ]
+      },
+      {
+        "ticker": "GOOG",
+        "company": "Alphabet Inc",
+        "sector": "Communication Services",
+        "coverage": "tracked",
+        "filings": [
+          {
+            "period": "2022Q3",
+            "filingId": "GOOG_10-Q_2022-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-09-30",
+            "fiscalPeriod": "Q3 FY2022"
+          },
+          {
+            "period": "2022Q4",
+            "filingId": "GOOG_10-K_2022-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2022-12-31",
+            "fiscalPeriod": "FY2022"
+          },
+          {
+            "period": "2023Q1",
+            "filingId": "GOOG_10-Q_2023-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2023-03-31",
+            "fiscalPeriod": "Q1 FY2023"
+          },
+          {
+            "period": "2023Q2",
+            "filingId": "GOOG_10-Q_2023-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-06-30",
+            "fiscalPeriod": "Q2 FY2023"
+          },
+          {
+            "period": "2023Q3",
+            "filingId": "GOOG_10-Q_2023-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-09-30",
+            "fiscalPeriod": "Q3 FY2023"
+          },
+          {
+            "period": "2023Q4",
+            "filingId": "GOOG_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31",
+            "fiscalPeriod": "FY2023"
+          },
+          {
+            "period": "2024Q1",
+            "filingId": "GOOG_10-Q_2024-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-31",
+            "fiscalPeriod": "Q1 FY2024"
+          },
+          {
+            "period": "2024Q2",
+            "filingId": "GOOG_10-Q_2024-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-06-30",
+            "fiscalPeriod": "Q2 FY2024"
+          },
+          {
+            "period": "2024Q3",
+            "filingId": "GOOG_10-Q_2024-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-09-30",
+            "fiscalPeriod": "Q3 FY2024"
+          },
+          {
+            "period": "2024Q4",
+            "filingId": "GOOG_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31",
+            "fiscalPeriod": "FY2024"
+          },
+          {
+            "period": "2025Q1",
+            "filingId": "GOOG_10-Q_2025-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-31",
+            "fiscalPeriod": "Q1 FY2025"
+          },
+          {
+            "period": "2025Q2",
+            "filingId": "GOOG_10-Q_2025-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-30",
+            "fiscalPeriod": "Q2 FY2025"
+          },
+          {
+            "period": "2025Q3",
+            "filingId": "GOOG_10-Q_2025-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-30",
+            "fiscalPeriod": "Q3 FY2025"
+          },
+          {
+            "period": "2025Q4",
+            "filingId": "GOOG_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "META",
+        "company": "Meta Platforms Inc",
+        "sector": "Communication Services",
+        "coverage": "tracked",
+        "filings": [
+          {
+            "period": "2024Q1",
+            "filingId": "META_10-Q_2024-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-31",
+            "fiscalPeriod": "Q1 FY2024"
+          },
+          {
+            "period": "2024Q2",
+            "filingId": "META_10-Q_2024-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-06-30",
+            "fiscalPeriod": "Q2 FY2024"
+          },
+          {
+            "period": "2024Q3",
+            "filingId": "META_10-Q_2024-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-09-30",
+            "fiscalPeriod": "Q3 FY2024"
+          },
+          {
+            "period": "2024Q4",
+            "filingId": "META_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31",
+            "fiscalPeriod": "FY2024"
+          },
+          {
+            "period": "2025Q1",
+            "filingId": "META_10-Q_2025-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-31",
+            "fiscalPeriod": "Q1 FY2025"
+          },
+          {
+            "period": "2025Q2",
+            "filingId": "META_10-Q_2025-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-30",
+            "fiscalPeriod": "Q2 FY2025"
+          },
+          {
+            "period": "2025Q3",
+            "filingId": "META_10-Q_2025-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-30",
+            "fiscalPeriod": "Q3 FY2025"
+          },
+          {
+            "period": "2025Q4",
+            "filingId": "META_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "AMZN",
+        "company": "Amazon.com Inc",
+        "sector": "Consumer Discretionary",
+        "coverage": "tracked",
+        "filings": [
+          {
+            "period": "2022Q1",
+            "filingId": "AMZN_10-Q_2022-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2022-03-31",
+            "fiscalPeriod": "Q1 FY2022"
+          },
+          {
+            "period": "2022Q2",
+            "filingId": "AMZN_10-Q_2022-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-06-30",
+            "fiscalPeriod": "Q2 FY2022"
+          },
+          {
+            "period": "2022Q3",
+            "filingId": "AMZN_10-Q_2022-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-09-30",
+            "fiscalPeriod": "Q3 FY2022"
+          },
+          {
+            "period": "2022Q4",
+            "filingId": "AMZN_10-K_2022-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2022-12-31",
+            "fiscalPeriod": "FY2022"
+          },
+          {
+            "period": "2023Q1",
+            "filingId": "AMZN_10-Q_2023-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2023-03-31",
+            "fiscalPeriod": "Q1 FY2023"
+          },
+          {
+            "period": "2023Q2",
+            "filingId": "AMZN_10-Q_2023-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-06-30",
+            "fiscalPeriod": "Q2 FY2023"
+          },
+          {
+            "period": "2023Q3",
+            "filingId": "AMZN_10-Q_2023-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-09-30",
+            "fiscalPeriod": "Q3 FY2023"
+          },
+          {
+            "period": "2023Q4",
+            "filingId": "AMZN_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31",
+            "fiscalPeriod": "FY2023"
+          },
+          {
+            "period": "2024Q1",
+            "filingId": "AMZN_10-Q_2024-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-31",
+            "fiscalPeriod": "Q1 FY2024"
+          },
+          {
+            "period": "2024Q2",
+            "filingId": "AMZN_10-Q_2024-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-06-30",
+            "fiscalPeriod": "Q2 FY2024"
+          },
+          {
+            "period": "2024Q3",
+            "filingId": "AMZN_10-Q_2024-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-09-30",
+            "fiscalPeriod": "Q3 FY2024"
+          },
+          {
+            "period": "2024Q4",
+            "filingId": "AMZN_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31",
+            "fiscalPeriod": "FY2024"
+          },
+          {
+            "period": "2025Q1",
+            "filingId": "AMZN_10-Q_2025-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-31",
+            "fiscalPeriod": "Q1 FY2025"
+          },
+          {
+            "period": "2025Q2",
+            "filingId": "AMZN_10-Q_2025-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-30",
+            "fiscalPeriod": "Q2 FY2025"
+          },
+          {
+            "period": "2025Q3",
+            "filingId": "AMZN_10-Q_2025-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-30",
+            "fiscalPeriod": "Q3 FY2025"
+          },
+          {
+            "period": "2025Q4",
+            "filingId": "AMZN_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "TSLA",
+        "company": "Tesla Inc",
+        "sector": "Consumer Discretionary",
+        "coverage": "tracked",
+        "filings": [
+          {
+            "period": "2022Q1",
+            "filingId": "TSLA_10-Q_2022-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2022-03-31",
+            "fiscalPeriod": "Q1 FY2022"
+          },
+          {
+            "period": "2022Q2",
+            "filingId": "TSLA_10-Q_2022-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-06-30",
+            "fiscalPeriod": "Q2 FY2022"
+          },
+          {
+            "period": "2022Q3",
+            "filingId": "TSLA_10-Q_2022-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-09-30",
+            "fiscalPeriod": "Q3 FY2022"
+          },
+          {
+            "period": "2022Q4",
+            "filingId": "TSLA_10-K_2022-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2022-12-31",
+            "fiscalPeriod": "FY2022"
+          },
+          {
+            "period": "2023Q1",
+            "filingId": "TSLA_10-Q_2023-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2023-03-31",
+            "fiscalPeriod": "Q1 FY2023"
+          },
+          {
+            "period": "2023Q2",
+            "filingId": "TSLA_10-Q_2023-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-06-30",
+            "fiscalPeriod": "Q2 FY2023"
+          },
+          {
+            "period": "2023Q3",
+            "filingId": "TSLA_10-Q_2023-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-09-30",
+            "fiscalPeriod": "Q3 FY2023"
+          },
+          {
+            "period": "2023Q4",
+            "filingId": "TSLA_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31",
+            "fiscalPeriod": "FY2023"
+          },
+          {
+            "period": "2024Q1",
+            "filingId": "TSLA_10-Q_2024-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-31",
+            "fiscalPeriod": "Q1 FY2024"
+          },
+          {
+            "period": "2024Q2",
+            "filingId": "TSLA_10-Q_2024-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-06-30",
+            "fiscalPeriod": "Q2 FY2024"
+          },
+          {
+            "period": "2024Q3",
+            "filingId": "TSLA_10-Q_2024-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-09-30",
+            "fiscalPeriod": "Q3 FY2024"
+          },
+          {
+            "period": "2024Q4",
+            "filingId": "TSLA_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31",
+            "fiscalPeriod": "FY2024"
+          },
+          {
+            "period": "2025Q1",
+            "filingId": "TSLA_10-Q_2025-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-31",
+            "fiscalPeriod": "Q1 FY2025"
+          },
+          {
+            "period": "2025Q2",
+            "filingId": "TSLA_10-Q_2025-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-30",
+            "fiscalPeriod": "Q2 FY2025"
+          },
+          {
+            "period": "2025Q3",
+            "filingId": "TSLA_10-Q_2025-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-30",
+            "fiscalPeriod": "Q3 FY2025"
+          },
+          {
+            "period": "2025Q4",
+            "filingId": "TSLA_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "KO",
+        "company": "The Coca-Cola Company",
+        "sector": "Consumer Staples",
+        "coverage": "tracked",
+        "filings": [
+          {
+            "period": "2022Q1",
+            "filingId": "KO_10-Q_2022-04-01",
+            "formType": "10-Q",
+            "reportPeriod": "2022-04-01",
+            "fiscalPeriod": "Q1 FY2022"
+          },
+          {
+            "period": "2022Q2",
+            "filingId": "KO_10-Q_2022-07-01",
+            "formType": "10-Q",
+            "reportPeriod": "2022-07-01",
+            "fiscalPeriod": "Q2 FY2022"
+          },
+          {
+            "period": "2022Q3",
+            "filingId": "KO_10-Q_2022-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-09-30",
+            "fiscalPeriod": "Q3 FY2022"
+          },
+          {
+            "period": "2022Q4",
+            "filingId": "KO_10-K_2022-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2022-12-31",
+            "fiscalPeriod": "FY2022"
+          },
+          {
+            "period": "2023Q1",
+            "filingId": "KO_10-Q_2023-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2023-03-31",
+            "fiscalPeriod": "Q1 FY2023"
+          },
+          {
+            "period": "2023Q2",
+            "filingId": "KO_10-Q_2023-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-06-30",
+            "fiscalPeriod": "Q2 FY2023"
+          },
+          {
+            "period": "2023Q3",
+            "filingId": "KO_10-Q_2023-09-29",
+            "formType": "10-Q",
+            "reportPeriod": "2023-09-29",
+            "fiscalPeriod": "Q3 FY2023"
+          },
+          {
+            "period": "2023Q4",
+            "filingId": "KO_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31",
+            "fiscalPeriod": "FY2023"
+          },
+          {
+            "period": "2024Q1",
+            "filingId": "KO_10-Q_2024-03-29",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-29",
+            "fiscalPeriod": "Q1 FY2024"
+          },
+          {
+            "period": "2024Q2",
+            "filingId": "KO_10-Q_2024-06-28",
+            "formType": "10-Q",
+            "reportPeriod": "2024-06-28",
+            "fiscalPeriod": "Q2 FY2024"
+          },
+          {
+            "period": "2024Q3",
+            "filingId": "KO_10-Q_2024-09-27",
+            "formType": "10-Q",
+            "reportPeriod": "2024-09-27",
+            "fiscalPeriod": "Q3 FY2024"
+          },
+          {
+            "period": "2024Q4",
+            "filingId": "KO_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31",
+            "fiscalPeriod": "FY2024"
+          },
+          {
+            "period": "2025Q1",
+            "filingId": "KO_10-Q_2025-03-28",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-28",
+            "fiscalPeriod": "Q1 FY2025"
+          },
+          {
+            "period": "2025Q2",
+            "filingId": "KO_10-Q_2025-06-27",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-27",
+            "fiscalPeriod": "Q2 FY2025"
+          },
+          {
+            "period": "2025Q3",
+            "filingId": "KO_10-Q_2025-09-26",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-26",
+            "fiscalPeriod": "Q3 FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "XOM",
+        "company": "Exxon Mobil Corporation",
+        "sector": "Energy",
+        "coverage": "tracked",
+        "filings": [
+          {
+            "period": "2022Q1",
+            "filingId": "XOM_10-Q_2022-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2022-03-31",
+            "fiscalPeriod": "Q1 FY2022"
+          },
+          {
+            "period": "2022Q2",
+            "filingId": "XOM_10-Q_2022-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-06-30",
+            "fiscalPeriod": "Q2 FY2022"
+          },
+          {
+            "period": "2022Q3",
+            "filingId": "XOM_10-Q_2022-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-09-30",
+            "fiscalPeriod": "Q3 FY2022"
+          },
+          {
+            "period": "2022Q4",
+            "filingId": "XOM_10-K_2022-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2022-12-31",
+            "fiscalPeriod": "FY2022"
+          },
+          {
+            "period": "2023Q1",
+            "filingId": "XOM_10-Q_2023-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2023-03-31",
+            "fiscalPeriod": "Q1 FY2023"
+          },
+          {
+            "period": "2023Q2",
+            "filingId": "XOM_10-Q_2023-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-06-30",
+            "fiscalPeriod": "Q2 FY2023"
+          },
+          {
+            "period": "2023Q3",
+            "filingId": "XOM_10-Q_2023-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-09-30",
+            "fiscalPeriod": "Q3 FY2023"
+          },
+          {
+            "period": "2023Q4",
+            "filingId": "XOM_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31",
+            "fiscalPeriod": "FY2023"
+          },
+          {
+            "period": "2024Q1",
+            "filingId": "XOM_10-Q_2024-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-31",
+            "fiscalPeriod": "Q1 FY2024"
+          },
+          {
+            "period": "2024Q2",
+            "filingId": "XOM_10-Q_2024-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-06-30",
+            "fiscalPeriod": "Q2 FY2024"
+          },
+          {
+            "period": "2024Q3",
+            "filingId": "XOM_10-Q_2024-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-09-30",
+            "fiscalPeriod": "Q3 FY2024"
+          },
+          {
+            "period": "2024Q4",
+            "filingId": "XOM_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31",
+            "fiscalPeriod": "FY2024"
+          },
+          {
+            "period": "2025Q1",
+            "filingId": "XOM_10-Q_2025-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-31",
+            "fiscalPeriod": "Q1 FY2025"
+          },
+          {
+            "period": "2025Q2",
+            "filingId": "XOM_10-Q_2025-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-30",
+            "fiscalPeriod": "Q2 FY2025"
+          },
+          {
+            "period": "2025Q3",
+            "filingId": "XOM_10-Q_2025-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-30",
+            "fiscalPeriod": "Q3 FY2025"
+          },
+          {
+            "period": "2025Q4",
+            "filingId": "XOM_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "JNJ",
+        "company": "Johnson & Johnson",
+        "sector": "Health Care",
+        "coverage": "tracked",
+        "filings": [
+          {
+            "period": "2021Q4",
+            "filingId": "JNJ_10-K_2022-01-02",
+            "formType": "10-K",
+            "reportPeriod": "2022-01-02",
+            "fiscalPeriod": "FY2021"
+          },
+          {
+            "period": "2022Q1",
+            "filingId": "JNJ_10-Q_2022-04-03",
+            "formType": "10-Q",
+            "reportPeriod": "2022-04-03",
+            "fiscalPeriod": "Q1 FY2022"
+          },
+          {
+            "period": "2022Q2",
+            "filingId": "JNJ_10-Q_2022-07-03",
+            "formType": "10-Q",
+            "reportPeriod": "2022-07-03",
+            "fiscalPeriod": "Q2 FY2022"
+          },
+          {
+            "period": "2022Q3",
+            "filingId": "JNJ_10-Q_2022-10-02",
+            "formType": "10-Q",
+            "reportPeriod": "2022-10-02",
+            "fiscalPeriod": "Q3 FY2022"
+          },
+          {
+            "period": "2022Q4",
+            "filingId": "JNJ_10-K_2023-01-01",
+            "formType": "10-K",
+            "reportPeriod": "2023-01-01",
+            "fiscalPeriod": "FY2022"
+          },
+          {
+            "period": "2023Q1",
+            "filingId": "JNJ_10-Q_2023-04-02",
+            "formType": "10-Q",
+            "reportPeriod": "2023-04-02",
+            "fiscalPeriod": "Q1 FY2023"
+          },
+          {
+            "period": "2023Q2",
+            "filingId": "JNJ_10-Q_2023-07-02",
+            "formType": "10-Q",
+            "reportPeriod": "2023-07-02",
+            "fiscalPeriod": "Q2 FY2023"
+          },
+          {
+            "period": "2023Q3",
+            "filingId": "JNJ_10-Q_2023-10-01",
+            "formType": "10-Q",
+            "reportPeriod": "2023-10-01",
+            "fiscalPeriod": "Q3 FY2023"
+          },
+          {
+            "period": "2023Q4",
+            "filingId": "JNJ_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31",
+            "fiscalPeriod": "FY2023"
+          },
+          {
+            "period": "2024Q1",
+            "filingId": "JNJ_10-Q_2024-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-31",
+            "fiscalPeriod": "Q1 FY2024"
+          },
+          {
+            "period": "2024Q2",
+            "filingId": "JNJ_10-Q_2024-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-06-30",
+            "fiscalPeriod": "Q2 FY2024"
+          },
+          {
+            "period": "2024Q3",
+            "filingId": "JNJ_10-Q_2024-09-29",
+            "formType": "10-Q",
+            "reportPeriod": "2024-09-29",
+            "fiscalPeriod": "Q3 FY2024"
+          },
+          {
+            "period": "2024Q4",
+            "filingId": "JNJ_10-K_2024-12-29",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-29",
+            "fiscalPeriod": "FY2024"
+          },
+          {
+            "period": "2025Q1",
+            "filingId": "JNJ_10-Q_2025-03-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-30",
+            "fiscalPeriod": "Q1 FY2025"
+          },
+          {
+            "period": "2025Q2",
+            "filingId": "JNJ_10-Q_2025-06-29",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-29",
+            "fiscalPeriod": "Q2 FY2025"
+          },
+          {
+            "period": "2025Q3",
+            "filingId": "JNJ_10-Q_2025-09-28",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-28",
+            "fiscalPeriod": "Q3 FY2025"
+          },
+          {
+            "period": "2025Q4",
+            "filingId": "JNJ_10-K_2025-12-28",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-28",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "PFE",
+        "company": "Pfizer Inc",
+        "sector": "Health Care",
+        "coverage": "tracked",
+        "filings": [
+          {
+            "period": "2022Q1",
+            "filingId": "PFE_10-Q_2022-04-03",
+            "formType": "10-Q",
+            "reportPeriod": "2022-04-03",
+            "fiscalPeriod": "Q1 FY2022"
+          },
+          {
+            "period": "2022Q2",
+            "filingId": "PFE_10-Q_2022-07-03",
+            "formType": "10-Q",
+            "reportPeriod": "2022-07-03",
+            "fiscalPeriod": "Q2 FY2022"
+          },
+          {
+            "period": "2022Q3",
+            "filingId": "PFE_10-Q_2022-10-02",
+            "formType": "10-Q",
+            "reportPeriod": "2022-10-02",
+            "fiscalPeriod": "Q3 FY2022"
+          },
+          {
+            "period": "2022Q4",
+            "filingId": "PFE_10-K_2022-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2022-12-31",
+            "fiscalPeriod": "FY2022"
+          },
+          {
+            "period": "2023Q1",
+            "filingId": "PFE_10-Q_2023-04-02",
+            "formType": "10-Q",
+            "reportPeriod": "2023-04-02",
+            "fiscalPeriod": "Q1 FY2023"
+          },
+          {
+            "period": "2023Q2",
+            "filingId": "PFE_10-Q_2023-07-02",
+            "formType": "10-Q",
+            "reportPeriod": "2023-07-02",
+            "fiscalPeriod": "Q2 FY2023"
+          },
+          {
+            "period": "2023Q3",
+            "filingId": "PFE_10-Q_2023-10-01",
+            "formType": "10-Q",
+            "reportPeriod": "2023-10-01",
+            "fiscalPeriod": "Q3 FY2023"
+          },
+          {
+            "period": "2023Q4",
+            "filingId": "PFE_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31",
+            "fiscalPeriod": "FY2023"
+          },
+          {
+            "period": "2024Q1",
+            "filingId": "PFE_10-Q_2024-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-31",
+            "fiscalPeriod": "Q1 FY2024"
+          },
+          {
+            "period": "2024Q2",
+            "filingId": "PFE_10-Q_2024-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-06-30",
+            "fiscalPeriod": "Q2 FY2024"
+          },
+          {
+            "period": "2024Q3",
+            "filingId": "PFE_10-Q_2024-09-29",
+            "formType": "10-Q",
+            "reportPeriod": "2024-09-29",
+            "fiscalPeriod": "Q3 FY2024"
+          },
+          {
+            "period": "2024Q4",
+            "filingId": "PFE_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31",
+            "fiscalPeriod": "FY2024"
+          },
+          {
+            "period": "2025Q1",
+            "filingId": "PFE_10-Q_2025-03-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-30",
+            "fiscalPeriod": "Q1 FY2025"
+          },
+          {
+            "period": "2025Q2",
+            "filingId": "PFE_10-Q_2025-06-29",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-29",
+            "fiscalPeriod": "Q2 FY2025"
+          },
+          {
+            "period": "2025Q3",
+            "filingId": "PFE_10-Q_2025-09-28",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-28",
+            "fiscalPeriod": "Q3 FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "UNH",
+        "company": "UnitedHealth Group Inc",
+        "sector": "Health Care",
+        "coverage": "tracked",
+        "filings": [
+          {
+            "period": "2022Q1",
+            "filingId": "UNH_10-Q_2022-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2022-03-31",
+            "fiscalPeriod": "Q1 FY2022"
+          },
+          {
+            "period": "2022Q2",
+            "filingId": "UNH_10-Q_2022-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-06-30",
+            "fiscalPeriod": "Q2 FY2022"
+          },
+          {
+            "period": "2022Q3",
+            "filingId": "UNH_10-Q_2022-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-09-30",
+            "fiscalPeriod": "Q3 FY2022"
+          },
+          {
+            "period": "2022Q4",
+            "filingId": "UNH_10-K_2022-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2022-12-31",
+            "fiscalPeriod": "FY2022"
+          },
+          {
+            "period": "2023Q1",
+            "filingId": "UNH_10-Q_2023-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2023-03-31",
+            "fiscalPeriod": "Q1 FY2023"
+          },
+          {
+            "period": "2023Q2",
+            "filingId": "UNH_10-Q_2023-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-06-30",
+            "fiscalPeriod": "Q2 FY2023"
+          },
+          {
+            "period": "2023Q3",
+            "filingId": "UNH_10-Q_2023-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-09-30",
+            "fiscalPeriod": "Q3 FY2023"
+          },
+          {
+            "period": "2023Q4",
+            "filingId": "UNH_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31",
+            "fiscalPeriod": "FY2023"
+          },
+          {
+            "period": "2024Q1",
+            "filingId": "UNH_10-Q_2024-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-31",
+            "fiscalPeriod": "Q1 FY2024"
+          },
+          {
+            "period": "2024Q2",
+            "filingId": "UNH_10-Q_2024-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-06-30",
+            "fiscalPeriod": "Q2 FY2024"
+          },
+          {
+            "period": "2024Q3",
+            "filingId": "UNH_10-Q_2024-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-09-30",
+            "fiscalPeriod": "Q3 FY2024"
+          },
+          {
+            "period": "2024Q4",
+            "filingId": "UNH_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31",
+            "fiscalPeriod": "FY2024"
+          },
+          {
+            "period": "2025Q1",
+            "filingId": "UNH_10-Q_2025-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-31",
+            "fiscalPeriod": "Q1 FY2025"
+          },
+          {
+            "period": "2025Q2",
+            "filingId": "UNH_10-Q_2025-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-30",
+            "fiscalPeriod": "Q2 FY2025"
+          },
+          {
+            "period": "2025Q3",
+            "filingId": "UNH_10-Q_2025-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-30",
+            "fiscalPeriod": "Q3 FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "AAPL",
+        "company": "Apple Inc",
+        "sector": "Information Technology",
+        "coverage": "tracked",
+        "filings": [
+          {
+            "period": "2022Q1",
+            "filingId": "AAPL_10-Q_2022-03-26",
+            "formType": "10-Q",
+            "reportPeriod": "2022-03-26",
+            "fiscalPeriod": "Q2 FY2022"
+          },
+          {
+            "period": "2022Q2",
+            "filingId": "AAPL_10-Q_2022-06-25",
+            "formType": "10-Q",
+            "reportPeriod": "2022-06-25",
+            "fiscalPeriod": "Q3 FY2022"
+          },
+          {
+            "period": "2022Q3",
+            "filingId": "AAPL_10-K_2022-09-24",
+            "formType": "10-K",
+            "reportPeriod": "2022-09-24",
+            "fiscalPeriod": "FY2022"
+          },
+          {
+            "period": "2022Q4",
+            "filingId": "AAPL_10-Q_2022-12-31",
+            "formType": "10-Q",
+            "reportPeriod": "2022-12-31",
+            "fiscalPeriod": "Q1 FY2023"
+          },
+          {
+            "period": "2023Q1",
+            "filingId": "AAPL_10-Q_2023-04-01",
+            "formType": "10-Q",
+            "reportPeriod": "2023-04-01",
+            "fiscalPeriod": "Q2 FY2023"
+          },
+          {
+            "period": "2023Q2",
+            "filingId": "AAPL_10-Q_2023-07-01",
+            "formType": "10-Q",
+            "reportPeriod": "2023-07-01",
+            "fiscalPeriod": "Q3 FY2023"
+          },
+          {
+            "period": "2023Q3",
+            "filingId": "AAPL_10-K_2023-09-30",
+            "formType": "10-K",
+            "reportPeriod": "2023-09-30",
+            "fiscalPeriod": "FY2023"
+          },
+          {
+            "period": "2023Q4",
+            "filingId": "AAPL_10-Q_2023-12-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-12-30",
+            "fiscalPeriod": "Q1 FY2024"
+          },
+          {
+            "period": "2024Q1",
+            "filingId": "AAPL_10-Q_2024-03-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-30",
+            "fiscalPeriod": "Q2 FY2024"
+          },
+          {
+            "period": "2024Q2",
+            "filingId": "AAPL_10-Q_2024-06-29",
+            "formType": "10-Q",
+            "reportPeriod": "2024-06-29",
+            "fiscalPeriod": "Q3 FY2024"
+          },
+          {
+            "period": "2024Q3",
+            "filingId": "AAPL_10-K_2024-09-28",
+            "formType": "10-K",
+            "reportPeriod": "2024-09-28",
+            "fiscalPeriod": "FY2024"
+          },
+          {
+            "period": "2024Q4",
+            "filingId": "AAPL_10-Q_2024-12-28",
+            "formType": "10-Q",
+            "reportPeriod": "2024-12-28",
+            "fiscalPeriod": "Q1 FY2025"
+          },
+          {
+            "period": "2025Q1",
+            "filingId": "AAPL_10-Q_2025-03-29",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-29",
+            "fiscalPeriod": "Q2 FY2025"
+          },
+          {
+            "period": "2025Q2",
+            "filingId": "AAPL_10-Q_2025-06-28",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-28",
+            "fiscalPeriod": "Q3 FY2025"
+          },
+          {
+            "period": "2025Q3",
+            "filingId": "AAPL_10-K_2025-09-27",
+            "formType": "10-K",
+            "reportPeriod": "2025-09-27",
+            "fiscalPeriod": "FY2025"
+          },
+          {
+            "period": "2025Q4",
+            "filingId": "AAPL_10-Q_2025-12-27",
+            "formType": "10-Q",
+            "reportPeriod": "2025-12-27",
+            "fiscalPeriod": "Q1 FY2026"
+          }
+        ]
+      },
+      {
+        "ticker": "MSFT",
+        "company": "Microsoft Corporation",
+        "sector": "Information Technology",
+        "coverage": "tracked",
+        "filings": [
+          {
+            "period": "2022Q1",
+            "filingId": "MSFT_10-Q_2022-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2022-03-31",
+            "fiscalPeriod": "Q3 FY2022"
+          },
+          {
+            "period": "2022Q2",
+            "filingId": "MSFT_10-K_2022-06-30",
+            "formType": "10-K",
+            "reportPeriod": "2022-06-30",
+            "fiscalPeriod": "FY2022"
+          },
+          {
+            "period": "2022Q3",
+            "filingId": "MSFT_10-Q_2022-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-09-30",
+            "fiscalPeriod": "Q1 FY2023"
+          },
+          {
+            "period": "2022Q4",
+            "filingId": "MSFT_10-Q_2022-12-31",
+            "formType": "10-Q",
+            "reportPeriod": "2022-12-31",
+            "fiscalPeriod": "Q2 FY2023"
+          },
+          {
+            "period": "2023Q1",
+            "filingId": "MSFT_10-Q_2023-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2023-03-31",
+            "fiscalPeriod": "Q3 FY2023"
+          },
+          {
+            "period": "2023Q2",
+            "filingId": "MSFT_10-K_2023-06-30",
+            "formType": "10-K",
+            "reportPeriod": "2023-06-30",
+            "fiscalPeriod": "FY2023"
+          },
+          {
+            "period": "2023Q3",
+            "filingId": "MSFT_10-Q_2023-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-09-30",
+            "fiscalPeriod": "Q1 FY2024"
+          },
+          {
+            "period": "2023Q4",
+            "filingId": "MSFT_10-Q_2023-12-31",
+            "formType": "10-Q",
+            "reportPeriod": "2023-12-31",
+            "fiscalPeriod": "Q2 FY2024"
+          },
+          {
+            "period": "2024Q1",
+            "filingId": "MSFT_10-Q_2024-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-31",
+            "fiscalPeriod": "Q3 FY2024"
+          },
+          {
+            "period": "2024Q2",
+            "filingId": "MSFT_10-K_2024-06-30",
+            "formType": "10-K",
+            "reportPeriod": "2024-06-30",
+            "fiscalPeriod": "FY2024"
+          },
+          {
+            "period": "2024Q3",
+            "filingId": "MSFT_10-Q_2024-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-09-30",
+            "fiscalPeriod": "Q1 FY2025"
+          },
+          {
+            "period": "2024Q4",
+            "filingId": "MSFT_10-Q_2024-12-31",
+            "formType": "10-Q",
+            "reportPeriod": "2024-12-31",
+            "fiscalPeriod": "Q2 FY2025"
+          },
+          {
+            "period": "2025Q1",
+            "filingId": "MSFT_10-Q_2025-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-31",
+            "fiscalPeriod": "Q3 FY2025"
+          },
+          {
+            "period": "2025Q2",
+            "filingId": "MSFT_10-K_2025-06-30",
+            "formType": "10-K",
+            "reportPeriod": "2025-06-30",
+            "fiscalPeriod": "FY2025"
+          },
+          {
+            "period": "2025Q3",
+            "filingId": "MSFT_10-Q_2025-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-30",
+            "fiscalPeriod": "Q1 FY2026"
+          },
+          {
+            "period": "2025Q4",
+            "filingId": "MSFT_10-Q_2025-12-31",
+            "formType": "10-Q",
+            "reportPeriod": "2025-12-31",
+            "fiscalPeriod": "Q2 FY2026"
+          }
+        ]
+      },
+      {
+        "ticker": "NVDA",
+        "company": "NVIDIA Corporation",
+        "sector": "Information Technology",
+        "coverage": "tracked",
+        "filings": [
+          {
+            "period": "2022Q1",
+            "filingId": "NVDA_10-K_2022-01-30",
+            "formType": "10-K",
+            "reportPeriod": "2022-01-30",
+            "fiscalPeriod": "FY2022"
+          },
+          {
+            "period": "2022Q2",
+            "filingId": "NVDA_10-Q_2022-05-01",
+            "formType": "10-Q",
+            "reportPeriod": "2022-05-01",
+            "fiscalPeriod": "Q1 FY2023"
+          },
+          {
+            "period": "2022Q3",
+            "filingId": "NVDA_10-Q_2022-07-31",
+            "formType": "10-Q",
+            "reportPeriod": "2022-07-31",
+            "fiscalPeriod": "Q2 FY2023"
+          },
+          {
+            "period": "2022Q4",
+            "filingId": "NVDA_10-Q_2022-10-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-10-30",
+            "fiscalPeriod": "Q3 FY2023"
+          },
+          {
+            "period": "2023Q1",
+            "filingId": "NVDA_10-K_2023-01-29",
+            "formType": "10-K",
+            "reportPeriod": "2023-01-29",
+            "fiscalPeriod": "FY2023"
+          },
+          {
+            "period": "2023Q2",
+            "filingId": "NVDA_10-Q_2023-04-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-04-30",
+            "fiscalPeriod": "Q1 FY2024"
+          },
+          {
+            "period": "2023Q3",
+            "filingId": "NVDA_10-Q_2023-07-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-07-30",
+            "fiscalPeriod": "Q2 FY2024"
+          },
+          {
+            "period": "2023Q4",
+            "filingId": "NVDA_10-Q_2023-10-29",
+            "formType": "10-Q",
+            "reportPeriod": "2023-10-29",
+            "fiscalPeriod": "Q3 FY2024"
+          },
+          {
+            "period": "2024Q1",
+            "filingId": "NVDA_10-K_2024-01-28",
+            "formType": "10-K",
+            "reportPeriod": "2024-01-28",
+            "fiscalPeriod": "FY2024"
+          },
+          {
+            "period": "2024Q2",
+            "filingId": "NVDA_10-Q_2024-04-28",
+            "formType": "10-Q",
+            "reportPeriod": "2024-04-28",
+            "fiscalPeriod": "Q1 FY2025"
+          },
+          {
+            "period": "2024Q3",
+            "filingId": "NVDA_10-Q_2024-07-28",
+            "formType": "10-Q",
+            "reportPeriod": "2024-07-28",
+            "fiscalPeriod": "Q2 FY2025"
+          },
+          {
+            "period": "2024Q4",
+            "filingId": "NVDA_10-Q_2024-10-27",
+            "formType": "10-Q",
+            "reportPeriod": "2024-10-27",
+            "fiscalPeriod": "Q3 FY2025"
+          },
+          {
+            "period": "2025Q1",
+            "filingId": "NVDA_10-K_2025-01-26",
+            "formType": "10-K",
+            "reportPeriod": "2025-01-26",
+            "fiscalPeriod": "FY2025"
+          },
+          {
+            "period": "2025Q2",
+            "filingId": "NVDA_10-Q_2025-04-27",
+            "formType": "10-Q",
+            "reportPeriod": "2025-04-27",
+            "fiscalPeriod": "Q1 FY2026"
+          },
+          {
+            "period": "2025Q3",
+            "filingId": "NVDA_10-Q_2025-07-27",
+            "formType": "10-Q",
+            "reportPeriod": "2025-07-27",
+            "fiscalPeriod": "Q2 FY2026"
+          },
+          {
+            "period": "2025Q4",
+            "filingId": "NVDA_10-Q_2025-10-26",
+            "formType": "10-Q",
+            "reportPeriod": "2025-10-26",
+            "fiscalPeriod": "Q3 FY2026"
+          }
+        ]
+      },
+      {
+        "ticker": "CMCSA",
+        "company": "Comcast Corporation",
+        "sector": "Communication Services",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q4",
+            "filingId": "CMCSA_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "NFLX",
+        "company": "Netflix Inc",
+        "sector": "Communication Services",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q4",
+            "filingId": "NFLX_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "T",
+        "company": "AT&T Inc",
+        "sector": "Communication Services",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q4",
+            "filingId": "T_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "VZ",
+        "company": "Verizon Communications Inc",
+        "sector": "Communication Services",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q4",
+            "filingId": "VZ_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "HD",
+        "company": "The Home Depot Inc",
+        "sector": "Consumer Discretionary",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q1",
+            "filingId": "HD_10-K_2025-02-02",
+            "formType": "10-K",
+            "reportPeriod": "2025-02-02",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "MCD",
+        "company": "McDonalds Corporation",
+        "sector": "Consumer Discretionary",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2023Q1",
+            "filingId": "MCD_10-Q_2023-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2023-03-31",
+            "fiscalPeriod": "Q1 FY2023"
+          },
+          {
+            "period": "2024Q4",
+            "filingId": "MCD_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31",
+            "fiscalPeriod": "FY2024"
+          }
+        ]
+      },
+      {
+        "ticker": "NKE",
+        "company": "Nike Inc",
+        "sector": "Consumer Discretionary",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q2",
+            "filingId": "NKE_10-K_2025-05-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-05-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "SBUX",
+        "company": "Starbucks Corporation",
+        "sector": "Consumer Discretionary",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q3",
+            "filingId": "SBUX_10-K_2025-09-28",
+            "formType": "10-K",
+            "reportPeriod": "2025-09-28",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "COST",
+        "company": "Costco Wholesale Corporation",
+        "sector": "Consumer Staples",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q3",
+            "filingId": "COST_10-K_2025-08-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-08-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "PEP",
+        "company": "PepsiCo Inc",
+        "sector": "Consumer Staples",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2023Q1",
+            "filingId": "PEP_10-Q_2023-03-25",
+            "formType": "10-Q",
+            "reportPeriod": "2023-03-25",
+            "fiscalPeriod": "Q1 FY2023"
+          },
+          {
+            "period": "2025Q4",
+            "filingId": "PEP_10-K_2025-12-27",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-27",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "PG",
+        "company": "Procter & Gamble Company",
+        "sector": "Consumer Staples",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q2",
+            "filingId": "PG_10-K_2025-06-30",
+            "formType": "10-K",
+            "reportPeriod": "2025-06-30",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "TGT",
+        "company": "Target Corporation",
+        "sector": "Consumer Staples",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q1",
+            "filingId": "TGT_10-K_2025-02-01",
+            "formType": "10-K",
+            "reportPeriod": "2025-02-01",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "WMT",
+        "company": "Walmart Inc",
+        "sector": "Consumer Staples",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q1",
+            "filingId": "WMT_10-K_2025-01-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-01-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "CVX",
+        "company": "Chevron Corporation",
+        "sector": "Energy",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2024Q4",
+            "filingId": "CVX_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31",
+            "fiscalPeriod": "FY2024"
+          }
+        ]
+      },
+      {
+        "ticker": "AXP",
+        "company": "American Express Company",
+        "sector": "Financials",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q4",
+            "filingId": "AXP_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "BAC",
+        "company": "Bank of America Corporation",
+        "sector": "Financials",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2024Q4",
+            "filingId": "BAC_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31",
+            "fiscalPeriod": "FY2024"
+          },
+          {
+            "period": "2025Q1",
+            "filingId": "BAC_10-Q_2025-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-31",
+            "fiscalPeriod": "Q1 FY2025"
+          },
+          {
+            "period": "2025Q2",
+            "filingId": "BAC_10-Q_2025-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-30",
+            "fiscalPeriod": "Q2 FY2025"
+          },
+          {
+            "period": "2025Q3",
+            "filingId": "BAC_10-Q_2025-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-30",
+            "fiscalPeriod": "Q3 FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "BLK",
+        "company": "BlackRock Inc",
+        "sector": "Financials",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2023Q4",
+            "filingId": "BLK_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31",
+            "fiscalPeriod": "FY2023"
+          }
+        ]
+      },
+      {
+        "ticker": "BRK",
+        "company": "Berkshire Hathaway Inc",
+        "sector": "Financials",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2024Q4",
+            "filingId": "BRK_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31",
+            "fiscalPeriod": "FY2024"
+          }
+        ]
+      },
+      {
+        "ticker": "GE",
+        "company": "General Electric Company",
+        "sector": "Financials",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2014Q4",
+            "filingId": "GE_10-K_2014-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2014-12-31",
+            "fiscalPeriod": "FY2014"
+          }
+        ]
+      },
+      {
+        "ticker": "GS",
+        "company": "Goldman Sachs Group Inc",
+        "sector": "Financials",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2024Q4",
+            "filingId": "GS_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31",
+            "fiscalPeriod": "FY2024"
+          }
+        ]
+      },
+      {
+        "ticker": "JPM",
+        "company": "JPMorgan Chase & Co",
+        "sector": "Financials",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q1",
+            "filingId": "JPM_10-Q_2025-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-31",
+            "fiscalPeriod": "Q1 FY2025"
+          },
+          {
+            "period": "2025Q2",
+            "filingId": "JPM_10-Q_2025-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-30",
+            "fiscalPeriod": "Q2 FY2025"
+          },
+          {
+            "period": "2025Q3",
+            "filingId": "JPM_10-Q_2025-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-30",
+            "fiscalPeriod": "Q3 FY2025"
+          },
+          {
+            "period": "2025Q4",
+            "filingId": "JPM_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "MA",
+        "company": "Mastercard Inc",
+        "sector": "Financials",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q4",
+            "filingId": "MA_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "MS",
+        "company": "Morgan Stanley",
+        "sector": "Financials",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q4",
+            "filingId": "MS_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "V",
+        "company": "Visa Inc",
+        "sector": "Financials",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q3",
+            "filingId": "V_10-K_2025-09-30",
+            "formType": "10-K",
+            "reportPeriod": "2025-09-30",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "ABBV",
+        "company": "AbbVie Inc",
+        "sector": "Health Care",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2024Q4",
+            "filingId": "ABBV_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31",
+            "fiscalPeriod": "FY2024"
+          }
+        ]
+      },
+      {
+        "ticker": "LLY",
+        "company": "Eli Lilly and Company",
+        "sector": "Health Care",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q4",
+            "filingId": "LLY_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "MRK",
+        "company": "Merck & Co Inc",
+        "sector": "Health Care",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2024Q4",
+            "filingId": "MRK_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31",
+            "fiscalPeriod": "FY2024"
+          }
+        ]
+      },
+      {
+        "ticker": "TMO",
+        "company": "Thermo Fisher Scientific Inc",
+        "sector": "Health Care",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2024Q4",
+            "filingId": "TMO_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31",
+            "fiscalPeriod": "FY2024"
+          }
+        ]
+      },
+      {
+        "ticker": "BA",
+        "company": "The Boeing Company",
+        "sector": "Industrials",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q4",
+            "filingId": "BA_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "CAT",
+        "company": "Caterpillar Inc",
+        "sector": "Industrials",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q4",
+            "filingId": "CAT_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "DE",
+        "company": "Deere & Company",
+        "sector": "Industrials",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q4",
+            "filingId": "DE_10-K_2025-11-02",
+            "formType": "10-K",
+            "reportPeriod": "2025-11-02",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "LMT",
+        "company": "Lockheed Martin Corporation",
+        "sector": "Industrials",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q4",
+            "filingId": "LMT_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "RTX",
+        "company": "RTX Corporation",
+        "sector": "Industrials",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q4",
+            "filingId": "RTX_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "UPS",
+        "company": "United Parcel Service Inc",
+        "sector": "Industrials",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q4",
+            "filingId": "UPS_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "ADBE",
+        "company": "Adobe Inc",
+        "sector": "Information Technology",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q4",
+            "filingId": "ADBE_10-K_2025-11-28",
+            "formType": "10-K",
+            "reportPeriod": "2025-11-28",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "AMD",
+        "company": "Advanced Micro Devices Inc",
+        "sector": "Information Technology",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q4",
+            "filingId": "AMD_10-K_2025-12-27",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-27",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "CRM",
+        "company": "Salesforce Inc",
+        "sector": "Information Technology",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q1",
+            "filingId": "CRM_10-K_2025-01-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-01-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "CSCO",
+        "company": "Cisco Systems Inc",
+        "sector": "Information Technology",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q3",
+            "filingId": "CSCO_10-K_2025-07-26",
+            "formType": "10-K",
+            "reportPeriod": "2025-07-26",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "IBM",
+        "company": "International Business Machines Corp",
+        "sector": "Information Technology",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2024Q4",
+            "filingId": "IBM_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31",
+            "fiscalPeriod": "FY2024"
+          }
+        ]
+      },
+      {
+        "ticker": "INTC",
+        "company": "Intel Corporation",
+        "sector": "Information Technology",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q4",
+            "filingId": "INTC_10-K_2025-12-27",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-27",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      },
+      {
+        "ticker": "ORCL",
+        "company": "Oracle Corporation",
+        "sector": "Information Technology",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q2",
+            "filingId": "ORCL_10-K_2025-05-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-05-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      }
+    ]
+  }
+}

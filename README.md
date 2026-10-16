@@ -14,7 +14,7 @@ The work runs in phases. The exploratory data analysis (EDA) phase is complete. 
 | Indexing and retrieval code | Partly done: Corpus loading, cleaning, Section splitting, Financial Facts extraction, chunking, the FTS5 index, Company recognition, Sector phrases resolved through the Sector table, time windows, Section hints, the metric, risk routing, deduplication of repeated text, "how has it changed" routing and retrieval into numbered Sources budgeted per Company are built and tested. Follow-ups, Coverage Gaps and Financial Facts in the answer are next. | [`backend/src/edgar_rag/`](backend/src/edgar_rag/) |
 | Log of prompt iterations | Started: v1, v2 | [`docs/prompt-iterations.md`](docs/prompt-iterations.md) |
 | Final prompt template | v2 in place; the final version follows the prompt iterations | [`docs/prompt-iterations.md`](docs/prompt-iterations.md), [`backend/src/edgar_rag/_prompt.py`](backend/src/edgar_rag/_prompt.py) |
-| Front-end | Started: the research workspace streams answers, opens each `[Sn]` citation's passage in a Sources panel, shows each answer's Query Scope as chips and offers the six starter prompts. Coverage Gap callouts, session history and the "How it works" page come next. | [`frontend/`](frontend/), [Running the full stack](#running-the-full-stack) |
+| Front-end | Started: the research workspace streams answers, opens each `[Sn]` citation's passage in a Sources panel, shows each answer's Query Scope as chips and offers the six starter prompts. A "How it works" page shows the architecture, the evaluation scoreboard (from `make eval-export`) and the Corpus coverage grid. Coverage Gap callouts and session history come next. | [`frontend/`](frontend/), [Running the full stack](#running-the-full-stack) |
 | Example request, ready to execute | Done: `make ask` answers a question from the command line, and `backend/scripts/chat.sh` calls the chat API with `curl` | [Asking a question](#asking-a-question), [The chat API](#the-chat-api) |
 | Notes on how quality was evaluated | Partly done: Financial Facts extraction is measured against SEC XBRL data, the Golden Set of 30 labelled questions is written and checked against the Corpus, the retrieval harness scores the FTS5 Arm on it (hit@10 0.71 on dev), and the generation harness scores the answers in code and with the Jev judge (Fact Recall 0.55, Faithfulness 0.93 on dev, at $0.0026 per answer). | [`docs/evaluation.md`](docs/evaluation.md), [`docs/findings.md`](docs/findings.md) (findings 21–24), notebook analysis 7, [`docs/golden-set.md`](docs/golden-set.md) |
 | Documented assumptions and decisions | Done for the EDA | [`docs/findings.md`](docs/findings.md), [`docs/assumptions.md`](docs/assumptions.md), [`docs/adr/`](docs/adr/) |
@@ -88,6 +88,7 @@ Every command runs through the root `Makefile` (`make help` lists them):
 | `make eval-retrieval` | Score the retrieval Arms on the Golden Set's dev split (`SPLIT=holdout` or `all` to change it); no LLM call |
 | `make dev` | Run the chat API and the research workspace together on http://localhost:3000 (`WEB_PORT` to change) |
 | `make eval-generation` | Answer the Golden Set's dev split and score the answers, with cost and latency (`SPLIT=`, `MODEL=`; needs `OPENAI_API_KEY` and `JEV_API_KEY`, costs money) |
+| `make eval-export` | Export the harnesses' latest results and the Corpus coverage for the workspace's "How it works" page (`SPLIT=` to change the split); no LLM call |
 
 ### Asking a question
 
@@ -159,6 +160,14 @@ make eval-generation
 
 answers every Golden Set case on the dev split through one real Answer Call each, then scores the answers: citation validity, figure exactness and Coverage Gap statements are checked in code, and Fact Recall and Faithfulness are judged by Jev, TypeSafe's judgment model, pinned to an exact version. Each answer's cost and latency, from the Answer Call log, are reported next to the scores. It needs `OPENAI_API_KEY` and `JEV_API_KEY` in `backend/.env` and costs about $0.07 per run. `MODEL=` picks another generator. The report, with every answer, is written to `data/derived/eval/generation-dev.json`; the method and the first scores are in [`docs/evaluation.md`](docs/evaluation.md#generation-harness).
 
+### Showing the results in the workspace
+
+```sh
+make eval-export
+```
+
+collects the harnesses' latest reports for the dev split (every Arm's retrieval scores and comparison with the Shipped Arm, and every generator's scores, cost and latency) and the Corpus coverage grid (each Company's Filings by Report Period, Tracked Companies first) into `frontend/data/eval-export.json`. The workspace's "How it works" page (http://localhost:3000/how-it-works, linked from its header) shows them with the architecture. The export runs the retrieval harness first if its report is missing, but never the generation harness, which costs money: until `make eval-generation` has run, the page says so instead of showing answer scores. The export is committed, so the page shows the last exported results without anyone rerunning the harnesses; rerun it and commit the file after a harness run worth publishing.
+
 ### Running the EDA
 
 `make eda` compares extracted Financial Facts with the SEC's XBRL company-facts data, so it needs that data cached first. It fetches it automatically when the cache is missing. The SEC requires every automated request to carry a User-Agent naming the requester and a contact email, which is read from the `SEC_USER_AGENT` environment variable. Put it in `backend/.env`, which is gitignored and loaded by the `Makefile`:
@@ -221,11 +230,11 @@ context.messages  # the rendered prompt for the Answer Call
 │   │   └── golden_set.py      loads and validates the Golden Set and its dev/holdout split
 │   ├── src/edgar_answer/      provider implementations (OpenAI) and the `make ask` CLI
 │   ├── src/edgar_api/         the FastAPI chat API (`make api`)
-│   ├── src/edgar_eval/        evaluation harnesses: retrieval Arms and metrics, answer checks, the Jev judge
+│   ├── src/edgar_eval/        evaluation harnesses: retrieval Arms and metrics, answer checks, the Jev judge, the export
 │   ├── scripts/chat.sh        the `curl` example against the chat API
 │   ├── tests/                 pytest suite
 │   └── notebooks/             eda.py (source) and eda.ipynb (executed)
-├── frontend/                  the Next.js research workspace (`make dev`)
+├── frontend/                  the Next.js research workspace (`make dev`) and its "How it works" page
 ├── data/
 │   ├── edgar_corpus/          the Corpus, read-only, exactly as supplied
 │   ├── reference/sectors.csv  the curated Sector table, one row per Company
