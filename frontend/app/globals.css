@@ -1,0 +1,76 @@
+@import 'tailwindcss';
+
+/* A neutral, light analyst-tool palette. */
+@theme {
+  --color-canvas: #f7f8fa;
+  --color-ink: #1c2330;
+  --color-muted: #5f6b7a;
+  --color-line: #e2e6ec;
+  --color-accent: #1f5fbf;
+  --color-accent-strong: #184c99;
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+body {
+  @apply bg-canvas font-sans text-ink antialiased;
+}
+
+/* A citation in an answer: [S3] as a small, clickable tag. */
+.citation {
+  @apply mx-0.5 inline-block rounded border border-accent/30 bg-accent/5 px-1 align-baseline font-mono text-[11.5px] leading-[1.4] font-medium text-accent no-underline hover:bg-accent hover:text-white;
+}
+.citation[aria-current='true'] {
+  @apply bg-accent text-white;
+}
+.citation-missing {
+  @apply border-line bg-canvas text-muted hover:bg-canvas hover:text-muted;
+}
+
+/* The answer's Markdown. */
+.answer > :first-child {
+  @apply mt-0;
+}
+.answer p {
+  @apply my-2.5;
+}
+.answer h1,
+.answer h2,
+.answer h3,
+.answer h4 {
+  @apply mt-5 mb-2 font-semibold text-ink;
+}
+.answer h1 {
+  @apply text-[17px];
+}
+.answer h2 {
+  @apply text-[16px];
+}
+.answer h3,
+.answer h4 {
+  @apply text-[14.5px];
+}
+.answer ul {
+  @apply my-2 ml-5 list-disc space-y-1;
+}
+.answer ol {
+  @apply my-2 ml-5 list-decimal space-y-1;
+}
+.answer strong {
+  @apply font-semibold;
+}
+.answer table {
+  @apply min-w-full border-collapse text-left text-[13px];
+}
+.answer th {
+  @apply border-b border-line bg-canvas px-3 py-1.5 font-semibold;
+}
+.answer td {
+  @apply border-b border-line px-3 py-1.5 align-top;
+}
+.answer blockquote {
+  @apply my-3 border-l-2 border-line pl-3 text-muted;
+}
+.answer code {
+  @apply rounded bg-canvas px-1 font-mono text-[13px];
+}

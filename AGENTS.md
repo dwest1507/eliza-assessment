@@ -17,7 +17,7 @@ Single-context: one root `CONTEXT.md` plus `docs/adr/`. See `docs/agents/domain.
 ## Repo layout and commands
 
 - `backend/`: uv-managed Python project holding the `edgar_rag` core package (`src/`), its tests (`tests/`) and the EDA notebook (`notebooks/`). The core package must not depend on a web framework.
-- `frontend/`: reserved for the Next.js front-end.
+- `frontend/`: the Next.js research workspace (npm-managed; Tailwind, AI SDK `useChat`, Vitest). Its server-side route `app/api/chat/route.ts` proxies to the backend's chat API, so the backend URL (`BACKEND_URL`) stays on the server. `lib/starters.ts` copies the Golden Set's starter prompts, and a test keeps the copy in sync. See `frontend/README.md`.
 - `data/edgar_corpus/`: the Corpus, read-only (see `data/README.md`). Derived files go in `data/derived/` (gitignored).
 - `data/reference/sectors.csv`: the curated Sector table, one row per Company (see `data/README.md`).
 - `data/eval/golden_set.json`: the Golden Set, the evaluation's labelled questions, including the front-end's starter prompts (see `docs/golden-set.md`). Its tests check every label against the Corpus.
@@ -31,7 +31,7 @@ Single-context: one root `CONTEXT.md` plus `docs/adr/`. See `docs/agents/domain.
 - `docs/prompt-iterations.md`: every version of the Answer Call's prompt template. A change to `backend/src/edgar_rag/_prompt.py` bumps `PROMPT_VERSION` and adds an entry.
 - `docs/adr/`: architecture decisions, numbered `NNNN-slug.md` (0001: the SQLite Financial Facts store).
 
-Run everything through the root `Makefile`: `make install` (uv sync), `make test`, `make lint`, `make format`, `make eda`, `make sec-facts`, `make index`, `make ask Q="..."`, `make api`, `make eval-retrieval`.
+Run everything through the root `Makefile`: `make install` (uv sync and npm ci), `make test`, `make lint`, `make format` (each covers the backend and the front-end), `make eda`, `make sec-facts`, `make index`, `make ask Q="..."`, `make api`, `make eval-retrieval`, `make dev` (the API and the front-end together; stops both if either exits).
 
 `make index` rebuilds the retrieval index, `data/derived/edgar_rag.sqlite`, from the Corpus. `make ask` answers one question through one Answer Call (it needs `OPENAI_API_KEY` from `backend/.env`, and costs money) and logs it to `data/derived/logs/answer_calls.jsonl`. `make api` serves the same pipeline on port 8000 (`API_PORT` overrides); its tests use FastAPI's test client. Tests never call a provider: they use a fake answer model.
 

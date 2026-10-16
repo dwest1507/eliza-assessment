@@ -1,3 +1,39 @@
-# Frontend
+# Research workspace (front-end)
 
-Reserved for the Next.js front-end. Not built yet: the EDA phase covers only the backend core package and notebook.
+The Next.js research workspace: an analyst asks a question, or clicks a starter prompt, watches the answer stream in, and clicks any `[Sn]` citation to open that Source's passage in a side panel. It sits on the stack of the developer's portfolio: Next.js (App Router), Tailwind CSS and the AI SDK's `useChat`.
+
+Run it from the repo root with `make dev`, which starts the chat API and this app together (see the root [README](../README.md#running-the-full-stack)).
+
+## How it talks to the backend
+
+The browser never calls the chat API directly. `useChat` posts the conversation to this app's own route, [`app/api/chat/route.ts`](app/api/chat/route.ts), which forwards each message's role and text to the API's `POST /api/chat` and streams the API's [AI SDK UI message stream](https://ai-sdk.dev/docs/ai-sdk-ui/stream-protocol) back unchanged. The API's URL therefore stays on the server. It comes from `BACKEND_URL` (copy [`.env.example`](.env.example) to `.env`); when unset it is `http://127.0.0.1:8000`, where `make api` listens. `make dev` sets it to the API it starts.
+
+The stream carries the Query Scope and the numbered Sources as data parts before the answer text, so every citation is clickable while the answer is still arriving.
+
+## Layout
+
+| Path                           | What it is                                                           |
+| ------------------------------ | -------------------------------------------------------------------- |
+| `app/page.tsx`                 | The workspace page                                                   |
+| `app/api/chat/route.ts`        | The server-side proxy to the chat API                                |
+| `components/Workspace.tsx`     | The conversation thread, starter prompts and question box            |
+| `components/AnswerMessage.tsx` | One answer: Markdown with `[Sn]` citations as links, and its Sources |
+| `components/SourcesPanel.tsx`  | The side panel showing one Source's Filing metadata and passage      |
+| `lib/chat.ts`                  | The stream's data part types and the citation helpers                |
+| `lib/starters.ts`              | The six starter prompts, copied from the Golden Set                  |
+| `__tests__/`                   | Vitest and React Testing Library tests                               |
+
+The starter prompts are the Golden Set cases that carry a `starter` object (`data/eval/golden_set.json`), so every demo prompt is measured. `__tests__/starters.test.ts` fails if the copy in `lib/starters.ts` drifts from the Golden Set.
+
+## Commands
+
+From the repo root, `make install`, `make test`, `make lint` and `make format` cover this app as well as the backend. Inside `frontend/`:
+
+| Command                                                       | What it does                                                    |
+| ------------------------------------------------------------- | --------------------------------------------------------------- |
+| `npm run dev`                                                 | The dev server on http://localhost:3000 (needs the API running) |
+| `npm test`                                                    | The Vitest suite                                                |
+| `npm run lint` / `npm run typecheck` / `npm run format:check` | ESLint, TypeScript and Prettier checks                          |
+| `npm run build`                                               | A production build                                              |
+
+The tests run against a mocked stream: `fetch` returns the API's UI message stream, so the real `useChat` parses it. They cover a starter sending on click, Markdown rendering, a citation opening its Source in the panel, and the proxy route.

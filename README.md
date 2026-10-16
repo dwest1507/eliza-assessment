@@ -6,7 +6,7 @@ This repo is a take-home assessment for a Forward Deployed Engineer (AI Engineer
 
 ## Status
 
-The work runs in phases. The exploratory data analysis (EDA) phase is complete. The retrieval phase has its tracer bullet: a question asked from the command line or over the chat API is answered end to end, from the index through one Answer Call, and the retrieval harness measures it on the Golden Set. The query parser's full rules, Coverage Gaps, Financial Facts in the context, the generation harness and the front-end come next.
+The work runs in phases. The exploratory data analysis (EDA) phase is complete. The retrieval phase has its tracer bullet: a question asked from the command line, over the chat API or in the research workspace is answered end to end, from the index through one Answer Call, and the retrieval harness measures it on the Golden Set. The query parser's full rules, Coverage Gaps, Financial Facts in the context and the generation harness come next.
 
 | Deliverable (from the brief) | Status | Where |
 |---|---|---|
@@ -14,7 +14,7 @@ The work runs in phases. The exploratory data analysis (EDA) phase is complete. 
 | Indexing and retrieval code | Partly done: Corpus loading, cleaning, Section splitting, Financial Facts extraction, chunking, the FTS5 index, Company recognition, time windows, Section hints, risk routing and retrieval into numbered Sources budgeted per Company are built and tested. Sector phrases, follow-ups, Coverage Gaps and deduplication are next. | [`backend/src/edgar_rag/`](backend/src/edgar_rag/) |
 | Log of prompt iterations | Started: v1 | [`docs/prompt-iterations.md`](docs/prompt-iterations.md) |
 | Final prompt template | v1 in place; the final version follows the prompt iterations | [`docs/prompt-iterations.md`](docs/prompt-iterations.md), [`backend/src/edgar_rag/_prompt.py`](backend/src/edgar_rag/_prompt.py) |
-| Front-end | Not started | [`frontend/`](frontend/) (reserved for Next.js) |
+| Front-end | Started: the research workspace streams answers, opens each `[Sn]` citation's passage in a Sources panel and offers the six starter prompts. Query Scope chips, Coverage Gap callouts, session history and the "How it works" page come next. | [`frontend/`](frontend/), [Running the full stack](#running-the-full-stack) |
 | Example request, ready to execute | Done: `make ask` answers a question from the command line, and `backend/scripts/chat.sh` calls the chat API with `curl` | [Asking a question](#asking-a-question), [The chat API](#the-chat-api) |
 | Notes on how quality was evaluated | Partly done: Financial Facts extraction is measured against SEC XBRL data, the Golden Set of 30 labelled questions is written and checked against the Corpus, and the retrieval harness scores the FTS5 Arm on it (hit@10 0.71 on dev). The answer harness is next. | [`docs/evaluation.md`](docs/evaluation.md), [`docs/findings.md`](docs/findings.md) (findings 21–24), notebook analysis 7, [`docs/golden-set.md`](docs/golden-set.md) |
 | Documented assumptions and decisions | Done for the EDA | [`docs/findings.md`](docs/findings.md), [`docs/assumptions.md`](docs/assumptions.md), [`docs/adr/`](docs/adr/) |
@@ -63,29 +63,30 @@ These rest on assumptions about what the Client wants. Each one, and whether the
 
 ## Setup
 
-Prerequisites: Python 3.12+, [uv](https://docs.astral.sh/uv/) and `make`. The Corpus is committed, so there is nothing to download.
+Prerequisites: Python 3.12+, [uv](https://docs.astral.sh/uv/), Node.js 22+ with npm (`frontend/.nvmrc` names the version used), and `make`. The Corpus is committed, so there is nothing to download.
 
 ```sh
 git clone https://github.com/dwest1507/eliza-assessment.git
 cd eliza-assessment
-make install   # create backend/.venv with uv
-make test      # run the test suite
+make install   # create backend/.venv with uv and install frontend/node_modules with npm
+make test      # run the backend and front-end test suites
 ```
 
 Every command runs through the root `Makefile` (`make help` lists them):
 
 | Command | What it does |
 |---|---|
-| `make install` | Install the backend environment with uv |
-| `make test` | Run the backend test suite (pytest) |
-| `make lint` | Lint and check formatting (ruff) |
-| `make format` | Auto-fix lint issues and format |
+| `make install` | Install the backend environment with uv and the front-end's dependencies with npm |
+| `make test` | Run the backend (pytest) and front-end (Vitest) test suites |
+| `make lint` | Lint and check formatting (ruff; ESLint, TypeScript and Prettier) |
+| `make format` | Auto-fix lint issues and format both halves |
 | `make eda` | Execute the EDA notebook from its source and write `eda.ipynb` with outputs |
 | `make sec-facts` | Fetch the SEC XBRL company-facts reference for the Tracked Companies |
 | `make index` | Rebuild the retrieval index (`data/derived/edgar_rag.sqlite`) from the Corpus |
 | `make ask Q="..."` | Answer a question from the command line, without a server (needs `OPENAI_API_KEY`) |
 | `make api` | Run the chat API on http://localhost:8000 (`API_PORT` to change; answers need `OPENAI_API_KEY`) |
 | `make eval-retrieval` | Score the retrieval Arms on the Golden Set's dev split (`SPLIT=holdout` or `all` to change it); no LLM call |
+| `make dev` | Run the chat API and the research workspace together on http://localhost:3000 (`WEB_PORT` to change) |
 
 ### Asking a question
 
@@ -122,7 +123,23 @@ curl --no-buffer -X POST http://localhost:8000/api/chat \
 - An empty latest message, one longer than 4,000 characters, or a conversation that does not end with the user's question is rejected with `400`; a body of the wrong shape with `422`. If the index is missing or the answer model can't be created (no key), the API answers `503`.
 - **`GET /api/health`** returns `{"status": "ok"}` and needs no key.
 
-The backend is stateless: nothing is kept between requests, so the browser sends the whole conversation each time. Cross-origin browser calls are refused unless their origin is listed in `CORS_ALLOWED_ORIGINS` in `backend/.env` (comma-separated). The front-end will call the API through its own server-side route, which needs none. Each Answer Call is logged like `make ask`'s.
+The backend is stateless: nothing is kept between requests, so the browser sends the whole conversation each time. Cross-origin browser calls are refused unless their origin is listed in `CORS_ALLOWED_ORIGINS` in `backend/.env` (comma-separated). The front-end calls the API through its own server-side route, which needs none. Each Answer Call is logged like `make ask`'s.
+
+### Running the full stack
+
+`make dev` runs the chat API and the research workspace together, then serves the workspace on http://localhost:3000. Answers need `OPENAI_API_KEY` in `backend/.env`, as for `make ask`:
+
+```sh
+cp backend/.env.example backend/.env   # then set OPENAI_API_KEY (unquoted)
+make dev                               # API on :8000, workspace on http://localhost:3000
+make dev API_PORT=8001 WEB_PORT=3001   # other ports
+```
+
+`make dev` builds the index first if it is missing, and installs the front-end's dependencies if they are missing or `package-lock.json` changed. If either server exits, it stops the other, and Ctrl+C stops both.
+
+In the workspace, type a question or click one of the six starter prompts, which are the Golden Set's starter cases. The answer streams in as Markdown. Every `[Sn]` citation is a link: clicking it opens the Sources panel at that Source, showing its Filing ID, Form Type, Report Period, Fiscal Period, Section, Item and passage text. The answer's Sources are also listed under it, and they are clickable as soon as the answer starts.
+
+The browser never calls the API directly. It posts to the workspace's own route (`frontend/app/api/chat/route.ts`), which forwards the conversation to the API and streams the answer back, so the API's URL stays on the server. That URL comes from `BACKEND_URL` in `frontend/.env` (copy `frontend/.env.example`); it defaults to `http://127.0.0.1:8000`, and `make dev` points it at the API it starts. To run the halves separately, use `make api` and `cd frontend && npm run dev`. [`frontend/README.md`](frontend/README.md) describes the app's layout and tests.
 
 ### Measuring retrieval
 
@@ -198,7 +215,7 @@ context.messages  # the rendered prompt for the Answer Call
 │   ├── scripts/chat.sh        the `curl` example against the chat API
 │   ├── tests/                 pytest suite
 │   └── notebooks/             eda.py (source) and eda.ipynb (executed)
-├── frontend/                  reserved for the Next.js front-end
+├── frontend/                  the Next.js research workspace (`make dev`)
 ├── data/
 │   ├── edgar_corpus/          the Corpus, read-only, exactly as supplied
 │   ├── reference/sectors.csv  the curated Sector table, one row per Company
@@ -216,7 +233,7 @@ context.messages  # the rendered prompt for the Answer Call
 └── Makefile                   single entry point
 ```
 
-The core package depends on nothing outside the Python standard library and must not depend on a web framework, so the API and front-end can sit on top of it; a guard test enforces this. Code that needs a provider's SDK lives in `edgar_answer` ([ADR 0005](docs/adr/0005-provider-sdks-outside-the-core-package.md)), the web API in `edgar_api`, and the evaluation harnesses in `edgar_eval` ([ADR 0006](docs/adr/0006-evaluation-harnesses-outside-the-core-package.md)).
+The core package depends on nothing outside the Python standard library and must not depend on a web framework, so the API and front-end can sit on top of it; a guard test enforces this. Code that needs a provider's SDK lives in `edgar_answer` ([ADR 0005](docs/adr/0005-provider-sdks-outside-the-core-package.md)), the web API in `edgar_api`, the evaluation harnesses in `edgar_eval` ([ADR 0006](docs/adr/0006-evaluation-harnesses-outside-the-core-package.md)), and the research workspace in `frontend/`, which reaches the API only through its own server-side route.
 
 ## Data
 
