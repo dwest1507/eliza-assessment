@@ -212,6 +212,20 @@ def test_the_fts5_arm_ranks_the_answer_contexts_sources_taking_each_company_in_t
     assert [filing_id.split("_")[0] for filing_id, _ in ranked[:6]] == ["AAPL", "TSLA", "JPM"] * 2
 
 
+def test_the_fts5_arm_ranks_text_sources_only(index):
+    """Facts Sources are not retrieved text, so they don't take ranks from the Sections
+    the Golden Set labels."""
+    question = [ChatMessage("user", "How has NVIDIA's revenue changed over the last two years?")]
+    fts5 = next(arm for arm in ARMS if arm.name == "fts5")
+
+    ranked = fts5.retrieve(question, index)
+
+    sources = prepare_answer_context(question, index).sources
+    assert any(s.kind == "facts" for s in sources)
+    assert ranked and "Financial Facts" not in {section for _, section in ranked}
+    assert sorted(ranked) == sorted((s.filing_id, s.section) for s in sources if s.kind == "text")
+
+
 # --- The command line -------------------------------------------------------------------
 
 

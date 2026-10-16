@@ -124,3 +124,40 @@ Retrieval changes with it: the stale GE Capital Filing is kept out of every Answ
 **Why.** Under v2 the model wrote its own coverage note, so whether a Snapshot trend, a missing Company or the stale GE Filing was mentioned, and in what words, depended on the model (user stories 20–26, assumptions 3, 4, 6, 7 and 9). The gaps are facts about the Corpus, so code can compute them exactly and the prompt only has to ask for them to be stated. The coverage block gives the model the Report Period and Fiscal Period of every Filing it may cite, so it can state them beside each Company's points without reading them out of Source labels. The same gaps stream to the workspace as a `data-coverage-gaps` part and show as a callout beside the answer, so they are visible even if an answer leaves one out.
 
 **Scores.** Retrieval on dev, from the retrieval harness: unchanged (hit@10 0.71, recall@10 0.65, MRR 0.59 over 17 scored cases). The three dev cases with no expected Source now get none: `stale-ge-recent-performance` 7 → 0 Sources (all from GE Capital's FY2014 10-K before), `missing-citigroup` 47 → 0, `followup-ge-to-honeywell` 0 → 0. Computed gaps against the Golden Set's expected Coverage Gaps on dev: 19 of 20 cases get every expected gap, with no gap the labels do not expect. The miss is `followup-regulatory-exposure` ("Which of them has the most regulatory exposure?"), which names no Company and needs follow-up inheritance (ADR 0003) before its periods can be compared. Generation on dev (`gpt-6-luna`, `jev-1.13.0`), against the last scored run (prompt v1, retrieval before Sector phrases; prompt v2 was never scored): Coverage Gaps stated 0.50 → 0.91, Fact Recall 0.55 → 0.55, Faithfulness 0.93 → 0.90, citations valid 0.95 → 0.79, figures exact 0.90 → 0.95, $0.0026 → $0.0024 per answer ([evaluation notes](evaluation.md#after-coverage-gaps-prompt-v3)). The only gap still missed is the same follow-up. The citation drop is mostly the check's wording rules: the GE answer's "it is stale and left out of this answer" is an absence the check does not yet exempt. 19 of 20 cases were scored, since Jev refused one judging request as too long.
+
+## v4: the Financial Facts table
+
+**What.** When the question names a metric (revenue, net income, a segment name, or "segment"), a `# Financial Facts` block goes between `# Coverage` and the Sources. It lists the Facts Sources (one per Filing the figures come from, numbered first), then one table, then a note for anything the store can't answer:
+
+```text
+# Financial Facts
+
+Figures extracted from the Filings' income statements and segment tables. Each tag below is the Financial Facts of one Filing; cite the tags a row lists. Values are in US dollars. Rows marked derived are computed from the rows they cite, not reported.
+
+[S1] NVDA 10-Q Q1 FY2024, Financial Facts. Filing ID NVDA_10-Q_2023-04-30, Report Period 2023-04-30.
+...
+[S11] NVDA 10-Q Q3 FY2026, Financial Facts. Filing ID NVDA_10-Q_2025-10-26, Report Period 2025-10-26.
+
+| Company | Metric | Fiscal Period | Period | Value | Basis | Change from a year earlier (derived) | Sources |
+|---|---|---|---|---|---|---|---|
+| NVDA | Revenue | Q4 FY2024 | 3 months ended 2024-01-28 | $22,103 million | derived: FY2024 less Q1–Q3 FY2024, $60,922 million [S4] less $7,192 million [S1], $13,507 million [S2], $18,120 million [S3] |  | [S4] [S1] [S2] [S3] |
+| NVDA | Revenue | FY2024 | 12 months ended 2024-01-28 | $60,922 million | reported as "Revenue" |  | [S4] |
+...
+| NVDA | Revenue | Q3 FY2026 | 3 months ended 2025-10-26 | $57,006 million | reported as "Revenue" | +62.5% [S11] [S7] | [S11] |
+
+- JPMorgan Chase & Co (JPM) is a Snapshot Company, so no Financial Facts are extracted for it. Any revenue figure for it must be read from the Sources' text. The answer must say such a figure was read from the Filing text, not from extracted Financial Facts.
+```
+
+The rows are the Filings in the Query Scope's time window, or of the Fiscal Periods the question names. A fourth quarter is derived as the 10-K's year less its three 10-Q quarters when the store holds all three (citing those 10-Qs even when they fall before the window), and a year-on-year change is derived when the same period a year earlier is also in the table. A segment series stops at a segment reorganisation, and a note says where the segments changed and which were dropped or added.
+
+System rule 5 changes from "Quote figures exactly as the Sources give them, with their units and periods." to:
+
+```text
+5. Take revenue, net income and segment revenue from the Financial Facts table when it has them, cite the row's Source tags, and quote figures exactly with their units and periods. Label a derived figure as derived: a fourth quarter computed from a 10-K less three 10-Qs, a growth rate, or any figure you compute yourself, citing the rows it comes from. When a figure is not in the table and you read it from a Source's text instead, say it was read from the Filing text.
+```
+
+The text Sources are unchanged and numbered after the Facts Sources. The `# Sources` block lists only text Sources, since the Facts Sources' figures are in the table. A question naming no metric gets no block, and its prompt is the same as under v3.
+
+**Why.** Figures read from flattened tables are the answers most likely to be wrong (ADR 0001): the model would have to line up columns, scales and periods that vary by Company, across eight or more Filings for a two-year trend. The store has every Tracked Company's revenue and net income to the dollar, so the template hands the model exact rows with their citations and says which figures are computed. The fallback note and the new rule keep the analyst able to tell an extracted figure from one read off the text.
+
+**Scores.** Retrieval on dev, from the retrieval harness: unchanged at hit@10 0.71, recall@10 0.65, MRR 0.59, since text retrieval did not change and the `fts5` Arm ranks text Sources only ([evaluation notes](evaluation.md#after-financial-facts-in-the-answer)). Every dollar figure in the Required Facts of the two dev figure cases with a Tracked Company (Meta's revenue, Tesla's net income) is now a cited row of the table. No Answer Call was made for this change (the run had no provider keys), so there are no generation-harness scores or hand check for v4 yet: the next `make eval-generation` run on dev should score it against [v3's](#v3-coverage-gaps-and-each-companys-coverage), with `trend-meta-revenue-two-years` and `trend-tsla-net-income-three-years` (figures and citations), and `trend-jpm-revenue-snapshot` (saying a figure was read from the Filing text), as the cases to read.

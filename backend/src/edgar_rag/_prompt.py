@@ -4,11 +4,11 @@ One fixed template with a version constant. Every change to it bumps `PROMPT_VER
 and gets an entry in `docs/prompt-iterations.md`, with what changed, why, and its dev
 scores before and after.
 
-v3 renders, in this order: the system rules, the Coverage Gaps the answer must state,
+v4 renders, in this order: the system rules, the Coverage Gaps the answer must state,
 the Companies each Sector phrase resolved to (when the question uses one), each
-Company's coverage (its class, Filings, Report Periods and Fiscal Periods), the Sources
-grouped by Company, the earlier conversation, and the latest question. The Financial
-Facts table joins it in a later version, between the coverage and the Sources.
+Company's coverage (its class, Filings, Report Periods and Fiscal Periods), the
+Financial Facts table (when the question names a metric), the text Sources grouped by
+Company, the earlier conversation, and the latest question.
 """
 
 from __future__ import annotations
@@ -22,10 +22,11 @@ from edgar_rag._coverage import COVERAGE_LABELS
 
 if TYPE_CHECKING:
     from edgar_rag._coverage import CompanyCoverage, CoverageGap
+    from edgar_rag._facts import FactNote, FactRow
     from edgar_rag._query_scope import ScopeFiling
     from edgar_rag.retrieval import Message, QueryScope, Source
 
-PROMPT_VERSION = "v3"
+PROMPT_VERSION = "v4"
 
 HISTORY_TURNS = 10
 HISTORY_MAX_TOKENS = 6_000
@@ -47,7 +48,12 @@ supports it, and then cite that Source.
 4. When you use a Company's filings, give the filing's form type, fiscal period and \
 report period, as listed under "Coverage", and say so when the Companies you compare \
 report for different periods.
-5. Quote figures exactly as the Sources give them, with their units and periods.
+5. Take revenue, net income and segment revenue from the Financial Facts table when it \
+has them, cite the row's Source tags, and quote figures exactly with their units and \
+periods. Label a derived figure as derived: a fourth quarter computed from a 10-K less \
+three 10-Qs, a growth rate, or any figure you compute yourself, citing the rows it comes \
+from. When a figure is not in the table and you read it from a Source's text instead, say \
+it was read from the Filing text.
 6. When the question names a group of companies ("the major banks"), it was resolved \
 through a curated Sector table to the Companies listed under "Companies in scope". Name \
 those Companies near the start of the answer, say they come from the Sector table, and \
@@ -78,16 +84,21 @@ def render(
     scope: QueryScope,
     coverage: Sequence[CompanyCoverage] = (),
     gaps: Sequence[CoverageGap] = (),
+    facts: Sequence[FactRow] = (),
+    notes: Sequence[FactNote] = (),
 ) -> list[tuple[str, str]]:
     """The prompt as (role, content) messages: the system rules, then one user message
     holding the Coverage Gaps, the Companies each Sector phrase resolved to, each
-    Company's coverage, the Sources, the earlier conversation and the question."""
+    Company's coverage, the Financial Facts, the text Sources, the earlier conversation
+    and the question."""
     parts = ["# Coverage Gaps", "\n".join(f"- {gap.text}" for gap in gaps) or "None."]
     if scope.sector_phrases:
         parts += ["# Companies in scope", _render_sector_phrases(scope)]
     if coverage:
         parts += ["# Coverage", _render_coverage(coverage)]
-    parts += ["# Sources", _render_sources(sources)]
+    if scope.metrics:
+        parts += ["# Financial Facts", _render_facts(sources, facts, notes)]
+    parts += ["# Sources", _render_sources([s for s in sources if s.kind == "text"])]
     if earlier := _render_history(history):
         parts += ["# Earlier conversation (context only, not evidence)", earlier]
     parts += ["# Question", question.strip()]
@@ -142,6 +153,59 @@ def _render_coverage(coverage: Sequence[CompanyCoverage]) -> str:
 
 def _period(filing: ScopeFiling) -> str:
     return filing.fiscal_period or f"period to {filing.report_period}"
+
+
+_FACTS_INTRO = (
+    "Figures extracted from the Filings' income statements and segment tables. Each tag "
+    "below is the Financial Facts of one Filing; cite the tags a row lists. Values are in "
+    "US dollars. Rows marked derived are computed from the rows they cite, not reported."
+)
+
+
+def _render_facts(
+    sources: Sequence[Source], facts: Sequence[FactRow], notes: Sequence[FactNote]
+) -> str:
+    from edgar_rag._facts import money, percent
+
+    blocks = []
+    if facts:
+        blocks.append(_FACTS_INTRO)
+        blocks.append("\n".join(f"[{s.tag}] {s.label}" for s in sources if s.kind == "facts"))
+        lines = [
+            "| Company | Metric | Fiscal Period | Period | Value | Basis | "
+            "Change from a year earlier (derived) | Sources |",
+            "|---|---|---|---|---|---|---|---|",
+        ]
+        reported = {
+            (s.tag, f.metric, f.segment, f.months): f.value
+            for s in sources
+            if s.kind == "facts"
+            for f in s.facts
+        }
+        for r in facts:
+            basis = f'reported as "{r.label}"'
+            if r.derived:
+                parts = [
+                    f"{money(reported[(tag, r.metric, r.segment, months)])} [{tag}]"
+                    for tag, months in zip(r.sources, (12, 3, 3, 3), strict=True)
+                ]
+                basis = f"derived: {r.derived}, {parts[0]} less {', '.join(parts[1:])}"
+            change = (
+                f"{percent(r.year_on_year)} " + " ".join(f"[{t}]" for t in r.year_on_year_sources)
+                if r.year_on_year is not None
+                else ""
+            )
+            lines.append(
+                f"| {r.ticker} | {r.metric_name} | {r.fiscal_period} | "
+                f"{r.months} months ended {r.report_period} | {money(r.value)} | {basis} | "
+                f"{change} | {' '.join(f'[{t}]' for t in r.sources)} |"
+            )
+        blocks.append("\n".join(lines))
+    else:
+        blocks.append("No Financial Facts were found for this question.")
+    if notes:
+        blocks.append("\n".join(f"- {n.text}" for n in notes))
+    return "\n\n".join(blocks)
 
 
 def _render_sources(sources: Sequence[Source]) -> str:

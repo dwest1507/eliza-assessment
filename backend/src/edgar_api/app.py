@@ -217,22 +217,39 @@ def _query_scope(scope: QueryScope) -> dict[str, Any]:
 
 
 def _sources(sources: Sequence[Source]) -> list[dict[str, Any]]:
-    return [
-        {
-            "tag": s.tag,
-            "filingId": s.filing_id,
-            "company": s.company,
-            "ticker": s.ticker,
-            "formType": s.form_type,
-            "reportPeriod": s.report_period,
-            "fiscalPeriod": s.fiscal_period,
-            "section": s.section,
-            "item": s.item,
-            "label": s.label,
-            "text": s.text,
-        }
-        for s in sources
-    ]
+    return [_source(s) for s in sources]
+
+
+def _source(s: Source) -> dict[str, Any]:
+    sent: dict[str, Any] = {
+        "tag": s.tag,
+        "filingId": s.filing_id,
+        "company": s.company,
+        "ticker": s.ticker,
+        "formType": s.form_type,
+        "reportPeriod": s.report_period,
+        "fiscalPeriod": s.fiscal_period,
+        "section": s.section,
+        "item": s.item,
+        "label": s.label,
+        "text": s.text,
+        "kind": s.kind,
+    }
+    if s.kind == "facts":
+        sent["rows"] = [
+            {
+                "metric": r.metric,
+                "metricName": r.metric_name,
+                "segment": r.segment,
+                "months": r.months,
+                "reportPeriod": r.report_period,
+                "value": r.value,
+                "valueText": r.value_text,
+                "label": r.label,
+            }
+            for r in s.facts
+        ]
+    return sent
 
 
 def _gaps(gaps: Sequence[CoverageGap]) -> list[dict[str, Any]]:

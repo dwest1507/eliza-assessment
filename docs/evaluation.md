@@ -124,6 +124,20 @@ Before → after, overall: hit@10 0.71 → 0.71, recall@10 0.58 → 0.65, MRR 0.
 
 Golden Set version 1, dev split, the same 17 scored cases. The stale GE Capital Filing is now kept out of retrieval unless a question asks for it by name, and a question naming only Companies missing from the Corpus retrieves nothing (prompt [v3](prompt-iterations.md#v3-coverage-gaps-and-each-companys-coverage)). Every metric is unchanged (hit@10 0.71, recall@10 0.65, MRR 0.59, 16.9 Sources), since the scored cases all name Companies in the Corpus. The change shows in the three unscored cases, which expect no Source: `stale-ge-recent-performance` goes from 7 Sources (all from the stale Filing) to none, `missing-citigroup` from 47 Sources (36 unrelated Companies) to none, and `followup-ge-to-honeywell` stays at none.
 
+### After Financial Facts in the answer
+
+Golden Set version 1, dev split, the same 17 scored cases. A question naming a metric (revenue, net income or a segment) now also gets the Financial Facts table, cited by one Facts Source per Filing and numbered before the text Sources ([ADR 0001](adr/0001-sqlite-financial-facts-store.md)). Text retrieval is unchanged, and the `fts5` Arm ranks only the text Sources: Facts Sources are looked up by rule, not retrieved, and the Golden Set labels Sections.
+
+The scores are identical to [After Coverage Gaps](#after-coverage-gaps): hit@10 0.71, recall@10 0.65, MRR 0.59, 16.9 text Sources. This is expected, because the change adds context beside retrieval rather than changing it. What it adds shows in the figure cases' Required Facts instead:
+
+- **Meta's revenue over two years and Tesla's net income over three years**: all five dollar figures their Required Facts state ($164,501 million and $200,966 million for Meta's 2024 and 2025 revenue; $14,997 million, $7,091 million and $3,794 million for Tesla's 2023–2025 net income) are rows in the Financial Facts table, each citing its 10-K. Before, they had to be read from MD&A text the retrieval ranked late (the first expected MD&A at rank 11 for Tesla).
+- **JPMorgan's revenue** gets no rows (a Snapshot Company), and the prompt says any figure for it must be read from the Filing text and said to be.
+- **"And what about Microsoft?"** names no metric, so it gets no Financial Facts until follow-ups inherit the earlier question's metric (ADR 0003).
+
+The table costs about 700 to 1,100 prompt tokens for one Company over two or three years: eight to twelve quarters, the fiscal years, derived fourth quarters and year-on-year changes. It sits outside the per-Company text budget.
+
+**How derived figures are checked.** The generation harness's figure check (below) asked this task to decide. A derived figure the table states is checked like any cited figure: each Facts Source's text states its reported rows, the year-on-year change of each, and the fourth quarters derived from it (a 10-K's year less its 10-Qs), so an answer that cites a derived row's tags cites text holding the figure. A figure the model computes itself, outside the table, is still unmatched unless it appears in a cited passage, and prompt rule 5 asks for such figures to be labelled as derived.
+
 The holdout split has not been scored.
 
 ## Generation harness

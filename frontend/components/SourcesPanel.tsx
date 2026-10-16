@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react'
-import type { Source } from '@/lib/chat'
+import type { FactRow, Source } from '@/lib/chat'
 
 interface SourcesPanelProps {
   /** The Sources of one answer. */
@@ -104,11 +104,45 @@ export default function SourcesPanel({ sources, selected, onSelect, onClose }: S
           ref={passageRef}
           className="mt-4 min-h-0 flex-1 overflow-y-auto border-t border-line bg-canvas px-4 py-4"
         >
-          <p className="text-[13px] leading-relaxed break-words whitespace-pre-wrap text-ink">
-            {source.text}
-          </p>
+          {source.kind === 'facts' && source.rows ? (
+            <FactsTable rows={source.rows} />
+          ) : (
+            <p className="text-[13px] leading-relaxed break-words whitespace-pre-wrap text-ink">
+              {source.text}
+            </p>
+          )}
         </div>
       </section>
     </aside>
+  )
+}
+
+/** A Facts Source's rows: each figure the Filing reports, with the label it prints. */
+function FactsTable({ rows }: { rows: FactRow[] }) {
+  return (
+    <table aria-label="Financial Facts" className="w-full border-collapse text-[12.5px]">
+      <thead>
+        <tr className="border-b border-line text-left text-muted">
+          <th className="py-1 pr-3 font-medium">Metric</th>
+          <th className="py-1 pr-3 font-medium">Period</th>
+          <th className="py-1 pr-3 text-right font-medium">Value</th>
+          <th className="py-1 font-medium">As printed</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={`${row.metric}:${row.segment ?? ''}`} className="border-b border-line/60">
+            <td className="py-1 pr-3 text-ink">{row.metricName}</td>
+            <td className="py-1 pr-3 text-muted">
+              {row.months} months ended {row.reportPeriod}
+            </td>
+            <td className="py-1 pr-3 text-right font-mono whitespace-nowrap text-ink">
+              {row.valueText}
+            </td>
+            <td className="py-1 text-muted">{row.label ?? '—'}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
   )
 }

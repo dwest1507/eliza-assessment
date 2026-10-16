@@ -17,8 +17,10 @@ Rule-based, with no LLM (ADR 0003). It recognises:
   as Fiscal Periods. A named period decides which copy of a repeated passage is cited.
 - Change questions: "how has it changed", "what is new", "how did it evolve", "how do
   they differ". They are routed to the paragraphs new between periods.
-- The metric of ADR 0001's vocabulary: "revenue", "sales" and "top line" are revenue;
-  "net income", "earnings" and "profit" are net income.
+- The metrics of ADR 0001's vocabulary: "revenue", "sales" and "top line" are revenue;
+  "net income", "earnings" and "profit" are net income; a segment name of a Company in
+  scope ("Compute & Networking", "AWS") is that segment's revenue, and "segment" alone
+  is every segment's.
 
 Tickers match only when written in capitals, so "cost" never means Costco. Names match
 in any case, except names that are also everyday words ("Target", "Meta", "Visa"),
@@ -464,18 +466,49 @@ def is_change_question(question: str) -> bool:
 
 # --- Metric ------------------------------------------------------------------------------
 
-# ADR 0001's vocabulary. Segment names join it with the Financial Facts store.
+# ADR 0001's vocabulary. Segment names join it from the Financial Facts store.
 _METRICS: tuple[tuple[str, re.Pattern[str]], ...] = tuple(
     (metric, re.compile(pattern, re.I))
     for metric, pattern in (
         ("net_income", r"\bnet\s+income\b|\bearnings\b|\bprofits?\b"),
         ("revenue", r"\brevenues?\b|\bsales\b|\btop[\s-]+line\b"),
+        # "Segment revenue", "by segment": every segment of the Companies in scope.
+        ("segment_revenue", r"\bsegments?\b"),
     )
 )
 
 
 def find_metric(question: str) -> str | None:
-    """The Financial Facts metric a question asks about (`revenue` or `net_income`), the
-    one it names first if it names both, or None."""
+    """The Financial Facts metric a question asks about (`revenue`, `net_income` or
+    `segment_revenue`), the one it names first if it names several, or None."""
+    metrics, _ = find_metrics(question, ())
+    return metrics[0] if metrics else None
+
+
+def find_metrics(
+    question: str, segment_names: Iterable[str]
+) -> tuple[tuple[str, ...], tuple[str, ...]]:
+    """Every Financial Facts metric a question asks about, in the order it names them,
+    and the segments it names. `segment_names` are the segments of the Companies in
+    scope, as their Filings print them; naming one asks for that segment's revenue.
+
+    A one-word segment name ("Graphics", "International") counts only when capitalised
+    as printed, so everyday words don't become segments. A trailing "segment" in the
+    printed name (Tesla's "Automotive segment") need not be written.
+    """
     found = [(m.start(), metric) for metric, p in _METRICS if (m := p.search(question))]
-    return min(found)[1] if found else None
+    segments: list[tuple[int, str]] = []
+    for name in segment_names:
+        if m := _segment_pattern(name).search(question):
+            segments.append((m.start(), name))
+    if segments:
+        found.append((min(start for start, _ in segments), "segment_revenue"))
+    metrics = tuple(dict.fromkeys(metric for _, metric in sorted(found)))
+    return metrics, tuple(name for _, name in sorted(segments))
+
+
+def _segment_pattern(name: str) -> re.Pattern[str]:
+    words = re.sub(r"\s+segment$", "", name.strip(), flags=re.I).split()
+    body = r"\s+".join(r"(?:&|and)" if word in ("&", "and") else re.escape(word) for word in words)
+    flags = 0 if len(words) == 1 else re.I
+    return re.compile(rf"(?<![\w&]){body}(?![\w&])", flags)

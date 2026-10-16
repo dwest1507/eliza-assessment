@@ -24,10 +24,13 @@ def fts5(messages: Sequence[Message], index: Path) -> list[Pair]:
     budget, and its Sources are numbered after the previous Company's. Ranking them by
     number would put the last Company's best Source behind every other Company's worst,
     so the ranking takes each Company's next-best Source in turn instead.
+
+    Facts Sources are left out: they are Financial Facts looked up by rule, not text
+    retrieved by an Arm, and the Golden Set labels Sections.
     """
     sources = prepare_answer_context(messages, index).sources
     per_company: dict[str, list[Pair]] = {}
-    for source in sources:
+    for source in (s for s in sources if s.kind == "text"):
         per_company.setdefault(source.ticker, []).append((source.filing_id, source.section))
     return [
         pair for turn in zip_longest(*per_company.values()) for pair in turn if pair is not None

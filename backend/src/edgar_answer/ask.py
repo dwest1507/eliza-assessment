@@ -1,7 +1,8 @@
 """`make ask`: answer one question from the command line, without a server.
 
-Prints the Query Scope, the numbered Sources and the Coverage Gaps, then streams the answer from the
-Answer Call, then one line with the model, prompt version, token usage and latency.
+Prints the Query Scope, the Financial Facts table, the numbered Sources and the
+Coverage Gaps, then streams the answer from the Answer Call, then one line with the
+model, prompt version, token usage and latency.
 
     python -m edgar_answer.ask "What are the primary risk factors facing Apple?"
 """
@@ -78,7 +79,10 @@ def _print_context(context: AnswerContext, out: TextIO) -> None:
         print(f"  Named periods: {', '.join(scope.periods)}", file=out)
     if scope.change:
         print("  Change question: new paragraphs first", file=out)
-    print(f"  Metric: {(scope.metric or 'none').replace('_', ' ')}", file=out)
+    metrics = ", ".join(m.replace("_", " ") for m in scope.metrics)
+    print(f"  Metrics: {metrics or 'none'}", file=out)
+    if scope.segments:
+        print(f"  Segments: {', '.join(scope.segments)}", file=out)
     for company in companies:
         filings = [f for f in scope.filings if f.ticker == company.ticker]
         print(
@@ -86,6 +90,18 @@ def _print_context(context: AnswerContext, out: TextIO) -> None:
             + ", ".join(f"{f.filing_id} ({f.fiscal_period})" for f in filings),
             file=out,
         )
+    if scope.metrics:
+        print(f"\nFinancial Facts ({len(context.financial_facts)} rows)", file=out)
+        for row in context.financial_facts:
+            basis = f"derived: {row.derived}" if row.derived else f'reported as "{row.label}"'
+            print(
+                f"  {row.ticker} {row.metric_name} {row.fiscal_period} ({row.months} months "
+                f"ended {row.report_period}): {row.value_text}, {basis} "
+                + " ".join(f"[{t}]" for t in row.sources),
+                file=out,
+            )
+        for note in context.fact_notes:
+            print(f"  Note: {note.text}", file=out)
     print(f"\nSources ({len(context.sources)})", file=out)
     for source in context.sources:
         print(f"  [{source.tag}] {source.label}", file=out)

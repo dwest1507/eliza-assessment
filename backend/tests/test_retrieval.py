@@ -292,7 +292,7 @@ def test_a_source_carries_its_citation_metadata_and_passage(index):
 def test_the_prompt_renders_rules_sources_and_question(index):
     context = _ask(index, BRIEF_QUESTION)
 
-    assert context.prompt_version == PROMPT_VERSION == "v3"
+    assert context.prompt_version == PROMPT_VERSION == "v4"
     system, user = context.messages
     assert system.role == "system"
     assert "[S3]" in system.content and "general knowledge" in system.content
@@ -396,8 +396,11 @@ def test_the_last_two_years_is_eight_quarters_up_to_the_companys_latest_filing(i
         "NVDA_10-Q_2025-07-27",
         "NVDA_10-Q_2025-10-26",
     ]
-    assert context.sources
-    assert {s.filing_id for s in context.sources} <= set(_scope_filings(context, "NVDA"))
+    # Text is retrieved only from the window. (A Facts Source may come from earlier: the
+    # 10-Qs a derived fourth quarter subtracts.)
+    text = [s for s in context.sources if s.kind == "text"]
+    assert text
+    assert {s.filing_id for s in text} <= set(_scope_filings(context, "NVDA"))
 
 
 def test_each_company_anchors_its_window_on_its_own_latest_filing(index):

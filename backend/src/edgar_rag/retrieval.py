@@ -7,12 +7,22 @@ Two entry points:
   once, a `chunk_filings` table listing every Filing (and Section and position) each
   chunk appears in, with the text of it that is new since the previous Filing of the
   same Form Type, an FTS5 table over the chunk text with the `porter` tokenizer, and the
-  `companies`, `filings` and `sections` tables the Query Scope and retrieval plan read.
-  The `filing_chunks` view joins them back into one row per chunk per Filing. `make
+  `companies`, `filings` and `sections` tables the Query Scope and retrieval plan read,
+  and the `financial_facts` table: the Tracked Companies' Financial Facts as the
+  Financial Facts seam reads them from each Filing (ADR 0001; never SEC XBRL data). The
+  `filing_chunks` view joins the chunks back into one row per chunk per Filing. `make
   index` runs it over the whole Corpus.
 - `prepare_answer_context(messages)` resolves the latest user message's Query Scope,
-  retrieves chunks for each Company in it, groups them into numbered Sources and renders
-  the Answer Call's prompt. It is deterministic and makes no network calls.
+  looks up the Financial Facts of any metric it names, retrieves chunks for each Company
+  in it, groups them into numbered Sources and renders the Answer Call's prompt. It is
+  deterministic and makes no network calls.
+
+A question naming a metric (revenue, net income, a segment) gets the Financial Facts
+table: one fixed parameterised query per Company and metric, cut to the Query Scope's
+Filings, with derived fourth quarters and year-on-year changes labelled as derived and a
+segment series stopped at a segment reorganisation. Each Filing the figures come from is
+one Facts Source, numbered before the text Sources. A Company and metric the store can't
+answer falls back to the text, and the prompt says the answer must say so.
 
 Retrieval applies the Query Scope's Companies and time window as hard filters before
 `bm25()` ranking, and each Company gets an even share of the context budget. A Section
@@ -43,10 +53,11 @@ import os
 import re
 import sqlite3
 from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path
 from typing import Any, Literal
 
+from edgar_rag import _facts
 from edgar_rag._chunks import Chunk, _sentences, chunk_filing, count_tokens
 from edgar_rag._coverage import (
     DEFAULT_MISSING_COMPANIES,
@@ -58,6 +69,7 @@ from edgar_rag._coverage import (
     load_missing_companies,
     stale_filings_left_out,
 )
+from edgar_rag._facts import FactNote, FactRow
 from edgar_rag._prompt import PROMPT_VERSION, render
 from edgar_rag._query_scope import (
     LATEST,
@@ -65,7 +77,7 @@ from edgar_rag._query_scope import (
     ScopeFiling,
     SectorPhrase,
     TimeWindow,
-    find_metric,
+    find_metrics,
     find_periods,
     find_section_hints,
     find_time_window,
@@ -87,6 +99,8 @@ __all__ = [
     "AnswerContext",
     "CompanyCoverage",
     "CoverageGap",
+    "FactNote",
+    "FactRow",
     "Message",
     "MissingCompany",
     "PromptMessage",
@@ -116,10 +130,11 @@ RISK_FACTORS = "Risk Factors"
 
 _CANDIDATES_PER_COMPANY = 200
 
-INDEX_VERSION = 3
+INDEX_VERSION = 4
 """Bumped whenever the index's tables change, so an older index is rebuilt, not misread.
 Version 2 adds the `filings` and `sections` tables; version 3 stores each Company's
-repeated chunks once, listing their Filings in `chunk_filings`."""
+repeated chunks once, listing their Filings in `chunk_filings`; version 4 adds the
+`financial_facts` table of ADR 0001."""
 
 _SCHEMA = """
 CREATE TABLE companies (
@@ -234,8 +249,14 @@ class QueryScope:
     """Whether the question asks how something changed, which routes it to the
     paragraphs new between periods."""
     metric: str | None = None
-    """The Financial Facts metric the question asks about (`revenue` or `net_income`),
-    or None."""
+    """The Financial Facts metric the question names first (`revenue`, `net_income` or
+    `segment_revenue`), or None."""
+    metrics: tuple[str, ...] = ()
+    """Every Financial Facts metric the question names, in order. Each is looked up in
+    the Financial Facts store for every Company in scope."""
+    segments: tuple[str, ...] = ()
+    """The segments the question names, as the Filings print them. Empty with
+    `segment_revenue` among the metrics means every segment."""
     missing_companies: tuple[str, ...] = ()
     """Companies the question names that are not in the Corpus, from the curated list
     of notable missing Companies, in the order it names them. They are Coverage Gaps,
@@ -244,7 +265,9 @@ class QueryScope:
 
 @dataclass(frozen=True)
 class Source:
-    """One numbered, citable item: the retrieved text of one Section of one Filing."""
+    """One numbered, citable item: the retrieved text of one Section of one Filing
+    (`kind` "text"), or the Financial Facts taken from one Filing (`kind` "facts", whose
+    `section` is "Financial Facts" and whose `facts` are the Filing's reported rows)."""
 
     number: int
     filing_id: str
@@ -256,7 +279,11 @@ class Source:
     section: str
     item: str | None
     text: str
-    """The retrieved chunks of the Section, in body order."""
+    """The retrieved chunks of the Section, in body order; for a Facts Source, its rows
+    as text."""
+    kind: Literal["text", "facts"] = "text"
+    facts: tuple[FactRow, ...] = ()
+    """A Facts Source's rows, as the Filing reports them."""
 
     @property
     def tag(self) -> str:
@@ -279,6 +306,7 @@ class AnswerContext:
 
     query_scope: QueryScope
     sources: tuple[Source, ...]
+    """The Facts Sources first, then the text Sources."""
     prompt_version: str
     messages: tuple[PromptMessage, ...]
     coverage: tuple[CompanyCoverage, ...] = ()
@@ -287,6 +315,12 @@ class AnswerContext:
     the time window and any stale Filing left out."""
     coverage_gaps: tuple[CoverageGap, ...] = ()
     """What the Corpus cannot answer, in fixed wordings the answer must state."""
+    financial_facts: tuple[FactRow, ...] = ()
+    """The Financial Facts table of the prompt: reported and derived rows, each citing
+    the tags of the Facts Sources it comes from."""
+    fact_notes: tuple[FactNote, ...] = ()
+    """What the Financial Facts can't answer: a Company and metric that falls back to
+    the Filing text, or a segment reorganisation the series stops at."""
 
 
 def build_index(filings: Iterable[Filing], path: str | Path = DEFAULT_INDEX) -> Path:
@@ -304,7 +338,7 @@ def build_index(filings: Iterable[Filing], path: str | Path = DEFAULT_INDEX) -> 
     partial.unlink(missing_ok=True)
     db = sqlite3.connect(partial)
     try:
-        db.executescript(_SCHEMA)
+        db.executescript(_SCHEMA + _facts.SCHEMA)
         companies: dict[str, tuple] = {}
         stored: dict[tuple[str, str, str], int] = {}  # (ticker, kind, text) → chunk id
         previous: dict[tuple[str, str], set[int]] = {}  # (ticker, Form Type) → shingles
@@ -334,6 +368,10 @@ def build_index(filings: Iterable[Filing], path: str | Path = DEFAULT_INDEX) -> 
                     (stored[key],) + _listing_row(chunk) + (new,),
                 )
             previous[(filing.ticker, filing.form_type)] = seen
+            db.executemany(
+                f"INSERT INTO financial_facts VALUES ({', '.join('?' * 12)})",
+                _facts.store_rows(filing),
+            )
         db.executemany("INSERT INTO companies VALUES (?, ?, ?, ?, ?)", companies.values())
         db.executescript(
             """
@@ -394,11 +432,22 @@ def prepare_answer_context(
             ),
             periods=periods,
             change=is_change_question(question),
-            metric=find_metric(question),
             missing_companies=missing,
         )
+        names = _facts.segment_names(db, [c.ticker for c in companies])
+        metrics, segments = find_metrics(question, [n for t in names.values() for n in t])
+        scope = replace(
+            scope,
+            metric=metrics[0] if metrics else None,
+            metrics=metrics,
+            segments=segments,
+        )
+        facts = _facts.lookup(db, companies, metrics, segments, scope.filings, scope.periods)
+        fact_sources, rows = _facts_sources(db, facts)
         terms = _terms(_without_spans(question, spans + missing_spans))
-        sources = _sources(db, scope, filings, terms, explicit=bool(left_out))
+        sources = fact_sources + _sources(
+            db, scope, filings, terms, explicit=bool(left_out), first_number=len(fact_sources) + 1
+        )
     by_ticker = {c.ticker: c for c in known}
     covered = list(companies) or [by_ticker[t] for t in dict.fromkeys(s.ticker for s in sources)]
     coverage = tuple(
@@ -413,7 +462,7 @@ def prepare_answer_context(
         for c in covered
     )
     gaps = coverage_gaps(question, scope, coverage)
-    rendered = render(sources, messages[:-1], question, scope, coverage, gaps)
+    rendered = render(sources, messages[:-1], question, scope, coverage, gaps, rows, facts.notes)
     return AnswerContext(
         query_scope=scope,
         sources=sources,
@@ -421,7 +470,46 @@ def prepare_answer_context(
         messages=tuple(PromptMessage(role, content) for role, content in rendered),
         coverage=coverage,
         coverage_gaps=gaps,
+        financial_facts=rows,
+        fact_notes=facts.notes,
     )
+
+
+def _facts_sources(
+    db: sqlite3.Connection, facts: _facts.Lookup
+) -> tuple[tuple[Source, ...], tuple[FactRow, ...]]:
+    """One Facts Source per Filing the Financial Facts come from, numbered from S1, and
+    the table's rows citing their tags. A Facts Source's text states its reported rows,
+    their year-on-year changes and the fourth quarters derived from it first, so a
+    citation of any figure in the table leads to text that states it."""
+    tags = {filing_id: f"S{n}" for n, (_, filing_id) in enumerate(facts.filings, start=1)}
+    rows = _facts.with_tags(facts, tags)
+    sources: list[Source] = []
+    for number, (ticker, filing_id) in enumerate(facts.filings, start=1):
+        filing = db.execute(
+            "SELECT f.*, c.name FROM filings f JOIN companies c USING (ticker) "
+            "WHERE f.filing_id = ?",
+            (filing_id,),
+        ).fetchone()
+        tag = tags[filing_id]
+        own = tuple(replace(r, sources=(tag,)) for r in facts.reported[filing_id])
+        sources.append(
+            Source(
+                number=number,
+                filing_id=filing_id,
+                ticker=ticker,
+                company=filing["name"],
+                form_type=filing["form_type"],
+                report_period=filing["report_period"],
+                fiscal_period=filing["fiscal_period"],
+                section=_facts.FACTS_SECTION,
+                item=None,
+                text=_facts.as_text(tag, own, rows),
+                kind="facts",
+                facts=own,
+            )
+        )
+    return tuple(sources), rows
 
 
 def _chunk_row(chunk: Chunk) -> tuple:
@@ -563,6 +651,7 @@ def _sources(
     filings: dict[str, list[ScopeFiling]],
     terms: str | None,
     explicit: bool = False,
+    first_number: int = 1,
 ) -> tuple[Source, ...]:
     """The numbered Sources for the Query Scope. `filings` holds the Filings retrieval
     may use; with `explicit`, some were left out (a stale Filing), so retrieval is held
@@ -595,7 +684,7 @@ def _sources(
                 break
             spent += row["tokens"]
             chosen.append(row)
-        sources += _group(chosen + pointers, first_number=len(sources) + 1)
+        sources += _group(chosen + pointers, first_number=first_number + len(sources))
     return tuple(sources)
 
 

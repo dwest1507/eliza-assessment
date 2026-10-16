@@ -1,8 +1,27 @@
 import type { UIMessage } from 'ai'
 
+/** One reported row of a Facts Source, as its Filing prints it. */
+export interface FactRow {
+  /** `revenue`, `net_income` or `segment_revenue`. */
+  metric: string
+  /** e.g. "Revenue" or "Segment revenue: Compute & Networking". */
+  metricName: string
+  segment: string | null
+  /** The length of the period the value covers: 3 or 12. */
+  months: number
+  reportPeriod: string
+  /** In whole US dollars. */
+  value: number
+  /** The value in millions of dollars, e.g. "$57,006 million". */
+  valueText: string
+  /** The row label as the Filing prints it. */
+  label: string | null
+}
+
 /**
  * One numbered Source as the chat API streams it in its `data-sources` part: the
- * retrieved text of one Section of one Filing.
+ * retrieved text of one Section of one Filing (`kind` "text"), or the Financial Facts
+ * taken from one Filing (`kind` "facts", with its `rows`).
  */
 export interface Source {
   tag: string
@@ -16,6 +35,8 @@ export interface Source {
   item: string | null
   label: string
   text: string
+  kind?: 'text' | 'facts'
+  rows?: FactRow[]
 }
 
 /** A Sector phrase in the question and the Sector table rows it resolved to. */

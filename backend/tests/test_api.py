@@ -154,6 +154,7 @@ def test_each_source_carries_its_tag_filing_metadata_and_passage(client, index):
             "item": source.item,
             "label": source.label,
             "text": source.text,
+            "kind": "text",
         }
     assert {s["ticker"] for s in sources} == {"AAPL", "TSLA", "JPM"}
 
@@ -185,6 +186,29 @@ def test_a_missing_company_streams_its_gap_and_no_sources(client):
     assert part_of(parts, "data-sources")["data"] == {"sources": []}
     [gap] = part_of(parts, "data-coverage-gaps")["data"]["gaps"]
     assert (gap["kind"], gap["companies"]) == ("missing_company", ["Citigroup"])
+
+
+def test_a_facts_source_carries_its_filings_reported_rows(client):
+    question = "How has NVIDIA's revenue changed over the last two years?"
+    sources = part_of(events(chat(client, user(question))), "data-sources")["data"]["sources"]
+
+    facts = [s for s in sources if s["kind"] == "facts"]
+    assert facts and sources[: len(facts)] == facts  # sent first, as numbered
+    q3 = next(s for s in facts if s["filingId"] == "NVDA_10-Q_2025-10-26")
+    assert q3["section"] == "Financial Facts"
+    assert q3["rows"] == [
+        {
+            "metric": "revenue",
+            "metricName": "Revenue",
+            "segment": None,
+            "months": 3,
+            "reportPeriod": "2025-10-26",
+            "value": 57_006_000_000,
+            "valueText": "$57,006 million",
+            "label": "Revenue",
+        }
+    ]
+    assert all("rows" not in s for s in sources if s["kind"] == "text")
 
 
 def test_the_answer_comes_from_one_answer_call_on_the_whole_conversation(client, model):

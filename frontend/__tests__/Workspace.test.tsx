@@ -51,15 +51,54 @@ const QUERY_SCOPE = {
   metric: null,
 }
 
+/** A Facts Source: the Financial Facts taken from one Filing, sent with its rows. */
+const FACTS_SOURCE = {
+  tag: 'S1',
+  filingId: 'NVDA_10-Q_2025-10-26',
+  company: 'NVIDIA CORP',
+  ticker: 'NVDA',
+  formType: '10-Q',
+  reportPeriod: '2025-10-26',
+  fiscalPeriod: 'Q3 FY2026',
+  section: 'Financial Facts',
+  item: null,
+  label: 'NVDA 10-Q Q3 FY2026, Financial Facts.',
+  text: 'Revenue, 3 months ended 2025-10-26: $57,006 million (reported as "Revenue")',
+  kind: 'facts',
+  rows: [
+    {
+      metric: 'revenue',
+      metricName: 'Revenue',
+      segment: null,
+      months: 3,
+      reportPeriod: '2025-10-26',
+      value: 57006000000,
+      valueText: '$57,006 million',
+      label: 'Revenue',
+    },
+    {
+      metric: 'segment_revenue',
+      metricName: 'Segment revenue: Compute & Networking',
+      segment: 'Compute & Networking',
+      months: 3,
+      reportPeriod: '2025-10-26',
+      value: 50908000000,
+      valueText: '$50,908 million',
+      label: 'Compute & Networking',
+    },
+  ],
+}
+
 function uiMessageStream(
   answer: string[] = ANSWER,
   scope: object = QUERY_SCOPE,
+  sources: object[] = SOURCES,
   gaps: object[] = []
 ): Response {
   const parts = [
     { type: 'start', messageId: 'msg-1' },
     { type: 'data-query-scope', data: scope },
-    { type: 'data-sources', data: { sources: SOURCES } },
+    { type: 'data-sources', data: { sources } },
     { type: 'data-coverage-gaps', data: { gaps } },
     { type: 'start-step' },
     { type: 'text-start', id: 'text-1' },
@@ -282,7 +321,7 @@ describe('Workspace', () => {
         text: 'Trend unavailable: JPMorgan Chase is a Snapshot Company. The Corpus holds 4 JPMorgan Chase Filings.',
       },
     ]
-    fetchMock.mockImplementation(async () => uiMessageStream(ANSWER, QUERY_SCOPE, gaps))
+    fetchMock.mockImplementation(async () => uiMessageStream(ANSWER, QUERY_SCOPE, SOURCES, gaps))
     const user = userEvent.setup()
     render(<Workspace />)
     await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
@@ -311,6 +350,45 @@ describe('Workspace', () => {
     await screen.findByText('trade policy')
 
     expect(screen.queryByRole('note', { name: 'Coverage Gaps' })).not.toBeInTheDocument()
+  })
+
+  it('shows a Facts Source in the Sources panel as a table of its rows', async () => {
+    fetchMock.mockImplementation(async () =>
+      uiMessageStream(['NVIDIA reported **revenue** of $57,006 million [S1].'], QUERY_SCOPE, [
+        FACTS_SOURCE,
+      ])
+    )
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByText('revenue')
+
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    await user.click(within(answer).getByRole('link', { name: 'Source S1' }))
+
+    const panel = await screen.findByRole('complementary', { name: 'Sources' })
+    const source = within(panel).getByRole('region', { name: /^S1/ })
+    expect(within(source).getByText('Filing ID').nextElementSibling?.textContent).toBe(
+      'NVDA_10-Q_2025-10-26'
+    )
+    const table = within(source).getByRole('table', { name: 'Financial Facts' })
+    const rows = within(table)
+      .getAllByRole('row')
+      .map((row) =>
+        within(row)
+          .queryAllByRole('cell')
+          .map((cell) => cell.textContent)
+      )
+      .filter((cells) => cells.length > 0)
+    expect(rows).toEqual([
+      ['Revenue', '3 months ended 2025-10-26', '$57,006 million', 'Revenue'],
+      [
+        'Segment revenue: Compute & Networking',
+        '3 months ended 2025-10-26',
+        '$50,908 million',
+        'Compute & Networking',
+      ],
+    ])
   })
 
   it('says so when the answer cannot be loaded, without leaking the error', async () => {
