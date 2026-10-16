@@ -1,0 +1,55 @@
+ticker,company,sector,industry,sic_code,sic_description,sic_agrees,note
+AAPL,Apple Inc,Information Technology,"Technology Hardware, Storage & Peripherals",3571,Electronic Computers,yes,
+ABBV,AbbVie Inc,Health Care,Biotechnology,2834,Pharmaceutical Preparations,no,"SIC files AbbVie with the other drug makers (2834); the GICS-style label puts it in Biotechnology. Same sector and same Pharmaceuticals, Biotechnology & Life Sciences group, so AbbVie counts as one of the major pharmaceutical companies alongside JNJ, LLY, MRK and PFE."
+ADBE,Adobe Inc,Information Technology,Software,7372,Services-Prepackaged Software,yes,
+AMD,Advanced Micro Devices Inc,Information Technology,Semiconductors & Semiconductor Equipment,3674,Semiconductors & Related Devices,yes,
+AMZN,Amazon.com Inc,Consumer Discretionary,Broadline Retail,5961,Retail-Catalog & Mail-Order Houses,yes,"Both class Amazon as a retailer. AWS (cloud) is a large share of its profit but does not change either classification."
+AXP,American Express Company,Financials,Consumer Finance,6199,Finance Services,yes,
+BA,The Boeing Company,Industrials,Aerospace & Defense,3721,Aircraft,yes,
+BAC,Bank of America Corporation,Financials,Banks,6021,National Commercial Banks,yes,
+BLK,BlackRock Inc,Financials,Capital Markets,6211,"Security Brokers, Dealers & Flotation Companies",yes,"Asset manager, which GICS also places in Capital Markets. EDGAR now names this CIK BlackRock Finance, Inc. after BlackRock's 2024 holding-company reorganisation; the Corpus Filing (FY2023) predates it and is BlackRock Inc's."
+BRK,Berkshire Hathaway Inc,Financials,Financial Services,6331,"Fire, Marine & Casualty Insurance",no,"SIC classes Berkshire by its insurance operations; the GICS-style label treats it as a multi-sector holding company (railroad, utilities, manufacturing and insurance). Same sector, different industry."
+CAT,Caterpillar Inc,Industrials,Machinery,3531,Construction Machinery & Equip,yes,
+CMCSA,Comcast Corporation,Communication Services,Media,4841,Cable & Other Pay Television Services,yes,
+COST,Costco Wholesale Corporation,Consumer Staples,Consumer Staples Distribution & Retail,5331,Retail-Variety Stores,no,"SIC has a single Retail division and no staples/discretionary split. The GICS-style label puts general merchandise retailers that mainly sell food and household goods (Costco, Target, Walmart) in Consumer Staples, apart from Amazon and Home Depot in Consumer Discretionary."
+CRM,Salesforce Inc,Information Technology,Software,7372,Services-Prepackaged Software,yes,
+CSCO,Cisco Systems Inc,Information Technology,Communications Equipment,3576,Computer Communications Equipment,yes,
+CVX,Chevron Corporation,Energy,"Oil, Gas & Consumable Fuels",2911,Petroleum Refining,yes,"SIC files integrated oil majors under refining (a manufacturing code); both place Chevron in oil and gas."
+DE,Deere & Company,Industrials,Machinery,3523,Farm Machinery & Equipment,yes,
+DIS,The Walt Disney Company,Communication Services,Entertainment,7990,Services-Miscellaneous Amusement & Recreation,no,"SIC reflects Disney's theme parks (amusement and recreation, a consumer services code); the GICS-style label classes it by its media and streaming business as Entertainment in Communication Services."
+GE,General Electric Company,Financials,Financial Services,6141,Personal Credit Institutions,yes,"The only GE Filing is GE Capital's (General Electric Capital Corporation) FY2014 10-K, filed under GE Capital's CIK, so it is classed by what it reports on: a lender and lessor. General Electric Company itself (today GE Aerospace) would be Industrials, Aerospace & Defense. Disputable; raised with the Client."
+GOOG,Alphabet Inc,Communication Services,Interactive Media & Services,7370,"Services-Computer Programming, Data Processing, Etc.",no,"SIC classes Alphabet as a computer services company; the GICS-style label classes it by its advertising-funded search and YouTube business as Interactive Media & Services (moved from Information Technology to Communication Services in 2018)."
+GS,Goldman Sachs Group Inc,Financials,Capital Markets,6211,"Security Brokers, Dealers & Flotation Companies",yes,
+HD,The Home Depot Inc,Consumer Discretionary,Specialty Retail,5211,Retail-Lumber & Other Building Materials Dealers,yes,
+IBM,International Business Machines Corp,Information Technology,IT Services,3570,Computer & office Equipment,no,"SIC still reflects IBM's hardware history; the GICS-style label classes it by today's software and consulting business as IT Services. Same sector, different industry."
+INTC,Intel Corporation,Information Technology,Semiconductors & Semiconductor Equipment,3674,Semiconductors & Related Devices,yes,
+JNJ,Johnson & Johnson,Health Care,Pharmaceuticals,2834,Pharmaceutical Preparations,yes,"Also has a large MedTech business; both classifications still class it as a drug maker."
+JPM,JPMorgan Chase & Co,Financials,Banks,6021,National Commercial Banks,yes,
+KO,The Coca-Cola Company,Consumer Staples,Beverages,2080,Beverages,yes,
+LLY,Eli Lilly and Company,Health Care,Pharmaceuticals,2834,Pharmaceutical Preparations,yes,
+LMT,Lockheed Martin Corporation,Industrials,Aerospace & Defense,3760,Guided Missiles & Space Vehicles & Parts,yes,
+MA,Mastercard Inc,Financials,Financial Services,7389,"Services-Business Services, NEC",no,"SIC classes payment networks as business services; the GICS-style label puts them in Financials (Transaction & Payment Processing Services), where GICS moved them from Information Technology in 2023."
+MCD,McDonalds Corporation,Consumer Discretionary,"Hotels, Restaurants & Leisure",5812,Retail-Eating Places,yes,
+META,Meta Platforms Inc,Communication Services,Interactive Media & Services,7370,"Services-Computer Programming, Data Processing, Etc.",no,"SIC classes Meta as a computer services company; the GICS-style label classes it by its advertising-funded social media business as Interactive Media & Services in Communication Services."
+MRK,Merck & Co Inc,Health Care,Pharmaceuticals,2834,Pharmaceutical Preparations,yes,
+MS,Morgan Stanley,Financials,Capital Markets,6211,"Security Brokers, Dealers & Flotation Companies",yes,
+MSFT,Microsoft Corporation,Information Technology,Software,7372,Services-Prepackaged Software,yes,
+NFLX,Netflix Inc,Communication Services,Entertainment,7841,Services-Video Tape Rental,no,"SIC still files Netflix under video tape rental, from its DVD-by-mail origins; the GICS-style label classes the streaming business as Entertainment in Communication Services."
+NKE,Nike Inc,Consumer Discretionary,"Textiles, Apparel & Luxury Goods",3021,Rubber & Plastics Footwear,yes,
+NVDA,NVIDIA Corporation,Information Technology,Semiconductors & Semiconductor Equipment,3674,Semiconductors & Related Devices,yes,
+ORCL,Oracle Corporation,Information Technology,Software,7372,Services-Prepackaged Software,yes,
+PEP,PepsiCo Inc,Consumer Staples,Beverages,2080,Beverages,yes,"Also a large snack-food maker (Frito-Lay); both classifications class it as a beverage company."
+PFE,Pfizer Inc,Health Care,Pharmaceuticals,2834,Pharmaceutical Preparations,yes,
+PG,Procter & Gamble Company,Consumer Staples,Household Products,2840,"Soap, Detergents, Cleang Preparations, Perfumes, Cosmetics",yes,
+RTX,RTX Corporation,Industrials,Aerospace & Defense,3724,Aircraft Engines & Engine Parts,yes,
+SBUX,Starbucks Corporation,Consumer Discretionary,"Hotels, Restaurants & Leisure",5810,Retail-Eating & Drinking Places,yes,
+T,AT&T Inc,Communication Services,Diversified Telecommunication Services,4813,Telephone Communications (No Radiotelephone),yes,
+TGT,Target Corporation,Consumer Staples,Consumer Staples Distribution & Retail,5331,Retail-Variety Stores,no,"SIC has a single Retail division and no staples/discretionary split. GICS moved Target from Consumer Discretionary to Consumer Staples in 2023, alongside Walmart and Costco."
+TMO,Thermo Fisher Scientific Inc,Health Care,Life Sciences Tools & Services,3829,"Measuring & Controlling Devices, NEC",no,"SIC classes Thermo Fisher as an instrument manufacturer; the GICS-style label puts it in Health Care as a supplier of tools and services to drug makers and laboratories. It is not a pharmaceutical company and is left out of pharma-group questions."
+TSLA,Tesla Inc,Consumer Discretionary,Automobiles,3711,Motor Vehicles & Passenger Car Bodies,yes,
+UNH,UnitedHealth Group Inc,Health Care,Health Care Providers & Services,6324,Hospital & Medical Service Plans,no,"SIC 6324 sits in the Finance, Insurance & Real Estate division, classing UnitedHealth as a health insurer; the GICS-style label puts managed care, with its Optum care-delivery and pharmacy business, in Health Care. It is not a pharmaceutical company."
+UPS,United Parcel Service Inc,Industrials,Air Freight & Logistics,4210,Trucking & Courier Services (No Air),yes,
+V,Visa Inc,Financials,Financial Services,7389,"Services-Business Services, NEC",no,"SIC classes payment networks as business services; the GICS-style label puts them in Financials (Transaction & Payment Processing Services), where GICS moved them from Information Technology in 2023."
+VZ,Verizon Communications Inc,Communication Services,Diversified Telecommunication Services,4813,Telephone Communications (No Radiotelephone),yes,
+WMT,Walmart Inc,Consumer Staples,Consumer Staples Distribution & Retail,5331,Retail-Variety Stores,no,"SIC has a single Retail division and no staples/discretionary split. The GICS-style label puts Walmart, which mainly sells groceries and household goods, in Consumer Staples."
+XOM,Exxon Mobil Corporation,Energy,"Oil, Gas & Consumable Fuels",2911,Petroleum Refining,yes,"SIC files integrated oil majors under refining (a manufacturing code); both place Exxon Mobil in oil and gas."

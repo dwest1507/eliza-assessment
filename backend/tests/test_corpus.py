@@ -2,11 +2,18 @@
 
 import re
 import shutil
+from collections import Counter
 from datetime import date
 
 import pytest
 
-from edgar_rag.corpus import DEFAULT_CORPUS_DIR, check_manifest, load_corpus, load_filing
+from edgar_rag.corpus import (
+    DEFAULT_CORPUS_DIR,
+    check_manifest,
+    load_corpus,
+    load_filing,
+    load_sector_table,
+)
 
 
 @pytest.fixture(scope="module")
@@ -248,3 +255,62 @@ def test_every_toc_in_the_corpus_sits_near_the_front_of_the_body(corpus):
     for f in filings:
         if f.toc is not None:
             assert 0 < f.toc.start < f.toc.end < len(f.body) / 10, f.path.name
+
+
+# --- Sectors and Tracked/Snapshot coverage ---------------------------------
+
+
+def test_every_company_in_the_corpus_has_exactly_one_sector_row(corpus):
+    rows_per_ticker = Counter(row.ticker for row in load_sector_table())
+
+    assert set(rows_per_ticker) == {f.ticker for f in corpus}
+    assert [t for t, n in rows_per_ticker.items() if n != 1] == []
+
+
+def test_every_disagreement_between_sic_and_the_sector_label_is_explained():
+    unexplained = [r.ticker for r in load_sector_table() if not r.sic_agrees and not r.note]
+
+    assert unexplained == []
+
+
+def test_health_care_companies_are_classified_by_what_they_do_not_by_sic_division():
+    rows = {r.ticker: r for r in load_sector_table()}
+
+    # SIC files UnitedHealth as an insurer and Thermo Fisher as an instrument maker.
+    assert (rows["UNH"].sector, rows["UNH"].sic_code) == ("Health Care", "6324")
+    assert rows["UNH"].industry == "Health Care Providers & Services"
+    assert (rows["TMO"].sector, rows["TMO"].sic_code) == ("Health Care", "3829")
+    assert rows["TMO"].industry == "Life Sciences Tools & Services"
+    # The drug makers all share SIC 2834; GICS puts AbbVie in Biotechnology.
+    pharma_sic = sorted(t for t, r in rows.items() if r.sic_code == "2834")
+    assert pharma_sic == ["ABBV", "JNJ", "LLY", "MRK", "PFE"]
+    assert all(rows[t].sector == "Health Care" for t in pharma_sic)
+    assert {t for t in pharma_sic if rows[t].sic_agrees} == {"JNJ", "LLY", "MRK", "PFE"}
+
+
+def test_every_filing_carries_its_companys_sector(corpus):
+    nvda = _only(corpus, ticker="NVDA", report_period=date(2025, 7, 27))
+    unh = next(f for f in corpus if f.ticker == "UNH")
+
+    assert (nvda.sector, nvda.industry) == (
+        "Information Technology",
+        "Semiconductors & Semiconductor Equipment",
+    )
+    assert (unh.sector, unh.industry) == ("Health Care", "Health Care Providers & Services")
+    assert [f.filing_id for f in corpus if not f.sector or not f.industry] == []
+
+
+def test_companies_with_two_years_of_quarterly_filings_are_tracked_the_rest_snapshot(corpus):
+    coverage = {f.ticker: f.coverage for f in corpus}
+
+    tracked = {t for t, c in coverage.items() if c == "tracked"}
+    assert tracked == {
+        "AAPL", "AMZN", "DIS", "GOOG", "JNJ", "KO", "MSFT", "NVDA", "PFE", "TSLA", "UNH", "XOM",
+        # Borderline: eight consecutive quarters, 2024Q1-2025Q4.
+        "META",
+    }  # fmt: skip
+    # Borderline the other way: one year of quarters (BAC, JPM) or two scattered
+    # Filings (MCD, PEP) cannot answer "over the last two years".
+    assert {coverage[t] for t in ["BAC", "JPM", "MCD", "PEP", "GE", "LLY"]} == {"snapshot"}
+    # Every Filing of a Company carries the same class.
+    assert len({(f.ticker, f.coverage) for f in corpus}) == 54

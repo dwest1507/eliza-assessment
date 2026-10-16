@@ -12,25 +12,41 @@ is passed in.
 
 The body is cleaned: the XBRL noise in front of the cover page is removed and the
 table of contents is located.
+
+Every Filing carries its Company's Sector and industry from the curated Sector table
+(`data/reference/sectors.csv`). Coverage is also Company-level, so only `load_corpus`
+classes each Company as a Tracked Company or a Snapshot Company.
 """
 
 from __future__ import annotations
 
+import csv
 import json
 import re
 from collections import Counter, defaultdict
+from collections.abc import Iterable
 from dataclasses import dataclass, field, replace
 from datetime import date, timedelta
+from functools import cache
 from pathlib import Path
 from typing import Literal
 
 from edgar_rag._body import Span, clean_body
 
-DEFAULT_CORPUS_DIR = Path(__file__).resolve().parents[3] / "data" / "edgar_corpus"
+_DATA_DIR = Path(__file__).resolve().parents[3] / "data"
+DEFAULT_CORPUS_DIR = _DATA_DIR / "edgar_corpus"
+DEFAULT_SECTOR_TABLE = _DATA_DIR / "reference" / "sectors.csv"
 
 _HEADER_END = "=" * 60
 
 ReportPeriodSource = Literal["header", "url", "text"]
+Coverage = Literal["tracked", "snapshot"]
+
+# A Tracked Company has Filings for at least this many consecutive quarter-ends: two
+# years, enough for "over the last two years" and a year-over-year comparison of every
+# quarter. The Corpus has nothing between 4 (BAC, JPM) and 8 (META), so any cut-off
+# from 5 to 8 gives the same split; 8 is the one that matches the question asked.
+TRACKED_MIN_QUARTERS = 8
 
 _MONTHS = "january|february|march|april|may|june|july|august|september|october|november|december"
 _MONTH_NUMBER = {name: i for i, name in enumerate(_MONTHS.split("|"), start=1)}
@@ -61,6 +77,20 @@ class Diagnostic:
 
 
 @dataclass(frozen=True)
+class SectorRow:
+    """One Company's row in the curated GICS-style Sector reference table."""
+
+    ticker: str
+    company: str
+    sector: str
+    industry: str
+    sic_code: str
+    sic_description: str
+    sic_agrees: bool
+    note: str
+
+
+@dataclass(frozen=True)
 class Filing:
     """One 10-K or 10-Q submitted to the SEC by a single Company."""
 
@@ -83,6 +113,9 @@ class Filing:
     Section detection must skip it: TOC rows repeat the real Item headings."""
     fiscal_year_end_month: int | None = None
     fiscal_period: str | None = None
+    sector: str | None = None
+    industry: str | None = None
+    coverage: Coverage | None = None
     diagnostics: tuple[Diagnostic, ...] = ()
 
     @property
@@ -95,7 +128,8 @@ def load_corpus(corpus_dir: str | Path = DEFAULT_CORPUS_DIR) -> list[Filing]:
     """Load every Filing listed in the Corpus manifest, in manifest order.
 
     Each Company's fiscal year end is derived from its 10-K Report Periods and every
-    Filing gets its Fiscal Period from it.
+    Filing gets its Fiscal Period from it. Each Company is classed as a Tracked Company
+    or a Snapshot Company from its coverage, and every Filing carries that class.
     """
     corpus_dir = Path(corpus_dir)
     filings = [load_filing(corpus_dir / name) for name in _read_manifest(corpus_dir)["files"]]
@@ -105,21 +139,32 @@ def load_corpus(corpus_dir: str | Path = DEFAULT_CORPUS_DIR) -> list[Filing]:
         by_ticker[filing.ticker].append(filing)
 
     fiscal_year_ends: dict[str, int | None] = {}
+    coverage: dict[str, Coverage] = {}
     company_diagnostics: dict[str, tuple[Diagnostic, ...]] = {}
     for ticker, company_filings in by_ticker.items():
         months = Counter(
             _period_month(f.report_period)[1] for f in company_filings if f.form_type == "10-K"
         )
         fiscal_year_ends[ticker] = months.most_common(1)[0][0] if months else None
+        tracked = consecutive_quarters(company_filings) >= TRACKED_MIN_QUARTERS
+        coverage[ticker] = "tracked" if tracked else "snapshot"
         company_diagnostics[ticker] = (
             (Diagnostic("fiscal_year_end_inconsistent", f"10-K months {sorted(months)}"),)
             if len(months) > 1
             else ()
         )
+        if company_filings[0].sector is None:
+            company_diagnostics[ticker] += (
+                Diagnostic("sector_missing", f"no row for {ticker} in the Sector table"),
+            )
 
     return [
         _with_fiscal_period(
-            replace(f, diagnostics=f.diagnostics + company_diagnostics[f.ticker]),
+            replace(
+                f,
+                coverage=coverage[f.ticker],
+                diagnostics=f.diagnostics + company_diagnostics[f.ticker],
+            ),
             fiscal_year_ends[f.ticker],
         )
         for f in filings
@@ -162,9 +207,59 @@ def load_filing(path: str | Path, fiscal_year_end_month: int | None = None) -> F
         xbrl_noise_chars=body.xbrl_noise_chars,
         toc=body.toc,
     )
+    sector_row = _sector_rows(DEFAULT_SECTOR_TABLE).get(filing.ticker)
+    if sector_row:
+        filing = replace(filing, sector=sector_row.sector, industry=sector_row.industry)
     if fiscal_year_end_month is None and form_type == "10-K":
         fiscal_year_end_month = _period_month(report_period)[1]
     return _with_fiscal_period(filing, fiscal_year_end_month)
+
+
+def consecutive_quarters(filings: Iterable[Filing]) -> int:
+    """The longest run of consecutive quarter-ends covered by these Filings' Report Periods.
+
+    A 10-K counts as its fiscal year's fourth quarter-end. Periods ending in the first
+    days of a month count as the previous month's end, as for Fiscal Periods.
+    """
+    quarters = set()
+    for filing in filings:
+        year, month = _period_month(filing.report_period)
+        quarters.add(year * 4 + (month - 1) // 3)
+    longest = 0
+    for start in quarters - {q + 1 for q in quarters}:
+        run = 1
+        while start + run in quarters:
+            run += 1
+        longest = max(longest, run)
+    return longest
+
+
+def load_sector_table(path: str | Path = DEFAULT_SECTOR_TABLE) -> list[SectorRow]:
+    """Read the curated Sector reference table, one row per Company, in file order."""
+    with Path(path).open(encoding="utf-8", newline="") as f:
+        return [
+            SectorRow(
+                ticker=row["ticker"],
+                company=row["company"],
+                sector=row["sector"],
+                industry=row["industry"],
+                sic_code=row["sic_code"],
+                sic_description=row["sic_description"],
+                sic_agrees=row["sic_agrees"] == "yes",
+                note=row["note"],
+            )
+            for row in csv.DictReader(f)
+        ]
+
+
+@cache
+def _sector_rows(path: Path) -> dict[str, SectorRow]:
+    rows: dict[str, SectorRow] = {}
+    for row in load_sector_table(path):
+        if row.ticker in rows:
+            raise ValueError(f"{path.name}: more than one Sector row for {row.ticker}")
+        rows[row.ticker] = row
+    return rows
 
 
 def check_manifest(corpus_dir: str | Path = DEFAULT_CORPUS_DIR) -> list[str]:

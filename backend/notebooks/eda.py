@@ -30,16 +30,26 @@ from collections import Counter
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from IPython.display import display
 from matplotlib.colors import ListedColormap
 from matplotlib.patches import Patch
 
-from edgar_rag.corpus import DEFAULT_CORPUS_DIR, check_manifest, load_corpus
+from edgar_rag.corpus import (
+    DEFAULT_CORPUS_DIR,
+    TRACKED_MIN_QUARTERS,
+    check_manifest,
+    consecutive_quarters,
+    load_corpus,
+    load_sector_table,
+)
 
 filings = load_corpus()
 print(f"{len(filings)} Filings from {len({f.ticker for f in filings})} Companies")
 
 # %% [markdown]
 # ## 1. Inventory and coverage
+#
+# ### 1.1 Filings per Company and the coverage grid
 #
 # How many Filings does each Company have, of which Form Type, and in which Calendar
 # Quarters? Calendar Quarter is taken from the header as written. Filings whose header
@@ -152,6 +162,151 @@ print(f"Company × Calendar Quarter cells holding more than one Filing: {shared_
 #   one-off 10-Ks, and a comparison across Snapshot Companies retrieves each of them.
 # - Derive a Report Period for every Filing whose header lacks one (next analysis), and
 #   never use Calendar Quarter as a key.
+
+# %% [markdown]
+# ### 1.2 Tracked and Snapshot Companies
+#
+# A trend question ("How has NVIDIA's revenue changed over the last two years?") needs
+# a run of consecutive quarters. For each Company the next cell counts the longest run
+# of consecutive quarter-ends its Filings cover, on the Report Period (a 10-K counts as
+# its fiscal year's fourth quarter-end). A Company is a **Tracked Company** when that run
+# is at least eight quarters (two years) and a **Snapshot Company** otherwise.
+
+# %%
+by_ticker = {}
+for f in filings:
+    by_ticker.setdefault(f.ticker, []).append(f)
+
+coverage = pd.DataFrame(
+    {
+        "ticker": ticker,
+        "filings": len(fs),
+        "10-K": sum(f.form_type == "10-K" for f in fs),
+        "10-Q": sum(f.form_type == "10-Q" for f in fs),
+        "first report period": min(f.report_period for f in fs),
+        "last report period": max(f.report_period for f in fs),
+        "consecutive quarters": consecutive_quarters(fs),
+        "coverage": fs[0].coverage,
+    }
+    for ticker, fs in by_ticker.items()
+).set_index("ticker")
+coverage = coverage.sort_values(["consecutive quarters", "filings"], ascending=False)
+print(f"Tracked/Snapshot cut-off: {TRACKED_MIN_QUARTERS} consecutive quarters")
+coverage["coverage"].value_counts().to_frame("Companies").T
+
+# %%
+coverage[coverage["filings"] > 1]
+
+# %%
+multi = coverage[coverage["filings"] > 1]
+fig, ax = plt.subplots(figsize=(9, 5))
+ax.barh(
+    multi.index[::-1],
+    multi["consecutive quarters"][::-1],
+    color=["#6baed6" if c == "tracked" else "#fd8d3c" for c in multi["coverage"][::-1]],
+)
+ax.axvline(TRACKED_MIN_QUARTERS - 0.5, color="black", linestyle="--", linewidth=1)
+ax.text(TRACKED_MIN_QUARTERS - 0.4, 0, "cut-off", va="bottom")
+ax.set_xlabel("Longest run of consecutive quarter-ends (Report Period)")
+ax.set_title("Companies with more than one Filing (the other 37 have one 10-K)")
+ax.legend(
+    handles=[Patch(color="#6baed6", label="Tracked"), Patch(color="#fd8d3c", label="Snapshot")],
+    loc="lower right",
+)
+fig.tight_layout()
+plt.show()
+
+# %% [markdown]
+# **Choosing the cut-off.** The runs fall into clear groups: 12 Companies cover 14–17
+# consecutive quarters from 2022 to 2025, META covers exactly 8 (2024Q1–2025Q4), BAC
+# and JPM cover 4, and MCD, PEP and the 37 single-10-K Companies never cover two
+# quarters in a row. Nothing falls between 4 and 8, so any cut-off from 5 to 8 gives
+# the same split. Eight is chosen because it is what the Client's own example asks for
+# ("over the last two years") and what a year-over-year comparison of every quarter
+# needs.
+#
+# **Borderline Companies:**
+#
+# - **META (Tracked, 8 quarters):** exactly at the cut-off. Its Filings start in 2024,
+#   so "the last two years" is answerable but nothing earlier is.
+# - **BAC and JPM (Snapshot, 4 quarters):** one year of quarters (BAC 2024Q4–2025Q3,
+#   JPM 2025Q1–2025Q4). Quarter-on-quarter movement within that year is answerable, and
+#   each Filing carries prior-year comparatives, but a two-year trend is not.
+# - **MCD and PEP (Snapshot, 2 Filings each):** a 10-Q and a 10-K far apart (MCD
+#   2023Q1 and FY2024, PEP 2023Q1 and FY2025). Two point-in-time snapshots, not a trend.
+#
+# ### 1.3 Sectors
+#
+# No Filing carries a Sector, so each Company is mapped to one from a curated
+# GICS-style reference table (`data/reference/sectors.csv`), which also holds the
+# Company's SEC SIC code and explains every case where the two disagree.
+
+# %%
+sectors = pd.DataFrame(load_sector_table()).set_index("ticker")
+sector_summary = (
+    pd.DataFrame(
+        {
+            "Companies": sectors.groupby("sector").size(),
+            "Tracked": coverage.join(sectors)
+            .query("coverage == 'tracked'")
+            .groupby("sector")
+            .size(),
+            "Filings": pd.Series(Counter(f.sector for f in filings)),
+        }
+    )
+    .fillna(0)
+    .astype(int)
+    .sort_values("Filings", ascending=False)
+)
+sector_summary["Companies (tickers)"] = sectors.groupby("sector").apply(
+    lambda g: ", ".join(sorted(g.index))
+)
+sector_summary
+
+# %%
+disagreements = sectors[~sectors["sic_agrees"]]
+print(f"Companies whose SIC code points elsewhere than the GICS-style label: {len(disagreements)}")
+with pd.option_context("display.max_colwidth", None):
+    display(disagreements[["sector", "industry", "sic_code", "sic_description", "note"]])
+
+# %%
+health_care = sectors[sectors["sector"] == "Health Care"].join(coverage["coverage"])
+health_care[["company", "industry", "sic_code", "sic_description", "coverage"]]
+
+# %% [markdown]
+# **What the Sector table shows**
+#
+# - The 54 Companies span eight GICS-style sectors; there is no Materials, Real Estate
+#   or Utilities Company. Filings are concentrated in Information Technology, Health
+#   Care and Communication Services because most Tracked Companies sit there. None of
+#   the 10 Financials Companies is Tracked: bank questions are point-in-time only.
+# - SIC and the GICS-style label disagree for 14 Companies, for five reasons: SIC
+#   codes are old (Netflix is "video tape rental", IBM "computer equipment"); SIC
+#   classifies by activity where GICS classifies by business model (Alphabet and Meta
+#   as computer services, Disney as amusement parks, UnitedHealth as an insurer, Thermo
+#   Fisher as an instrument maker); SIC has no staples/discretionary split for
+#   retailers (Walmart, Costco, Target); GICS has moved Companies since (Visa and
+#   Mastercard to Financials in 2023); and GICS draws finer industry lines inside the
+#   same sector (AbbVie as Biotechnology, Berkshire as a multi-sector holding company
+#   rather than an insurer).
+# - "The major pharmaceutical companies" resolves to five Companies: JNJ, LLY, MRK, PFE
+#   (GICS Pharmaceuticals) and ABBV (GICS Biotechnology). All five share SIC 2834.
+#   UnitedHealth and Thermo Fisher are Health Care but not drug makers, so they stay
+#   out. Only JNJ and PFE are Tracked; the other three have a single 10-K.
+# - The GE Filing is classed as Financials because it is GE Capital's report, even
+#   though the header names General Electric Company (today an Industrials Company).
+#
+# **So the design does:**
+#
+# - Carry Sector, industry and the Tracked/Snapshot class on every Filing and chunk.
+#   Sector-scoped questions filter on Sector or industry metadata, then retrieve per
+#   Company, instead of hoping similarity finds the right Companies.
+# - Resolve industry-group phrases with a small rule-based synonym list over the
+#   table (e.g. "pharmaceutical" → Pharmaceuticals and Biotechnology), keeping query
+#   parsing before the Answer Call rule-based.
+# - Tell the Answer Call each Company's coverage class, so a trend question about a
+#   Snapshot Company is answered as point-in-time with the limit stated, and a sector
+#   question says which Companies support trends.
 
 # %% [markdown]
 # ## 2. Metadata integrity

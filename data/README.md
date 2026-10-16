@@ -24,6 +24,25 @@ unzip -q edgar_corpus.zip -d /tmp/edgar_corpus_check && diff -r /tmp/edgar_corpu
 
 **The Corpus is read-only.** Never edit, rename, add or delete files in `edgar_corpus/`. Every cleaning and derivation step happens in code (`backend/src/edgar_rag`), so the analysis always runs on the data the Client provided, unmodified.
 
+## Sector reference table (`reference/sectors.csv`)
+
+Filings carry no sector, so each Company is mapped to one in a small curated table, the only outside reference data that can affect answers. One row per Company (54 rows):
+
+| Column | Meaning |
+|---|---|
+| `ticker`, `company` | As in the Filing headers |
+| `sector`, `industry` | GICS-style sector and industry |
+| `sic_code`, `sic_description` | The Company's SEC Standard Industrial Classification |
+| `sic_agrees` | `yes` when the SIC code points to the same sector and industry as the GICS-style label, else `no` |
+| `note` | Why they disagree (required when `sic_agrees` is `no`), or another caveat |
+
+Sources:
+
+- **Sector and industry** were curated by hand from the GICS structure (11 sectors, as revised in March 2023) and the Companies' publicly reported S&P 500 GICS assignments. This is a GICS-style label, not a licensed GICS data feed.
+- **SIC code and description** come from the SEC EDGAR submissions API (`https://data.sec.gov/submissions/CIK##########.json`, fields `sic` and `sicDescription`), retrieved 2026-10-15 for each Company's CIK in the Corpus.
+
+The GE row describes the Filing in the Corpus, GE Capital's FY2014 10-K, not today's General Electric. Unlike the Corpus, this table is ours to edit; a test checks it has exactly one row per Company and an explanation for every disagreement.
+
 ## Derived files
 
 Anything built from the Corpus (cleaned Sections, a Financial Facts database, indexes) is written to `data/derived/`, which is gitignored and rebuilt by Makefile targets.

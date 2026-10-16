@@ -49,11 +49,11 @@ The form-specific label a Filing uses for a Section (e.g. 10-K "Item 7", 10-Q "P
 _Avoid_: Using Item numbers as Section names
 
 **Tracked Company**:
-A Company with quarterly Filings across multiple years, so trend questions can be answered.
+A Company with quarterly Filings across multiple years, so trend questions can be answered. Concretely, its Filings cover at least eight consecutive quarter-ends (two years) by Report Period.
 _Avoid_: Full-coverage company
 
 **Snapshot Company**:
-A Company with one or a few Filings, so only point-in-time questions can be answered.
+A Company with one or a few Filings, so only point-in-time questions can be answered. Any Company that is not a Tracked Company.
 _Avoid_: Partial company, sparse company
 
 **Financial Fact**:
