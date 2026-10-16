@@ -6,9 +6,11 @@ Run it from the repo root with `make dev`, which starts the chat API and this ap
 
 ## How it talks to the backend
 
-The browser never calls the chat API directly. `useChat` posts the conversation to this app's own route, [`app/api/chat/route.ts`](app/api/chat/route.ts), which forwards each message's role and text to the API's `POST /api/chat` and streams the API's [AI SDK UI message stream](https://ai-sdk.dev/docs/ai-sdk-ui/stream-protocol) back unchanged. The API's URL therefore stays on the server. It comes from `BACKEND_URL` (copy [`.env.example`](.env.example) to `.env`); when unset it is `http://127.0.0.1:8000`, where `make api` listens. `make dev` sets it to the API it starts.
+The browser never calls the chat API directly. `useChat` posts the conversation to this app's own route, [`app/api/chat/route.ts`](app/api/chat/route.ts), which forwards each message's role and text (and, for an earlier answer, the Filing ID each of its Source tags cited, never the passages) to the API's `POST /api/chat` and streams the API's [AI SDK UI message stream](https://ai-sdk.dev/docs/ai-sdk-ui/stream-protocol) back unchanged. The API's URL therefore stays on the server. It comes from `BACKEND_URL` (copy [`.env.example`](.env.example) to `.env`); when unset it is `http://127.0.0.1:8000`, where `make api` listens. `make dev` sets it to the API it starts.
 
 The stream carries the Query Scope and the numbered Sources as data parts before the answer text, so every citation is clickable while the answer is still arriving. The Query Scope shows as chips above each answer, so the analyst sees what the system answered and can dispute it: each Sector phrase with the Companies it resolved to (hover for the Sector table rows it used), the other Companies, the time window, any Section hints and the metric.
+
+The conversation is kept in the browser's session storage ([`lib/conversation.ts`](lib/conversation.ts)), so a refresh keeps it and a new browser session starts empty; the backend keeps nothing. It is saved once each answer is complete. "New conversation" in the header clears it, so an old Query Scope can't leak into a new topic.
 
 ## Layout
 
@@ -23,6 +25,7 @@ The stream carries the Query Scope and the numbered Sources as data parts before
 | `components/SourcesPanel.tsx`    | The side panel showing one Source's Filing metadata and passage, or a Facts Source's table of figures |
 | `lib/chat.ts`                    | The stream's data part types and the citation helpers                                                 |
 | `lib/starters.ts`                | The six starter prompts, copied from the Golden Set                                                   |
+| `lib/conversation.ts`            | Keeps the conversation in session storage                                                             |
 | `components/HowItWorks.tsx`      | The architecture, the evaluation scoreboard and the coverage grid                                     |
 | `lib/evalExport.ts`              | The evaluation export's types and number formats                                                      |
 | `data/eval-export.json`          | The evaluation export, written by `make eval-export` (committed)                                      |
@@ -45,4 +48,4 @@ From the repo root, `make install`, `make test`, `make lint` and `make format` c
 | `npm run lint` / `npm run typecheck` / `npm run format:check` | ESLint, TypeScript and Prettier checks                          |
 | `npm run build`                                               | A production build                                              |
 
-The tests run against a mocked stream: `fetch` returns the API's UI message stream, so the real `useChat` parses it. They cover a starter sending on click, Markdown rendering, a citation opening its Source in the panel, a Facts Source shown as a table, the Query Scope chips, and the proxy route. The "How it works" page is rendered from a fixture export (`__tests__/fixtures/eval-export.json`).
+The tests run against a mocked stream: `fetch` returns the API's UI message stream, so the real `useChat` parses it. They cover a starter sending on click, Markdown rendering, a citation opening its Source in the panel, a Facts Source shown as a table, the Query Scope chips, the conversation surviving a refresh, the "New conversation" control, and the proxy route. The "How it works" page is rendered from a fixture export (`__tests__/fixtures/eval-export.json`).

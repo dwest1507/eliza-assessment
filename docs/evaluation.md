@@ -140,6 +140,27 @@ The table costs about 700 to 1,100 prompt tokens for one Company over two or thr
 
 The holdout split has not been scored.
 
+### After follow-up inheritance
+
+Golden Set version 1, dev split, the same 17 scored cases. A follow-up now inherits each part of the Query Scope it does not name (the Companies, the time window, the Section hints, the metric, and its topic words when it has none of its own) from the most recent earlier question that named it ([ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md)). Before, it was parsed on its own words alone. The "before" column is the harness run on the previous commit's code against the same index.
+
+| | hit@10 | recall@10 | MRR | Sources |
+|---|---|---|---|---|
+| before | 0.71 | 0.65 | 0.59 | 16.9 |
+| **after** | **0.88** | **0.82** | **0.73** | 12.3 |
+
+Only the five multi-turn dev cases changed; every single-turn case scores exactly as before.
+
+- `followup-regulatory-exposure` ("Which of them has the most regulatory exposure?"): 25 Sources from any Company and no hit → the three latest 10-Ks' Risk Factors, recall 1.00, first hit at rank 1.
+- `followup-switch-to-msft` ("And what about Microsoft?"): no Sources (the question had no search word) → Microsoft's MD&A across the last two years and its revenue in the Financial Facts table, recall 1.00, first hit at rank 2.
+- `followup-tsla-risk-change` ("How did that change over the last two years?"): 70 Sources from any Company → 8 Tesla Risk Factors Sources holding the paragraphs new in the window, recall 1.00, first hit at rank 1.
+- `followup-ge-to-honeywell` ("What about Honeywell?"): still no Sources, now because Honeywell replaces General Electric and is a Company missing from the Corpus.
+- `followup-topic-change-export-controls` (a new topic that names no Company): it found one expected NVIDIA Source at rank 25 before, by searching every Company; now it inherits Apple, as ADR 0003 predicts, and finds none. This is the known weakness the case is there to measure.
+
+Computed Coverage Gaps now match the labels on all 20 dev cases: `followup-regulatory-exposure` gets its "Periods differ" gap, since it has Companies to compare.
+
+The holdout split has not been scored.
+
 ## Generation harness
 
 ```sh
@@ -232,6 +253,30 @@ The answers cost $0.045 in all; the slowest took 15.7 seconds; Jev's judging cos
 - **Fewer Sources for questions the Corpus cannot answer.** "What are Citigroup's main risk factors?" no longer carries 47 unrelated Sources, so the missing-Company answers cost $0.0010 on average against $0.0016, and the GE answer is the gap itself rather than a summary of GE Capital in 2014.
 - **Citations fell from 0.95 to 0.79, mostly on the checks' wording rules, not on the answers.** `stale-ge-recent-performance` fails because its opening says the only Filing "is stale and left out of this answer", an absence the citation check does not yet recognise, and there is no Source to cite. `followup-regulatory-exposure` and `followup-switch-to-msft` fail on uncited sentences about earlier turns, and `trend-meta-revenue-two-years` on uncited table rows, as before. The stale-Filing wording should be added to the check's absence rule.
 - Fact Recall (0.55) and Faithfulness (0.90 against 0.93) are within the run-to-run range measured above, and the answers cost about the same.
+
+The holdout split has not been scored.
+
+### After Financial Facts and follow-ups (prompt v5)
+
+`gpt-6-luna`, `jev-1.13.0`, 2026-10-16, prompt [v5](prompt-iterations.md#v5-earlier-source-tags-named-as-filing-ids), on the retrieval as of [follow-up inheritance](#after-follow-up-inheritance). This is the first scored run since v3, so it also scores the Financial Facts table of [v4](prompt-iterations.md#v4-the-financial-facts-table). All 20 dev cases are scored.
+
+| | cases | citations valid | figures exact | gaps stated | Fact Recall | Faithfulness | $ per answer | latency s | first text s |
+|---|---|---|---|---|---|---|---|---|---|
+| **overall** | 20 | 0.75 | 0.90 | **1.00** | **0.50** | **0.90** | 0.0024 | 6.1 | 1.9 |
+| figure_trend | 4 | 0.50 | 0.50 | 1.00 | 0.46 | 0.86 | 0.0040 | 6.3 | 2.7 |
+| missing_company | 4 | 0.75 | 1.00 | 1.00 | 0.50 | 0.95 | 0.0010 | 4.3 | 1.6 |
+| outlook | 2 | 1.00 | 1.00 | 1.00 | 0.75 | 1.00 | 0.0033 | 4.0 | 1.4 |
+| risk | 6 | 1.00 | 1.00 | 1.00 | 0.41 | 0.85 | 0.0021 | 7.4 | 1.8 |
+| sector | 2 | 0.50 | 1.00 | 1.00 | 0.33 | 0.95 | 0.0028 | 9.7 | 2.5 |
+| stale_filing | 2 | 0.50 | 1.00 | 1.00 | 1.00 | 1.00 | 0.0018 | 3.6 | 1.3 |
+
+The answers cost $0.049 in all; the slowest took 12.8 seconds; Jev's judging cost $0.020.
+
+- **Coverage Gaps stated rose from 0.91 to 1.00.** The v3 miss, `followup-regulatory-exposure`, now has Apple, Tesla and JPMorgan in scope, and its answer states the "Periods differ" gap in the fixed wording.
+- **The follow-ups are answered about the right Companies.** "And what about Microsoft?" gets a table of Microsoft's FY2024, FY2025 and Q2 FY2026 revenue, every row cited to its Facts Source (Faithfulness 1.00); "How did that change over the last two years?" compares Tesla's FY2024 and FY2025 risk factors and cites the 2025 10-Qs' new tariff and tax-credit risks. Both cite only this turn's Sources: no uncited sentence about an earlier turn remains (two cases failed on those under v3). Their Fact Recall is low (0.00 and 0.33) because the Required Facts are worded as MD&A's "increased $36.6 billion or 15%", which the answers state as levels and derived percentages; the judge gave the Microsoft facts 0.03 to 0.44.
+- **Citations (0.75) fail on the checks' rules, as in v3.** The uncited units are opening summaries that restate cited points (`sector-pharma-regulatory`, `trend-jpm-revenue-snapshot`), table rows of figures (`trend-meta-revenue-two-years`), and sentences saying what the Filings lack phrased in ways the absence rule doesn't yet recognise (`missing-wells-fargo-vs-jpm`, `stale-ge-recent-performance`).
+- **Figures not exact** are both model-computed: Meta's quarterly differences ($36,465 million, $29,599 million) and Tesla's 74.7% decline, which the table does not state.
+- Fact Recall (0.50 against 0.55) and Faithfulness (0.90 against 0.90) are within the run-to-run range, and the answers cost the same.
 
 The holdout split has not been scored.
 

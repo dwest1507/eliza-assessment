@@ -17,6 +17,12 @@ Two entry points:
   in it, groups them into numbered Sources and renders the Answer Call's prompt. It is
   deterministic and makes no network calls.
 
+A follow-up inherits each part of the Query Scope it does not name (the Companies, the
+time window and named periods, the Section hints, the metric) from the most recent
+earlier user message that named it, and a part it names replaces the inherited one (ADR
+0003). A follow-up with no topic words of its own ("And what about Microsoft?") is also
+searched with the words of the most recent earlier message that had some.
+
 A question naming a metric (revenue, net income, a segment) gets the Financial Facts
 table: one fixed parameterised query per Company and metric, cut to the Query Scope's
 Filings, with derived fourth quarters and year-on-year changes labelled as derived and a
@@ -52,8 +58,8 @@ from __future__ import annotations
 import os
 import re
 import sqlite3
-from collections.abc import Iterable, Mapping, Sequence
-from dataclasses import dataclass, replace
+from collections.abc import Callable, Iterable, Mapping, Sequence
+from dataclasses import dataclass, field, replace
 from pathlib import Path
 from typing import Any, Literal
 
@@ -70,7 +76,7 @@ from edgar_rag._coverage import (
     stale_filings_left_out,
 )
 from edgar_rag._facts import FactNote, FactRow
-from edgar_rag._prompt import PROMPT_VERSION, render
+from edgar_rag._prompt import HISTORY_MAX_TOKENS, HISTORY_TURNS, PROMPT_VERSION, render
 from edgar_rag._query_scope import (
     LATEST,
     ScopeCompany,
@@ -93,6 +99,8 @@ __all__ = [
     "CONTEXT_BUDGET_TOKENS",
     "DEFAULT_INDEX",
     "DEFAULT_MISSING_COMPANIES",
+    "HISTORY_MAX_TOKENS",
+    "HISTORY_TURNS",
     "NEAR_DUPLICATE",
     "NEW_TEXT",
     "PROMPT_VERSION",
@@ -214,6 +222,10 @@ class Message:
 
     role: Literal["user", "assistant"]
     content: str
+    sources: Mapping[str, str] = field(default_factory=dict, hash=False)
+    """For an earlier answer, the Filing ID each of its Source tags cited ("S1" →
+    "AAPL_10-K_2025-09-27"), so the prompt can name the Filings instead of tags that
+    pointed at that turn's Sources. Tags it doesn't list are dropped."""
 
 
 @dataclass(frozen=True)
@@ -400,23 +412,36 @@ def prepare_answer_context(
     """The Answer Context for the latest user message of a conversation.
 
     `messages` is the conversation so far, oldest first, ending with the user message
-    to answer.
+    to answer. Its earlier user messages supply the parts of the Query Scope the latest
+    one does not name, and the last turns go into the prompt as history.
     """
     if not messages or messages[-1].role != "user" or not messages[-1].content.strip():
         raise ValueError("the conversation must end with a non-empty user message")
     question = messages[-1].content
     with _connect(index) as db:
         known = _companies(db)
-        companies, sector_phrases, spans = resolve_companies(question, known)
-        missing, missing_spans = find_missing(question, load_missing_companies(), spans)
-        sections = find_section_hints(question)
-        window = find_time_window(question) or (
-            LATEST if RISK_FACTORS in sections else TimeWindow("all")
-        )
-        periods = find_periods(question)
+        missing_list = load_missing_companies()
+        said = [_said(m.content, known, missing_list) for m in messages if m.role == "user"]
+        latest = said[-1]
+        # Each part of the Query Scope the question does not name comes from the most
+        # recent earlier user message that named it (ADR 0003).
+        who = _most_recent(said, lambda s: bool(s.companies or s.sector_phrases or s.missing))
+        when = _most_recent(said, lambda s: bool(s.window or s.periods))
+        where = _most_recent(said, lambda s: bool(s.sections))
+        topic = _most_recent(said, lambda s: s.has_topic)
+        companies, sector_phrases, missing = who.companies, who.sector_phrases, who.missing
+        sections = where.sections
+        window = when.window or (LATEST if RISK_FACTORS in sections else TimeWindow("all"))
+        periods = when.periods
+        # The question as retrieval reads it: its own words, plus the words of the
+        # message whose topic it inherits ("And what about Microsoft?").
+        asked = [latest] if topic is latest else [topic, latest]
+        focus = "\n".join(s.text for s in asked)
         everything = _filings(db, [c.ticker for c in companies] or None)
         left_out = stale_filings_left_out(
-            question, periods, (f for own in everything.values() for f in own)
+            "\n".join(dict.fromkeys([who.text, question])),
+            periods,
+            (f for own in everything.values() for f in own),
         )
         filings = {
             ticker: [f for f in own if f.filing_id not in left_out]
@@ -431,11 +456,18 @@ def prepare_answer_context(
                 f for c in companies for f in in_window(window, filings.get(c.ticker, []))
             ),
             periods=periods,
-            change=is_change_question(question),
+            change=is_change_question(focus),
             missing_companies=missing,
         )
-        names = _facts.segment_names(db, [c.ticker for c in companies])
-        metrics, segments = find_metrics(question, [n for t in names.values() for n in t])
+        names = [
+            n
+            for own in _facts.segment_names(db, [c.ticker for c in companies]).values()
+            for n in own
+        ]
+        metrics, segments = next(
+            (found for s in reversed(said) if (found := find_metrics(s.text, names))[0]),
+            ((), ()),
+        )
         scope = replace(
             scope,
             metric=metrics[0] if metrics else None,
@@ -444,7 +476,7 @@ def prepare_answer_context(
         )
         facts = _facts.lookup(db, companies, metrics, segments, scope.filings, scope.periods)
         fact_sources, rows = _facts_sources(db, facts)
-        terms = _terms(_without_spans(question, spans + missing_spans))
+        terms = _terms(*(s.words for s in asked))
         sources = fact_sources + _sources(
             db, scope, filings, terms, explicit=bool(left_out), first_number=len(fact_sources) + 1
         )
@@ -461,7 +493,7 @@ def prepare_answer_context(
         )
         for c in covered
     )
-    gaps = coverage_gaps(question, scope, coverage)
+    gaps = coverage_gaps(focus, scope, coverage)
     rendered = render(sources, messages[:-1], question, scope, coverage, gaps, rows, facts.notes)
     return AnswerContext(
         query_scope=scope,
@@ -587,12 +619,68 @@ def _without_spans(text: str, spans: list[tuple[int, int]]) -> str:
     return text
 
 
-def _terms(question: str) -> str | None:
-    """The question as an FTS5 query of quoted terms joined by OR, or None if no term
-    is left. Every term is a run of letters and digits inside double quotes, so FTS5
-    reads it as a string to match, never as an operator or a column filter."""
-    words = re.findall(r"[^\W_]+", question.lower())
-    terms = dict.fromkeys(w for w in words if w not in _STOPWORDS and len(w) > 1)
+# Words that name no topic of their own: a follow-up made only of these ("How did that
+# change over the last two years?") asks about the topic of an earlier message.
+_NOT_TOPIC = frozenset(
+    """last past previous prior preceding latest recent newest year years quarter quarters
+    month months fiscal one two three four five six seven eight nine ten twelve change
+    changed changes changing evolve evolved evolving shift shifted differ differs
+    difference new now instead too either same one ones else again further more""".split()
+)
+
+
+@dataclass(frozen=True)
+class _Said:
+    """What one user message names of each part of the Query Scope."""
+
+    text: str
+    companies: tuple[ScopeCompany, ...]
+    sector_phrases: tuple[SectorPhrase, ...]
+    missing: tuple[str, ...]
+    sections: tuple[str, ...]
+    window: TimeWindow | None
+    periods: tuple[str, ...]
+    words: tuple[str, ...]
+    """The message's search terms: its words without Company names, Sector phrases or
+    stopwords."""
+
+    @property
+    def has_topic(self) -> bool:
+        """Whether it names something to search for beyond Companies and periods."""
+        return any(w not in _NOT_TOPIC and not w.isdigit() for w in self.words)
+
+
+def _said(text: str, known: Sequence[ScopeCompany], missing: Sequence[MissingCompany]) -> _Said:
+    companies, sector_phrases, spans = resolve_companies(text, known)
+    missing_names, missing_spans = find_missing(text, missing, spans)
+    return _Said(
+        text=text,
+        companies=companies,
+        sector_phrases=sector_phrases,
+        missing=missing_names,
+        sections=find_section_hints(text),
+        window=find_time_window(text),
+        periods=find_periods(text),
+        words=_words(_without_spans(text, spans + missing_spans)),
+    )
+
+
+def _most_recent(said: Sequence[_Said], names: Callable[[_Said], bool]) -> _Said:
+    """The most recent user message that names a part of the Query Scope, or the latest
+    message when none does."""
+    return next((s for s in reversed(said) if names(s)), said[-1])
+
+
+def _words(text: str) -> tuple[str, ...]:
+    words = re.findall(r"[^\W_]+", text.lower())
+    return tuple(dict.fromkeys(w for w in words if w not in _STOPWORDS and len(w) > 1))
+
+
+def _terms(*words: Iterable[str]) -> str | None:
+    """The words as an FTS5 query of quoted terms joined by OR, or None if there is no
+    term. Every term is a run of letters and digits inside double quotes, so FTS5 reads
+    it as a string to match, never as an operator or a column filter."""
+    terms = dict.fromkeys(w for own in words for w in own)
     return " OR ".join(f'"{term}"' for term in terms) or None
 
 

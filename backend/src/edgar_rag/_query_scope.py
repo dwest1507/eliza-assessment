@@ -15,8 +15,8 @@ Rule-based, with no LLM (ADR 0003). It recognises:
 - Section hints: risk factors, legal proceedings, MD&A, market risk and business.
 - Named periods: "FY2024", "fiscal 2024", "Q2 FY2025", or a bare year ("in 2023"), read
   as Fiscal Periods. A named period decides which copy of a repeated passage is cited.
-- Change questions: "how has it changed", "what is new", "how did it evolve", "how do
-  they differ". They are routed to the paragraphs new between periods.
+- Change questions: "how has it changed", "how did that change", "what is new", "how
+  did it evolve", "how do they differ". They are routed to the paragraphs new between periods.
 - The metrics of ADR 0001's vocabulary: "revenue", "sales" and "top line" are revenue;
   "net income", "earnings" and "profit" are net income; a segment name of a Company in
   scope ("Compute & Networking", "AWS") is that segment's revenue, and "segment" alone
@@ -453,6 +453,7 @@ def names_period(fiscal_period: str | None, periods: Sequence[str]) -> bool:
 
 _CHANGE = re.compile(
     r"\bchang(?:ed|ing)\b|(?<!climate\s)\bchanges\b(?!\s+in\s+(?:the\s+)?climate)"
+    r"|\b(?:did|do|does|has|have|will)\s+(?:[\w’'&.-]+\s+){0,5}?(?<!climate\s)change\b"
     r"|\bevolv(?:e|ed|es|ing)\b|\bdiffer(?:s|ed|ence|ences)?\b|\bshift(?:ed|s)?\b"
     r"|\b(?:what(?:[’']s|\s+is|\s+was)|anything)\s+new\b",
     re.I,

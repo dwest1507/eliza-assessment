@@ -4,11 +4,13 @@ One fixed template with a version constant. Every change to it bumps `PROMPT_VER
 and gets an entry in `docs/prompt-iterations.md`, with what changed, why, and its dev
 scores before and after.
 
-v4 renders, in this order: the system rules, the Coverage Gaps the answer must state,
+v5 renders, in this order: the system rules, the Coverage Gaps the answer must state,
 the Companies each Sector phrase resolved to (when the question uses one), each
 Company's coverage (its class, Filings, Report Periods and Fiscal Periods), the
 Financial Facts table (when the question names a metric), the text Sources grouped by
-Company, the earlier conversation, and the latest question.
+Company, the earlier conversation (the last 10 turns under a token cap, with each
+earlier answer's Source tags rewritten as the Filing IDs they cited), and the latest
+question.
 """
 
 from __future__ import annotations
@@ -26,7 +28,7 @@ if TYPE_CHECKING:
     from edgar_rag._query_scope import ScopeFiling
     from edgar_rag.retrieval import Message, QueryScope, Source
 
-PROMPT_VERSION = "v4"
+PROMPT_VERSION = "v5"
 
 HISTORY_TURNS = 10
 HISTORY_MAX_TOKENS = 6_000
@@ -73,8 +75,10 @@ several Companies are compared on the same dimensions.
 the Sources could not answer.
 - Aim for 300 to 600 words."""
 
-# A Source tag in an earlier answer. It pointed at that turn's Sources, not this turn's.
-_SOURCE_TAG = re.compile(r"\s*\[S\d+\](?:\s*\[S\d+\])*")
+# A run of Source tags in an earlier answer ("[S1]", "[S1][S2]", "[S3, S1]"). They
+# pointed at that turn's Sources, not this turn's.
+_SOURCE_TAGS = re.compile(r"(\s*)((?:\[S\d+(?:\s*[,;]\s*S\d+)*\]\s*)*\[S\d+(?:\s*[,;]\s*S\d+)*\])")
+_TAG = re.compile(r"S\d+")
 
 
 def render(
@@ -223,12 +227,25 @@ def _render_sources(sources: Sequence[Source]) -> str:
 
 def _render_history(history: Sequence[Message]) -> str:
     """The last HISTORY_TURNS messages, oldest first, dropping the oldest until they fit
-    in HISTORY_MAX_TOKENS. Earlier answers lose their Source tags."""
+    in HISTORY_MAX_TOKENS. An earlier answer's Source tags are rewritten as the Filing IDs
+    they cited, or dropped when the message doesn't say which Filings those were."""
     lines = [
         f"{'User' if m.role == 'user' else 'Assistant'}: "
-        + (_SOURCE_TAG.sub("", m.content) if m.role == "assistant" else m.content).strip()
+        + (_without_tags(m) if m.role == "assistant" else m.content).strip()
         for m in history[-HISTORY_TURNS:]
     ]
     while lines and count_tokens("\n\n".join(lines)) > HISTORY_MAX_TOKENS:
         lines.pop(0)
     return "\n\n".join(lines)
+
+
+def _without_tags(message: Message) -> str:
+    """An earlier answer with each run of Source tags replaced by the Filing IDs they
+    cited, in parentheses: "[S1][S2]" becomes "(AAPL_10-K_2025-09-27; AAPL_10-Q_...)"."""
+    cited = getattr(message, "sources", None) or {}
+
+    def rewrite(m: re.Match[str]) -> str:
+        ids = dict.fromkeys(cited[t] for t in _TAG.findall(m.group(2)) if t in cited)
+        return f"{m.group(1)}({'; '.join(ids)})" if ids else ""
+
+    return _SOURCE_TAGS.sub(rewrite, message.content)

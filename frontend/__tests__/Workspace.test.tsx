@@ -126,6 +126,7 @@ function uiMessageStream(
 const fetchMock = vi.fn()
 
 beforeEach(() => {
+  sessionStorage.clear()
   fetchMock.mockReset()
   fetchMock.mockImplementation(async () => uiMessageStream())
   vi.stubGlobal('fetch', fetchMock)
@@ -245,6 +246,58 @@ describe('Workspace', () => {
 
     const roles = sentMessages(1).map((m) => m.role)
     expect(roles).toEqual(['user', 'assistant', 'user'])
+  })
+
+  it('keeps the conversation through a page refresh in the same session', async () => {
+    const user = userEvent.setup()
+    const { unmount } = render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByText('trade policy')
+    unmount()
+
+    render(<Workspace />)
+
+    expect(await screen.findByText(STARTERS[0].question)).toBeInTheDocument()
+    expect(screen.getByText('trade policy')).toBeInTheDocument()
+    expect(screen.queryByRole('list', { name: 'Starter prompts' })).not.toBeInTheDocument()
+    // The restored answer keeps its Sources, so its citations still open the panel.
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    await user.click(within(answer).getByRole('link', { name: 'Source S2' }))
+    expect(await screen.findByRole('complementary', { name: 'Sources' })).toBeInTheDocument()
+
+    // A follow-up after the refresh still carries the earlier turns.
+    await user.type(screen.getByRole('textbox', { name: 'Question' }), 'And Microsoft?{Enter}')
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    expect(sentMessages(1).map((m) => m.role)).toEqual(['user', 'assistant', 'user'])
+  })
+
+  it('starts a new conversation that clears the history', async () => {
+    const user = userEvent.setup()
+    const { unmount } = render(<Workspace />)
+    expect(screen.queryByRole('button', { name: 'New conversation' })).toBeDisabled()
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByText('trade policy')
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    await user.click(within(answer).getByRole('link', { name: 'Source S1' }))
+
+    await user.click(screen.getByRole('button', { name: 'New conversation' }))
+
+    expect(screen.getByRole('list', { name: 'Starter prompts' })).toBeInTheDocument()
+    expect(screen.queryByText('trade policy')).not.toBeInTheDocument()
+    expect(screen.queryByRole('complementary', { name: 'Sources' })).not.toBeInTheDocument()
+
+    // The next question starts afresh, with no earlier turns.
+    await user.type(screen.getByRole('textbox', { name: 'Question' }), 'And Microsoft?{Enter}')
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    expect(sentMessages(1).map((m) => m.role)).toEqual(['user'])
+
+    // And a refresh does not bring the old conversation back.
+    await screen.findByText('trade policy')
+    await user.click(screen.getByRole('button', { name: 'New conversation' }))
+    unmount()
+    render(<Workspace />)
+    expect(screen.getByRole('list', { name: 'Starter prompts' })).toBeInTheDocument()
+    expect(screen.queryByText('trade policy')).not.toBeInTheDocument()
   })
 
   it('shows the Query Scope as chips above the answer', async () => {

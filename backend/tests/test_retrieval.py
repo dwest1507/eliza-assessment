@@ -292,7 +292,7 @@ def test_a_source_carries_its_citation_metadata_and_passage(index):
 def test_the_prompt_renders_rules_sources_and_question(index):
     context = _ask(index, BRIEF_QUESTION)
 
-    assert context.prompt_version == PROMPT_VERSION == "v4"
+    assert context.prompt_version == PROMPT_VERSION == "v5"
     system, user = context.messages
     assert system.role == "system"
     assert "[S3]" in system.content and "general knowledge" in system.content
@@ -711,6 +711,8 @@ def test_periods_named_in_a_question_are_read_as_fiscal_periods(index, question,
         ("How has NVIDIA's revenue evolved?", True),
         ("What is new in Tesla's latest risk factors?", True),
         ("How do Tesla's risks differ from last year?", True),
+        ("How did Tesla's risk factors change over the last two years?", True),
+        ("How did that change?", True),
         ("What are Tesla's risk factors?", False),
         ("What does Tesla say about climate change?", False),
     ],

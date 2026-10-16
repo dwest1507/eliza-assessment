@@ -209,7 +209,8 @@ def stale_filings_left_out(
 
 _TREND = re.compile(
     r"\btrend(?:s|ed|ing)?\b|\bover\s+time\b|\byear[\s-]+(?:over|on)[\s-]+year\b"
-    r"|\b(?:grown|grew)\b|\bchang(?:ed|ing)\b|\bevolv(?:e|ed|es|ing)\b|\bshifted\b",
+    r"|\b(?:grown|grew)\b|\bchang(?:ed|ing)\b|\bevolv(?:e|ed|es|ing)\b|\bshifted\b"
+    r"|\b(?:did|do|does|has|have)\s+(?:[\w’'&.-]+\s+){0,5}?(?<!climate\s)change\b",
     re.I,
 )
 

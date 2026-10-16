@@ -3,10 +3,13 @@
  * backend's URL stays on the server: it comes from `BACKEND_URL` (see `.env.example`),
  * defaulting to the API `make api` runs locally.
  *
- * Only each message's role and text are forwarded: an earlier answer's Sources are
- * not evidence for the next question (the backend retrieves afresh), and resending
- * their passages would only make every follow-up heavier. The backend's AI SDK UI
- * message stream is passed through untouched, and so are its validation statuses.
+ * Each message's role and text are forwarded, and for an earlier answer the Filing ID
+ * each of its Source tags cited (`sources`), so the prompt's history can name those
+ * Filings in place of tags that meant that turn's Sources. The passages are not sent:
+ * an earlier answer's Sources are not evidence for the next question (the backend
+ * retrieves afresh), and resending them would only make every follow-up heavier. The
+ * backend's AI SDK UI message stream is passed through untouched, and so are its
+ * validation statuses.
  */
 
 const DEFAULT_BACKEND_URL = 'http://127.0.0.1:8000'
@@ -26,10 +29,14 @@ export async function POST(request: Request): Promise<Response> {
   if (!Array.isArray(body?.messages)) {
     return Response.json({ detail: 'The request has no messages.' }, { status: 400 })
   }
-  const messages = (body.messages as IncomingMessage[]).map((m) => ({
-    role: m.role,
-    content: textOf(m.parts),
-  }))
+  const messages = (body.messages as IncomingMessage[]).map((m) => {
+    const cited = citedFilings(m.parts)
+    return {
+      role: m.role,
+      content: textOf(m.parts),
+      ...(Object.keys(cited).length > 0 && { sources: cited }),
+    }
+  })
 
   let backend: Response
   try {
@@ -71,4 +78,19 @@ function textOf(parts: unknown): string {
     .filter((p) => p?.type === 'text' && typeof p.text === 'string')
     .map((p) => p.text as string)
     .join('')
+}
+
+/** The Filing ID each Source tag of a message cited, from its `data-sources` part. */
+function citedFilings(parts: unknown): Record<string, string> {
+  const cited: Record<string, string> = {}
+  if (!Array.isArray(parts)) return cited
+  for (const part of parts) {
+    if (part?.type !== 'data-sources' || !Array.isArray(part.data?.sources)) continue
+    for (const source of part.data.sources) {
+      if (typeof source?.tag === 'string' && typeof source?.filingId === 'string') {
+        cited[source.tag] = source.filingId
+      }
+    }
+  }
+  return cited
 }

@@ -225,6 +225,61 @@ def test_the_answer_comes_from_one_answer_call_on_the_whole_conversation(client,
     assert rendered.rstrip().endswith("And Tesla's?")
 
 
+def test_a_follow_up_streams_the_query_scope_it_inherits(client):
+    parts = events(
+        chat(
+            client,
+            user(QUESTION),
+            {"role": "assistant", "parts": [{"type": "text", "text": "Apple relies on Asia."}]},
+            user("Which of them has the most regulatory exposure?"),
+        )
+    )
+
+    scope = part_of(parts, "data-query-scope")["data"]
+    assert [c["ticker"] for c in scope["companies"]] == ["AAPL", "TSLA", "JPM"]
+    assert scope["sections"] == ["Risk Factors"]
+
+
+EARLIER_SOURCES = [
+    {"tag": "S1", "filingId": "AAPL_10-K_2025-09-27", "text": "a long passage"},
+    {"tag": "S2", "filingId": "TSLA_10-K_2025-12-31", "text": "another passage"},
+]
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        pytest.param(
+            {
+                "role": "assistant",
+                "parts": [
+                    {"type": "data-sources", "data": {"sources": EARLIER_SOURCES}},
+                    {"type": "text", "text": "Apple relies on Asia [S1]; Tesla on Musk [S2]."},
+                ],
+            },
+            id="useChat parts",
+        ),
+        pytest.param(
+            {
+                "role": "assistant",
+                "content": "Apple relies on Asia [S1]; Tesla on Musk [S2].",
+                "sources": {"S1": "AAPL_10-K_2025-09-27", "S2": "TSLA_10-K_2025-12-31"},
+            },
+            id="plain content with a sources map",
+        ),
+    ],
+)
+def test_an_earlier_answers_source_tags_reach_the_prompt_as_filing_ids(client, model, answer):
+    chat(client, user(QUESTION), answer, user("Which of them is most exposed?"))
+
+    [prompt] = model.received
+    rendered = prompt[-1].content
+    assert (
+        "Assistant: Apple relies on Asia (AAPL_10-K_2025-09-27); "
+        "Tesla on Musk (TSLA_10-K_2025-12-31)." in rendered
+    )
+
+
 def test_messages_with_plain_content_are_accepted_too(client):
     response = client.post("/api/chat", json={"messages": [{"role": "user", "content": QUESTION}]})
 

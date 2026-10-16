@@ -13,6 +13,7 @@ import {
   messageText,
   type ResearchMessage,
 } from '@/lib/chat'
+import { loadConversation, saveConversation } from '@/lib/conversation'
 import { STARTERS } from '@/lib/starters'
 
 /** Which answer's Sources the panel shows, and which of them is open. */
@@ -23,18 +24,35 @@ interface OpenSource {
 
 /**
  * The research workspace: a conversation thread, starter prompts on an empty
- * conversation, and a Sources panel that opens on a citation click.
+ * conversation, and a Sources panel that opens on a citation click. The conversation is
+ * kept in session storage, so it survives a page refresh, and "New conversation" clears
+ * it, so an old Query Scope can't leak into a new topic.
  */
 export default function Workspace() {
   const [transport] = useState(
     () => new DefaultChatTransport<ResearchMessage>({ api: '/api/chat' })
   )
-  const { messages, sendMessage, status, stop } = useChat<ResearchMessage>({ transport })
+  const { messages, sendMessage, setMessages, status, stop } = useChat<ResearchMessage>({
+    transport,
+  })
   const [input, setInput] = useState('')
   const [open, setOpen] = useState<OpenSource | null>(null)
   const endRef = useRef<HTMLDivElement>(null)
 
   const busy = status === 'submitted' || status === 'streaming'
+
+  // Session storage is read after the first render, so the server-rendered page (which
+  // has no storage) and the browser's first render agree.
+  useEffect(() => {
+    const saved = loadConversation()
+    if (saved.length > 0) setMessages(saved)
+  }, [setMessages])
+
+  // Saved once each answer is complete, never half-written. Only "New conversation"
+  // clears it, so the empty first render never overwrites a saved conversation.
+  useEffect(() => {
+    if (!busy && messages.length > 0) saveConversation(messages)
+  }, [messages, busy])
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
@@ -44,6 +62,14 @@ export default function Workspace() {
     const text = question.trim()
     if (!text || busy) return
     sendMessage({ text })
+  }
+
+  function newConversation() {
+    if (busy) stop()
+    setMessages([])
+    saveConversation([])
+    setOpen(null)
+    setInput('')
   }
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -65,9 +91,17 @@ export default function Workspace() {
         <p className="hidden text-[13px] text-muted sm:block">
           Answers from 10-K and 10-Q Filings, every claim cited to its passage
         </p>
+        <button
+          type="button"
+          onClick={newConversation}
+          disabled={messages.length === 0}
+          className="ml-auto rounded-md border border-line px-3 py-1 text-[13px] font-medium text-ink hover:bg-canvas disabled:opacity-40"
+        >
+          New conversation
+        </button>
         <Link
           href="/how-it-works"
-          className="ml-auto text-[13px] font-medium text-accent hover:text-accent-strong"
+          className="text-[13px] font-medium text-accent hover:text-accent-strong"
         >
           How it works
         </Link>

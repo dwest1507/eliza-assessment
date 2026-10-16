@@ -32,7 +32,12 @@ const conversation = {
       id: 'm2',
       role: 'assistant',
       parts: [
-        { type: 'data-sources', data: { sources: [{ tag: 'S1', text: 'a long passage' }] } },
+        {
+          type: 'data-sources',
+          data: {
+            sources: [{ tag: 'S1', filingId: 'AAPL_10-K_2025-09-27', text: 'a long passage' }],
+          },
+        },
         { type: 'step-start' },
         { type: 'text', text: 'Apple faces ' },
         { type: 'text', text: 'tariffs [S1].' },
@@ -52,11 +57,16 @@ describe('POST /api/chat (proxy)', () => {
     const [url, init] = fetchMock.mock.calls[0]
     expect(url).toBe('http://backend.test:9000/api/chat')
     expect(init.method).toBe('POST')
-    // Only the text goes back: earlier Sources would only make the request heavier.
+    // The text goes back, and an earlier answer's Source tags with the Filing each cited,
+    // so the prompt can name it; never the passages, which would only weigh it down.
     expect(JSON.parse(init.body)).toEqual({
       messages: [
         { role: 'user', content: 'Compare Apple and Tesla' },
-        { role: 'assistant', content: 'Apple faces tariffs [S1].' },
+        {
+          role: 'assistant',
+          content: 'Apple faces tariffs [S1].',
+          sources: { S1: 'AAPL_10-K_2025-09-27' },
+        },
         { role: 'user', content: 'And Microsoft?' },
       ],
     })

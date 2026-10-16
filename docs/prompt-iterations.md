@@ -161,3 +161,25 @@ The text Sources are unchanged and numbered after the Facts Sources. The `# Sour
 **Why.** Figures read from flattened tables are the answers most likely to be wrong (ADR 0001): the model would have to line up columns, scales and periods that vary by Company, across eight or more Filings for a two-year trend. The store has every Tracked Company's revenue and net income to the dollar, so the template hands the model exact rows with their citations and says which figures are computed. The fallback note and the new rule keep the analyst able to tell an extracted figure from one read off the text.
 
 **Scores.** Retrieval on dev, from the retrieval harness: unchanged at hit@10 0.71, recall@10 0.65, MRR 0.59, since text retrieval did not change and the `fts5` Arm ranks text Sources only ([evaluation notes](evaluation.md#after-financial-facts-in-the-answer)). Every dollar figure in the Required Facts of the two dev figure cases with a Tracked Company (Meta's revenue, Tesla's net income) is now a cited row of the table. No Answer Call was made for this change (the run had no provider keys), so there are no generation-harness scores or hand check for v4 yet: the next `make eval-generation` run on dev should score it against [v3's](#v3-coverage-gaps-and-each-companys-coverage), with `trend-meta-revenue-two-years` and `trend-tsla-net-income-three-years` (figures and citations), and `trend-jpm-revenue-snapshot` (saying a figure was read from the Filing text), as the cases to read.
+
+## v5: earlier Source tags named as Filing IDs
+
+**What.** The earlier-conversation block no longer drops an earlier answer's `[Sn]` tags: each run of tags is rewritten as the Filing IDs they cited, in parentheses. An earlier answer that read
+
+```text
+Apple outsources manufacturing [S1][S2]. Tesla depends on Elon Musk [S3].
+```
+
+now reaches the prompt as
+
+```text
+Assistant: Apple outsources manufacturing (AAPL_10-K_2025-09-27; AAPL_10-Q_2025-12-27). Tesla depends on Elon Musk (TSLA_10-K_2025-12-31).
+```
+
+The browser sends, with each earlier answer, the Filing ID each of its tags cited (from that answer's `data-sources` part; never the passages), and a tag it can't resolve is still dropped. The block is otherwise as before: the last 10 turns, oldest dropped first until they fit in about 6k tokens, under the heading "Earlier conversation (context only, not evidence)". The system rules are unchanged: rule 2 already limits citations to this turn's tags, and rule 3 says the earlier conversation is not evidence.
+
+Retrieval changes with it, which is where most of the follow-up behaviour lives: a follow-up inherits each part of the Query Scope it does not name from the most recent earlier question that named it, and its topic words when it has none of its own ([ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md)). So the Sources, Coverage, Financial Facts and Coverage Gaps blocks of a follow-up are now about the Companies the conversation is about.
+
+**Why.** v1 dropped the tags because the browser did not yet send the earlier turns' Sources ([v1's known gaps](#v1-the-tracer-bullet)). With the tags gone the model could not tell which Filing an earlier claim came from, so "How did that change?" lost the period the earlier answer was about. With `[S3]` left in, it would point at whatever this turn's S3 is, a different Filing. A Filing ID says which Company, Form Type and Report Period the earlier claim rested on, in the same words the Coverage block uses, without being citable in this turn.
+
+**Scores.** Retrieval on dev, from the retrieval harness: hit@10 0.71 → 0.88, recall@10 0.65 → 0.82, MRR 0.59 → 0.73; only the five multi-turn cases changed ([evaluation notes](evaluation.md#after-follow-up-inheritance)). Generation on dev (`gpt-6-luna`, `jev-1.13.0`), against v3 (v4 was never scored, so this run also scores the Financial Facts table): Coverage Gaps stated 0.91 → 1.00, Fact Recall 0.55 → 0.50, Faithfulness 0.90 → 0.90, citations valid 0.79 → 0.75, figures exact 0.95 → 0.90, $0.0024 → $0.0024 per answer, 6.6 → 6.1 seconds ([evaluation notes](evaluation.md#after-financial-facts-and-follow-ups-prompt-v5)). The Fact Recall and citation moves are within the run-to-run range; the multi-turn answers no longer have uncited sentences about earlier turns. The Golden Set's scripted histories already cite Filing IDs in this form, so the harness scores of the multi-turn cases measure the inheritance, not the rewriting; the rewriting is checked by tests through the retrieval seam and the API.

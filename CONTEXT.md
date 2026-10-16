@@ -17,7 +17,7 @@ The single LLM request that produces the final answer to a business question. Ev
 _Avoid_: LLM call (unqualified), API call
 
 **Query Scope**:
-What the rules resolve from a question before retrieval: the Companies (including those a Sector phrase resolves to), the time window, any named Fiscal Period, any Section hints, any metric, and whether it asks how something changed.
+What the rules resolve from a question before retrieval: the Companies (including those a Sector phrase resolves to), the time window, any named Fiscal Period, any Section hints, any metric, and whether it asks how something changed. A follow-up inherits each part it does not name from the most recent earlier question that named it.
 _Avoid_: Filters, entities, intent
 
 **Source**:

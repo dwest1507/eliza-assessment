@@ -51,7 +51,7 @@ def test_an_answer_call_logs_model_prompt_version_usage_and_latency(context, tmp
     [line] = log.read_text().splitlines()
     record = json.loads(line)
     assert record["model"] == "fake-model"
-    assert record["prompt_version"] == "v4"
+    assert record["prompt_version"] == "v5"
     assert (record["input_tokens"], record["output_tokens"], record["reasoning_tokens"]) == (
         1200,
         300,
@@ -169,7 +169,7 @@ def test_ask_prints_the_query_scope_the_sources_and_the_streamed_answer(index, t
     sources, answer = rest.split("\nAnswer\n", 1)
     assert "TSLA " in sources and "JPM " in sources
     assert "Apple faces supply chain risk [S1]." in answer
-    assert "fake-model · prompt v4 · 1200 input / 300 output tokens" in answer
+    assert "fake-model · prompt v5 · 1200 input / 300 output tokens" in answer
 
 
 def test_ask_prints_a_named_period_and_the_change_route(index, tmp_path):

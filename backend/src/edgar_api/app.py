@@ -20,7 +20,11 @@ front-end's `useChat` reads it as is:
 If the provider fails mid-answer, the text ends and an `error` part replaces the finish.
 
 The backend is stateless: the browser sends the whole conversation every time and the
-Query Scope is recomputed from it (ADR 0003). Nothing about one request is kept for the
+Query Scope is recomputed from it, a follow-up inheriting each part it does not name
+from the most recent earlier question that named it (ADR 0003). An earlier answer may
+carry the Filing ID each of its Source tags cited (a `sources` map, or its own
+`data-sources` part), and the prompt's history names those Filings in place of the
+tags. Nothing about one request is kept for the
 next. The answer model is built once, on the first question, so `/api/health` works
 without a provider key.
 
@@ -75,13 +79,34 @@ logger = logging.getLogger(__name__)
 
 
 class ChatMessage(BaseModel):
-    """One message as `useChat` sends it (`parts`), or as plain `content` (for `curl`)."""
+    """One message as `useChat` sends it (`parts`), or as plain `content` (for `curl`).
+
+    An earlier answer may say which Filing each of its Source tags cited, as a `sources`
+    map ({"S1": "AAPL_10-K_2025-09-27"}) or as its `data-sources` part, so the prompt's
+    history names those Filings instead of tags that meant that turn's Sources."""
 
     model_config = ConfigDict(extra="ignore")
 
     role: Literal["system", "user", "assistant"]
     content: str | None = None
     parts: list[dict[str, Any]] | None = None
+    sources: dict[str, str] | None = None
+
+    @property
+    def cited(self) -> dict[str, str]:
+        """The Filing ID each Source tag of this message cited."""
+        if self.sources is not None:
+            return self.sources
+        for part in self.parts or ():
+            if part.get("type") == "data-sources" and isinstance(part.get("data"), dict):
+                return {
+                    s["tag"]: s["filingId"]
+                    for s in part["data"].get("sources") or ()
+                    if isinstance(s, dict)
+                    and isinstance(s.get("tag"), str)
+                    and isinstance(s.get("filingId"), str)
+                }
+        return {}
 
     @property
     def text(self) -> str:
@@ -160,7 +185,7 @@ def _conversation(messages: Sequence[ChatMessage]) -> list[Message]:
         raise HTTPException(400, "The question is empty.")
     if len(latest.text) > MAX_MESSAGE_CHARS:
         raise HTTPException(400, f"The question is longer than {MAX_MESSAGE_CHARS} characters.")
-    return [Message(m.role, m.text) for m in messages if m.role != "system"]
+    return [Message(m.role, m.text, m.cited) for m in messages if m.role != "system"]
 
 
 def _ui_message_stream(
