@@ -176,7 +176,7 @@ Gaps stated is over the 12 dev cases with expected Coverage Gaps. The 20 answers
 
 ### After time windows, Section hints, risk routing and deduplication
 
-The same configuration (prompt v1, `gpt-6-luna`, `jev-1.13.0`, 2026-10-16) on the retrieval of [the sections above](#after-deduplication-and-change-routing).
+The same configuration (prompt v1, `gpt-6-luna`, `jev-1.13.0`, 2026-10-16) on the retrieval as of [deduplication and change routing](#after-deduplication-and-change-routing), before Sector phrases.
 
 | | cases | citations valid | figures exact | gaps stated | Fact Recall | Faithfulness | $ per answer | latency s | first text s |
 |---|---|---|---|---|---|---|---|---|---|
