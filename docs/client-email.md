@@ -4,11 +4,11 @@ A draft for the developer to review and send to the Client. It has **not** been 
 
 ---
 
-**Subject:** SEC filings Q&A: what we found in the data, and ten questions before we build
+**Subject:** SEC filings Q&A: what we found in the data, and eleven questions before we build
 
 Hi all,
 
-Before building the question-answering system, we analysed the filings you sent. Mostly the data is in good shape: every filing can be dated, identified and split into its standard sections, and revenue and net income can be read exactly from the tables (they match the SEC's own XBRL data to the dollar for all 197 filings we checked). A few things differ from the brief, though, and some choices depend on what you intend. Below are the differences and ten questions. Each question has the assumption we will work under until you tell us otherwise, so nothing is blocked while you look at them.
+Before building the question-answering system, we analysed the filings you sent. Mostly the data is in good shape: every filing can be dated, identified and split into its standard sections, and revenue and net income can be read exactly from the tables (they match the SEC's own XBRL data to the dollar for all 197 filings we checked). A few things differ from the brief, though, and some choices depend on what you intend. Below are the differences and eleven questions. Each question has the assumption we will work under until you tell us otherwise, so nothing is blocked while you look at them.
 
 **Where the data differs from the brief**
 
@@ -31,6 +31,7 @@ Before building the question-answering system, we analysed the filings you sent.
 8. **What should a good answer look like, and how will you judge it?** We assume an analyst reader: a short direct answer first, then points per company or a comparison table, then a note on gaps. Every claim is cited to a filing, section and period, and the answer runs to about 300–600 words. If you have reference answers or criteria, we would like to test against them.
 9. **What about companies the data doesn't cover?** Some peers are missing (e.g. Wells Fargo, Citigroup, Bristol Myers Squibb). We answer for the companies that are in the data and say plainly which named companies are not. We never fill the gap from general knowledge.
 10. **Are there constraints on which LLM we use?** We assume a mainstream hosted model whose terms exclude training on and retaining your data is acceptable for the demo. The model can be swapped, including for a locally hosted one.
+11. **May we add public EDGAR filings to fill the coverage gaps?** The missing filings are public on SEC EDGAR: annual reports filed after the data was assembled (e.g. Pfizer's and AbbVie's FY2025 10-Ks, NVIDIA's FY2026 10-K), earlier filings for the thinly covered companies (including JPMorgan), General Electric's own recent reports, and companies not in the data at all. We assume no: we use only the filings you sent and state the gaps plainly. If you want some filled, tell us which; we would keep them as a clearly labelled supplement, separate from your data, that can be switched off for the demo.
 
 None of these block us. If any assumption is wrong, the earlier we hear, the less we rebuild. Happy to go through them on a short call.
 
