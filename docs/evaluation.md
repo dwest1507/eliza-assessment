@@ -219,7 +219,7 @@ Jev refused to judge `trend-jpm-revenue-snapshot` on the `fts5` and `rerank` run
 - **Dense retrieval loses the outlook facts.** Meta's capital expenditure outlook and Tesla's 2026 outlook fall from 1.00 and 0.50 Fact Recall to 0.00: the dense Arm reaches the right MD&A Sections but ranks general forward-looking passages above the specific sentences the Required Facts quote, which name the exact terms ("capital expenditures", "2026") that `bm25()` matches. It also states fewer figures exactly (0.85), since fewer of the passages it retrieves hold them.
 - **Cost does not decide it.** Every Arm costs about a quarter of a cent per answer. The dense and hybrid Arms add an embedding call per question (a fraction of a thousandth of a cent, plus 0.2 to 0.6 seconds measured), a 300 MB matrix to rebuild whenever the chunks change, and an OpenAI dependency in retrieval. The cross-encoder adds about 1.4 seconds of CPU per Company searched (20 passages, measured on the development laptop). FTS5 adds nothing.
 
-The holdout split has not been scored.
+The holdout split was scored once, at the end, on FTS5 alone: see [The holdout run](#the-holdout-run).
 
 ## Generation harness
 
@@ -367,7 +367,70 @@ The answers cost $0.052 in all; the slowest took 13.6 seconds; Jev's judging cos
 - **The price is time, not money.** Answers are about 400 words and 800 output tokens against 250 and 490, so they finish in about 9 seconds rather than 5.5, with the first text after about 3 seconds. They cost $0.0026 against $0.0023.
 - Faithfulness (0.91, and 0.95 in the first run) is within the run-to-run range of v5's 0.95 and 0.93. The missing-Company row's 0.72 is mostly `missing-bms-with-merck` (0.50), whose answer tags "Bristol Myers Squibb's regulatory risks cannot be assessed from the provided filings" with a Merck Source that does not say so; the topic-change follow-up does the same. That case scored 1.00 in every other run, and v10, which told the model not to tag such statements, did not stop the follow-up doing it.
 
-The holdout split has not been scored.
+### Generator comparison
+
+Golden Set version 1, dev split (20 cases), prompt [v7](prompt-iterations.md#the-final-template-v7), the `fts5` Arm, judged by `jev-1.13.0`, 2026-10-16, run with `make eval-generators`. The four generators of user story 55 answered the same cases at their providers' nearest equivalent settings (see [Choosing the generator](#method) above), and the generator was chosen by the rule ([ADR 0009](adr/0009-gpt-6-luna-stays-the-generator.md)).
+
+| | cases | citations valid | figures exact | gaps stated | structure followed | words | Fact Recall | Faithfulness | input tokens | output tokens | $ per answer | latency s | first text s |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **`gpt-6-luna`** (shipped) | 19 | 0.95 | 1.00 | 1.00 | 0.79 | 395 | **0.62** | **0.90** | 21,151 | 776 | 0.0025 | 7.9 | 2.8 |
+| `gpt-6.1-sol` | 19 | 0.79 | 0.89 | 1.00 | 0.95 | 406 | 0.73 | 0.95 | 21,151 | 692 | 0.0492 | 13.2 | 1.4 |
+| `claude-sonnet-5-5` | 20 | 0.60 | 1.00 | 1.00 | 0.80 | 479 | 0.74 | 0.92 | 33,924 | 1,267 | 0.0805 | 9.3 | 1.3 |
+| `claude-opus-5-5` | 19 | 0.37 | 1.00 | 1.00 | 0.47 | 535 | 0.75 | 0.93 | 32,696 | 1,664 | 0.1641 | 15.8 | 3.7 |
+
+Jev refused to judge `trend-jpm-revenue-snapshot` for every model but Sonnet (`max_tokens_exceeded`, as in earlier runs), so those score 19 cases; the comparisons pair the 19 cases both sides scored. Gaps stated is over the 11 or 12 scored cases with expected gaps. The answers cost $0.048 (Luna), $0.94 (Sol), $1.61 (Sonnet) and $3.12 (Opus) in all, and Jev's judging about $0.10 across the four.
+
+| Challenger vs `gpt-6-luna` | Fact Recall (higher / lower, exact p) | Faithfulness | Coverage Gaps | Qualifies |
+|---|---|---|---|---|
+| `gpt-6.1-sol` | 4 / 1, p = 0.375 | 8 / 4, p = 0.388 | 0 / 0, p = 1.000 | no |
+| `claude-sonnet-5-5` | 5 / 0, p = 0.062 | 8 / 6, p = 0.791 | 0 / 0, p = 1.000 | no |
+| `claude-opus-5-5` | 5 / 0, p = 0.062 | 8 / 6, p = 0.791 | 0 / 0, p = 1.000 | no |
+
+**Chosen: `gpt-6-luna`.** No challenger is ahead on Fact Recall or Coverage Gaps, so none qualifies.
+
+- **Every challenger states more Required Facts, but not on enough cases.** Fact Recall is 0.73 to 0.75 against 0.62. Both Claude models are ahead on the same five cases (the Microsoft and Tesla follow-ups, Wells Fargo against JPMorgan, Meta's two years of revenue and the three-Company risk question) and behind on none: one case short of p < 0.05. Sol is ahead on four and behind on one. Luna's own v7 runs have scored 0.63, 0.65 and now 0.62.
+- **Every model states every expected Coverage Gap**, so that test cannot separate them; the fixed wordings in the prompt (v3) settled it for all four.
+- **The challengers cost 20 to 65 times as much.** Sol costs $0.049 per answer, Sonnet $0.081 and Opus $0.164, against Luna's $0.0025. Anthropic's tokenizer counts the same prompts as about 1.6 times as many input tokens, and the Claude models write longer answers (1,267 and 1,664 output tokens, thinking included, against 776). Sol and Sonnet show their first text sooner (1.3 to 1.4 seconds against 2.8) but Sol and Opus finish later (13 and 16 seconds against 8).
+- **The Claude models break the checks v7 was tuned for.** Their answers run longer (479 and 535 words), open with four to seven sentences rather than two or three, and add uncited paragraphs: Opus's answer about Citigroup, a Company missing from the Corpus, adds a section on what Citigroup's 10-K would usually contain. Citation validity falls to 0.60 and 0.37, and Opus follows the structure in 0.47 of answers. The rule does not gate on these checks, but a switch to Claude would need its own prompt pass.
+- **Sol's two figure failures are derived figures**, as in Luna's earlier runs: Tesla's cumulative net income decline and the increase Meta's 2026 capital expenditure range implies, both computed by the model and labelled as derived.
+
+### The holdout run
+
+The final configuration, the `fts5` Arm, `gpt-6-luna` and prompt v7, run once on the holdout split (10 cases) on 2026-10-16, after every choice above was made on dev. Nothing was changed after it.
+
+```sh
+make eval-retrieval SPLIT=holdout ARMS=fts5
+make eval-generation SPLIT=holdout
+```
+
+**Retrieval** (Golden Set version 1, 10 cases, all with expected Sources):
+
+| | cases | hit@5 | hit@10 | hit@20 | recall@10 | recall@all | MRR | Sources |
+|---|---|---|---|---|---|---|---|---|
+| **overall** | 10 | 0.90 | **0.90** | 1.00 | 0.88 | 0.97 | 0.72 | 12.8 |
+| figure_trend | 2 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 0.29 | 28.5 |
+| outlook | 2 | 0.50 | 0.50 | 1.00 | 0.50 | 1.00 | 0.29 | 20.5 |
+| risk | 3 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 1.00 | 6.3 |
+| sector | 3 | 1.00 | 1.00 | 1.00 | 0.92 | 0.92 | 1.00 | 3.7 |
+
+The one miss at hit@10 is `outlook-msft-cloud`, whose expected MD&A Section ranks between 11 and 20.
+
+**Answers** (judged by `jev-1.13.0`):
+
+| | cases | citations valid | figures exact | gaps stated | structure followed | words | Fact Recall | Faithfulness | $ per answer | latency s | first text s |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| **overall** | 10 | 1.00 | 0.90 | 1.00 | 0.80 | 486 | **0.67** | **0.95** | 0.0030 | 9.5 | 3.1 |
+| figure_trend | 2 | 1.00 | 0.50 | – | 1.00 | 348 | 0.67 | 0.90 | 0.0046 | 8.2 | 3.0 |
+| outlook | 2 | 1.00 | 1.00 | 1.00 | 1.00 | 469 | 0.42 | 0.97 | 0.0035 | 10.0 | 3.7 |
+| risk | 3 | 1.00 | 1.00 | 1.00 | 0.67 | 523 | 0.89 | 0.97 | 0.0022 | 9.5 | 3.1 |
+| sector | 3 | 1.00 | 1.00 | 1.00 | 0.67 | 550 | 0.62 | 0.95 | 0.0025 | 9.9 | 2.8 |
+
+Gaps stated is over the 6 holdout cases with expected gaps. The answers averaged 25,500 input and 960 output tokens and cost $0.030 in all; the slowest took 11.2 seconds; Jev's judging cost $0.012.
+
+- **The holdout scores are in line with dev.** Fact Recall 0.67 and Faithfulness 0.95 against v7's 0.62 to 0.65 and 0.90 to 0.95 on dev; hit@10 0.90 against 0.88. On 10 cases one case moves a share by 0.10, so this says the dev choices did not overfit badly, not that the holdout is better.
+- **The misses are on outlook and trend questions.** `outlook-msft-cloud` (Fact Recall 0.33) is the retrieval miss above, and leaves out Microsoft's remaining performance obligation and capital expenditure plans. `trend-amzn-aws-two-years` (0.33) states AWS's revenue but computes its own growth rate (19.7%) instead of quoting the MD&A's 19% and 20%. `outlook-nvda-revenue-two-years` (0.50) leaves out the latest quarter's revenue and the H20 export charge.
+- **The one figure failure is a labelled derivation.** The Apple revenue answer gives FY2025 growth as "6.4% ... derived from those reported amounts", as prompt rule 5 asks; the check fails every derived figure by design.
+- Two answers run over 600 words (621 and 609), the same length failure as on dev. Every citation is valid and every expected gap stated.
 
 ## Showing the results
 
