@@ -295,3 +295,41 @@ Structure the answer for a PE analyst, in Markdown:
 ```
 
 **After the template.** The [generator comparison](evaluation.md#generator-comparison) scored this template with all four models and kept `gpt-6-luna` ([ADR 0009](adr/0009-gpt-6-luna-stays-the-generator.md)); the Claude models' answers break its structure and citation rules more often, so a switch to Claude would need its own pass. The final configuration was then [run once on the holdout split](evaluation.md#the-holdout-run): Fact Recall 0.67, Faithfulness 0.95, structure followed by 0.80 of answers. Three things for later work: the 14 unreachable Required Facts are retrieval's (the per-Company budget leaves out the pharmaceutical Companies' Inflation Reduction Act passages; [ADR 0010](adr/0010-chunk-size-and-context-budget.md) later found that a 48k budget reaches only two of them and states no more facts); the longer answers make more claims for Jev to judge, so Faithfulness is worth watching across generators; and the citation check still fails statements of absence it does not recognise ("The stated Coverage Gap applies: ...", "[Coverage Gaps]" written as a tag), which are wording rules for the check, not faults of the answers.
+
+## Answer length: v11 to v14 (discarded)
+
+The code review of the spec (2026-10-16) found the structure criterion only partly met: v7's answers follow the structure in 0.79 to 0.90 of dev answers and 0.80 of holdout answers, and most misses are length. This pass tried to keep the long answers within 600 words. v8 to v10 already name discarded versions above, so its versions are numbered from v11.
+
+**The rule, from the ticket, before any run.** A version ships only if the share of answers following the structure rises on dev and the exact sign test, pairing the dev cases, puts it behind v7 on none of Fact Recall, Faithfulness and Coverage Gaps; otherwise v7 stays. The holdout split was not scored. Every run is `gpt-6-luna`, `jev-1.13.0`, the `fts5` Arm with 600-token chunks and the 32k budget that [ADR 0010](adr/0010-chunk-size-and-context-budget.md) kept, on the 20 dev cases, 2026-10-16.
+
+**Before.** v7 has five dev runs on that retrieval: the two of the iteration pass, the generator comparison's `gpt-6-luna` run, and the shipped setting and its control in the [chunk size and context budget sweep](evaluation.md#chunk-size-and-context-budget). Together 77 of 96 answers follow the structure (0.80). Two cases run over 600 words in nearly every run, and both compare three or more Companies: `sector-pharma-regulatory` (five Companies: 702, 632, 627, 785 and 640 words) and `risk-aapl-tsla-jpm` (three: 652, 597, 652, 708 and 746). Every other structure miss in those runs is an answer under 300 words (`outlook-meta-capex-2026`, and `followup-topic-change-export-controls`, whose Sources are the wrong Company's) or an opening of four sentences.
+
+**What.** v8 and v9 showed the model does not keep to a word count for a whole answer. So each version adds a length plan that code computes from the Sources: when they cover three or more Companies, the user message gets a "# Length" block just before the question, with a budget per Company, and the length line of the system rules ends "... keep the most material points, and follow the "Length" plan when the message gives one." The block also says "Add no closing summary or comparison section after them: the direct answer is the comparison. In the Coverage note, name each Coverage Gap in a few words instead of repeating its full wording." The budget per Company is all that differs between versions:
+
+- **v11**: "give each Company at most 4 sentences of points in all, under its heading or in its table row" (14 sentences shared among the Companies, at least 2 each: 4 for three Companies, 2 for five).
+- **v12**: "give each Company one paragraph of at most 4 sentences under its heading, or one table row of at most 4 sentences in all".
+- **v13**: "give each Company at most 3 bullet points under its heading, each a single sentence, or one table row with a single sentence per cell" (10 bullet points shared, at least 2 each).
+- **v14**: v12's paragraph "of at most 4 sentences and about 120 words" (360 words shared).
+
+Within the dev split, the plan reaches `risk-aapl-tsla-jpm`, `sector-pharma-regulatory`, `sector-aerospace-government` and `followup-regulatory-exposure`.
+
+**Scores.**
+
+| Version | cases | citations valid | figures exact | gaps stated | structure followed | words | Fact Recall | Faithfulness | $ per answer | latency s | over 600 words |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| **v7** (five runs) | 19-20 | 0.89-0.95 | 0.95-1.00 | 1.00 | **0.74-0.90** (0.80 pooled) | 382-404 | **0.62-0.68** | **0.90-0.97** | 0.0025-0.0026 | 6.8-8.9 | 1 or 2 |
+| v11 | 19 | 0.89 | 0.89 | 1.00 | 0.84 | 386 | 0.68 | 0.94 | 0.0025 | 6.1 | `risk-aapl-tsla-jpm` 681 |
+| v12 | 19 | 1.00 | 1.00 | 1.00 | 0.84 | 383 | 0.73 | 0.96 | 0.0025 | 5.8 | `risk-aapl-tsla-jpm` 690 |
+| v12 again | 19 | 0.95 | 0.95 | 1.00 | 0.74 | 390 | 0.66 | 0.92 | 0.0025 | 6.2 | `risk-aapl-tsla-jpm` 718, `missing-wells-fargo-vs-jpm` 629, `followup-tsla-risk-change` 618 |
+| v13 | 20 | 0.95 | 1.00 | 1.00 | 0.80 | 409 | 0.63 | 0.93 | 0.0026 | 6.5 | `risk-aapl-tsla-jpm` 722, `sector-pharma-regulatory` 682, `missing-wells-fargo-vs-jpm` 605 |
+| v14 | 19 | 0.89 | 1.00 | 1.00 | 0.79 | 369 | 0.66 | 0.93 | 0.0025 | 6.1 | `risk-aapl-tsla-jpm` 601, `sector-pharma-regulatory` 674 |
+
+Jev refused to judge `trend-jpm-revenue-snapshot` (`max_tokens_exceeded`) on every run but v13's, as on four of v7's five, so most runs score 19 cases.
+
+**Discarded: v7 stays.**
+
+- **The five-Company answer shortened; the three-Company one did not.** Under a sentence budget (v11 and both v12 runs), `sector-pharma-regulatory` came in at 532, 492 and 556 words, against 627 to 785 in all five v7 runs. `risk-aapl-tsla-jpm` ran over in every run of every version (601 to 722 words): whatever the plan asked for, the model gave each of the three Companies three paragraphs or bullets of two or three sentences each. Under v13 it kept to three bullets per Company but not to one sentence per bullet.
+- **The share following the structure did not rise.** v12, the best first run, was run again because it would have shipped: 0.84 and 0.74, or 30 of 38 answers (0.79) against v7's 77 of 96 (0.80). Answers the plan never reaches ran over in the rerun (`missing-wells-fargo-vs-jpm` 629, `followup-tsla-risk-change` 618), as they had not in any v7 run, which is the run-to-run noise the iteration pass found. Paired with each v7 run, structure is 0 to 3 cases higher and 0 to 4 lower for every version (p = 0.375 to 1.000).
+- **And v12's rerun fell behind on Faithfulness.** Against v7's control run from the sweep it is 1 case higher and 9 lower (p = 0.021), and 2 higher and 9 lower against the shipped run (p = 0.065). Its first run was behind on nothing (Fact Recall 2 to 5 cases higher and 0 to 1 lower, p = 0.219 to 0.500; Faithfulness 3 to 8 higher and 2 to 4 lower, p = 0.109 to 1.000), nor were v11, v13 and v14. No version was ahead on anything.
+
+The over-length answers are left as they are, as after v9. A five-Company comparison is the one case the plan fixed every time; a plan for four or more Companies only would reach that case alone, one answer in 20, which this rule cannot tell from noise. The five runs cost $0.238 in Answer Calls and $0.105 in Jev judging, **about $0.34 in all**.

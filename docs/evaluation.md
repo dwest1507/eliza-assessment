@@ -353,7 +353,7 @@ The holdout split has not been scored.
 
 ### After the prompt iterations (prompt v7)
 
-`gpt-6-luna`, `jev-1.13.0`, 2026-10-16, prompt [v7](prompt-iterations.md#the-final-template-v7), on the same retrieval as v5. The template was tuned in five versions, v6 to v10, each written for named failing dev cases and kept only if it fixed them and the paired sign test put it behind its predecessor on nothing; v6 and v7 were kept and v8 to v10 discarded. Each version's scores, the cases behind it and the paired tests are in the [prompt iteration log](prompt-iterations.md#the-iteration-pass-v6-to-v10). This is v7's second run, the one the "How it works" page shows; its first run scored structure 0.84, Fact Recall 0.63 and Faithfulness 0.95.
+`gpt-6-luna`, `jev-1.13.0`, 2026-10-16, prompt [v7](prompt-iterations.md#the-final-template-v7), on the same retrieval as v5. The template was tuned in five versions, v6 to v10, each written for named failing dev cases and kept only if it fixed them and the paired sign test put it behind its predecessor on nothing; v6 and v7 were kept and v8 to v10 discarded. A later pass on answer length, [v11 to v14](#answer-length-prompts-v11-to-v14), was discarded too. Each version's scores, the cases behind it and the paired tests are in the [prompt iteration log](prompt-iterations.md#the-iteration-pass-v6-to-v10). This is v7's second run, the one the "How it works" page shows; its first run scored structure 0.84, Fact Recall 0.63 and Faithfulness 0.95.
 
 | | cases | citations valid | figures exact | gaps stated | structure followed | words | Fact Recall | Faithfulness | $ per answer | latency s | first text s |
 |---|---|---|---|---|---|---|---|---|---|---|---|
@@ -477,6 +477,23 @@ Every setting hits and misses the same cases at hit@10 (0.88). Only the 48k budg
 - **Smaller chunks rank better and reach less.** 450-token chunks have the best MRR (0.84 against 0.73), but carry less text around each match, and reach fewer Required Facts at every budget.
 - **Of the 14 unreached facts, the budget can win two.** Five more sit in cases whose Sources do not fill even 48k, so the Section plan or the search terms leave them out; seven rank below what 48k holds.
 - Jev refused to judge `trend-jpm-revenue-snapshot` on both 32k runs (`max_tokens_exceeded`, as before), so the comparisons pair 19 cases. The three runs cost $0.157 in Answer Calls and $0.075 in Jev judging, **about $0.23 in all**. The holdout split was not scored.
+
+### Answer length (prompts v11 to v14)
+
+Golden Set version 1, dev split, 2026-10-16, after the chunk size and context budget sweep: the `fts5` Arm with 600-token chunks and the 32k budget, `gpt-6-luna`, judged by `jev-1.13.0`. v7's answers follow the structure in 0.80 of dev answers over its five runs (0.74 to 0.90 a run), and the misses are mostly length: the comparisons of three or more Companies run over 600 words. Four versions, v11 to v14, gave each Company a budget of sentences, paragraphs or bullet points when the Sources cover three or more; the rule, from the ticket, was that a version ships only if the share following the structure rises and the sign test puts it behind v7 on none of Fact Recall, Faithfulness and Coverage Gaps. Each version's wording, scores and paired tests are in the [prompt iteration log](prompt-iterations.md#answer-length-v11-to-v14-discarded).
+
+| | cases | citations valid | figures exact | gaps stated | structure followed | words | Fact Recall | Faithfulness | $ per answer | latency s |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **v7** (five runs, shipped) | 19-20 | 0.89-0.95 | 0.95-1.00 | 1.00 | **0.74-0.90** | 382-404 | **0.62-0.68** | **0.90-0.97** | 0.0025-0.0026 | 6.8-8.9 |
+| v12 (two runs) | 19 | 0.95-1.00 | 0.95-1.00 | 1.00 | 0.74-0.84 | 383-390 | 0.66-0.73 | 0.92-0.96 | 0.0025 | 5.8-6.2 |
+| v11, v13, v14 | 19-20 | 0.89-0.95 | 0.89-1.00 | 1.00 | 0.79-0.84 | 369-409 | 0.63-0.68 | 0.93-0.94 | 0.0025-0.0026 | 6.1-6.5 |
+
+**v7 stays**, so the dev numbers [after the prompt iterations](#after-the-prompt-iterations-prompt-v7) and [the holdout run](#the-holdout-run) still describe the shipped template.
+
+- **The share following the structure did not rise.** v12, the best first run, scored 0.84 and then 0.74: 30 of 38 answers (0.79) against v7's 77 of 96 (0.80).
+- **A budget per Company shortened the five-Company answer, not the three-Company one.** The pharmaceutical comparison came in at 492 to 556 words under a sentence budget, against 627 to 785 in every v7 run. The brief's risk comparison of Apple, Tesla and JPMorgan ran over in every run of every version (601 to 722 words): the model gave each Company three paragraphs or bullets whatever the budget said.
+- **v12's second run fell behind on Faithfulness** against one v7 run (1 case higher, 9 lower, p = 0.021). No version was ahead on anything.
+- The five runs cost $0.238 in Answer Calls and $0.105 in Jev judging, **about $0.34 in all**. The holdout split was not scored.
 
 ## Showing the results
 

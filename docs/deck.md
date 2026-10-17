@@ -124,7 +124,7 @@ computed and labelled as derived, which the check fails by design.
 
 - **Retrieval: FTS5 stays.** Dense embeddings, a hybrid and a cross-encoder re-ranker all reach hit@10 0.88, the same as FTS5, on the same cases (p = 1.000). None was ahead on Fact Recall, and FTS5 adds no model, no embedding call and no 300 MB matrix.
 - **Generator: `gpt-6-luna` stays.** `gpt-6.1-sol`, Claude Sonnet and Claude Opus state more Required Facts (0.73 to 0.75 against 0.62), but on too few cases (p = 0.062), at 20 to 65 times the cost: $0.049, $0.081 and $0.164 per answer against $0.0025.
-- **Prompt: v1 to v10, v7 kept.** Each version was written for named failing dev cases and kept only if it fixed them and fell behind on nothing. From v1 to v7: Fact Recall 0.45 to 0.65, Coverage Gaps stated 0.67 to 1.00, citations valid 0.75 to 0.90.
+- **Prompt: v1 to v14, v7 kept.** Each version was written for named failing dev cases and kept only if it fixed them and fell behind on nothing. From v1 to v7: Fact Recall 0.45 to 0.65, Coverage Gaps stated 0.67 to 1.00, citations valid 0.75 to 0.90. v11 to v14 tried to keep comparisons within 600 words: the structure was followed by 0.79 of dev answers against v7's 0.80, so v7 stays.
 
 > Sources: [Arm comparison](evaluation.md#arm-comparison), [generator comparison](evaluation.md#generator-comparison), [prompt log](prompt-iterations.md), [ADR 0008](adr/0008-fts5-stays-the-shipped-arm.md), [ADR 0009](adr/0009-gpt-6-luna-stays-the-generator.md)
 
