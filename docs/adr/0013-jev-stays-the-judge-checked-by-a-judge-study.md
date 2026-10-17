@@ -58,3 +58,7 @@ The study was run (issue #65); its numbers are in [`docs/evaluation.md`](../eval
 
 A check of Jev against a human's labels has still not been made. The committed sheet can be relabelled by a person to make one.
 
+
+## Built (2026-10-17)
+
+Everything decided here is built and in use. The judge study's three commands (`make judge-study-sample`, `make judge-study-judge`, `make judge-study-score`, in `edgar_eval.judge_study`) and the trial LLM claim split are built and were run (the outcome above). Jev is pinned in `JEV_MODEL`, the fact cut-off the study set is `FACT_CUTOFF` (0.6) in `edgar_eval.judge`, and every generation report records it. A failed judgment is recorded against that judgment, not the whole case. Jev judged the version 2 comparisons on dev at that cut-off (issue #73), where its one failure, the Faithfulness of `trend-jpm-revenue-snapshot`, left the case's other scores in place, and the version 2 holdout run (issue #74), where no judgment failed ([docs/evaluation.md](../evaluation.md#the-version-2-holdout-run)).

@@ -49,3 +49,12 @@ We decided:
 The developer should review every drafted fact, but because this is a quick-turn demo, it is acceptable not to. The developer chose not to (decided 2026-10-17, recorded on #43). Drafting does not wait for, or ask for, the developer to accept each case or fact.
 
 The mechanical checks stand in for the review: every evidence quote is checked verbatim against the Corpus, every figure against the SEC company-facts reference, and every new question against the others for duplicates. So does the implementer's read-back of each case against its Sections. These prove that the labels point at real text, not that they are complete, so no human has checked that a case lists everything its answer must say.
+
+## Built (2026-10-17)
+
+Everything decided here is built:
+
+- **The Brief Suite**: the brief's three questions and four variants of each, 15 cases, in `data/eval/brief_suite.json`, run 5 times a case by `make eval-brief`. On the shipped setup 1 of 15 cases passes, most misses being evidence that never reaches the Answer Context ([docs/evaluation.md](../evaluation.md#the-brief-suite)).
+- **One-claim, tiered Required Facts**, checked by the loader, with Fact Recall scored on the must-state facts and detail recall beside it.
+- **Golden Set version 2**: 80 cases in `data/eval/golden_set_v2.json`, version 1's 27 other cases rewritten and 53 new ones, with the split frozen at 60 dev and 20 holdout cases by the lowest SHA-256 digests (issue #72). It is the harnesses' default.
+- **The holdout rule per version**: version 2's holdout was scored once, on the final version 2 setup, after the comparisons on dev (issue #74). Fact Recall 0.74 and Faithfulness 0.95 against dev's 0.72 and 0.93, hit@10 0.89 against 0.93: in line with dev, and deciding nothing ([docs/evaluation.md](../evaluation.md#the-version-2-holdout-run)). Version 1's holdout run stands as recorded.

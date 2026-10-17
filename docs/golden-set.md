@@ -131,7 +131,7 @@ No id is in both files: the loader rejects one that is.
 
 ## Version 2
 
-Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions and four variants of each, and version 2's file, with all three batches of version 1's 27 other cases rewritten and all six slices of new cases, 80 cases in all, are built so far, and the split is [frozen](#the-frozen-split): 60 dev cases and 20 holdout cases, none pending. Version 2 is the harnesses' default.
+Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions and four variants of each, and version 2's file, with all three batches of version 1's 27 other cases rewritten and all six slices of new cases, 80 cases in all, are built, and the split is [frozen](#the-frozen-split): 60 dev cases and 20 holdout cases, none pending. Version 2 is the harnesses' default; its dev split has been measured and its holdout scored once ([evaluation](evaluation.md#the-version-2-holdout-run)).
 
 ### The file
 
@@ -369,7 +369,7 @@ The mix by kind of question, counted as in [Checks](#the-file), against [ADR 001
 | Follow-ups | 6 | ~8 | 5 | ~3 |
 | **Total** | **60** | 60 | **20** | 20 |
 
-The hash decided the holdout's mix, so it is reported and not adjusted: the holdout has more follow-ups and fewer Coverage Gap cases than the table, and dev the reverse. All five new follow-ups fell in the holdout, so dev's six are version 1's rewrites. Dev's Coverage Gap count is high because nine of the 27 rewritten version 1 cases are Coverage Gap cases, beside six new ones. The rewritten cases count 4 risk, 5 trend, 3 sector, 9 Coverage Gap and 6 follow-up cases, all dev; the new ones 16 risk (10 dev, 6 holdout), 11 trend (7, 4), 13 sector (10, 3), 8 Coverage Gap (6, 2) and 5 follow-ups (0, 5). No case moves from here on: a case added later is `dev` unless a new Golden Set version says otherwise, and version 2's holdout is scored once, on the final version 2 setup ([the holdout rule](evaluation.md#the-holdout-rule)).
+The hash decided the holdout's mix, so it is reported and not adjusted: the holdout has more follow-ups and fewer Coverage Gap cases than the table, and dev the reverse. All five new follow-ups fell in the holdout, so dev's six are version 1's rewrites. Dev's Coverage Gap count is high because nine of the 27 rewritten version 1 cases are Coverage Gap cases, beside six new ones. The rewritten cases count 4 risk, 5 trend, 3 sector, 9 Coverage Gap and 6 follow-up cases, all dev; the new ones 16 risk (10 dev, 6 holdout), 11 trend (7, 4), 13 sector (10, 3), 8 Coverage Gap (6, 2) and 5 follow-ups (0, 5). No case moves from here on: a case added later is `dev` unless a new Golden Set version says otherwise, and version 2's holdout is scored once, on the final version 2 setup ([the holdout rule](evaluation.md#the-holdout-rule)): that run has been made ([The version 2 holdout run](evaluation.md#the-version-2-holdout-run)).
 
 ### What is decided
 

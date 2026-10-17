@@ -31,3 +31,12 @@ Simulated at 60 dev cases, the size ADR 0012 sets, the new rule finds a real gai
 - The selection rules and the sign test change in `edgar_eval`, with the thresholds stated once.
 - The deck and the documents call version 2 results directional: "one-sided p < 0.10, fixed before running", with the Control Run shown.
 - **Revisit when** the system moves past the demo stage. Then return to two-sided p < 0.05 and a Golden Set large enough for it.
+
+## Built (2026-10-17)
+
+Everything decided here is built in `edgar_eval` and has been used:
+
+- **The thresholds** are stated once, as `AHEAD_P` (0.10) and `BEHIND_P` (0.20) in `edgar_eval.selection`, and every rule uses them, with Contradicted Claims among the guardrails. Each comparison reports the mean paired difference with a 95% bootstrap interval (fixed seed, 10,000 resamples), shown and not decided on (issue #55).
+- **The Control Run and the round** (issue #56): every comparison takes a Control Run, a Control Run ahead on an ahead metric makes the choice inconclusive, and the comparisons of one round share one shipped run and one Control Run.
+- **The Evidence Reached gate and the free screen** (issue #57): the retrieval harness gates on Evidence Reached with McNemar's exact test, one-sided, and screens every candidate Arm and setting before any paid run, at most three going on.
+- **Used on Golden Set version 2** (issue #73): the Arm, settings and generator comparisons on its 60 dev cases ran under this rule. The Control Run was not ahead, so every comparison was conclusive, and every shipped choice stands (the notes on ADRs 0008 to 0010). The holdout was then scored once on that setup (issue #74), deciding nothing. The numbers are in [docs/evaluation.md](../evaluation.md#the-version-2-comparisons-on-dev).

@@ -1,9 +1,14 @@
-"""The judge study (ADR 0013): Jev's verdicts checked against the developer's blind labels.
+"""The judge study (ADR 0013): Jev's verdicts checked against blind labels.
+
+The labels were meant to be the developer's. The developer delegated them, so the
+committed sheet's labels were made by blind Claude sessions (`claude-opus-5-5`) on the
+developer's behalf (issue #65): the study measures Jev's agreement with Claude, not with a
+human. "The labels" below means whoever filled in the sheet.
 
 Three commands:
 
 - `sample` draws the items from the saved generation reports and writes the labelling
-  sheet the developer fills in with an editor. It reads saved reports only: it makes no
+  sheet a labeller fills in with an editor. It reads saved reports only: it makes no
   Answer Call and no Jev call, and calls no provider.
 - `judge` has Jev judge every sampled item `JUDGE_RUNS` (2) times and, with
   `--reference`, Claude Haiku 5.5 (`REFERENCE_MODEL`, pinned) once as a reference judge.
@@ -12,7 +17,7 @@ Three commands:
   statements once. It prints its estimated cost before the first request, and stores
   the verdicts in their own file, apart from the sheet. A judgment that fails is
   recorded against each item it was for; no item is dropped.
-- `score` reads the developer's labels and the stored verdicts and reports, per judge:
+- `score` reads the sheet's labels and the stored verdicts and reports, per judge:
   accuracy and Cohen's kappa for facts and for claims; the share of bad claims
   (unsupported or contradicted) the judge calls supported, with its 95% Wilson interval;
   the error by generator; for Jev, agreement at each candidate fact cut-off (`CUTOFFS`)
@@ -78,7 +83,7 @@ the sentence split, and splits each into one-claim, self-contained statements. A
 statement keeps its sentence's citations (the tags it names that the sentence cites, or
 all of them when it names none) and its heading and table header, so each claim item's
 sentence has its own statements, judged against that item's cited Sources. That keeps
-the two splits comparable on the developer's labels, which are of the sentences.
+the two splits comparable on the sheet's labels, which are of the sentences.
 
 **Scoring.** Jev's first run is the study's measure, since a harness run judges once: it
 decides the revisit trigger and the stopping rule, and the second run measures how often
@@ -98,7 +103,7 @@ and counted.
   wholly below or wholly above one in five. The claim items left unlabelled are then
   left out, and the report is not partial.
 - **The splits compared**, answer by answer over the answers with a labelled claim item:
-  an answer is bad when the developer labels any of its claim items unsupported or
+  an answer is bad when the sheet labels any of its claim items unsupported or
   contradicted, and each split finds it bad when Jev calls any of those sentences (Jev's
   first run), or any of their LLM statements, unsupported or contradicted. The report
   says which split agrees with the labels on more answers and which catches more of the
@@ -1414,7 +1419,7 @@ Better = Literal["sentence", "llm", "both", "neither"]
 
 @dataclass(frozen=True)
 class AnswerComparison:
-    """One answer's labelled claim items: whether the developer labelled any of them
+    """One answer's labelled claim items: whether the sheet labels any of them
     unsupported or contradicted, and whether Jev's first run on the sentences, and Jev on
     the LLM split's statements of those sentences, finds any."""
 
@@ -1489,7 +1494,7 @@ def score(
     split: SplitRun | None = None,
     partial: bool = False,
 ) -> StudyScore:
-    """Score the judges' verdicts against the developer's labels (`read_labels`). Jev's
+    """Score the judges' verdicts against the sheet's labels (`read_labels`). Jev's
     first run is the study's measure, as one harness run judges once: it decides the
     revisit trigger and the stopping rule; its second run measures how often Jev agrees
     with itself. Raises `Unlabelled` while any item is unlabelled, unless the stopping
