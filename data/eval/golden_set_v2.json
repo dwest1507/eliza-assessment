@@ -1390,6 +1390,832 @@
           ]
         }
       ]
+    },
+    {
+      "id": "trend-jpm-revenue-snapshot",
+      "question": "How has JPMorgan's revenue changed over the last two years?",
+      "history": [],
+      "question_type": "figure_trend",
+      "split": "dev",
+      "starter": {
+        "order": 5,
+        "label": "How has JPMorgan's revenue changed over two years?"
+      },
+      "tags": [],
+      "notes": "EDA variant V1. JPMorgan is a Snapshot Company: four Filings, all 2025. Its 10-Qs have no MD&A Item heading (text is Unsectioned) and its 10-K's financial review sits after Item 15 (Other). Rewritten for version 2 from the firmwide overview of each of the four Filings' financial reviews and the 10-K's three-year summary; version 2 adds the first two 10-Qs, whose quarters are in the window. The SEC company-facts reference does not cache JPMorgan, a Snapshot Company, so no fact states a dollar amount; the amounts stay in the evidence quotes. The growth rates are the Filings' own, and the 10-K's are consistent with its three-year summary (2025 against 2024: up 3%).",
+      "expected_sources": [
+        {
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Other"
+        },
+        {
+          "filing_id": "JPM_10-Q_2025-03-31",
+          "section": "Unsectioned"
+        },
+        {
+          "filing_id": "JPM_10-Q_2025-06-30",
+          "section": "Unsectioned"
+        },
+        {
+          "filing_id": "JPM_10-Q_2025-09-30",
+          "section": "Unsectioned"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "JPMorgan's total net revenue for 2025 was up 3% from 2024.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Other",
+          "evidence": "Total net revenue was $182.4 billion, up 3%",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan's net interest income for 2025 was up 3% from 2024.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Other",
+          "evidence": "Net interest income (“NII”) of $95.4 billion, up 3%",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan's noninterest revenue for 2025 was up 2% from 2024.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Other",
+          "evidence": "Noninterest revenue (“NIR”) was $87.0 billion, up 2%",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says the absence of the net gain related to Visa shares recorded in the second quarter of 2024 predominantly offset the increases in its 2025 noninterest revenue.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Other",
+          "evidence": "These increases were predominantly offset by the absence of the $7.9 billion net gain related to Visa shares recorded in the second quarter of 2024",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan's 10-K reports higher total net revenue for 2024 than for 2023.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Other",
+          "evidence": "Total net revenue | | $ | 182,447 | | | $ | 177,556 | | (g) | $ | 158,104 |",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan's total net revenue for the first quarter of 2025 was up 8% from a year earlier.",
+          "filing_id": "JPM_10-Q_2025-03-31",
+          "section": "Unsectioned",
+          "evidence": "Total net revenue was $45.3 billion, up 8%",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan's total net revenue for the second quarter of 2025 was down 11% from a year earlier.",
+          "filing_id": "JPM_10-Q_2025-06-30",
+          "section": "Unsectioned",
+          "evidence": "Total net revenue was $44.9 billion, down 11%",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says its second-quarter 2025 noninterest revenue decline primarily reflected the absence of the net gain related to Visa shares recorded in the prior year.",
+          "filing_id": "JPM_10-Q_2025-06-30",
+          "section": "Unsectioned",
+          "evidence": "Noninterest revenue (\"NIR\") was $21.7 billion, down 21%, primarily reflecting the absence of the $7.9 billion net gain related to Visa shares recorded in the prior year.",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan's total net revenue for the third quarter of 2025 was up 9% from a year earlier.",
+          "filing_id": "JPM_10-Q_2025-09-30",
+          "section": "Unsectioned",
+          "evidence": "Total net revenue was $46.4 billion, up 9%",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan's noninterest revenue for the third quarter of 2025 was up 17% from a year earlier.",
+          "filing_id": "JPM_10-Q_2025-09-30",
+          "section": "Unsectioned",
+          "evidence": "Noninterest revenue (\"NIR\") was $22.5 billion, up 17%",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "snapshot_trend",
+          "companies": [
+            "JPM"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stale-ge-recent-performance",
+      "question": "How has General Electric performed recently?",
+      "history": [],
+      "question_type": "stale_filing",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "EDA variant V5. The only GE Filing is GE Capital's FY2014 10-K, which is kept out of answers about General Electric today, so nothing should be retrieved and the answer is the Coverage Gap. Rewritten for version 2 unchanged: a case that expects only a Coverage Gap has no Required Facts.",
+      "expected_sources": [],
+      "required_facts": [],
+      "expected_coverage_gaps": [
+        {
+          "kind": "stale_filing",
+          "companies": [
+            "GE"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trend-meta-revenue-two-years",
+      "question": "How has Meta's revenue changed over the last two years?",
+      "history": [],
+      "question_type": "figure_trend",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "EDA variant V2. Meta is the borderline Tracked Company: exactly eight Filings, 2024Q1 to 2025Q4. Its latest Filing is the FY2025 10-K, so the last two years are 2024 and 2025. Rewritten for version 2 from the whole MD&A of the FY2024 and FY2025 10-Ks. Total revenue and its growth match the SEC company-facts reference (RevenueFromContractWithCustomerExcludingAssessedTax: $134,902 million for 2023, $164,501 million for 2024, $200,966 million for 2025; up 22% each year). The segment and advertising revenue amounts have no company-facts value, so those facts state only the growth rate.",
+      "expected_sources": [
+        {
+          "filing_id": "META_10-K_2024-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Meta's total revenue for 2024 was $164.50 billion.",
+          "filing_id": "META_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Total revenue for 2024 was $164.50 billion, an increase of 22% compared to 2023",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Meta's total revenue for 2024 increased 22% compared to 2023.",
+          "filing_id": "META_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Total revenue for 2024 was $164.50 billion, an increase of 22% compared to 2023",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Meta says its 2024 revenue increase was due to an increase in advertising revenue.",
+          "filing_id": "META_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "an increase of 22% compared to 2023, due to an increase in advertising revenue.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta says its 2024 revenue would have increased 23% on a constant currency basis.",
+          "filing_id": "META_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Revenue on a constant currency basis would have increased 23% compared to 2023.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta's ad impressions delivered across its Family of Apps increased 11% year-over-year in 2024.",
+          "filing_id": "META_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Ad impressions delivered across our Family of Apps in 2024 increased 11% year-over-year",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta's average price per ad increased 10% year-over-year in 2024.",
+          "filing_id": "META_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "our average price per ad increased 10% year-over-year.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta's Reality Labs revenue increased 13% in 2024 compared to 2023.",
+          "filing_id": "META_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "RL revenue in 2024 increased $250 million, or 13%, compared to 2023.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta's total revenue for 2025 was $200.97 billion.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Total revenue for 2025 was $200.97 billion, an increase of 22% compared to 2024",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Meta's total revenue for 2025 increased 22% compared to 2024.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Total revenue for 2025 was $200.97 billion, an increase of 22% compared to 2024",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Meta says its 2025 revenue increase was due to an increase in advertising revenue.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "an increase of 22% compared to 2024, due to an increase in advertising revenue.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta's ad impressions delivered across its Family of Apps increased 12% year-over-year in 2025.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Ad impressions delivered across our Family of Apps in 2025 increased 12% year-over-year",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta's average price per ad increased 9% year-over-year in 2025.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "our average price per ad increased 9% year-over-year.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta's Family of Apps other revenue increased 50% in 2025 compared to 2024.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "FoA other revenue in 2025 increased $862 million, or 50%, compared to 2024.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta's Reality Labs revenue increased 3% in 2025 compared to 2024.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "RL revenue in 2025 increased $61 million, or 3%, compared to 2024.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta's total revenue for 2023 was $134.90 billion.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Revenue | $ | 200,966 | | | $ | 164,501 | | | $ | 134,902 |",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "trend-aapl-revenue-fy2025",
+      "question": "How did Apple's net sales change in fiscal 2025 compared with fiscal 2024?",
+      "history": [],
+      "question_type": "figure_trend",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "Named fiscal years, so the window is explicit. The net sales figures sit in flattened MD&A tables. Rewritten for version 2 from the whole MD&A of Apple's FY2025 10-K, its segment and category tables and their commentary. Total net sales and their growth match the SEC company-facts reference (RevenueFromContractWithCustomerExcludingAssessedTax: $391,035 million for FY2024, $416,161 million for FY2025; up 6%). The segment and category amounts have no company-facts value, so those facts state only the growth rate or direction.",
+      "expected_sources": [
+        {
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Apple's total net sales were $416,161 million in fiscal 2025.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Total net sales | $ | 416,161 | | | 6 | % | | $ | 391,035",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple's total net sales were $391,035 million in fiscal 2024.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Total net sales | $ | 416,161 | | | 6 | % | | $ | 391,035",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple's total net sales increased 6% in fiscal 2025 compared with fiscal 2024.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Total net sales | $ | 416,161 | | | 6 | % | | $ | 391,035",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple's Services net sales increased 14% in fiscal 2025.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Services(1) | 109,158 | | | 14 | %",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple says its Services net sales increased in fiscal 2025 primarily due to higher net sales from advertising, the App Store and cloud services.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Services net sales increased during 2025 compared to 2024 primarily due to higher net sales from advertising, the App Store and cloud services.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's iPhone net sales increased 4% in fiscal 2025.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "iPhone | $ | 209,586 | | | 4 | %",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says its iPhone net sales increased in fiscal 2025 due to higher net sales of Pro models.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "iPhone net sales increased during 2025 compared to 2024 due to higher net sales of Pro models.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's Mac net sales increased 12% in fiscal 2025.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Mac | 33,708 | | | 12 | %",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's iPad net sales increased 5% in fiscal 2025.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "iPad | 28,023 | | | 5 | %",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's Wearables, Home and Accessories net sales decreased 4% in fiscal 2025.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Wearables, Home and Accessories | 35,686 | | | (4) | %",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's Greater China net sales decreased 4% in fiscal 2025.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Greater China | 64,377 | | | (4) | %",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple says its Greater China net sales decreased in fiscal 2025 primarily due to lower net sales of iPhone.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Greater China net sales decreased during 2025 compared to 2024 primarily due to lower net sales of iPhone, partially offset by higher net sales of Mac.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's Americas net sales increased 7% in fiscal 2025.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Americas | $ | 178,353 | | | 7 | %",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's Europe net sales increased 10% in fiscal 2025.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Europe | 111,032 | | | 10 | %",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's Japan net sales increased 15% in fiscal 2025.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Japan | 28,703 | | | 15 | %",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's Rest of Asia Pacific net sales increased 10% in fiscal 2025.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Rest of Asia Pacific | 33,696 | | | 10 | %",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "trend-tsla-net-income-three-years",
+      "question": "How has Tesla's net income changed over the past three years?",
+      "history": [],
+      "question_type": "figure_trend",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "Three fiscal years of 10-Ks. The 2023 figure includes a one-time tax benefit that an answer should mention. Rewritten for version 2 from the whole MD&A of the FY2023, FY2024 and FY2025 10-Ks. Net income matches the SEC company-facts reference (NetIncomeLoss: $14,997 million for 2023, $7,091 million for 2024, $3,794 million for 2025). The year-on-year changes ($2.44 billion, $7.91 billion, $3.30 billion) and the $5.93 billion tax benefit have no company-facts value, so those facts state the direction or the item without the amount; the amounts stay in the evidence.",
+      "expected_sources": [
+        {
+          "filing_id": "TSLA_10-K_2023-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "TSLA_10-K_2024-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Tesla's net income attributable to common stockholders was $15.00 billion in 2023.",
+          "filing_id": "TSLA_10-K_2023-12-31",
+          "section": "MD&A",
+          "evidence": "In 2023, our net income attributable to common stockholders was $15.00 billion",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla's net income attributable to common stockholders increased in 2023 compared to 2022.",
+          "filing_id": "TSLA_10-K_2023-12-31",
+          "section": "MD&A",
+          "evidence": "our net income attributable to common stockholders was $15.00 billion, representing a favorable change of $2.44 billion, compared to the prior year.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla's 2023 net income included a one-time non-cash tax benefit for the release of valuation allowance on certain deferred tax assets.",
+          "filing_id": "TSLA_10-K_2023-12-31",
+          "section": "MD&A",
+          "evidence": "This included a one-time non-cash tax benefit of $5.93 billion for the release of valuation allowance on certain deferred tax assets.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla's net income attributable to common stockholders was $7.09 billion in 2024.",
+          "filing_id": "TSLA_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "In 2024, our net income attributable to common stockholders was $7.09 billion",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla's net income attributable to common stockholders decreased in 2024 compared to 2023.",
+          "filing_id": "TSLA_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "our net income attributable to common stockholders was $7.09 billion, representing a decrease of $7.91 billion compared to the prior year",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla attributes its 2024 net income decrease primarily to the impact of releasing its valuation allowance on U.S. federal and state deferred tax assets in the fourth quarter of 2023.",
+          "filing_id": "TSLA_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "primarily due to the impact of releasing $6.54 billion of our valuation allowance associated with U.S. federal and state deferred tax assets in the fourth quarter of 2023.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla's effective tax rate changed to an expense of 20% in 2024 from a benefit of 50% in 2023.",
+          "filing_id": "TSLA_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Our effective tax rate changed to an expense of 20% in the year ended December 31, 2024 from a benefit of 50% in the year ended December 31, 2023.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla's net income attributable to common stockholders was $3.79 billion in 2025.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "In 2025, our net income attributable to common stockholders was $3.79 billion",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla's net income attributable to common stockholders decreased in 2025 compared to 2024.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "our net income attributable to common stockholders was $3.79 billion, representing a decrease of $3.30 billion compared to the prior year.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla's total revenues decreased in 2025 compared to 2024.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "In 2025, we recognized total revenues of $94.83 billion, representing a decrease of $2.86 billion compared to the prior year.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "trend-amzn-aws-two-years",
+      "question": "How has Amazon's AWS segment revenue grown over the last two years?",
+      "history": [],
+      "question_type": "figure_trend",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "Segment revenue, a Financial Facts metric. Amazon's latest Filing is the FY2025 10-K, so the last two years are 2024 and 2025. Rewritten for version 2 from the whole MD&A of the FY2024 and FY2025 10-Ks. The SEC company-facts reference has no segment values, so AWS's net sales ($90,757 million for 2023, $107,556 million for 2024, $128,725 million for 2025) cannot be checked against it and no fact states them; the amounts stay in the evidence. The growth rates are the Filings' own and agree with those amounts (up 19% and 20%).",
+      "expected_sources": [
+        {
+          "filing_id": "AMZN_10-K_2024-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Amazon's AWS sales increased 19% in 2024 compared to the prior year.",
+          "filing_id": "AMZN_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "AWS sales increased 19% in 2024, compared to the prior year.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Amazon says its 2024 AWS sales growth primarily reflects increased customer usage.",
+          "filing_id": "AMZN_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "AWS sales increased 19% in 2024, compared to the prior year. The sales growth primarily reflects increased customer usage",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon says its 2024 AWS sales growth was partially offset by pricing changes primarily driven by long-term customer contracts.",
+          "filing_id": "AMZN_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "The sales growth primarily reflects increased customer usage, partially offset by pricing changes primarily driven by long-term customer contracts.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon's AWS sales increased 20% in 2025 compared to the prior year.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "AWS sales increased 20% in 2025, compared to the prior year.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Amazon says its 2025 AWS sales growth primarily reflects increased customer usage.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "AWS sales increased 20% in 2025, compared to the prior year. The sales growth primarily reflects increased customer usage",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon says its 2025 AWS sales growth was partially offset by pricing changes primarily driven by long-term customer contracts.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "The sales growth primarily reflects increased customer usage, partially offset by pricing changes primarily driven by long-term customer contracts.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon's AWS segment was 18% of its net sales in 2025.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "AWS | 17 | | | 18 | Consolidated | 100 | % | | 100 | %",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "outlook-tsla-2026",
+      "question": "What is Tesla's outlook for 2026?",
+      "history": [],
+      "question_type": "outlook",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "Tesla's FY2025 MD&A has a 2026 Outlook section with spending and strategy, but no revenue or delivery guidance. Rewritten for version 2 from the whole of that MD&A's \"Management Opportunities, Challenges and Uncertainties and 2026 Outlook\" passages. The expected 2026 capital expenditures (in excess of $20 billion) are a forecast with no SEC company-facts value, so the must-state fact says that Tesla gives a minimum, which an answer states by giving it; the amount stays in the evidence. The 2025 capital expenditures match the reference (PaymentsToAcquirePropertyPlantAndEquipment: $8,527 million).",
+      "expected_sources": [
+        {
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Tesla gives a minimum figure for the capital expenditures it expects in 2026.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "We currently expect our capital expenditures to be in excess of $20 billion in 2026",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla expects its 2026 capital expenditures to be driven by its AI initiatives.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "We currently expect our capital expenditures to be in excess of $20 billion in 2026, driven by our AI initiatives",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla says its expected 2026 capital expenditures include investments in compute infrastructure and data centers.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "driven by our AI initiatives, including investments in compute infrastructure and data centers",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla's capital expenditures were $8.53 billion in 2025.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Capital expenditures amounted to $8.53 billion in 2025",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla believes the launch of its Robotaxi service unlocks the potential for significant business growth.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "we believe the launch of our Robotaxi service unlocks the potential for significant business growth to advance a service-driven business model.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla says the next phase of its production growth will be initiated by advances in autonomy and the introduction of new products.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "The next phase of production growth will be initiated by advances in autonomy and the introduction of new products, including those built on our next generation vehicle platform",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says it is advancing the development of Optimus, a general purpose, autonomous humanoid robot.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "We are also capitalizing on our strengths in real-world AI data to advance the development of Optimus, a general purpose, autonomous humanoid robot.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says changes to fiscal and trade policy, including tariffs and export controls, may impact its global supply chain cost structure and availability.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "changes to fiscal and trade policy with respect to tariffs, export controls and other restrictions may impact our global supply chain cost structure and availability",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says the removal of tax credits for electric vehicles under the OBBBA may impact consumer demand for electric vehicles.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "certain provisions of the OBBBA, including the removal of tax credits for electric vehicles, may also impact consumer demand for electric vehicles in general.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says it continues to increase the production of its energy storage products to meet high levels of demand.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "We continue to increase the production and capabilities of our energy storage products to meet high levels of demand",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla is constructing a new Megafactory near Houston, Texas.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "the construction of a new Megafactory near Houston, Texas",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla sees opportunities for its energy storage products as AI infrastructure drives rapid load growth.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "as AI infrastructure drives rapid load growth, we see opportunities for our energy storage products to stabilize the grid",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "no_guidance",
+          "companies": [
+            "TSLA"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outlook-msft-cloud",
+      "question": "What is the growth outlook for Microsoft's cloud business?",
+      "history": [],
+      "question_type": "outlook",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "Microsoft's latest Filing is its Q2 FY2026 10-Q. Its commentary and backlog speak to the outlook; no guidance is given. Rewritten for version 2 from the whole MD&A of that 10-Q: the highlights, the trends and risks, the Intelligent Cloud segment results and the capital expenditure plans. The Microsoft Cloud revenue ($51.5 billion) and commercial remaining performance obligation ($625 billion) have no SEC company-facts value (the reference records total remaining performance obligations of $631 billion), so those facts state only the growth rate; the amounts stay in the evidence.",
+      "expected_sources": [
+        {
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Microsoft's Azure and other cloud services revenue increased 39% in the second quarter of fiscal 2026.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Azure and other cloud services revenue increased 39%.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft says its Azure growth was driven by demand for its portfolio of services, with continued growth across all workloads.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Azure and other cloud services revenue grew 39% driven by demand for our portfolio of services with continued growth across all workloads.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft Cloud revenue increased 26% in the second quarter of fiscal 2026.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Microsoft Cloud revenue increased 26% to $51.5 billion.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft's commercial remaining performance obligation increased 110%.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Commercial remaining performance obligation increased 110% to $625 billion.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft's Intelligent Cloud revenue increased 29% in the second quarter of fiscal 2026.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Intelligent CloudRevenue increased $7.4 billion or 29%.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft 365 Commercial cloud revenue increased 17% in the second quarter of fiscal 2026.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Microsoft 365 Commercial cloud revenue increased 17%.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft Cloud gross margin percentage decreased to 67% in the second quarter of fiscal 2026.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Microsoft Cloud gross margin percentage decreased to 67%",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says its Microsoft Cloud gross margin percentage decrease was driven by continued investments in AI infrastructure and growing AI product usage.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Microsoft Cloud gross margin percentage decreased to 67% driven by continued investments in AI infrastructure and growing AI product usage",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says it will continue to invest in capital expenditures to support growth in its cloud offerings and AI infrastructure.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A",
+          "evidence": "We will continue to invest in capital expenditures to support growth in our cloud offerings and our investments in AI infrastructure and training.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft says its investments in cloud and AI infrastructure will continue to increase its operating costs and may decrease its operating margins.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A",
+          "evidence": "The investments we are making in cloud and AI infrastructure and devices will continue to increase our operating costs and may decrease our operating margins.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says it continues to evaluate opportunities to expand its datacenter locations and server capacity, particularly given the growing demand for AI services.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A",
+          "evidence": "We continue to identify and evaluate opportunities to expand our datacenter locations and increase our server capacity to meet the evolving needs of our customers, particularly given the growing demand for AI services.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says its datacenters depend on the availability of permitted and buildable land, predictable energy, networking supplies and servers.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Our datacenters depend on the availability of permitted and buildable land, predictable energy, networking supplies, and servers, including graphics processing units and other components.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "no_guidance",
+          "companies": [
+            "MSFT"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outlook-meta-capex-2026",
+      "question": "What does Meta expect to spend on capital expenditures in 2026?",
+      "history": [],
+      "question_type": "outlook",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "An outlook question the Filings do answer: Meta's FY2025 10-K states its expected 2026 capital expenditures. No no_guidance gap is expected; the generation harness checks only the gaps listed, so a system that adds one anyway is not penalised here. Rewritten for version 2 from the whole MD&A of that 10-K. The expected range (approximately $115 billion to $135 billion) is a forecast with no SEC company-facts value, so the must-state fact says that Meta gives a range, which an answer states by giving it; the amounts stay in the evidence.",
+      "expected_sources": [
+        {
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Meta gives a range for the capital expenditures it anticipates making in 2026.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "We anticipate making capital expenditures of approximately $115 billion to $135 billion in 2026",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Meta anticipates that its 2026 capital expenditures will support its AI efforts and core business.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "We anticipate making capital expenditures of approximately $115 billion to $135 billion in 2026 to support our AI efforts and core business.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Meta expects its AI initiatives will require significantly increased investment in infrastructure.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "In particular, we expect our AI initiatives will require significantly increased investment in infrastructure.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta has leases that have not yet commenced, mostly for data centers, colocations and network infrastructure.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "we have leases that have not yet commenced, with total lease obligations of approximately $103.77 billion, mostly for data centers, colocations, and network infrastructure",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
     }
   ]
 }

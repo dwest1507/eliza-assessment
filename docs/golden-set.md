@@ -2,7 +2,7 @@
 
 The Golden Set is the evaluation's ground truth: 30 labelled questions that the retrieval and generation harnesses score the system against. It lives in [`data/eval/golden_set.json`](../data/eval/golden_set.json) and is read by `edgar_rag.golden_set.load_golden_set()`, which checks the schema. It was written before any retrieval Arm or prompt ran, so no label was written with results in view.
 
-This page describes version 1, the set every result so far was measured on, the Required Fact tiers that version 2 adds, and the [Brief Suite](#the-brief-suite), the brief's questions in a file of their own. Version 2's [file](#the-file) is built and holds the first nine of version 1's cases [rewritten](#the-rewritten-version-1-cases); the rest of version 2 is decided but not built yet: see [Version 2](#version-2). Version 1's file stays unchanged as a record, and a test pins its digest.
+This page describes version 1, the set every result so far was measured on, the Required Fact tiers that version 2 adds, and the [Brief Suite](#the-brief-suite), the brief's questions in a file of their own. Version 2's [file](#the-file) is built and holds the first 18 of version 1's cases [rewritten](#the-rewritten-version-1-cases); the rest of version 2 is decided but not built yet: see [Version 2](#version-2). Version 1's file stays unchanged as a record, and a test pins its digest.
 
 ## What it covers
 
@@ -131,7 +131,7 @@ No id is in both files: the loader rejects one that is.
 
 ## Version 2
 
-Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions and four variants of each, and version 2's file, with the first nine of version 1's 27 other cases rewritten, are built so far.
+Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions and four variants of each, and version 2's file, with the first two batches of version 1's 27 other cases rewritten (18 cases), are built so far.
 
 ### The file
 
@@ -170,6 +170,26 @@ Version 1's 27 cases other than the brief's are rewritten into version 2 in thre
 - **Must-state or detail.** The must-state facts are what any good answer gives: each Company's defining risks, its headline figure (Boeing's 35%, Lockheed Martin's 72%, RTX's 38% of sales to the U.S. government), and, for a comparison, each side's. Dates, the second half of a split fact, risk categories beyond the main ones and remediation steps are details.
 - **No amount without a reference value.** None of this batch's dollar amounts has an SEC company-facts value: Coca-Cola's $28.7 billion of revenue outside the U.S. and $18,442 million of foreign currency notional value, UnitedHealth's Change Healthcare costs, and every amount for Companies the reference does not cache (Boeing, Lockheed Martin, RTX). Their facts state no amount, as in the Brief Suite; the amount stays in the evidence quote. Version 1's Coca-Cola facts stated two of these amounts.
 - **Review.** The developer waived the review of drafted labels on 2026-10-17 (spec #43), so the label tests and the read-back of each case against its notes are the review.
+
+The second batch, version 1's figure trend, outlook and General Electric cases:
+
+| Case | Required Facts (must-state / detail) | Sections drafted from |
+|---|---|---|
+| `trend-jpm-revenue-snapshot` | 2 / 8 | The financial review of JPMorgan's FY2025 10-K (Other) and, new, of all three of its 2025 10-Qs (Unsectioned) |
+| `trend-meta-revenue-two-years` | 4 / 11 | MD&A of Meta's FY2024 and FY2025 10-Ks |
+| `trend-aapl-revenue-fy2025` | 5 / 11 | MD&A of Apple's FY2025 10-K, its segment and category tables and their commentary |
+| `trend-tsla-net-income-three-years` | 6 / 4 | MD&A of Tesla's FY2023, FY2024 and FY2025 10-Ks |
+| `trend-amzn-aws-two-years` | 2 / 5 | MD&A of Amazon's FY2024 and FY2025 10-Ks |
+| `outlook-tsla-2026` | 3 / 9 | The 2026 Outlook passages of the MD&A of Tesla's FY2025 10-K |
+| `outlook-msft-cloud` | 4 / 8 | MD&A of Microsoft's Q2 FY2026 10-Q |
+| `outlook-meta-capex-2026` | 2 / 2 | MD&A of Meta's FY2025 10-K |
+| `stale-ge-recent-performance` | 0 / 0 | None: the case expects only the stale Filing Coverage Gap, as in version 1 |
+
+- **Each figure its own fact.** A period's figure and the change from the period before are separate facts: Meta's revenue for 2024 and for 2025 and the 22% growth of each, Tesla's net income for each year and the decrease from the year before, Apple's total net sales for each fiscal year and the 6% between them.
+- **Figures from the reference.** The total figures match the SEC company-facts reference, which the figure check confirms: Meta's RevenueFromContractWithCustomerExcludingAssessedTax ($134,902, $164,501 and $200,966 million for 2023 to 2025), Apple's ($391,035 and $416,161 million for FY2024 and FY2025), Tesla's NetIncomeLoss ($14,997, $7,091 and $3,794 million for 2023 to 2025) and Tesla's 2025 PaymentsToAcquirePropertyPlantAndEquipment ($8,527 million), with every growth rate recomputed from them.
+- **No amount without a reference value.** The reference has no segment, category or forecast values and does not cache JPMorgan, a Snapshot Company. So the facts on AWS's, Apple's segments' and categories', Meta's segments' and Microsoft Cloud's revenue, Microsoft's commercial remaining performance obligation (the reference records total remaining performance obligations of $631 billion, not the MD&A's $625 billion commercial figure) and every JPMorgan figure state the growth rate or direction only. So do the facts on Tesla's year-on-year changes in dollars and its 2023 tax benefit. Where the forecast is the answer, the must-state fact says the Filing gives it: Meta "gives a range for the capital expenditures it anticipates making in 2026" ($115 billion to $135 billion) and Tesla "gives a minimum figure" for its 2026 capital expenditures (more than $20 billion). An answer states the fact by giving the range or the minimum, which stays in the evidence quote. Ten of this batch's version 1 facts stated an amount like these.
+- **New Sources.** JPMorgan's case gains its first two 2025 10-Qs, whose quarters are in the window: revenue up 8% in the first quarter and down 11% in the second, when the Visa share gain of the year before was absent.
+- **Must-state or detail.** The must-state facts are each period's headline figure and its change, and for an outlook what the Filing expects: Tesla's capital expenditures driven by AI and its Robotaxi growth, Microsoft's cloud growth rates, backlog and continued capital investment, Meta's expected capital expenditures. Segment and category breakdowns, drivers, the year before the window and risks to the outlook are details. Apple's Services growth and Greater China decline stay must-state, as in version 1.
 
 ### What is decided
 

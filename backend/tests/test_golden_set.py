@@ -561,6 +561,15 @@ REWRITTEN_VERSION_1_CASES = (
     "sector-aerospace-government",
     "risk-bac-change-snapshot",
     "missing-wells-fargo-vs-jpm",
+    "trend-jpm-revenue-snapshot",
+    "trend-meta-revenue-two-years",
+    "trend-aapl-revenue-fy2025",
+    "trend-tsla-net-income-three-years",
+    "trend-amzn-aws-two-years",
+    "outlook-tsla-2026",
+    "outlook-msft-cloud",
+    "outlook-meta-capex-2026",
+    "stale-ge-recent-performance",
 )
 """Version 1 cases rewritten into version 2 so far, batch by batch, until all 27 of version
 1's cases other than the brief's are in it (ADR 0012)."""
