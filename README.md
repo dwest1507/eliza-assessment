@@ -119,7 +119,22 @@ Every command runs through the root `Makefile` (`make help` lists them):
 | `make eval-arms` | Answer the dev split through every retrieval Arm and choose the Shipped Arm by the selection rule (needs `OPENAI_API_KEY` and `JEV_API_KEY`, costs money) |
 | `make eval-generators` | Answer the dev split with `gpt-6-luna`, `gpt-6.1-sol`, Claude Sonnet 5.5 and Claude Opus 5.5 and choose the generator by the selection rule (needs `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` and `JEV_API_KEY`, costs about $6 on dev) |
 | `make eval-export` | Export the harnesses' latest results and the Corpus coverage for the workspace's "How it works" page (`SPLIT=` to change the split); no LLM call |
+| `make ci-cd` | Run every CI check locally: lint, tests, the retrieval gate, the front-end build, the dependency audits and Lighthouse (no paid API call) |
 | `make deck` | Render the slide deck (`docs/deck.md`) to `data/derived/deck/deck.html` with the Marp CLI, which `npx` fetches |
+
+### Continuous integration
+
+GitHub Actions runs the same scripts as `make ci-cd` (in [`scripts/`](scripts/)), and none of them calls a paid API: the generation harness never runs in CI ([ADR 0011](docs/adr/0011-ci-runs-no-paid-api.md)).
+
+| Workflow | Runs on | What it checks | Locally |
+|---|---|---|---|
+| Backend CI | backend, `data/` or `docs/` changes | the uv lockfile, ruff, pytest, and the retrieval gate: FTS5 on the dev split against the Floors in `data/eval/retrieval_floors.json` | `make backend-lint`, `make backend-test`, `make eval-gate` |
+| Frontend CI | front-end changes | ESLint, Prettier, TypeScript, Vitest, the production build | `make frontend-quality`, `make frontend-test`, `make frontend-build` |
+| Lighthouse | front-end pull requests | accessibility, best practices and SEO of at least 0.9 (performance warns) | `make lighthouse` |
+| Security | every pull request and push to main, and weekly | CodeQL, gitleaks, npm audit, pip-audit, dependency review | `make security-audit` |
+| Release Please | pushes to main | opens a release pull request that bumps the version and writes `CHANGELOG.md` from the conventional commits | |
+
+A change meant to move the retrieval scores (a new Golden Set version, Shipped Arm, chunk size or context budget) re-records the Floors with `make eval-floors` and commits them with it. Dependabot opens weekly npm and uv update pull requests and monthly GitHub Actions ones.
 
 ### Asking a question
 
@@ -276,6 +291,7 @@ context.messages  # the rendered prompt for the Answer Call
 │   ├── reference/sectors.csv  the curated Sector table, one row per Company
 │   ├── reference/missing_companies.csv  notable Companies not in the Corpus
 │   ├── eval/golden_set.json   the Golden Set: labelled evaluation questions and starter prompts
+│   ├── eval/retrieval_floors.json  the lowest retrieval scores CI accepts (ADR 0011)
 │   └── derived/               anything built from the Corpus (gitignored)
 ├── docs/
 │   ├── AI-RAG Assessment.md   the assessment brief
@@ -286,6 +302,8 @@ context.messages  # the rendered prompt for the Answer Call
 │   ├── prompt-iterations.md   every version of the Answer Call's prompt template
 │   ├── deck.md                the slide deck (Marp Markdown; `make deck` renders it)
 │   └── adr/                   architecture decision records
+├── scripts/                   the CI checks, run by GitHub Actions and `make ci-cd`
+├── .github/                   the GitHub Actions workflows, Dependabot and CODEOWNERS
 ├── CONTEXT.md                 domain glossary
 └── Makefile                   single entry point
 ```

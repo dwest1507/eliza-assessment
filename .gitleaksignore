@@ -1,0 +1,6 @@
+# False positives from gitleaks' generic-api-key rule. The CI scripts once cleared the
+# provider keys by assigning them empty strings, which the rule reads as a key; they now
+# unset the keys instead. Fingerprints are commit:file:rule:line.
+648f3570adafc3db78799a7c20b2b1a857bac2d3:scripts/backend-test.sh:generic-api-key:10
+648f3570adafc3db78799a7c20b2b1a857bac2d3:scripts/backend-eval.sh:generic-api-key:15
+ffe6fe6db37857fd3c4a90cd6a9eac1231750b2e:.gitleaksignore:generic-api-key:1
