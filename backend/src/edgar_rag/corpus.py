@@ -35,6 +35,7 @@ from typing import Literal
 
 from edgar_rag._body import Span, clean_body
 from edgar_rag._sections import UNSECTIONED, Section, split_sections
+from edgar_rag.paths import DATA_DIR
 
 __all__ = [
     "DEFAULT_CORPUS_DIR",
@@ -53,11 +54,11 @@ __all__ = [
     "load_corpus",
     "load_filing",
     "load_sector_table",
+    "report_quarter",
 ]
 
-_DATA_DIR = Path(__file__).resolve().parents[3] / "data"
-DEFAULT_CORPUS_DIR = _DATA_DIR / "edgar_corpus"
-DEFAULT_SECTOR_TABLE = _DATA_DIR / "reference" / "sectors.csv"
+DEFAULT_CORPUS_DIR = DATA_DIR / "edgar_corpus"
+DEFAULT_SECTOR_TABLE = DATA_DIR / "reference" / "sectors.csv"
 
 _HEADER_END = "=" * 60
 
@@ -260,6 +261,16 @@ def consecutive_quarters(filings: Iterable[Filing]) -> int:
             run += 1
         longest = max(longest, run)
     return longest
+
+
+def report_quarter(report_period: date) -> str:
+    """The calendar quarter whose end a Report Period stands for, as "2025Q3".
+
+    Periods ending in the first days of a month count as the previous month's end, as
+    for Fiscal Periods, so a 52/53-week quarter ending on 1 July is the second quarter.
+    """
+    year, month = _period_month(report_period)
+    return f"{year}Q{(month - 1) // 3 + 1}"
 
 
 def load_sector_table(path: str | Path = DEFAULT_SECTOR_TABLE) -> list[SectorRow]:

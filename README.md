@@ -6,17 +6,18 @@ This repo is a take-home assessment for a Forward Deployed Engineer (AI Engineer
 
 ## Status
 
-The work runs in phases. The exploratory data analysis (EDA) phase is complete; retrieval, the prompt and the front-end come next.
+The work runs in phases. The exploratory data analysis (EDA) phase is complete. The retrieval phase has its tracer bullet: a question asked from the command line, over the chat API or in the research workspace is answered end to end, from the index through one Answer Call, and the retrieval and generation harnesses measure it on the Golden Set. Coverage Gaps are computed by code and stated in the prompt, the stream and the workspace. Figure questions get exact, cited Financial Facts. The workspace is a chat: a follow-up inherits the parts of the Query Scope it does not name from earlier questions, and the conversation survives a page refresh. The retrieval Arm (FTS5) and the generator (`gpt-6-luna`) were chosen by fixed rules on the Golden Set's dev split, and the final configuration was scored once on its holdout split.
 
 | Deliverable (from the brief) | Status | Where |
 |---|---|---|
 | README with setup and run instructions | Done | This file |
-| Indexing and retrieval code | Partly done: Corpus loading, cleaning, Section splitting and Financial Facts extraction are built and tested. Chunking, the index and retrieval are next. | [`backend/src/edgar_rag/`](backend/src/edgar_rag/) |
-| Log of prompt iterations | Not started | Planned with the Answer Call |
-| Final prompt template | Not started | Planned with the Answer Call |
-| Front-end | Not started | [`frontend/`](frontend/) (reserved for Next.js) |
-| Example request, ready to execute | Not started | Planned with the API |
-| Notes on how quality was evaluated | Partly done: Financial Facts extraction is measured against SEC XBRL data. Retrieval and answer evaluation are next. | [`docs/findings.md`](docs/findings.md) (findings 21–24), notebook analysis 7 |
+| Indexing and retrieval code | Partly done: Corpus loading, cleaning, Section splitting, Financial Facts extraction, chunking, the FTS5 index, Company recognition, Sector phrases resolved through the Sector table, time windows, Section hints, the metric (revenue, net income, segment names), risk routing, deduplication of repeated text, "how has it changed" routing, retrieval into numbered Sources budgeted per Company, the Financial Facts store queried into a cited table with derived fourth quarters and year-on-year changes, Coverage Gaps (Snapshot trends, Companies missing from the Corpus, the stale GE Capital Filing, missing guidance, periods that differ) and follow-up questions that inherit their Query Scope by rules ([ADR 0003](docs/adr/0003-follow-ups-inherit-query-scope-by-rules.md)) are built and tested. | [`backend/src/edgar_rag/`](backend/src/edgar_rag/) |
+| Log of prompt iterations | Done: v1 to v14, each with what changed, why (the failing dev cases or metric) and its dev scores before and after; v8 to v14 were tried and discarded | [`docs/prompt-iterations.md`](docs/prompt-iterations.md) |
+| Final prompt template | Done: v7, after the prompt iterations, scored with all four generators and on the holdout split | [The Answer Call's prompt](#the-answer-calls-prompt), [`docs/prompt-iterations.md`](docs/prompt-iterations.md#the-final-template-v7), [`backend/src/edgar_rag/_prompt.py`](backend/src/edgar_rag/_prompt.py) |
+| Front-end | Started: the research workspace streams answers, opens each `[Sn]` citation's passage (or, for a Financial Facts Source, its table of figures) in a Sources panel, shows each answer's Query Scope as chips and its Coverage Gaps as a callout, and offers the six starter prompts. The conversation is kept for the browser session, and a "New conversation" control clears it. A "How it works" page shows the architecture, the evaluation scoreboard with the generator comparison (from `make eval-export`), the holdout run and the Corpus coverage grid. | [`frontend/`](frontend/), [Running the full stack](#running-the-full-stack) |
+| Example request, ready to execute | Done: `make ask` answers a question from the command line, and `backend/scripts/chat.sh` calls the chat API with `curl` | [Asking a question](#asking-a-question), [The chat API](#the-chat-api) |
+| Notes on how quality was evaluated | Done: Financial Facts extraction is measured against SEC XBRL data, the Golden Set of 30 labelled questions is written and checked against the Corpus, the retrieval harness scores the FTS5 Arm on it (hit@10 0.88 on dev), three challenger Arms (dense, hybrid, cross-encoder re-ranking) were measured in both harnesses and none beat FTS5 ([ADR 0008](docs/adr/0008-fts5-stays-the-shipped-arm.md)), the generation harness scores the answers in code and with the Jev judge, four generators (`gpt-6-luna`, `gpt-6.1-sol`, Claude Sonnet 5.5, Claude Opus 5.5) were compared on dev and none beat `gpt-6-luna` at 20 to 65 times its cost ([ADR 0009](docs/adr/0009-gpt-6-luna-stays-the-generator.md)), 16 chunk sizes and context budgets were scored on dev and none beat 600-token chunks and a 32k budget ([ADR 0010](docs/adr/0010-chunk-size-and-context-budget.md)), and the final configuration was run once on the holdout split (Fact Recall 0.67, Faithfulness 0.95, Coverage Gaps stated 1.00, every citation valid and hit@10 0.90, at $0.0030 per answer). | [`docs/evaluation.md`](docs/evaluation.md), [`docs/findings.md`](docs/findings.md) (findings 21–24), notebook analysis 7, [`docs/golden-set.md`](docs/golden-set.md) |
+| Presentation: value case and future state | Drafted, awaiting the developer's review: eight slides (the Client's problem, the value case, the demo hand-off, the holdout numbers, how the choices were made, risks and limits, the future state), each linking the documents its numbers come from; a test checks every figure on a slide is in one of them | [`docs/deck.md`](docs/deck.md), [The slide deck](#the-slide-deck) |
 | Documented assumptions and decisions | Done for the EDA | [`docs/findings.md`](docs/findings.md), [`docs/assumptions.md`](docs/assumptions.md), [`docs/adr/`](docs/adr/) |
 
 ## What the EDA found
@@ -37,14 +38,15 @@ The planned flow for one question, following the [recommendations for the retrie
 ```
 question
   │
-  ├─ rule-based parser ── Companies, Sector phrases, time window, Section hints, metric
+  ├─ rule-based parser ── Companies, Sector phrases, time window, Section hints, metric;
+  │                        a follow-up inherits what it leaves out from earlier questions
   │                        (no LLM runs before the Answer Call)
   │
   ├─ retrieval ────────── chunks filtered by Company and period, preferring the right
   │                        Section, deduplicated, budgeted per Company
   │
   ├─ Financial Facts ──── fixed, parameterised SQLite queries for revenue, net income
-  │                        and segment revenue
+  │                        and segment revenue; one Facts Source per Filing
   │
   └─ Answer Call ──────── one LLM request: fixed prompt template + cited chunks
                            + facts table + each Company's coverage gaps
@@ -61,27 +63,145 @@ Key decisions so far:
 
 These rest on assumptions about what the Client wants. Each one, and whether the Client has confirmed it, is in [`docs/assumptions.md`](docs/assumptions.md).
 
+### The Answer Call's prompt
+
+The Answer Call sends one fixed template, version v7 ([`backend/src/edgar_rag/_prompt.py`](backend/src/edgar_rag/_prompt.py)), as two messages. The system message holds the rules below. The user message holds, in order: the Coverage Gaps the answer must state (or "None."), the Companies each Sector phrase resolved to, each Company's coverage (its class, Filings, Report Periods and Fiscal Periods), the Financial Facts table when the question names a metric, the Sources grouped by Company, the earlier conversation (the last 10 turns, about 6k tokens at most, each earlier Source tag named as the Filing ID it cited), and the question. How each part came to be, and its dev scores, is in the [prompt iteration log](docs/prompt-iterations.md).
+
+```text
+You are a research assistant for private equity analysts. You answer business questions about public companies using only the excerpts from their SEC 10-K and 10-Q filings given to you as numbered Sources.
+
+Rules:
+1. Use only the Sources. Never use general knowledge, memory or any outside data, even for well-known facts. If the Sources do not answer part of the question, say so plainly.
+2. Cite every claim with the tag of the Source it comes from, e.g. [S3], placed right after the claim. Use several tags when a claim rests on several Sources. Cite only tags listed in this turn's Sources.
+3. The earlier conversation is there to help you understand the question. It is not evidence: never repeat a claim from an earlier answer unless a Source in this turn supports it, and then cite that Source.
+4. When you use a Company's filings, give the filing's form type, fiscal period and report period, as listed under "Coverage", and say so when the Companies you compare report for different periods.
+5. Take revenue, net income and segment revenue from the Financial Facts table when it has them, cite the row's Source tags, and quote figures exactly with their units and periods. Label a derived figure as derived: a fourth quarter computed from a 10-K less three 10-Qs, a growth rate, or any figure you compute yourself, citing the rows it comes from. When a figure is not in the table and you read it from a Source's text instead, say it was read from the Filing text. When a Source's text states a change itself ("Revenue increased $36.6 billion or 15%") or what drove it, give that too, in its words and with its tag, rather than computing the change yourself.
+6. When the question names a group of companies ("the major banks"), it was resolved through a curated Sector table to the Companies listed under "Companies in scope". Name those Companies near the start of the answer, say they come from the Sector table, and cover no other company for that group.
+7. "Coverage Gaps" lists what the filings cannot answer: a trend asked of a company with only a snapshot of filings, a company not in the filings, a stale filing, guidance the filings do not contain, or periods that differ. State every gap listed there, in the words given, near the start of the answer. Never fill a gap from general knowledge: say nothing about a company the filings do not include, never use a filing listed as left out, and never present MD&A commentary as the company's guidance.
+8. Be specific. For each point, give the particulars the Sources state: the laws and programs, products, people, places, dates, amounts and percentages they name, in their words. Never reduce them to broad categories ("regulatory risk", "pricing pressure") that would fit any company.
+
+Structure the answer for a PE analyst, in Markdown:
+- Open with the direct answer: two or three sentences of prose, citing their Sources like any other claim. Put nothing before it: no heading, list or table.
+- Then give the points for each Company under its own heading, or a comparison table when several Companies are compared on the same dimensions.
+- Always end with a short "Coverage" note, even when there is no Coverage Gap: repeat the Coverage Gaps (or say there are none) and say what else the Sources could not answer.
+- Write 300 to 600 words. When the question is narrow, reach 300 words with the specifics of rule 8 that bear on it (what drove a figure, the segments, periods or plans behind it, the risks the Sources attach to it), never with repetition or general knowledge. When the Sources hold more than 600 words can carry, keep the most material points. Only an answer whose question the Sources cannot answer at all may be shorter.
+```
+
 ## Setup
 
-Prerequisites: Python 3.12+, [uv](https://docs.astral.sh/uv/) and `make`. The Corpus is committed, so there is nothing to download.
+Prerequisites: Python 3.12+, [uv](https://docs.astral.sh/uv/), Node.js 22+ with npm (`frontend/.nvmrc` names the version used), and `make`. The Corpus is committed, so there is nothing to download.
 
 ```sh
 git clone https://github.com/dwest1507/eliza-assessment.git
 cd eliza-assessment
-make install   # create backend/.venv with uv
-make test      # run the test suite
+make install   # create backend/.venv with uv and install frontend/node_modules with npm
+make test      # run the backend and front-end test suites
 ```
 
 Every command runs through the root `Makefile` (`make help` lists them):
 
 | Command | What it does |
 |---|---|
-| `make install` | Install the backend environment with uv |
-| `make test` | Run the backend test suite (pytest) |
-| `make lint` | Lint and check formatting (ruff) |
-| `make format` | Auto-fix lint issues and format |
+| `make install` | Install the backend environment with uv and the front-end's dependencies with npm |
+| `make test` | Run the backend (pytest) and front-end (Vitest) test suites |
+| `make lint` | Lint and check formatting (ruff; ESLint, TypeScript and Prettier) |
+| `make format` | Auto-fix lint issues and format both halves |
 | `make eda` | Execute the EDA notebook from its source and write `eda.ipynb` with outputs |
 | `make sec-facts` | Fetch the SEC XBRL company-facts reference for the Tracked Companies |
+| `make index` | Rebuild the retrieval index (`data/derived/edgar_rag.sqlite`) from the Corpus |
+| `make ask Q="..."` | Answer a question from the command line, without a server (needs `OPENAI_API_KEY`) |
+| `make api` | Run the chat API on http://localhost:8000 (`API_PORT` to change; answers need `OPENAI_API_KEY`) |
+| `make embeddings` | Embed every chunk for the dense and hybrid challenger Arms (evaluation only; needs `OPENAI_API_KEY`, about 35 cents) |
+| `make eval-retrieval` | Score the retrieval Arms on the Golden Set's dev split (`SPLIT=holdout` or `all` to change it, `ARMS=` to pick Arms, `CHUNK_TOKENS=` and `CONTEXT_BUDGET=` for another chunk size or context budget); no LLM call |
+| `make dev` | Run the chat API and the research workspace together on http://localhost:3000 (`WEB_PORT` to change) |
+| `make eval-generation` | Answer the Golden Set's dev split and score the answers, with cost and latency (`SPLIT=`, `MODEL=`, `CHUNK_TOKENS=`, `CONTEXT_BUDGET=`; needs `OPENAI_API_KEY` and `JEV_API_KEY`, costs money) |
+| `make eval-rescore` | Redo the figure check of every saved generation report from its stored answers, in place; no LLM call |
+| `make eval-arms` | Answer the dev split through every retrieval Arm and choose the Shipped Arm by the selection rule (needs `OPENAI_API_KEY` and `JEV_API_KEY`, costs money) |
+| `make eval-generators` | Answer the dev split with `gpt-6-luna`, `gpt-6.1-sol`, Claude Sonnet 5.5 and Claude Opus 5.5 and choose the generator by the selection rule (needs `OPENAI_API_KEY`, `ANTHROPIC_API_KEY` and `JEV_API_KEY`, costs about $6 on dev) |
+| `make eval-export` | Export the harnesses' latest results and the Corpus coverage for the workspace's "How it works" page (`SPLIT=` to change the split); no LLM call |
+| `make deck` | Render the slide deck (`docs/deck.md`) to `data/derived/deck/deck.html` with the Marp CLI, which `npx` fetches |
+
+### Asking a question
+
+`make index` chunks every Filing, extracts the Tracked Companies' Financial Facts, and writes both to the index, one SQLite file under `data/derived/` (about 45 seconds). An index written by an earlier version of the code is refused with a message to run `make index` again. `make ask` answers one question through one Answer Call to OpenAI, so it needs an OpenAI API key in `backend/.env`:
+
+```sh
+cp backend/.env.example backend/.env   # then set OPENAI_API_KEY (unquoted)
+make index
+make ask Q="What are the primary risk factors facing Apple, Tesla, and JPMorgan, and how do they compare?"
+```
+
+`make ask` builds the index first if it is missing. It prints the Query Scope (the Companies the question names, each Sector phrase and the Companies the Sector table resolved it to, the time window, any Section hints, the metrics and segments, and each Company's Filings inside the window), the Financial Facts table when the question names a metric (each row with its Source tags, derived rows labelled, and a note for each Company and metric that falls back to the Filing text), the numbered Sources the answer may cite, the Coverage Gaps the answer must state, then the answer as it streams, and a last line with the model, prompt version, token usage and latency. The model defaults to `gpt-6-luna`; set `OPENAI_MODEL` in `backend/.env` to try another. Every Answer Call is also logged as one JSON line in `data/derived/logs/answer_calls.jsonl`.
+
+### The chat API
+
+`make api` serves the same pipeline over HTTP with FastAPI, for the front-end (it builds the index first if it is missing). With it running, the `curl` example asks the brief's first question and prints the stream as it arrives:
+
+```sh
+make api                                   # terminal 1
+backend/scripts/chat.sh                    # terminal 2: the brief's first example question
+backend/scripts/chat.sh "What are NVIDIA's main supply chain risks?"
+API_URL=http://localhost:8001 backend/scripts/chat.sh   # another server
+```
+
+The script is a single `curl` call:
+
+```sh
+curl --no-buffer -X POST http://localhost:8000/api/chat \
+  -H 'Content-Type: application/json' \
+  -d '{"messages": [{"role": "user", "content": "What are the primary risk factors facing Apple, Tesla, and JPMorgan, and how do they compare?"}]}'
+```
+
+- **`POST /api/chat`** takes the conversation, oldest first, ending with the question: `{"messages": [{"role": "user" | "assistant", "content": "..."}]}`. Messages in the AI SDK's `useChat` shape (`parts: [{"type": "text", "text": "..."}]`) are read too. An earlier answer may say which Filing each of its Source tags cited, as `"sources": {"S1": "AAPL_10-K_2025-09-27"}` or as its own `data-sources` part, and the prompt's history then names those Filings in place of the tags (tags it can't resolve are dropped). A follow-up inherits each part of the Query Scope it does not name (the Companies, the time window, the Section hints, the metric, and the topic words when it names none of its own) from the most recent earlier question that named it ([ADR 0003](docs/adr/0003-follow-ups-inherit-query-scope-by-rules.md)). It answers with the [Vercel AI SDK UI message stream](https://ai-sdk.dev/docs/ai-sdk-ui/stream-protocol) (server-sent events, header `x-vercel-ai-ui-message-stream: v1`): first a `data-query-scope` part with the Query Scope the rules resolved (`companies`; `sectorPhrases`, each with its `phrase`, the Sector table `column` and `values` it was read against and the `tickers` it resolved to; `timeWindow`; `sections`; `metric`), then a `data-sources` part with every numbered Source (`tag`, `filingId`, `company`, `ticker`, `formType`, `reportPeriod`, `fiscalPeriod`, `section`, `item`, `label`, `text`, and `kind`: `text`, or `facts` for the Financial Facts of one Filing, which also carries its reported `rows`, each with `metric`, `metricName`, `segment`, `months`, `reportPeriod`, `value`, `valueText` and the `label` the Filing prints), so citations are clickable before the answer arrives, then a `data-coverage-gaps` part with every Coverage Gap (`kind`, `label`, `companies`, and the fixed wording `text` the answer states; an empty list when there is none), then the answer as `text-delta` parts, `finish` and `[DONE]`. If the provider fails mid-answer, an `error` part replaces `finish`.
+- A conversation is rejected with `400` and a `detail` giving the reason when it has more than 11 messages (the question and the 10 earlier messages the prompt keeps as history, `HISTORY_TURNS` in `backend/src/edgar_rag/_prompt.py`), when an earlier message is longer than 20,000 characters (an answer runs to at most 2,500 completion tokens, about 10,000 characters), or when its latest message is empty, longer than 4,000 characters, or not the user's question; a body of the wrong shape is rejected with `422`. A follow-up therefore inherits its Query Scope only from the questions among those 11 messages. If the index is missing or the answer model can't be created (no key), the API answers `503`.
+- **`GET /api/health`** returns `{"status": "ok"}` and needs no key.
+
+The backend is stateless: nothing is kept between requests, so the browser sends the conversation each time (its last 11 messages, the turns the prompt uses). Cross-origin browser calls are refused unless their origin is listed in `CORS_ALLOWED_ORIGINS` in `backend/.env` (comma-separated). The front-end calls the API through its own server-side route, which needs none. Each Answer Call is logged like `make ask`'s.
+
+### Running the full stack
+
+`make dev` runs the chat API and the research workspace together, then serves the workspace on http://localhost:3000. Answers need `OPENAI_API_KEY` in `backend/.env`, as for `make ask`:
+
+```sh
+cp backend/.env.example backend/.env   # then set OPENAI_API_KEY (unquoted)
+make dev                               # API on :8000, workspace on http://localhost:3000
+make dev API_PORT=8001 WEB_PORT=3001   # other ports
+```
+
+`make dev` builds the index first if it is missing, and installs the front-end's dependencies if they are missing or `package-lock.json` changed. If either server exits, it stops the other, and Ctrl+C stops both.
+
+In the workspace, type a question or click one of the six starter prompts, which are the Golden Set's starter cases. The answer streams in as Markdown. Every `[Sn]` citation is a link: clicking it opens the Sources panel at that Source, showing its Filing ID, Form Type, Report Period, Fiscal Period, Section, Item and passage text. A Financial Facts Source shows a table of the figures that Filing reports instead of a passage. The answer's Sources are also listed under it, and they are clickable as soon as the answer starts. Follow-up questions build on earlier ones ("Which of them has the most regulatory exposure?", "And what about Microsoft?"), and each answer's Query Scope chips show what was inherited. The conversation is kept in the browser's session storage, so a refresh keeps it; "New conversation" in the header clears it.
+
+The browser never calls the API directly. It posts to the workspace's own route (`frontend/app/api/chat/route.ts`), which forwards the conversation's last 11 messages (the turns the prompt uses, so a long conversation keeps working) to the API and streams the answer back, so the API's URL stays on the server. When the API rejects a request, the workspace shows its reason. That URL comes from `BACKEND_URL` in `frontend/.env` (copy `frontend/.env.example`); it defaults to `http://127.0.0.1:8000`, and `make dev` points it at the API it starts. To run the halves separately, use `make api` and `cd frontend && npm run dev`. [`frontend/README.md`](frontend/README.md) describes the app's layout and tests.
+
+### Measuring retrieval
+
+```sh
+make eval-retrieval
+```
+
+runs every Golden Set case on the dev split through each retrieval Arm (FTS5, the Shipped Arm, and three challengers: dense embeddings, a reciprocal-rank-fusion hybrid and a cross-encoder re-ranker), with no LLM call, and prints hit@k, recall@k and MRR overall and per question type, then each challenger Arm's comparison with the Shipped Arm by McNemar's exact test. The report is also written to `data/derived/eval/retrieval-dev.json`. The method and the first numbers are in [`docs/evaluation.md`](docs/evaluation.md). The dense and hybrid Arms need chunk embeddings, which `make embeddings` builds once (OpenAI `text-embedding-3-small`; it needs `OPENAI_API_KEY`, costs about 35 cents and runs automatically when they are missing); `ARMS=fts5` skips them. `make eval-arms` answers the dev split through every Arm and applies the spec's selection rule. The comparison, which kept FTS5, is in [`docs/evaluation.md`](docs/evaluation.md#arm-comparison) and [ADR 0008](docs/adr/0008-fts5-stays-the-shipped-arm.md). It also reports how many Required Facts' evidence quotes reach the prompt. `CHUNK_TOKENS=450` and `CONTEXT_BUDGET=24000` score another chunk size or context budget without editing code (an index of that chunk size is built beside the shipped one when missing); the grid that kept 600-token chunks and a 32k budget is in [`docs/evaluation.md`](docs/evaluation.md#chunk-size-and-context-budget) and [ADR 0010](docs/adr/0010-chunk-size-and-context-budget.md).
+
+
+### Measuring answers
+
+```sh
+make eval-generation
+```
+
+answers every Golden Set case on the dev split through one real Answer Call each, then scores the answers: citation validity, figure exactness, Coverage Gap statements and the answer's structure (a direct answer first, points per Company or a comparison table, a closing Coverage note, 300–600 words) are checked in code, and Fact Recall and Faithfulness are judged by Jev, TypeSafe's judgment model, pinned to an exact version. Each answer's cost and latency, from the Answer Call log, are reported next to the scores. It needs `OPENAI_API_KEY` and `JEV_API_KEY` in `backend/.env` and costs about $0.07 per run. `MODEL=` picks another generator: an OpenAI model, or a Claude model (`MODEL=claude-sonnet-5-5`), which needs `ANTHROPIC_API_KEY` instead of `OPENAI_API_KEY`. `make eval-generators` runs all four compared generators and applies the selection rule; the comparison, which kept `gpt-6-luna`, is in [`docs/evaluation.md`](docs/evaluation.md#generator-comparison) and [ADR 0009](docs/adr/0009-gpt-6-luna-stays-the-generator.md). `SPLIT=holdout` scores the holdout split, which was run once, at the end ([The holdout run](docs/evaluation.md#the-holdout-run)). The report, with every answer, is written to `data/derived/eval/generation-dev.json`; the method and the first scores are in [`docs/evaluation.md`](docs/evaluation.md#generation-harness). `make eval-rescore` reruns a corrected check on the saved reports' answers offline, with no Answer Call and no Jev call.
+
+### Showing the results in the workspace
+
+```sh
+make eval-export
+```
+
+collects the harnesses' latest reports for the dev split (every Arm's retrieval scores and comparison with the Shipped Arm, every generator's scores, cost and latency, and the generator comparison's sign tests and choice), the holdout run's reports once the holdout has been scored, and the Corpus coverage grid (each Company's Filings by Report Period, Tracked Companies first) into `frontend/data/eval-export.json`. The workspace's "How it works" page (http://localhost:3000/how-it-works, linked from its header) shows them with the architecture. The export runs the retrieval harness first if its report is missing, but never the generation harness, which costs money: until `make eval-generation` has run, the page says so instead of showing answer scores. The export is committed, so the page shows the last exported results without anyone rerunning the harnesses; rerun it and commit the file after a harness run worth publishing.
+
+### The slide deck
+
+The presentation around the demo is [`docs/deck.md`](docs/deck.md), Markdown for [Marp](https://marp.app/): one slide per `---`, with speaker notes in HTML comments. It reads as plain Markdown on GitHub, and `make deck` renders it to `data/derived/deck/deck.html` (it needs Node.js and network access the first time, for `npx` to fetch the pinned Marp CLI; open the HTML in a browser and press `p` for presenter view). Every slide ends with links to the documents its numbers come from, and `backend/tests/test_deck.py` checks that every figure on a slide, speaker notes included, is found word for word in one of them, so a changed evaluation number fails the test until the slide is updated.
 
 ### Running the EDA
 
@@ -117,32 +237,60 @@ for fact in extract_financial_facts(latest):
     print(fact.metric, fact.segment, fact.value, fact.label)
 ```
 
+The retrieval seam works on the index `make index` builds. Preparing an Answer Context makes no network call:
+
+```python
+from edgar_rag.retrieval import Message, prepare_answer_context
+
+context = prepare_answer_context([Message("user", "What are NVIDIA's main supply risks?")])
+context.query_scope.companies
+context.query_scope.time_window.label  # "latest": a risk question with no time phrase
+context.query_scope.sections           # ("Risk Factors",)
+[f.filing_id for f in context.query_scope.filings]
+[(s.tag, s.label) for s in context.sources]
+context.messages  # the rendered prompt for the Answer Call
+```
+
 ## Repository layout
 
 ```
 .
 ├── backend/                   uv-managed Python project
-│   ├── src/edgar_rag/
+│   ├── src/edgar_rag/         the core package (standard library only)
 │   │   ├── corpus.py          the Corpus seam: Filings with metadata, cleaned body, Sections
 │   │   ├── financial_facts.py the Financial Facts seam: revenue, net income, segment revenue
-│   │   └── sec_reference.py   fetches and reads the SEC company-facts evaluation reference
+│   │   ├── retrieval.py       the retrieval seam: build the index, prepare an Answer Context
+│   │   ├── answer_model.py    the answer model protocol and the logged Answer Call
+│   │   ├── sec_reference.py   fetches and reads the SEC company-facts evaluation reference
+│   │   ├── golden_set.py      loads and validates the Golden Set and its dev/holdout split
+│   │   └── paths.py           the data directory, defined once for every backend package
+│   ├── src/edgar_answer/      provider implementations (OpenAI, Anthropic) and the `make ask` CLI
+│   ├── src/edgar_api/         the FastAPI chat API (`make api`)
+│   ├── src/edgar_eval/        evaluation harnesses: retrieval Arms, their rankers and embeddings, metrics, the selection rule, answer checks, the Jev judge, the export
+│   ├── scripts/chat.sh        the `curl` example against the chat API
 │   ├── tests/                 pytest suite
 │   └── notebooks/             eda.py (source) and eda.ipynb (executed)
-├── frontend/                  reserved for the Next.js front-end
+├── frontend/                  the Next.js research workspace (`make dev`) and its "How it works" page
 ├── data/
 │   ├── edgar_corpus/          the Corpus, read-only, exactly as supplied
 │   ├── reference/sectors.csv  the curated Sector table, one row per Company
+│   ├── reference/missing_companies.csv  notable Companies not in the Corpus
+│   ├── eval/golden_set.json   the Golden Set: labelled evaluation questions and starter prompts
 │   └── derived/               anything built from the Corpus (gitignored)
 ├── docs/
 │   ├── AI-RAG Assessment.md   the assessment brief
 │   ├── findings.md            EDA findings and recommendations for retrieval
 │   ├── assumptions.md         working assumptions, confirmed or not by the Client
+│   ├── golden-set.md          the Golden Set's fields, split rule and review
+│   ├── evaluation.md          how quality is measured, and the scores
+│   ├── prompt-iterations.md   every version of the Answer Call's prompt template
+│   ├── deck.md                the slide deck (Marp Markdown; `make deck` renders it)
 │   └── adr/                   architecture decision records
 ├── CONTEXT.md                 domain glossary
 └── Makefile                   single entry point
 ```
 
-The core package depends on nothing outside the Python standard library and must not depend on a web framework, so the API and front-end can sit on top of it.
+The core package depends on nothing outside the Python standard library and must not depend on a web framework, so the API and front-end can sit on top of it; a guard test enforces this. Code that needs a provider's SDK lives in `edgar_answer` ([ADR 0005](docs/adr/0005-provider-sdks-outside-the-core-package.md)), the web API in `edgar_api`, the evaluation harnesses in `edgar_eval` ([ADR 0006](docs/adr/0006-evaluation-harnesses-outside-the-core-package.md)), and the research workspace in `frontend/`, which reaches the API only through its own server-side route.
 
 ## Data
 

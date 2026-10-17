@@ -1,0 +1,109 @@
+"""Guard: the core package imports no web framework and no API module, and stays on
+the standard library, so the API and front-end can sit on top of it."""
+
+import ast
+import subprocess
+import sys
+from pathlib import Path
+
+import edgar_rag
+
+CORE = Path(edgar_rag.__file__).parent
+
+WEB_FRAMEWORKS = {
+    "aiohttp",
+    "django",
+    "fastapi",
+    "flask",
+    "sanic",
+    "starlette",
+    "tornado",
+    "uvicorn",
+}
+# Packages that sit on top of the core: the API, the provider implementations and the
+# evaluation harnesses.
+OUTSIDE_CORE = {"api", "edgar_api", "edgar_answer", "edgar_eval"}
+
+
+def _imported_modules(path):
+    for node in ast.walk(ast.parse(path.read_text(encoding="utf-8"))):
+        if isinstance(node, ast.Import):
+            yield from (alias.name for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            yield node.module
+
+
+def test_the_core_package_imports_only_the_standard_library_and_itself():
+    imports = {
+        (path.name, module.split(".")[0])
+        for path in CORE.glob("*.py")
+        for module in _imported_modules(path)
+    }
+
+    outside = {
+        (name, top)
+        for name, top in imports
+        if top != "edgar_rag" and top not in sys.stdlib_module_names
+    }
+    assert outside == set()
+    assert not {top for _, top in imports} & (WEB_FRAMEWORKS | OUTSIDE_CORE)
+
+
+def test_importing_every_core_module_loads_no_web_framework_or_api_module():
+    modules = sorted(f"edgar_rag.{p.stem}" for p in CORE.glob("*.py") if p.stem != "__init__")
+    code = (
+        "import importlib, sys\n"
+        f"for m in {modules!r}: importlib.import_module(m)\n"
+        "print('\\n'.join(sorted({m.split('.')[0] for m in sys.modules})))"
+    )
+
+    loaded = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True, check=True
+    ).stdout.split()
+
+    assert not set(loaded) & (WEB_FRAMEWORKS | OUTSIDE_CORE | {"openai", "anthropic"})
+
+
+# The challenger Arms' model packages: only the evaluation harnesses use them.
+DEV_ONLY = {"numpy", "onnxruntime", "tokenizers", "huggingface_hub"}
+
+
+def test_the_challenger_arms_packages_are_in_the_dev_dependency_group_only():
+    import re
+    import tomllib
+
+    project = tomllib.loads((CORE.parents[1] / "pyproject.toml").read_text(encoding="utf-8"))
+
+    def names(requirements):
+        return {re.split(r"[<>=!~\[ ;]", r)[0].replace("-", "_") for r in requirements}
+
+    assert not names(project["project"]["dependencies"]) & DEV_ONLY
+    assert DEV_ONLY <= names(project["dependency-groups"]["dev"])
+
+
+def test_the_product_loads_none_of_the_challenger_arms_packages():
+    code = (
+        "import sys, edgar_api.app, edgar_answer.ask, edgar_rag.retrieval\n"
+        "print('\\n'.join(sorted({m.split('.')[0] for m in sys.modules})))"
+    )
+
+    loaded = subprocess.run(
+        [sys.executable, "-c", code], capture_output=True, text=True, check=True
+    ).stdout.split()
+
+    assert not set(loaded) & DEV_ONLY
+
+
+def test_the_data_directory_is_defined_once_for_every_backend_package():
+    """Every backend module finds the data directory through `edgar_rag.paths`; none
+    rebuilds it from its own file location."""
+    from edgar_rag.paths import DATA_DIR
+
+    rebuilt = sorted(
+        str(path.relative_to(CORE.parent))
+        for path in CORE.parent.glob("*/*.py")
+        if path != CORE / "paths.py" and "__file__" in path.read_text(encoding="utf-8")
+    )
+
+    assert rebuilt == []
+    assert (DATA_DIR / "edgar_corpus").is_dir()

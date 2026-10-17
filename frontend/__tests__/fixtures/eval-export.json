@@ -1,0 +1,308 @@
+{
+  "exportedOn": "2026-10-16",
+  "split": "dev",
+  "goldenSet": {
+    "version": 1,
+    "cases": 30,
+    "splitCases": 20
+  },
+  "retrieval": {
+    "gatingMetric": "hit@10",
+    "ks": [5, 10, 20],
+    "scoredCases": 17,
+    "unscored": ["stale-ge-recent-performance", "missing-citigroup", "followup-ge-to-honeywell"],
+    "arms": [
+      {
+        "name": "fts5",
+        "shipped": true,
+        "overall": {
+          "cases": 17,
+          "hitAt": {
+            "5": 0.647,
+            "10": 0.706,
+            "20": 0.765
+          },
+          "recallAt": {
+            "5": 0.598,
+            "10": 0.647,
+            "20": 0.667
+          },
+          "hitAll": 0.824,
+          "recallAll": 0.765,
+          "mrr": 0.59,
+          "meanSources": 16.88
+        },
+        "byType": [
+          {
+            "questionType": "risk",
+            "cases": 6,
+            "hitAt": {
+              "5": 0.5,
+              "10": 0.5,
+              "20": 0.5
+            },
+            "recallAt": {
+              "5": 0.42,
+              "10": 0.42,
+              "20": 0.42
+            },
+            "hitAll": 0.67,
+            "recallAll": 0.5,
+            "mrr": 0.51,
+            "meanSources": 22.7
+          }
+        ],
+        "missed": ["trend-tsla-net-income-three-years", "followup-switch-to-msft"]
+      },
+      {
+        "name": "dense",
+        "shipped": false,
+        "overall": {
+          "cases": 17,
+          "hitAt": {
+            "5": 0.59,
+            "10": 0.65,
+            "20": 0.82
+          },
+          "recallAt": {
+            "5": 0.5,
+            "10": 0.55,
+            "20": 0.7
+          },
+          "hitAll": 0.88,
+          "recallAll": 0.8,
+          "mrr": 0.48,
+          "meanSources": 20
+        },
+        "byType": [],
+        "missed": ["trend-tsla-net-income-three-years"]
+      }
+    ],
+    "comparisons": [
+      {
+        "arm": "dense",
+        "shippedArm": "fts5",
+        "metric": "hit@10",
+        "challengerOnly": 1,
+        "shippedOnly": 2,
+        "pValue": 1,
+        "verdict": "indistinguishable"
+      }
+    ]
+  },
+  "generation": [
+    {
+      "report": "generation-dev.json",
+      "model": "gpt-6-luna",
+      "judgeModel": "jev-1.13.0",
+      "promptVersion": "v2",
+      "overall": {
+        "cases": 20,
+        "citationsValid": 0.95,
+        "figuresExact": 0.9,
+        "coverageGapsStated": 0.5,
+        "factRecall": 0.55,
+        "faithfulness": 0.93,
+        "meanCostUsd": 0.0026,
+        "totalCostUsd": 0.052,
+        "meanLatencyS": 6.1,
+        "maxLatencyS": 14.9,
+        "meanFirstTokenS": 2.3,
+        "meanInputTokens": 23900,
+        "meanOutputTokens": 460,
+        "judgeCostUsd": 0.016
+      },
+      "byType": [
+        {
+          "questionType": "outlook",
+          "cases": 2,
+          "citationsValid": 1,
+          "figuresExact": 1,
+          "coverageGapsStated": null,
+          "factRecall": 0.75,
+          "faithfulness": 1,
+          "meanCostUsd": 0.0033,
+          "totalCostUsd": 0.0066,
+          "meanLatencyS": 4.6,
+          "maxLatencyS": 5.1,
+          "meanFirstTokenS": 1.1,
+          "meanInputTokens": 30000,
+          "meanOutputTokens": 500,
+          "judgeCostUsd": 0.001
+        }
+      ],
+      "failing": {
+        "citations": ["trend-meta-revenue-two-years"],
+        "figures": ["trend-meta-revenue-two-years", "trend-tsla-net-income-three-years"],
+        "coverageGaps": []
+      },
+      "errors": []
+    },
+    {
+      "report": "generation-dev-gpt-6.1-sol.json",
+      "model": "gpt-6.1-sol",
+      "judgeModel": "jev-1.13.0",
+      "promptVersion": "v2",
+      "overall": {
+        "cases": 20,
+        "citationsValid": 0.95,
+        "figuresExact": 0.9,
+        "coverageGapsStated": 0.5,
+        "factRecall": 0.73,
+        "faithfulness": 0.95,
+        "meanCostUsd": 0.0492,
+        "totalCostUsd": 0.94,
+        "meanLatencyS": 13.2,
+        "maxLatencyS": 14.9,
+        "meanFirstTokenS": 2.3,
+        "meanInputTokens": 23900,
+        "meanOutputTokens": 460,
+        "judgeCostUsd": 0.016
+      },
+      "byType": [],
+      "failing": {
+        "citations": [],
+        "figures": [],
+        "coverageGaps": []
+      },
+      "errors": []
+    }
+  ],
+  "generatorChoice": {
+    "shipped": "gpt-6-luna",
+    "chosen": "gpt-6-luna",
+    "comparisons": [
+      {
+        "model": "gpt-6.1-sol",
+        "cases": 19,
+        "factRecall": {
+          "challengerOnly": 4,
+          "shippedOnly": 1,
+          "pValue": 0.375,
+          "verdict": "indistinguishable"
+        },
+        "faithfulness": {
+          "challengerOnly": 8,
+          "shippedOnly": 4,
+          "pValue": 0.3877,
+          "verdict": "indistinguishable"
+        },
+        "coverageGaps": {
+          "challengerOnly": 0,
+          "shippedOnly": 0,
+          "pValue": 1,
+          "verdict": "indistinguishable"
+        },
+        "qualifies": false
+      }
+    ]
+  },
+  "holdout": {
+    "splitCases": 10,
+    "retrieval": {
+      "gatingMetric": "hit@10",
+      "ks": [5, 10, 20],
+      "scoredCases": 10,
+      "unscored": [],
+      "arms": [
+        {
+          "name": "fts5",
+          "shipped": true,
+          "overall": {
+            "cases": 10,
+            "hitAt": {
+              "5": 0.9,
+              "10": 0.9,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.83,
+              "10": 0.88,
+              "20": 0.97
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.97,
+            "mrr": 0.72,
+            "meanSources": 12.8
+          },
+          "byType": [],
+          "missed": ["outlook-msft-cloud"]
+        }
+      ],
+      "comparisons": []
+    },
+    "generation": [
+      {
+        "report": "generation-holdout.json",
+        "model": "gpt-6-luna",
+        "judgeModel": "jev-1.13.0",
+        "promptVersion": "v7",
+        "overall": {
+          "cases": 10,
+          "citationsValid": 1,
+          "figuresExact": 0.9,
+          "coverageGapsStated": 1,
+          "factRecall": 0.67,
+          "faithfulness": 0.95,
+          "meanCostUsd": 0.003,
+          "totalCostUsd": 0.052,
+          "meanLatencyS": 9.5,
+          "maxLatencyS": 14.9,
+          "meanFirstTokenS": 2.3,
+          "meanInputTokens": 23900,
+          "meanOutputTokens": 460,
+          "judgeCostUsd": 0.016
+        },
+        "byType": [],
+        "failing": {
+          "citations": [],
+          "figures": ["trend-aapl-revenue"],
+          "coverageGaps": []
+        },
+        "errors": []
+      }
+    ]
+  },
+  "coverage": {
+    "periods": ["2025Q3", "2025Q4"],
+    "companies": [
+      {
+        "ticker": "AAPL",
+        "company": "Apple Inc.",
+        "sector": "Information Technology",
+        "coverage": "tracked",
+        "filings": [
+          {
+            "period": "2025Q3",
+            "filingId": "AAPL_10-K_2025-09-27",
+            "formType": "10-K",
+            "reportPeriod": "2025-09-27",
+            "fiscalPeriod": "FY2025"
+          },
+          {
+            "period": "2025Q4",
+            "filingId": "AAPL_10-Q_2025-12-27",
+            "formType": "10-Q",
+            "reportPeriod": "2025-12-27",
+            "fiscalPeriod": "Q1 FY2026"
+          }
+        ]
+      },
+      {
+        "ticker": "JPM",
+        "company": "JPMorgan Chase & Co.",
+        "sector": "Financials",
+        "coverage": "snapshot",
+        "filings": [
+          {
+            "period": "2025Q4",
+            "filingId": "JPM_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31",
+            "fiscalPeriod": "FY2025"
+          }
+        ]
+      }
+    ]
+  }
+}

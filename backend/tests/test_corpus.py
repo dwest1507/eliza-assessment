@@ -14,6 +14,7 @@ from edgar_rag.corpus import (
     load_corpus,
     load_filing,
     load_sector_table,
+    report_quarter,
 )
 
 
@@ -132,6 +133,22 @@ def test_fiscal_period_for_a_non_december_fiscal_year(corpus):
     assert nvda_10k.fiscal_period == "FY2025"
     assert apple_q1.fiscal_year_end_month == 9
     assert apple_q1.fiscal_period == "Q1 FY2025"
+
+
+@pytest.mark.parametrize(
+    ("period", "quarter"),
+    [
+        (date(2025, 9, 27), "2025Q3"),
+        (date(2025, 12, 31), "2025Q4"),
+        (date(2025, 11, 2), "2025Q4"),  # Deere: a 52/53-week year ending in early November
+        (date(2022, 7, 1), "2022Q2"),  # Coca-Cola: ending on the first day of a quarter
+        (date(2026, 1, 25), "2026Q1"),  # NVIDIA's fiscal year end
+    ],
+)
+def test_report_quarter_is_the_calendar_quarter_whose_end_the_report_period_stands_for(
+    period, quarter
+):
+    assert report_quarter(period) == quarter
 
 
 def test_load_corpus_returns_every_filing_in_the_manifest(corpus):

@@ -17,7 +17,7 @@ The single LLM request that produces the final answer to a business question. Ev
 _Avoid_: LLM call (unqualified), API call
 
 **Query Scope**:
-What the rules resolve from a question before retrieval: the Companies (including those a Sector phrase resolves to), the time window, any Section hints and any metric.
+What the rules resolve from a question before retrieval: the Companies (including those a Sector phrase resolves to), the time window, any named Fiscal Period, any Section hints, any metric, and whether it asks how something changed. A follow-up inherits each part it does not name from the most recent earlier question that named it.
 _Avoid_: Filters, entities, intent
 
 **Source**:
@@ -27,6 +27,32 @@ _Avoid_: Reference, document, context item
 **Coverage Gap**:
 A part of a question the Corpus cannot answer (a trend asked of a Snapshot Company, a Company not in the Corpus, a stale Filing, guidance the Filings don't contain), stated in the answer with a fixed wording instead of being filled from general knowledge.
 _Avoid_: Limitation, missing data, caveat
+
+### Evaluation
+
+**Golden Set**:
+The labelled questions retrieval and answers are scored against, each with its expected (Filing ID, Section) pairs, Required Facts and expected Coverage Gaps, split into dev and holdout by a hash of the case id.
+_Avoid_: Test set, benchmark, eval data
+
+**Required Fact**:
+A self-contained sentence, naming its Company, that a good answer to a Golden Set question must state, with an evidence quote from the Section that supports it.
+_Avoid_: Expected answer, key point
+
+**Fact Recall**:
+The share of a Golden Set case's Required Facts that an answer states, as judged by Jev.
+_Avoid_: Recall (unqualified), coverage
+
+**Faithfulness**:
+The share of an answer's cited claims that the Sources they cite support, as judged by Jev.
+_Avoid_: Groundedness, accuracy, hallucination rate
+
+**Arm**:
+One way of ranking the chunks that become an Answer Call's Sources (FTS5, dense embeddings, a hybrid, a re-ranker), scored by the retrieval and generation harnesses on the Golden Set.
+_Avoid_: Retriever, strategy, variant
+
+**Shipped Arm**:
+The Arm the product uses, which every other Arm is compared with question by question. FTS5 unless a challenger is shown to be better.
+_Avoid_: Baseline, default retriever
 
 ### Filings
 

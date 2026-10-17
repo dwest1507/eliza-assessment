@@ -1,0 +1,42 @@
+name,ticker,aliases,sector,industry
+Wells Fargo,WFC,Wells Fargo & Company;WFC,Financials,Banks
+Citigroup,C,Citi;Citibank,Financials,Banks
+U.S. Bancorp,USB,US Bancorp,Financials,Banks
+PNC Financial Services,PNC,PNC Financial;PNC,Financials,Banks
+Truist Financial,TFC,Truist,Financials,Banks
+Capital One,COF,Capital One Financial,Financials,Consumer Finance
+Charles Schwab,SCHW,Schwab;SCHW,Financials,Capital Markets
+PayPal,PYPL,PayPal Holdings;PYPL,Financials,Financial Services
+Bristol Myers Squibb,BMY,Bristol-Myers Squibb;Bristol Myers;BMS;BMY,Health Care,Pharmaceuticals
+Amgen,AMGN,AMGN,Health Care,Biotechnology
+Gilead Sciences,GILD,Gilead;GILD,Health Care,Biotechnology
+Regeneron,REGN,Regeneron Pharmaceuticals;REGN,Health Care,Biotechnology
+Moderna,MRNA,MRNA,Health Care,Biotechnology
+Abbott Laboratories,ABT,Abbott;ABT,Health Care,Health Care Equipment & Supplies
+Medtronic,MDT,MDT,Health Care,Health Care Equipment & Supplies
+Danaher,DHR,DHR,Health Care,Life Sciences Tools & Services
+CVS Health,CVS,CVS,Health Care,Health Care Providers & Services
+Elevance Health,ELV,Elevance;Anthem,Health Care,Health Care Providers & Services
+Cigna,CI,The Cigna Group,Health Care,Health Care Providers & Services
+Honeywell,HON,Honeywell International;HON,Industrials,Industrial Conglomerates
+3M,MMM,3M Company;MMM,Industrials,Industrial Conglomerates
+Northrop Grumman,NOC,Northrop;NOC,Industrials,Aerospace & Defense
+General Dynamics,GD,,Industrials,Aerospace & Defense
+Union Pacific,UNP,UNP,Industrials,Ground Transportation
+FedEx,FDX,FDX,Industrials,Air Freight & Logistics
+General Motors,GM,GM,Consumer Discretionary,Automobiles
+Ford Motor,F,Ford,Consumer Discretionary,Automobiles
+Lowe's,LOW,Lowe’s;Lowes,Consumer Discretionary,Specialty Retail
+Uber Technologies,UBER,Uber,Industrials,Ground Transportation
+Philip Morris International,PM,Philip Morris,Consumer Staples,Tobacco
+Mondelez International,MDLZ,Mondelez;MDLZ,Consumer Staples,Food Products
+Kroger,KR,,Consumer Staples,Consumer Staples Distribution & Retail
+ConocoPhillips,COP,Conoco,Energy,"Oil, Gas & Consumable Fuels"
+Occidental Petroleum,OXY,Occidental;OXY,Energy,"Oil, Gas & Consumable Fuels"
+Broadcom,AVGO,AVGO,Information Technology,Semiconductors & Semiconductor Equipment
+Qualcomm,QCOM,QCOM,Information Technology,Semiconductors & Semiconductor Equipment
+Texas Instruments,TXN,TXN,Information Technology,Semiconductors & Semiconductor Equipment
+Micron Technology,MU,Micron,Information Technology,Semiconductors & Semiconductor Equipment
+Accenture,ACN,ACN,Information Technology,IT Services
+ServiceNow,NOW,,Information Technology,Software
+T-Mobile US,TMUS,T-Mobile;TMUS,Communication Services,Wireless Telecommunication Services

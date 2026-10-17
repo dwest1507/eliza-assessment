@@ -1,6 +1,6 @@
 # Assumptions
 
-The assumptions we build under where the brief and the Corpus leave a choice open. Each one names the evidence behind it and why it matters. Three of them (1, 2 and 3) are put to the Client as questions in an email the developer sends; the rest are documented here and covered in the presentation instead of asked.
+The assumptions we build under where the brief and the Corpus leave a choice open. Each one names the evidence behind it and why it matters. Three of them (1, 2 and 3) were put to the Client as questions in an email the developer sent, and the Client confirmed all three on 2026-10-16; the rest are documented here and covered in the presentation instead of asked.
 
 The numbers match the "Client question" numbers cited in the EDA notebook.
 
@@ -11,9 +11,9 @@ Status:
 
 | # | Assumption | Asked in email | Status |
 |---|---|---|---|
-| 1 | One generative LLM call per question; retrieval uses no LLM | Question 1 | not confirmed |
-| 2 | Answers use only the provided Filings; no gap-filling from EDGAR | Question 2 | not confirmed |
-| 3 | Every Filing is kept, whatever its date; GE Capital's is flagged | Question 3 | not confirmed |
+| 1 | One generative LLM call per question; retrieval uses no LLM | Question 1 | confirmed |
+| 2 | Answers use only the provided Filings; no gap-filling from EDGAR | Question 2 | confirmed |
+| 3 | Every Filing is kept, whatever its date; GE Capital's is flagged | Question 3 | confirmed |
 | 4 | Both trend and cross-Company questions will be asked | No | not confirmed |
 | 5 | A curated, disclosed Sector table is acceptable | No | not confirmed |
 | 6 | "Latest" and "the last two years" are measured from each Company's latest Filing | No | not confirmed |
@@ -28,16 +28,17 @@ Status:
 - **Assumption:** The brief says the final answer must be produced in one API request, while indexing and retrieval can run beforehand. We read it strictly: exactly one generative LLM call per question (the Answer Call), hosted or local. Embedding models and cross-encoder rerankers are allowed inside retrieval because they score text and don't generate it. Query parsing (Companies, periods, sector phrases) is rule-based, so there is no LLM call to generate SQL or extract entities.
 - **Why it matters:** It decides whether query understanding and structured lookups (text-to-SQL over the Financial Facts store) can use an LLM, or whether retrieval must be fully deterministic.
 - **Asked in email:** Question 1. We asked whether an earlier LLM call that only builds a SQL query, never answer text, counts as part of retrieval.
-- **Status:** not confirmed
+- **Client's answer:** A single LLM call is a hard requirement across the entire question-answering pipeline, so there can't be one generative call for retrieval and another for writing the answer. This matches our strict reading: query parsing, text-to-SQL and follow-up rewriting stay rule-based (ADR 0001, ADR 0003), and multi-step research that needs more than one generative call is out of scope, not a future-state option.
+- **Status:** confirmed
 
 ## 2. Answers use only the provided Filings
 
 - **Assumption:** Answers are grounded only in the Corpus. We do not add public SEC EDGAR filings to fill coverage gaps, and we use no other outside source as an answer source. The only outside data that can affect an answer is static metadata we curate and disclose (the Sector table, assumption 5). The SEC XBRL company-facts API is used only as an evaluation reference, to measure how accurate our Financial Fact extraction is. Answers state plainly where data is missing.
 - **Evidence:** The gaps are public on SEC EDGAR: annual reports filed after the Corpus was assembled (e.g. Pfizer's and AbbVie's FY2025 10-Ks, NVIDIA's FY2026 10-K), earlier Filings for the thinly covered Companies (including JPMorgan), General Electric's own recent reports, and Companies not in the Corpus at all (assumption 9).
 - **Why it matters:** Filling the gaps would make trend and "latest" questions answerable for more Companies, and clean structured financials would make numeric questions more reliable. Both take work and change what the system can claim to be grounded in.
-- **If the Client says yes:** Added Filings are kept as a clearly labelled supplement, separate from the Corpus, that can be switched off for the demo.
 - **Asked in email:** Question 2.
-- **Status:** not confirmed
+- **Client's answer:** Filling the gaps wasn't necessary for the exercise. We call the gaps out in the interview, say we saw them, and propose scraping public filings from SEC EDGAR as a next step. That proposal belongs in the presentation's future state; if it were built, added Filings would be kept as a clearly labelled supplement, separate from the Corpus.
+- **Status:** confirmed
 
 ## 3. Every Filing is kept, whatever its date
 
@@ -60,7 +61,8 @@ Status:
   - **Filed in 2026 (27 Filings, inside the window by Report Period):** 24 FY2025 10-Ks and 3 10-Qs for quarters ending in December 2025 (AAPL, DIS, MSFT).
 - **Why it matters:** It decides whether a ten-year-old Filing from a different legal entity can show up in answers about General Electric, and which Filings are available to trend and "latest" questions.
 - **Asked in email:** Question 3.
-- **Status:** not confirmed
+- **Client's answer:** Keeping the out-of-range Filings and calling them out is fine.
+- **Status:** confirmed
 
 ## 4. Both trend and cross-Company questions will be asked
 
@@ -87,7 +89,7 @@ Status:
 
 ## 6. "Latest" and "the last two years" are measured from each Company's latest Filing
 
-- **Assumption:** Time phrases are anchored on each Company's latest Filing in the Corpus, not on today's date. "The last two years" is the eight quarter-ends up to that Filing, and "latest" is the latest 10-K plus any 10-Qs after it. Every answer states each Company's Report Period and Fiscal Period, and says when the periods it compares differ.
+- **Assumption:** Time phrases are anchored on each Company's latest Filing in the Corpus, not on today's date. "The last two years" is the eight quarter-ends up to that Filing, and "latest" is the latest 10-K plus any 10-Qs after it. A question with no time phrase searches every Filing, except a risk question, which gets "latest" (finding 16). Every answer states each Company's Report Period and Fiscal Period, and says when the periods it compares differ.
 - **Evidence:** The Corpus stops at Filings made by 19 February 2026, and not every Company's latest annual report covers the same year.
   - Anchored on each Company's latest Filing, every one of the 13 Tracked Companies has eight quarterly Filings in "the last two years". For NVIDIA that is Q4 FY2024 to Q3 FY2026 (Report Periods 28 January 2024 to 26 October 2025). Anchored on today, each has only four or five.
   - "Latest" differs by Company: 12 December year-end Companies, including AbbVie, Merck, Pfizer, Bank of America and Chevron, have no FY2025 10-K in the Corpus, so their latest annual report is FY2024 while J&J's, Lilly's and JPMorgan's is FY2025. NVIDIA's FY2026 10-K is not in the Corpus either.
@@ -112,7 +114,7 @@ Status:
 
 ## 9. Companies missing from the Corpus are named as missing
 
-- **Assumption:** If a question names a Company that is not in the Corpus, or a sector phrase would normally include one, the system answers for the Companies the Corpus covers and says plainly which named Companies have no Filings in it, e.g. "Wells Fargo is not in the Filings provided." Sector phrases resolve only to Companies in the Sector table (assumption 5), and the answer names them. Nothing is answered from general knowledge.
+- **Assumption:** If a question names a Company that is not in the Corpus, or a sector phrase would normally include one, the system answers for the Companies the Corpus covers and says plainly which named Companies have no Filings in it, e.g. "Wells Fargo is not in the Filings provided." Sector phrases resolve only to Companies in the Sector table (assumption 5), and the answer names them. Nothing is answered from general knowledge. Missing Companies are recognised through a small curated, disclosed list of notable Companies not in the Corpus (`data/reference/missing_companies.csv`, described in `data/README.md`); a Company not on it is not recognised as missing.
 - **Evidence:** The Corpus holds 54 Companies, and some well-known peers are missing: for example, Wells Fargo and Citigroup among banks, and Bristol Myers Squibb and Amgen among drug makers.
 - **Why it matters:** An LLM asked about a missing Company will happily answer from what it remembers, which is not grounded in the Filings and cannot be cited.
 - **Asked in email:** No.
