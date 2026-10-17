@@ -64,7 +64,7 @@ The evaluation's ground truth: 30 labelled questions, each with the (Filing ID, 
 
 ## Golden Set version 2 (`eval/golden_set_v2.json`)
 
-Version 2 of the Golden Set, beside version 1, holding all 27 of version 1's non-brief cases, rewritten, and the first five slices of its new cases, forty-five in all, `pending` ([ADR 0012](../docs/adr/0012-golden-set-version-2-and-the-brief-suite.md)). The same schema with a tier on every Required Fact, and each case records its split: `dev`, `holdout`, or `pending` until the split is frozen. The harnesses run version 1 unless this file is named, and refuse it while any case is pending. The same tests check its labels; see [`docs/golden-set.md`](../docs/golden-set.md#version-2).
+Version 2 of the Golden Set, beside version 1, holding all 27 of version 1's non-brief cases, rewritten, and all six slices of its new cases, fifty-three in all, `pending`, eighty cases ([ADR 0012](../docs/adr/0012-golden-set-version-2-and-the-brief-suite.md)). The same schema with a tier on every Required Fact, and each case records its split: `dev`, `holdout`, or `pending` until the split is frozen. The harnesses run version 1 unless this file is named, and refuse it while any case is pending. The same tests check its labels; see [`docs/golden-set.md`](../docs/golden-set.md#version-2).
 
 ## Brief Suite (`eval/brief_suite.json`)
 

@@ -10603,6 +10603,798 @@
           ]
         }
       ]
+    },
+    {
+      "id": "gap-cat-sales-snapshot",
+      "question": "How have Caterpillar's sales and revenues changed over the last two years?",
+      "history": [],
+      "question_type": "figure_trend",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "A Coverage Gap case: a trend asked of a Snapshot Company. Caterpillar's only Filing is its FY2025 10-K, so the answer must state the Snapshot trend gap and give only what that 10-K compares, 2025 against 2024; the 10-K refers its discussion of 2024 against 2023 to the annual report for 2024, which is not in the Corpus. Drafted from the whole MD&A of the FY2025 10-K, its highlights, overview, consolidated sales and revenues and segment and regional tables. Not a repeat: the Caterpillar cases ask about its dealers and tariffs, and the other Snapshot trends about JPMorgan's revenue and Bank of America's risk factors. Must-state: the 4 percent increase in 2025 and its cause in the Filing, higher sales volume partly offset by unfavorable price realization. Each segment's and region's change and the driver of the volume are details. The SEC company-facts reference does not cache Caterpillar, a Snapshot Company, so no fact states a dollar amount; the amounts stay in the evidence quotes.",
+      "expected_sources": [
+        {
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Caterpillar's total sales and revenues for 2025 increased 4 percent compared with 2024.",
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Total sales and revenues for 2025 were $67.589 billion, an increase of $2.780 billion, or 4 percent, compared with $64.809 billion for 2024.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Caterpillar says the increase in its 2025 sales and revenues reflected higher sales volume, partially offset by unfavorable price realization.",
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "The increase reflected higher sales volume, partially offset by unfavorable price realization.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Caterpillar says its higher 2025 sales volume was primarily driven by higher sales of equipment to end users.",
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Higher sales volume was primarily driven by higher sales of equipment to end users.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Caterpillar's sales were higher in Power & Energy in 2025.",
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Sales were higher in Power & Energy, about flat in Resource Industries and slightly lower in Construction Industries.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Caterpillar's sales were about flat in Resource Industries in 2025.",
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Sales were higher in Power & Energy, about flat in Resource Industries and slightly lower in Construction Industries.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Caterpillar's sales were slightly lower in Construction Industries in 2025.",
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Sales were higher in Power & Energy, about flat in Resource Industries and slightly lower in Construction Industries.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Caterpillar's North America sales increased 6 percent in 2025.",
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "North America sales increased 6 percent due to higher sales volume, partially offset by unfavorable price realization.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Caterpillar's Asia/Pacific sales decreased 2 percent in 2025.",
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Asia/Pacific sales decreased 2 percent primarily due to unfavorable currency impacts related to the Australian dollar, and lower sales volume.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "snapshot_trend",
+          "companies": [
+            "CAT"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "missing-broadcom-revenue",
+      "question": "How has Broadcom's revenue grown over the last two years?",
+      "history": [],
+      "question_type": "missing_company",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "A Coverage Gap case: Broadcom is on the curated list of notable Companies missing from the Corpus, and version 1 asks about Wells Fargo, Citigroup, Bristol Myers Squibb and Honeywell, not Broadcom. Nothing should be retrieved, and the answer is the missing Company gap; a well-known semiconductor Company's revenue growth tempts an answer from general knowledge, which it must not give. A case that expects only a Coverage Gap has no Required Facts.",
+      "expected_sources": [],
+      "required_facts": [],
+      "expected_coverage_gaps": [
+        {
+          "kind": "missing_company",
+          "companies": [
+            "Broadcom"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "stale-gecc-main-risks",
+      "question": "What are GE Capital's main risks?",
+      "history": [],
+      "question_type": "stale_filing",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "A Coverage Gap case: the question names GE Capital, so its FY2014 10-K, the only GE Filing, may be cited, but it asks about GE Capital in the present tense, so the answer must state the stale Filing gap: the Filing is GE Capital's report for 2014 and does not describe the Company today. Drafted from the whole Risk Factors Section of the FY2014 10-K. Not a repeat: the other GE cases ask how General Electric has performed recently and what GE Capital's 2014 report said about reducing its balance sheet. Must-state: the global economic and political risks, a deterioration of the economy or financial markets, counterparty credit risk, its credit ratings, the availability and cost of funding, and the Federal Reserve's prudential oversight of it as a nonbank SIFI. Strategic transactions, loan losses, collateral on a downgrade, its funding sources, the proposed prudential standards, tax, cybersecurity and legal proceedings are details. GE Capital is not in the SEC company-facts reference; no fact states an amount.",
+      "expected_sources": [
+        {
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "GE Capital says its growth is subject to global economic and political risks.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our growth is subject to global economic and political risks.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "GE Capital says a deterioration of conditions in the global economy or the financial markets may adversely affect its business and results of operations.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "Risk Factors",
+          "evidence": "A deterioration of conditions in the global economy, the major industries GE and we serve or the financial markets, or the soundness of financial institutions and governments we deal with, may adversely affect our business and results of operations.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "GE Capital says many of its transactions with counterparties in the financial services industry expose it to credit risk in the event of their default.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "Risk Factors",
+          "evidence": "Many of these transactions expose GE Capital to credit risk in the event of default of our counterparty or client.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "GE Capital says a failure to maintain its credit ratings could adversely affect its cost of funds, liquidity, competitive position and access to capital markets.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "Risk Factors",
+          "evidence": "Failure to maintain our credit ratings could adversely affect our cost of funds and related margins, liquidity, competitive position and access to capital markets.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "GE Capital says conditions in the financial and credit markets may affect the availability and cost of its funding.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "Risk Factors",
+          "evidence": "Conditions in the financial and credit markets may affect the availability and cost of funding.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "GE Capital says it is subject to prudential oversight by the Federal Reserve as a result of its designation as a nonbank systemically important financial institution.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "Risk Factors",
+          "evidence": "we are subject to prudential oversight by the Federal Reserve, including as a result of GECC's designation as a nonbank systemically important financial institution (nonbank SIFI), which subjects us to increased and evolving regulatory requirements.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "GE Capital says the success of its business depends on achieving its strategic objectives, including through acquisitions, joint ventures, dispositions and restructurings.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "Risk Factors",
+          "evidence": "The success of our business depends on achieving our strategic objectives, including through acquisitions, joint ventures, dispositions and restructurings.",
+          "tier": "detail"
+        },
+        {
+          "fact": "GE Capital says delays in tax rulings and regulatory approvals or volatility in the capital markets may affect its ability to complete the staged exit from Synchrony Financial as planned.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "Risk Factors",
+          "evidence": "delays in obtaining tax rulings and regulatory approvals or clearances, and disruptions or volatility in the capital markets may impact our ability to complete the staged exit from our North American Retail Finance business, Synchrony Financial, as planned.",
+          "tier": "detail"
+        },
+        {
+          "fact": "GE Capital says deterioration in the economy and in default and recovery rates could require it to increase its allowances for loan losses.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "Risk Factors",
+          "evidence": "Deterioration in the economy and in default and recovery rates could require us to increase allowances for loan losses, impairments or write-offs",
+          "tier": "detail"
+        },
+        {
+          "fact": "GE Capital says a ratings downgrade would require it to post additional capital or collateral under various debt and derivative instruments, guarantees and covenants.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "Risk Factors",
+          "evidence": "Various debt and derivative instruments, guarantees and covenants would require posting additional capital or collateral in the event of a ratings downgrade",
+          "tier": "detail"
+        },
+        {
+          "fact": "GE Capital continues to expand its reliance on alternative sources of funding, including bank deposits, securitizations and other asset-based funding.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "Risk Factors",
+          "evidence": "GE Capital continues to expand its reliance on alternative sources of funding, including bank deposits, securitizations and other asset-based funding.",
+          "tier": "detail"
+        },
+        {
+          "fact": "GE Capital says the Federal Reserve proposed on November 25, 2014 enhanced prudential standards that would apply to it as a nonbank SIFI.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "Risk Factors",
+          "evidence": "On November 25, 2014 the FRB proposed for comment enhanced prudential standards that would apply to GECC as a nonbank SIFI.",
+          "tier": "detail"
+        },
+        {
+          "fact": "GE Capital says the proposed standards would require it to comply with rules on capital and liquidity adequacy that apply to large bank holding companies.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "Risk Factors",
+          "evidence": "require GECC to comply with rules on capital and liquidity adequacy that apply to large bank holding companies",
+          "tier": "detail"
+        },
+        {
+          "fact": "GE Capital expects its effective tax rate to increase significantly after 2015 if a U.S. tax provision deferring tax on active financial services income earned outside the United States is not extended.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "Risk Factors",
+          "evidence": "If this provision is not extended, we expect our effective tax rate to increase significantly after 2015.",
+          "tier": "detail"
+        },
+        {
+          "fact": "GE Capital says increased cybersecurity threats and more sophisticated computer crime could pose a risk to its systems, networks and data.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "Risk Factors",
+          "evidence": "Increased cybersecurity requirements, vulnerabilities, threats and more sophisticated and targeted computer crime could pose a risk to our systems, networks, products, solutions, services and data.",
+          "tier": "detail"
+        },
+        {
+          "fact": "GE Capital says it is subject to legal proceedings and legal compliance risks.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "Risk Factors",
+          "evidence": "We are subject to legal proceedings and legal compliance risks.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "stale_filing",
+          "companies": [
+            "GE"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gap-msft-goog-capex-periods-differ",
+      "question": "Compare how Microsoft's and Alphabet's capital expenditures grew in their latest fiscal years.",
+      "history": [],
+      "question_type": "figure_trend",
+      "split": "pending",
+      "starter": null,
+      "tags": [
+        "periods_differ_comparison"
+      ],
+      "notes": "A Coverage Gap case: the comparison cannot be of the same period. Microsoft's latest fiscal year, FY2025, ended June 30, 2025, and Alphabet's, 2025, ended December 31, 2025, six months later, so the answer must state the periods differ gap while comparing them. Drafted from the MD&A of both FY2025 10-Ks, its cash flow and capital expenditure passages, and Microsoft's cash flow statement (Financial Statements), since its MD&A gives the change but not the totals. Microsoft's later FY2026 10-Qs are quarters, not a fiscal year. Not a repeat: no case asks about Microsoft's or Alphabet's capital expenditures; Meta's and Tesla's expected 2026 capital expenditures are asked, and Microsoft's cloud outlook, one of whose facts is its continued capital investment. Must-state: each Company's capital expenditures for its latest fiscal year and the year before. Neither Filing gives a growth rate, so, as in the third slice, the facts give both years' figures and state none. Microsoft's description of the increase and its plans, and Alphabet's driver, its investing cash flow and its 2026 expectation are details. Every dollar amount matches the SEC company-facts reference (PaymentsToAcquirePropertyPlantAndEquipment: Microsoft's $64,551 million for FY2025 and $44,477 million for FY2024, Alphabet's $91,447 million for 2025 and $52,535 million for 2024).",
+      "expected_sources": [
+        {
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Financial Statements"
+        },
+        {
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Microsoft's additions to property and equipment were $64,551 million in fiscal year 2025.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Financial Statements",
+          "evidence": "Additions to property and equipment |  |  | (64,551 | ) |  |  | (44,477 | ) |  |  | (28,107 | )",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft's additions to property and equipment were $44,477 million in fiscal year 2024.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Financial Statements",
+          "evidence": "Additions to property and equipment |  |  | (64,551 | ) |  |  | (44,477 | ) |  |  | (28,107 | )",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft says its additions to property and equipment increased in fiscal year 2025.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "MD&A",
+          "evidence": "a $20.1 billion increase in additions to property and equipment.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says it will continue to invest in capital expenditures to support growth in its cloud offerings and its investments in AI infrastructure and training.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "MD&A",
+          "evidence": "We will continue to invest in capital expenditures to support growth in our cloud offerings and our investments in AI infrastructure and training.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says its additions to property and equipment will continue, including new facilities, datacenters and computer systems.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "MD&A",
+          "evidence": "Additions to property and equipment will continue, including new facilities, datacenters, and computer systems for research and development, sales and marketing, support, and administrative staff.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Alphabet spent $91.4 billion on capital expenditures in 2025.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "During the years ended December 31, 2024 and 2025, we spent $52.5 billion and $91.4 billion on capital expenditures, respectively.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Alphabet spent $52.5 billion on capital expenditures in 2024.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "During the years ended December 31, 2024 and 2025, we spent $52.5 billion and $91.4 billion on capital expenditures, respectively.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Alphabet says its 2025 capital expenditures primarily reflected investments in technical infrastructure.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Capital expenditures, which primarily reflected investments in technical infrastructure, were $91.4 billion for the year ended December 31, 2025.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Alphabet says its net cash used in investing activities increased from 2024 to 2025 primarily due to an increase in purchases of property and equipment.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Net cash used in investing activities increased from 2024 to 2025, primarily due to an increase in purchases of property and equipment, driven by investments in technical infrastructure",
+          "tier": "detail"
+        },
+        {
+          "fact": "Alphabet expects to significantly increase its investment in technical infrastructure in 2026 relative to 2025.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "In 2026, we expect to significantly increase, relative to 2025, our investment in our technical infrastructure, including servers and network equipment, and data centers.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "MSFT",
+            "GOOG"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "missing-kroger-with-walmart",
+      "question": "How do Walmart and Kroger describe the competition they face?",
+      "history": [],
+      "question_type": "missing_company",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "A Coverage Gap case mixing a covered Company with a missing one: Kroger is on the curated list of Companies missing from the Corpus; Walmart is in it (fiscal 2025 10-K, the year to January 31, 2025). The answer covers Walmart only and names Kroger as missing. Drafted from Walmart's whole Risk Factors Section and the competition passage of its Business Section. Not a repeat: Walmart is asked about its legal proceedings, its workforce and, as a consumer staples Company, its largest customers, not its competition. Must-state: the strong competition it faces from other retailers, wholesale club operators and omni-channel retailers, the many ways it competes, price first, and the highly competitive, rapidly evolving omni-channel landscape. New well-funded and smaller online competitors, the services it also competes in, consolidation, its competitors' advantages, its everyday low price and cost strategies and the risk of failing to respond are details.",
+      "expected_sources": [
+        {
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Business"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Walmart says it faces strong competition from other retailers, wholesale club operators, omni-channel retailers and other businesses, which could materially adversely affect its financial performance.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "We face strong competition from other retailers, wholesale club operators, omni-channel retailers and other businesses which could materially adversely affect our financial performance.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Walmart says it competes in a variety of ways, including the prices at which it sells its merchandise.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "We compete in a variety of ways, including the prices at which we sell our merchandise, merchandise selection and availability, services offered to customers, location, store hours, in-store amenities, the shopping convenience and overall shopping experience we offer",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Walmart says the omni-channel retail landscape is highly competitive and rapidly evolving.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "The omni-channel retail landscape is highly competitive and rapidly evolving, and the entry of new, well-funded competitors may increase competitive pressures.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Walmart says the entry of new, well-funded competitors may increase competitive pressures.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "The omni-channel retail landscape is highly competitive and rapidly evolving, and the entry of new, well-funded competitors may increase competitive pressures.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walmart says newer or smaller eCommerce and internet-based businesses may be better able to innovate and compete with it.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "for eCommerce and other internet-based businesses, newer or smaller businesses may be better able to innovate and compete with us.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walmart says it also competes with companies that offer services in digital advertising, fulfillment and delivery, health and wellness and financial services.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "as well as companies that offer services in digital advertising, data analytics/insights, fulfillment and delivery services, health and wellness and financial services.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walmart says consolidation in the retail industry may result in competitors with improved financial resources and competitive positions.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "Such consolidation, or other business combinations or alliances, competitive omni-channel ecosystems or reductions in operations may result in competitors with improved financial resources, improved access to merchandise, greater market penetration and other improvements in their competitive positions.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walmart says a failure to respond effectively to competitive pressures could materially adversely affect its financial performance.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "A failure to respond effectively to competitive pressures and changes in the retail and other markets in which we operate, omni-channel innovations and omni-channel ecosystems developed by our competitors or delays or failure in execution of our strategy could materially adversely affect our financial performance.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walmart says some of its competitors have longer histories in these lines of business, more customers and greater brand recognition.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Business",
+          "evidence": "Some of our competitors have longer histories in these lines of business, more customers and greater brand recognition.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walmart's strategies to meet competitive pressures include EDLP, its pricing philosophy of everyday low prices.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Business",
+          "evidence": "EDLP: our pricing philosophy under which we price items at everyday low prices so our customers trust that our prices will not change under frequent promotional activity",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walmart's strategies to meet competitive pressures include EDLC, its commitment to control expenses so its cost savings can be passed along to its customers.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Business",
+          "evidence": "EDLC: everyday low cost is our commitment to control expenses so our cost savings can be passed along to our customers",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "missing_company",
+          "companies": [
+            "Kroger"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "followup-topic-change-stock-splits",
+      "question": "Which companies carried out a stock split in 2024 or 2025?",
+      "history": [
+        {
+          "role": "user",
+          "content": "What are Coca-Cola's main risk factors?"
+        },
+        {
+          "role": "assistant",
+          "content": "Coca-Cola says unfavorable general economic and geopolitical conditions could negatively impact its financial results, and that under difficult economic conditions consumers may shift away from its beverages to lower-priced products, including private-label brands (KO_10-K_2024-12-31, Risk Factors)."
+        }
+      ],
+      "question_type": "risk",
+      "split": "pending",
+      "starter": null,
+      "tags": [
+        "topic_change_without_company"
+      ],
+      "notes": "ADR 0003's known weakness again, on another topic: the follow-up changes topic but names no Company or Sector phrase, so the rules inherit Coca-Cola, which split no stock. The intended scope is the whole Corpus; the Companies that report a stock split in 2024 or 2025 are NVIDIA, Walmart and Netflix. Drafted after searching every Filing in the Corpus for a stock split: Amazon's 2022 split, Tesla's 2020 and 2022 splits and PepsiCo's mention of Celsius's 2023 split fall outside the years asked. NVIDIA's split is in its FY2025 10-K's Item 5 and Financial Statements notes, which the Corpus seam names Other, Walmart's in its fiscal 2025 10-K's Financial Statements, and Netflix's in its FY2025 10-K's Item 5 and notes (Other). Each Company's split, its ratio and date, is must-state; announcements, approvals, record dates and authorized shares are details. The question type is risk, as for the other topic change, since the set has no type for a corporate action.",
+      "expected_sources": [
+        {
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Other"
+        },
+        {
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Financial Statements"
+        },
+        {
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Other"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "NVIDIA executed a ten-for-one stock split of its common stock in June 2024.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Other",
+          "evidence": "In June 2024, we executed a ten-for-one stock split of our common stock.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA announced its ten-for-one stock split in May 2024.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Other",
+          "evidence": "In May 2024, we announced a ten-for-one stock split, or the Stock Split, of our issued common stock",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA proportionately increased the number of shares of its authorized common stock from 8.0 billion to 80.0 billion.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Other",
+          "evidence": "proportionately increased the number of shares of the Company’s authorized common stock from 8.0 billion to 80.0 billion.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walmart effected a 3-for-1 forward split of its common stock on February 23, 2024.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Financial Statements",
+          "evidence": "On February 23, 2024, the Company effected a 3-for-1 forward split of its common stock and a proportionate increase in the number of authorized shares.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Walmart proportionately increased the number of its authorized shares with its stock split.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Financial Statements",
+          "evidence": "On February 23, 2024, the Company effected a 3-for-1 forward split of its common stock and a proportionate increase in the number of authorized shares.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Netflix completed a ten-for-one forward stock split of its common stock on November 14, 2025.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Other",
+          "evidence": "On November 14, 2025, the Company completed a ten-for-one forward stock split of the Company's issued common stock",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Netflix's Board of Directors approved the stock split on October 30, 2025.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Other",
+          "evidence": "On October 30, 2025, the Company's Board of Directors approved the Stock Split to all shareholders of record as of November 10, 2025.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Netflix says each shareholder as of the record date of November 10, 2025 received nine additional shares of common stock for every share held.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Other",
+          "evidence": "Each shareholder as of the record date of November 10, 2025 received nine additional shares of common stock for every share held.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "followup-cmcsa-to-telecom-competition",
+      "question": "And the telecom companies?",
+      "history": [
+        {
+          "role": "user",
+          "content": "How does Comcast describe the competition it faces?"
+        },
+        {
+          "role": "assistant",
+          "content": "Comcast says its businesses operate in highly competitive and dynamic industries. Its broadband services compete primarily against wireline telecommunications companies, many of them deploying fiber-based networks, and against wireless companies offering internet services, including 5G fixed wireless, while its video services compete mainly with DTC streaming providers (CMCSA_10-K_2025-12-31, Risk Factors)."
+        }
+      ],
+      "question_type": "sector",
+      "split": "pending",
+      "starter": null,
+      "tags": [
+        "switches_company"
+      ],
+      "notes": "A follow-up that switches to a Sector phrase: \"the telecom companies\" resolves through the Sector table to AT&T and Verizon (Diversified Telecommunication Services), replacing Comcast, while the topic, competition, is inherited (ADR 0003), as \"And the oil majors?\" does. The scripted answer cites Comcast's FY2025 10-K. Drafted from the whole Risk Factors Sections of AT&T's and Verizon's FY2025 10-Ks. Not a repeat: AT&T, Verizon and Comcast are asked about regulation and Comcast about advertising, not competition. Must-state: for AT&T, increasing competition, its multiple wireless competitors, its broadband losses to cable competitors and its response, and competitors with less regulation and lower costs; for Verizon, its significant competition, the new competitors new technologies have brought and competitors' aggressive pricing and promotions. Market saturation, competitors' cost advantages and new technologies, pricing pressure, what competing depends on, and AI are details. Both 10-Ks end on December 31, 2025, so the case expects no Coverage Gap.",
+      "expected_sources": [
+        {
+          "filing_id": "T_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "VZ_10-K_2025-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "AT&T says increasing competition could materially adversely affect its operating results.",
+          "filing_id": "T_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Increasing competition could materially adversely affect our operating results.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AT&T says it has multiple wireless competitors in each of its service areas.",
+          "filing_id": "T_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We have multiple wireless competitors in each of our service areas and compete for customers based principally on service/device offerings, price, network quality, reliability, speed, coverage area and customer service.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AT&T says it competes for wireless customers based principally on service and device offerings, price, network quality, reliability, speed, coverage area and customer service.",
+          "filing_id": "T_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We have multiple wireless competitors in each of our service areas and compete for customers based principally on service/device offerings, price, network quality, reliability, speed, coverage area and customer service.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AT&T has been expanding its all-fiber wireline network, and where it offers its fixed wireless access product, to stem broadband connectivity losses to cable competitors in its non-fiber wireline areas.",
+          "filing_id": "T_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In order to stem broadband connectivity losses to cable competitors in our non-fiber wireline areas, we have been expanding our all-fiber wireline network and where we offer our fixed wireless access product.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AT&T says a number of its competitors offering comparable legacy services are subject to less regulation and are therefore able to operate with lower costs.",
+          "filing_id": "T_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "A number of our competitors offering comparable legacy services that rely on alternative technologies and business models are typically subject to less regulation, and therefore are able to operate with lower costs.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AT&T says it faces growing competition from providers offering services using advanced wireless technologies and IP-based networks.",
+          "filing_id": "T_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In addition, we are facing growing competition from providers offering services using advanced wireless technologies and IP-based networks, among others.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AT&T expects market saturation to continue, leading to increased competition for wireless customers.",
+          "filing_id": "T_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We expect market saturation to continue, which may cause the wireless industry’s customer growth rate to moderate in comparison with historical growth rates, leading to increased competition for customers, including from strategic alliances in converged connectivity.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AT&T says its share of industry sales could be reduced by competitors' aggressive pricing or promotional strategies.",
+          "filing_id": "T_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our share of industry sales could be reduced due to aggressive pricing or promotional strategies pursued by competitors.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AT&T says competition and capacity constraints will continue to put pressure on pricing and margins.",
+          "filing_id": "T_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "These competition and capacity constraints will continue to put pressure on pricing and margins as companies compete for potential customers.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AT&T says its lower-regulated competitors have cost advantages, operating on newer, lower-cost networks with a nonunionized workforce.",
+          "filing_id": "T_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Also, these competitors have cost advantages compared to us, due in part to operating on newer, more technically advanced and lower-cost networks with a nonunionized workforce, lower employee benefits and fewer retirees.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Verizon says it faces significant competition that may negatively affect its operating results.",
+          "filing_id": "VZ_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We face significant competition that may negatively affect our operating results.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Verizon says new technologies have brought new competitors to its markets, including other telecommunications companies, cable companies, wireless service providers and satellite providers.",
+          "filing_id": "VZ_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "The rapid development of new technologies, services and products has eliminated many of the traditional distinctions among wireless, cable, internet and other communication services and brought new competitors to our markets, including other telecommunications companies, cable companies, wireless service providers, satellite providers, and others.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Verizon says its competitors commonly offer aggressive pricing, promotions, premium content options and other incentives that put pressure on its pricing and margins.",
+          "filing_id": "VZ_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our competitors commonly offer aggressive pricing, promotions, premium content options and other incentives – in some cases specifically targeting our customers and putting pressure on our pricing and margins.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Verizon expects the wireless industry's customer growth rate to continue to moderate, leading to increased competition for customers.",
+          "filing_id": "VZ_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In addition, we expect the wireless industry’s customer growth rate to continue to moderate over time in comparison to historical growth rates, leading to increased competition for customers.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Verizon says that if it is unable to differentiate its services and products from its competitors, its competitive position and market share could be adversely affected.",
+          "filing_id": "VZ_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "If we are unable to successfully differentiate our services and products from our competitors, it could adversely affect our competitive position and market share.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Verizon says its ability to compete effectively depends on, among other things, the pricing of its products and services and the quality of its customer service.",
+          "filing_id": "VZ_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our ability to compete effectively will depend on, among other things, the pricing of our products and services and our value proposition, our competitors' promotional strategies, the quality of our customer service",
+          "tier": "detail"
+        },
+        {
+          "fact": "Verizon says its competitors may incorporate AI into their offerings and operations more quickly or more successfully than it does.",
+          "filing_id": "VZ_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our competitors may incorporate AI into their offerings and operations more quickly or more successfully than we do, which could impair our ability to compete effectively.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "followup-aapl-buybacks-change",
+      "question": "How has that changed over the past two years?",
+      "history": [
+        {
+          "role": "user",
+          "content": "How much stock did Apple repurchase in fiscal 2025?"
+        },
+        {
+          "role": "assistant",
+          "content": "During fiscal 2025, Apple repurchased $89.3 billion of its common stock and paid dividends and dividend equivalents of $15.4 billion (AAPL_10-K_2025-09-27, MD&A)."
+        }
+      ],
+      "question_type": "figure_trend",
+      "split": "pending",
+      "starter": null,
+      "tags": [
+        "inherits_companies"
+      ],
+      "notes": "A follow-up that asks how something changed over time: it names no Company and no topic, so it inherits Apple and the topic, its share repurchases, from the earlier question, and its time window, the past two years, replaces the earlier fiscal 2025 (ADR 0003). The window is anchored on Apple's latest Filing, its Q1 FY2026 10-Q (December 27, 2025). Drafted from the capital return program passages of the MD&A of every Apple Filing in the window, from the Q2 FY2024 10-Q to the Q1 FY2026 10-Q. Not a repeat: no case asks about share repurchases; the Apple cases ask about its legal proceedings, supply chain, market risk, net sales, net income, research and development and risks. Must-state: the repurchases in fiscal 2024, fiscal 2025 and the first quarter of fiscal 2026. The Filings give no change rate, so the facts give each period's figure and state none, as in the third slice. The first quarter of fiscal 2025, for comparison with the latest quarter, the programs announced in May 2024 and May 2025 and that a program does not oblige Apple to buy are details. The other quarters' repurchases have no SEC company-facts value, so they have no facts. Every dollar amount matches the SEC company-facts reference (StockRepurchasedAndRetiredDuringPeriodValue: $95,000 million for FY2024, $89,300 million for FY2025, $23,300 million for Q1 FY2025 and $25,000 million for Q1 FY2026); the programs' sizes ($110 billion and $100 billion) have no value, so their facts state none.",
+      "expected_sources": [
+        {
+          "filing_id": "AAPL_10-K_2024-09-28",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "AAPL_10-Q_2024-12-28",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "AAPL_10-Q_2025-12-27",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Apple repurchased $95.0 billion of its common stock during fiscal 2024.",
+          "filing_id": "AAPL_10-K_2024-09-28",
+          "section": "MD&A",
+          "evidence": "During 2024, the Company repurchased $95.0 billion of its common stock and paid dividends and dividend equivalents of $15.2 billion.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple repurchased $89.3 billion of its common stock during fiscal 2025.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "During 2025, the Company repurchased $89.3 billion of its common stock and paid dividends and dividend equivalents of $15.4 billion.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple repurchased $25.0 billion of its common stock during the first quarter of fiscal 2026.",
+          "filing_id": "AAPL_10-Q_2025-12-27",
+          "section": "MD&A",
+          "evidence": "During the first quarter of 2026, the Company repurchased $25.0 billion of its common stock and paid dividends and dividend equivalents of $3.9 billion.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple repurchased $23.3 billion of its common stock during the first quarter of fiscal 2025.",
+          "filing_id": "AAPL_10-Q_2024-12-28",
+          "section": "MD&A",
+          "evidence": "During the first quarter of 2025, the Company repurchased $23.3 billion of its common stock and paid dividends and dividend equivalents of $3.9 billion.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple announced a new share repurchase program in May 2024.",
+          "filing_id": "AAPL_10-K_2024-09-28",
+          "section": "MD&A",
+          "evidence": "In May 2024, the Company announced a new share repurchase program of up to $110 billion and raised its quarterly dividend from $0.24 to $0.25 per share beginning in May 2024.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple announced a new share repurchase program in May 2025.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "In May 2025, the Company announced a new share repurchase program of up to $100 billion and raised its quarterly dividend from $0.25 to $0.26 per share beginning in May 2025.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says its share repurchase program does not obligate it to acquire a minimum amount of shares.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "The program does not obligate the Company to acquire a minimum amount of shares.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
     }
   ]
 }

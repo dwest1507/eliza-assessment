@@ -10,6 +10,7 @@ cache), the Brief Suite's variants of the brief's questions, and version 2's mix
 question kinds, reported against ADR 0012's table but not yet enforced.
 """
 
+import csv
 import hashlib
 import json
 import re
@@ -32,6 +33,7 @@ from edgar_rag.golden_set import (
     normalise_whitespace,
     starter_cases,
 )
+from edgar_rag.paths import DATA_DIR
 from edgar_rag.sec_reference import DEFAULT_CACHE_DIR as SEC_CACHE_DIR
 from edgar_rag.sec_reference import load_company_facts
 
@@ -861,6 +863,130 @@ def test_new_slice_5_holds_a_periods_differ_comparison_as_a_coverage_gap_case(
     assert gaps == [("periods_differ", set(ends))]
     assert "periods_differ_comparison" in case.tags
     assert _question_kind(case) == "coverage_gap"
+
+
+NEW_SLICE_6_GAPS = {
+    "gap-cat-sales-snapshot": "snapshot_trend",
+    "missing-broadcom-revenue": "missing_company",
+    "stale-gecc-main-risks": "stale_filing",
+    "gap-msft-goog-capex-periods-differ": "periods_differ",
+    "missing-kroger-with-walmart": "mixed",
+}
+NEW_SLICE_6_FOLLOW_UPS = {
+    "followup-topic-change-stock-splits": "topic_change_without_company",
+    "followup-cmcsa-to-telecom-competition": "switches_company",
+    "followup-aapl-buybacks-change": "inherits_companies",
+}
+"""Version 2's sixth and last slice of new cases (issue #71): five Coverage Gap cases, one
+per kind the issue names (a trend asked of a Snapshot Company, a missing Company version 1
+did not use, the stale Filing, the periods differ gap, and a covered Company asked about
+beside a missing one), and three follow-ups, each by its tag: one changes topic without
+naming a Company, one switches to a Sector phrase, one asks how something changed."""
+
+_TELECOM_PHRASE = ("telecom companies", "Diversified Telecommunication Services")
+_CHANGE_WORDS = re.compile(r"\bchang(?:e|ed)\b|\bgrown\b|\bgrew\b", re.I)
+
+
+def _missing_companies():
+    """The names on the curated list of notable Companies missing from the Corpus."""
+    path = DATA_DIR / "reference" / "missing_companies.csv"
+    with path.open(encoding="utf-8", newline="") as f:
+        return {row["name"] for row in csv.DictReader(f)}
+
+
+def _named_tickers(text, company_names):
+    return {
+        ticker
+        for ticker, names in company_names.items()
+        if any(re.search(rf"\b{re.escape(n)}\b", text) for n in names)
+    }
+
+
+def test_new_slice_6_holds_one_coverage_gap_case_of_each_kind(
+    golden_set, golden_set_v2, filings_by_id
+):
+    cases = {c.id: c for c in golden_set_v2.cases if c.id in NEW_SLICE_6_GAPS}
+    missing = _missing_companies()
+    used_by_version_1 = {
+        name
+        for case in golden_set.cases
+        for gap in case.expected_coverage_gaps
+        if gap.kind == "missing_company"
+        for name in gap.companies
+    }
+
+    assert set(cases) == set(NEW_SLICE_6_GAPS)
+    for case in cases.values():
+        assert not case.history and case.starter is None, case.id
+        assert _question_kind(case) == "coverage_gap", case.id
+        gaps = [(g.kind, set(g.companies)) for g in case.expected_coverage_gaps]
+        filings = [filings_by_id[s.filing_id] for s in case.expected_sources]
+        tickers = {f.ticker for f in filings}
+        kind = NEW_SLICE_6_GAPS[case.id]
+        if kind == "snapshot_trend":
+            assert gaps == [("snapshot_trend", tickers)], case.id
+            assert {f.coverage for f in filings} == {"snapshot"}, case.id
+        elif kind == "missing_company":
+            [(gap_kind, names)] = gaps
+            assert gap_kind == "missing_company" and names <= missing, case.id
+            assert not names & used_by_version_1, case.id
+            assert not case.expected_sources and not case.required_facts, case.id
+        elif kind == "stale_filing":
+            assert gaps == [("stale_filing", {"GE"})], case.id
+            assert {s.filing_id for s in case.expected_sources} == {"GE_10-K_2014-12-31"}
+        elif kind == "periods_differ":
+            ends = {f.ticker: f.report_period for f in filings if f.form_type == "10-K"}
+            assert gaps == [("periods_differ", set(ends))], case.id
+            assert (max(ends.values()) - min(ends.values())).days > 20, case.id
+            assert "periods_differ_comparison" in case.tags, case.id
+        else:  # a covered Company asked about beside a missing one
+            [(gap_kind, names)] = gaps
+            assert gap_kind == "missing_company" and names <= missing, case.id
+            assert tickers and case.required_facts, case.id
+            assert {filings_by_id[f.filing_id].ticker for f in case.required_facts} == tickers
+
+
+def test_new_slice_6_holds_three_follow_ups_of_different_kinds(
+    golden_set_v2, filings_by_id, company_names
+):
+    cases = {c.id: c for c in golden_set_v2.cases if c.id in NEW_SLICE_6_FOLLOW_UPS}
+    rows = {row.ticker: row for row in load_sector_table()}
+
+    assert set(cases) == set(NEW_SLICE_6_FOLLOW_UPS)
+    for case_id, case in cases.items():
+        assert case.history and case.history[-1].role == "assistant", case_id
+        assert re.search(r"\b[A-Z]+_10-[KQ]_\d{4}-\d{2}-\d{2}\b", case.history[-1].content)
+        assert NEW_SLICE_6_FOLLOW_UPS[case_id] in case.tags, case_id
+        assert _question_kind(case) == "follow_up", case_id
+        earlier = _named_tickers(case.history[0].content, company_names)
+        facts = {filings_by_id[f.filing_id].ticker for f in case.required_facts}
+        asked = _named_tickers(case.question, company_names)
+        kind = NEW_SLICE_6_FOLLOW_UPS[case_id]
+        if kind == "topic_change_without_company":
+            # It names no Company, and the Companies that answer it are not the earlier ones.
+            assert not asked and earlier and not facts & earlier, case_id
+            assert len(facts) >= 2, case_id
+        elif kind == "switches_company":
+            phrase, industry = _TELECOM_PHRASE
+            resolved = {t for t, row in rows.items() if row.industry == industry}
+            assert phrase in case.question and not asked, case_id
+            assert facts == resolved and not resolved & earlier, case_id
+        else:  # it inherits its Company and asks how the topic changed over time
+            assert not asked and facts == earlier, case_id
+            assert _CHANGE_WORDS.search(case.question), case_id
+            periods = {filings_by_id[f.filing_id].report_period for f in case.required_facts}
+            assert len(periods) >= 3, case_id
+
+
+def test_version_2_holds_all_53_new_cases(golden_set, golden_set_v2):
+    """The six slices complete the 53 new cases ADR 0012 sets, beside the 27 rewrites: 80
+    cases, so the split can be frozen."""
+    version_1 = {case.id for case in golden_set.cases}
+
+    new = [case for case in golden_set_v2.cases if case.id not in version_1]
+
+    assert len(new) == 53
+    assert len(golden_set_v2.cases) == 80
 
 
 def test_a_missing_evidence_quote_or_section_fails_the_label_checks(tmp_path, filings_by_id):
