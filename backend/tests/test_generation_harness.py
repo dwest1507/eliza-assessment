@@ -8,6 +8,7 @@ import pytest
 
 from edgar_eval.answer_checks import Claim
 from edgar_eval.judge import JEV_MODEL, Evidence, JevJudge
+from edgar_rag.golden_set import GOLDEN_SET_V1
 
 # --- The Jev judge --------------------------------------------------------------------------
 
@@ -459,7 +460,16 @@ def test_the_command_line_lists_every_failed_judgment(index, tmp_path):
     path = tmp_path / "generation-dev.json"
     jev = FakeJev(fail_on={"Apple relies on outsourcing partners in Asia."})
     code = main(
-        ["--case", "risk-aapl-tsla-jpm", "--index", str(index), "--log", str(tmp_path / "l")]
+        [
+            "--golden-set",
+            str(GOLDEN_SET_V1),
+            "--case",
+            "risk-aapl-tsla-jpm",
+            "--index",
+            str(index),
+            "--log",
+            str(tmp_path / "l"),
+        ]
         + ["--json", str(path)],
         model=FakeModel(ANSWER),
         judge=JevJudge(client=jev),
@@ -580,7 +590,14 @@ def test_the_report_and_its_summary_show_each_cases_contradicted_claims(index, t
     path = tmp_path / "generation-dev.json"
     code = main(
         [
-            *("--case", "risk-aapl-tsla-jpm", "--index", str(index)),
+            *(
+                "--golden-set",
+                str(GOLDEN_SET_V1),
+                "--case",
+                "risk-aapl-tsla-jpm",
+                "--index",
+                str(index),
+            ),
             *("--log", str(tmp_path / "log.jsonl"), "--json", str(path)),
         ],
         model=FakeModel(ANSWER),
@@ -729,6 +746,8 @@ def test_the_command_line_prints_scores_with_cost_and_latency_and_writes_json(in
     path = tmp_path / "generation-dev.json"
     code = main(
         [
+            "--golden-set",
+            str(GOLDEN_SET_V1),
             "--case",
             "risk-aapl-tsla-jpm",
             "--index",
@@ -769,7 +788,7 @@ def test_a_report_records_the_round_it_was_run_in(index, tmp_path):
 
     path = tmp_path / "generation-dev.json"
     main(
-        ["--case", "risk-aapl-tsla-jpm", "--index", str(index), "--log", str(tmp_path / "l")]
+        ["--case", "risk-unh-cybersecurity", "--index", str(index), "--log", str(tmp_path / "l")]
         + ["--json", str(path)],
         model=FakeModel(ANSWER),
         judge=FakeJudge(),
@@ -781,7 +800,7 @@ def test_a_report_records_the_round_it_was_run_in(index, tmp_path):
     now = current_round()
     assert {k: data[k] for k in now} == now
     assert now["prompt_version"] == PROMPT_VERSION
-    assert now["golden_set_version"] == data["golden_set_version"]
+    assert now["golden_set_version"] == data["golden_set_version"] == 2
 
 
 def test_the_code_version_changes_with_any_source_file(tmp_path):
@@ -825,7 +844,16 @@ def test_the_command_answers_through_a_chosen_arm_and_records_it(index, tmp_path
         )
 
     path = tmp_path / "generation-arms-dev-dense.json"
-    argv = ["--case", "risk-aapl-tsla-jpm", "--index", str(index), "--log", str(tmp_path / "l")]
+    argv = [
+        "--golden-set",
+        str(GOLDEN_SET_V1),
+        "--case",
+        "risk-aapl-tsla-jpm",
+        "--index",
+        str(index),
+        "--log",
+        str(tmp_path / "l"),
+    ]
     common = dict(judge=FakeJudge(), fact_values=lambda tickers: [], out=io.StringIO())
     arms = [arm("fts5", shipped=True), arm("dense", query_api_call=True)]
 
@@ -841,14 +869,24 @@ def test_the_command_answers_through_a_chosen_arm_and_records_it(index, tmp_path
 
 
 def _saved_report(index, tmp_path, answer, fact_values):
-    """A generation report written by the command line, as `make eval-generation` saves it."""
+    """A version 1 generation report written by the command line, as `make eval-generation`
+    saved it before version 2 became the default."""
     import io
     import json
 
     from edgar_eval.generation import main
 
     path = tmp_path / "generation-dev.json"
-    argv = ["--case", "risk-aapl-tsla-jpm", "--index", str(index), "--log", str(tmp_path / "l")]
+    argv = [
+        "--golden-set",
+        str(GOLDEN_SET_V1),
+        "--case",
+        "risk-aapl-tsla-jpm",
+        "--index",
+        str(index),
+        "--log",
+        str(tmp_path / "l"),
+    ]
     code = main(
         [*argv, "--json", str(path)],
         model=FakeModel(answer),
@@ -1061,7 +1099,16 @@ def test_the_command_answers_with_a_chosen_context_budget_and_records_the_settin
         return prepare_answer_context(messages, path, context_budget=context_budget)
 
     path = tmp_path / "generation-dev.json"
-    argv = ["--case", "risk-aapl-tsla-jpm", "--index", str(index), "--log", str(tmp_path / "l")]
+    argv = [
+        "--golden-set",
+        str(GOLDEN_SET_V1),
+        "--case",
+        "risk-aapl-tsla-jpm",
+        "--index",
+        str(index),
+        "--log",
+        str(tmp_path / "l"),
+    ]
     common = dict(
         model=FakeModel(ANSWER),
         judge=FakeJudge(),
@@ -1136,6 +1183,46 @@ def test_a_version_2_run_answers_its_recorded_split_once_frozen(
     data = json.loads(report.read_text())
     assert data["golden_set_version"] == 2
     assert [c["case_id"] for c in data["cases"]] == ["risk-unh-cybersecurity"]
+
+
+def test_version_2_is_the_default_and_version_1_runs_by_naming_its_file(index, tmp_path):
+    import io
+    import json
+
+    from edgar_eval.generation import main
+
+    def run(*argv):
+        path = tmp_path / "generation-dev.json"
+        main(
+            [*argv, "--index", str(index), "--log", str(tmp_path / "l"), "--json", str(path)],
+            model=FakeModel(ANSWER),
+            judge=FakeJudge(),
+            fact_values=lambda tickers: [],
+            out=io.StringIO(),
+        )
+        return json.loads(path.read_text())
+
+    # A new version 2 case, and a version 1 case version 2 does not hold (the brief's).
+    assert run("--case", "risk-ups-market-risk", "--split", "holdout")["golden_set_version"] == 2
+    version_1 = run("--golden-set", str(GOLDEN_SET_V1), "--case", "risk-aapl-tsla-jpm")
+    assert version_1["golden_set_version"] == 1
+
+
+def test_rescoring_reads_the_golden_set_version_each_report_records(index, tmp_path):
+    """A saved report is rescored against its own Golden Set version, whatever the default:
+    version 1's when it records none, as reports from before versions were recorded."""
+    import io
+    import json
+
+    from edgar_eval.generation import main
+
+    path, saved = _saved_report(index, tmp_path, ANSWER, lambda filing_id: [])
+    del saved["golden_set_version"]
+    path.write_text(json.dumps(saved))
+
+    rescore = ["--rescore", str(path), "--index", str(index)]
+    assert main(rescore, fact_values=lambda filing_id: [], out=io.StringIO()) == 0
+    assert json.loads(path.read_text()) == saved
 
 
 def test_a_brief_suite_run_beside_golden_set_version_2_still_loads_the_suite(

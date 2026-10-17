@@ -1,10 +1,11 @@
 """The Golden Set: the labelled questions retrieval and answers are evaluated against.
 
-The cases live in `data/eval/golden_set.json`, written before any retrieval Arm or prompt
-ran. Each case is a question (with a scripted conversation before it, for follow-ups),
-its question type, the (Filing ID, Section) pairs that should reach the Answer Call, the
-Required Facts an answer must state (each with an evidence quote from its Section) and
-the Coverage Gaps it must state. Six cases are the front-end's starter prompts.
+Version 1's cases live in `data/eval/golden_set.json` (`GOLDEN_SET_V1`), written before
+any retrieval Arm or prompt ran. Each case is a question (with a scripted conversation
+before it, for follow-ups), its question type, the (Filing ID, Section) pairs that should
+reach the Answer Call, the Required Facts an answer must state (each with an evidence
+quote from its Section) and the Coverage Gaps it must state. Six cases are the
+front-end's starter prompts.
 
 Each Required Fact has a tier (`TIERS`): `must_state`, which any good answer covers and
 Fact Recall is scored on, or `detail`, reported as detail recall but never counted as a
@@ -13,9 +14,12 @@ one. Every case has a must-state fact unless it expects only Coverage Gaps.
 
 Version 1's cases are split dev/holdout by a hash of each case id (`assign_splits`), so
 prompt and Arm choices are tuned on dev and the holdout is scored once per final setup,
-never to choose. Version 2 (`data/eval/golden_set_v2.json`, `DEFAULT_GOLDEN_SET_V2`)
-records each case's split instead (`SPLIT_RULE_V2`): `dev`, `holdout`, or `pending` while
-its new cases are drafted. A harness runs version 1 unless named another file, and
+never to choose. Version 2 (`data/eval/golden_set_v2.json`, `GOLDEN_SET_V2`) records
+each case's split instead (`SPLIT_RULE_V2`): `dev`, `holdout`, or `pending` while its new
+cases were drafted. Its split is frozen: the file lists its holdout ids
+(`GoldenSet.holdout_ids`), and the loader refuses a recorded split that disagrees with
+that list, so no case moves and a case added later is dev. Version 2 is the harnesses'
+default (`DEFAULT_GOLDEN_SET`); a run names version 1's file to use it, and a harness
 refuses a set with a pending case (`GoldenSet.require_frozen`).
 
 The Brief Suite (`data/eval/brief_suite.json`, `load_brief_suite`) holds the brief's
@@ -48,7 +52,9 @@ __all__ = [
     "COVERAGE_GAP_KINDS",
     "DEFAULT_BRIEF_SUITE",
     "DEFAULT_GOLDEN_SET",
-    "DEFAULT_GOLDEN_SET_V2",
+    "GOLDEN_SET_FILES",
+    "GOLDEN_SET_V1",
+    "GOLDEN_SET_V2",
     "QUESTION_TYPES",
     "SPLIT_RULE",
     "SPLIT_RULE_V2",
@@ -68,10 +74,16 @@ __all__ = [
     "starter_cases",
 ]
 
-DEFAULT_GOLDEN_SET = DATA_DIR / "eval" / "golden_set.json"
-"""Golden Set version 1, the harnesses' default until version 2's split is frozen."""
+GOLDEN_SET_V1 = DATA_DIR / "eval" / "golden_set.json"
+"""Golden Set version 1, kept unchanged as a record. A run names it to use it."""
 
-DEFAULT_GOLDEN_SET_V2 = DATA_DIR / "eval" / "golden_set_v2.json"
+GOLDEN_SET_V2 = DATA_DIR / "eval" / "golden_set_v2.json"
+
+DEFAULT_GOLDEN_SET = GOLDEN_SET_V2
+"""The harnesses' default since version 2's split was frozen."""
+
+GOLDEN_SET_FILES = {1: GOLDEN_SET_V1, 2: GOLDEN_SET_V2}
+"""Each Golden Set version's file, so a saved report is read against its own version."""
 
 DEFAULT_BRIEF_SUITE = DATA_DIR / "eval" / "brief_suite.json"
 
@@ -115,7 +127,9 @@ SPLIT_RULE_V2 = (
     "Each case records its split, and no case ever moves. Version 1's cases rewritten "
     "here keep their ids and are dev. New cases are pending until all of them exist; "
     "then the 20 whose ids have the lowest SHA-256 hex digests (UTF-8) are holdout and "
-    "the rest dev. A run refuses while any case is pending."
+    "the rest dev, and the holdout ids are frozen as a list in the file. A case added "
+    "later is dev unless a new Golden Set version says otherwise. A run refuses while "
+    "any case is pending."
 )
 """The split rule from version 2 on (ADR 0012), also written in the file."""
 
@@ -196,6 +210,10 @@ class GoldenSet:
     version: int
     split_rule: str
     cases: tuple[GoldenCase, ...]
+    holdout_ids: tuple[str, ...] | None = None
+    """From version 2 on, once the split is frozen: the holdout's case ids, sorted. Every
+    case it names records `holdout`, and every other case `dev`. None for version 1,
+    whose split is computed, and for a set still being drafted."""
 
     def starters(self) -> list[GoldenCase]:
         """The starter-prompt cases, in the order the front-end shows them."""
@@ -247,20 +265,47 @@ def normalise_whitespace(text: str) -> str:
 
 
 def load_golden_set(path: str | Path = DEFAULT_GOLDEN_SET) -> GoldenSet:
-    """Read and validate the Golden Set file. Raises ValueError on a schema problem."""
+    """Read and validate a Golden Set file, version 2 by default. Raises ValueError on a
+    schema problem, or on a recorded split that disagrees with the frozen holdout list."""
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     version = _field(data, "version", int, "Golden Set")
     cases = tuple(_case(raw, version) for raw in _field(data, "cases", list, "Golden Set"))
+    holdout_ids = None
+    if "holdout_ids" in data:
+        if version == 1:
+            raise ValueError("Golden Set version 1: its split is computed, so no holdout_ids")
+        holdout_ids = tuple(sorted(_field(data, "holdout_ids", list, "Golden Set")))
+        _check_frozen_split(cases, holdout_ids)
     return GoldenSet(
         version=version,
         split_rule=_field(data, "split_rule", str, "Golden Set"),
         cases=cases,
+        holdout_ids=holdout_ids,
     )
+
+
+def _check_frozen_split(cases: tuple[GoldenCase, ...], holdout_ids: tuple[str, ...]) -> None:
+    """Raise ValueError unless the recorded splits are exactly the frozen list: every id
+    in it a holdout case, and every other case dev. A recorded split that changes, a
+    holdout case removed and a case added later as anything but dev all fail here."""
+    if len(set(holdout_ids)) != len(holdout_ids):
+        raise ValueError("Golden Set: holdout_ids are not unique")
+    recorded = {c.id: c.split for c in cases}
+    missing = [i for i in holdout_ids if i not in recorded]
+    if missing:
+        raise ValueError(f"Golden Set: frozen holdout case(s) missing: {', '.join(missing)}")
+    wrong = [
+        f"{case_id} records {split}, not {'holdout' if case_id in holdout_ids else 'dev'}"
+        for case_id, split in recorded.items()
+        if split != ("holdout" if case_id in holdout_ids else "dev")
+    ]
+    if wrong:
+        raise ValueError(f"Golden Set: splits disagree with holdout_ids: {'; '.join(wrong)}")
 
 
 def load_brief_suite(
     path: str | Path = DEFAULT_BRIEF_SUITE,
-    golden_sets: Iterable[str | Path] = (DEFAULT_GOLDEN_SET, DEFAULT_GOLDEN_SET_V2),
+    golden_sets: Iterable[str | Path] = (GOLDEN_SET_V1, GOLDEN_SET_V2),
 ) -> BriefSuite:
     """Read and validate the Brief Suite file. Raises ValueError on a schema problem, on an
     id that is also a case's in one of `golden_sets`, or on a `replaces` naming no case

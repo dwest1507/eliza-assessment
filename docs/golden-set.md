@@ -2,7 +2,7 @@
 
 The Golden Set is the evaluation's ground truth: 30 labelled questions that the retrieval and generation harnesses score the system against. It lives in [`data/eval/golden_set.json`](../data/eval/golden_set.json) and is read by `edgar_rag.golden_set.load_golden_set()`, which checks the schema. It was written before any retrieval Arm or prompt ran, so no label was written with results in view.
 
-This page describes version 1, the set every result so far was measured on, the Required Fact tiers that version 2 adds, and the [Brief Suite](#the-brief-suite), the brief's questions in a file of their own. Version 2's [file](#the-file) is built and holds all 27 of version 1's cases other than the brief's, [rewritten](#the-rewritten-version-1-cases), and all six slices of its 53 [new cases](#the-new-cases); freezing the split is decided but not built yet: see [Version 2](#version-2). Version 1's file stays unchanged as a record, and a test pins its digest.
+This page describes version 1, the set every result so far was measured on, the Required Fact tiers that version 2 adds, and the [Brief Suite](#the-brief-suite), the brief's questions in a file of their own. Version 2's [file](#the-file) is built and holds all 27 of version 1's cases other than the brief's, [rewritten](#the-rewritten-version-1-cases), and all six slices of its 53 [new cases](#the-new-cases), with its split [frozen](#the-frozen-split) at 60 dev and 20 holdout cases: see [Version 2](#version-2). Version 2 is now the harnesses' default; version 1's file stays unchanged as a record, a run names it to use it, and a test pins its digest.
 
 ## What it covers
 
@@ -131,24 +131,26 @@ No id is in both files: the loader rejects one that is.
 
 ## Version 2
 
-Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions and four variants of each, and version 2's file, with all three batches of version 1's 27 other cases rewritten and all six slices of new cases, 80 cases in all, are built so far. The split is frozen next.
+Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions and four variants of each, and version 2's file, with all three batches of version 1's 27 other cases rewritten and all six slices of new cases, 80 cases in all, are built so far, and the split is [frozen](#the-frozen-split): 60 dev cases and 20 holdout cases, none pending. Version 2 is the harnesses' default.
 
 ### The file
 
-Version 2 lives in [`data/eval/golden_set_v2.json`](../data/eval/golden_set_v2.json), beside version 1, which stays unchanged. It is read by the same loader, `load_golden_set(DEFAULT_GOLDEN_SET_V2)`, with the same case schema and three differences:
+Version 2 lives in [`data/eval/golden_set_v2.json`](../data/eval/golden_set_v2.json), beside version 1, which stays unchanged. It is read by the same loader, `load_golden_set()`, whose default it now is (`DEFAULT_GOLDEN_SET`, which is `GOLDEN_SET_V2`; version 1 is `GOLDEN_SET_V1`), with the same case schema and four differences:
 
 - `version` is 2, and every Required Fact names its `tier`;
-- `split_rule` states version 2's rule (`SPLIT_RULE_V2`): each case records its split, and no case ever moves. Version 1's cases rewritten here keep their ids and are `dev`. New cases are `pending` until all of them exist; then the 20 whose ids have the lowest SHA-256 digests become `holdout` and the rest `dev`;
-- `split` is `dev`, `holdout` or `pending`. Version 1's loader still allows only `dev` and `holdout`.
+- `split_rule` states version 2's rule (`SPLIT_RULE_V2`): each case records its split, and no case ever moves. Version 1's cases rewritten here keep their ids and are `dev`. New cases are `pending` until all of them exist; then the 20 whose ids have the lowest SHA-256 digests become `holdout` and the rest `dev`, and the holdout ids are frozen as a list in the file. A case added later is `dev` unless a new Golden Set version says otherwise;
+- `split` is `dev`, `holdout` or `pending`. Version 1's loader still allows only `dev` and `holdout`;
+- `holdout_ids` is the frozen list of holdout ids (`GoldenSet.holdout_ids`), written once the split is frozen. When it is present the loader refuses any case whose recorded split disagrees with it: a listed case that is not `holdout` or is missing from the file, and any other case that is not `dev`, so a pending case, a moved case, a removed holdout case and a case added later as holdout all fail to load. Version 1 has no such list; its split is computed.
 
-**Runs.** The harnesses keep version 1 as their default until the split is frozen. A version 2 run names the file (`python -m edgar_eval.retrieval --golden-set ../data/eval/golden_set_v2.json`, and likewise `edgar_eval.generation`), and it refuses, naming the cases, while any case is pending (`GoldenSet.require_frozen`). A Brief Suite run is checked against both versions whichever file is named, since its cases replace version 1 cases.
+**Runs.** The harnesses run version 2 by default (`make eval-retrieval`, `make eval-generation` and the selection commands). A version 1 run names its file (`python -m edgar_eval.retrieval --golden-set ../data/eval/golden_set.json`, and likewise `edgar_eval.generation`). A run refuses, naming the cases, while any case is pending (`GoldenSet.require_frozen`). A Brief Suite run is checked against both versions whichever file is named, since its cases replace version 1 cases. `make eval-rescore` reads each saved report against the Golden Set version it records (version 1 when it records none), so version 1's reports still rescore. The evaluation export (`make eval-export`) still describes version 1, as the "How it works" page does until a later spec moves it, and refuses a retrieval report of another version rather than mix the two.
 
 **Checks** (`backend/tests/test_golden_set.py`). The label tests run over version 1, version 2 and the Brief Suite alike: every expected Filing ID and Section exists, every evidence quote is verbatim in its Section after collapsing whitespace, and every fact names its Company and cites one of its case's expected Sources. Version 2 adds:
 
 - **No repeated question.** No question is asked twice across Golden Set version 1, Golden Set version 2 and the Brief Suite, once case and whitespace are normalised. A version 1 case may share its question with the version 2 case that rewrites it under the same id, and with the Brief Suite case that replaces it.
 - **No shared id** between version 2 and the Brief Suite; the Brief Suite's loader checks both versions.
 - **Figures from the reference.** Every dollar amount a version 2 or Brief Suite Required Fact states must match a USD value that the SEC company-facts reference records for the fact's own Filing (matched on the accession number in its source URL), at the amount's printed precision: "$60.9 billion" matches 60.85 to 60.95 billion. A figure about a Company the reference does not cache fails. The test is skipped when the cache is absent (`make sec-facts`). Percentages are not checked against it.
-- **The mix by kind of question**, counted per split against ADR 0012's table below and printed with the test run, not yet enforced. A follow-up counts as one whatever it asks; a Coverage Gap case asks about a missing Company or a stale Filing, or for a trend or outlook the Filings cannot give (a `snapshot_trend` or `no_guidance` gap), or is a comparison asked to test the periods differ gap (tagged `periods_differ_comparison`); elsewhere that gap only qualifies the answer, and the rest count by question type (`risk`; `figure_trend` and `outlook` as trends; `sector`).
+- **The frozen split.** A test recomputes the 20 lowest SHA-256 digests over the 53 new cases, named by their six slices so a case added later never enters the count, and checks they are the frozen list and the cases recording `holdout`, every other case `dev`, 60 and 20 ([The frozen split](#the-frozen-split)).
+- **The mix by kind of question**, counted per split against ADR 0012's table below and printed with the test run. It is reported, not enforced against the table and not adjusted, since the hash decides the holdout's; the test pins the frozen mix recorded [below](#the-frozen-split), so a case that changes kind or split shows there. A follow-up counts as one whatever it asks; a Coverage Gap case asks about a missing Company or a stale Filing, or for a trend or outlook the Filings cannot give (a `snapshot_trend` or `no_guidance` gap), or is a comparison asked to test the periods differ gap (tagged `periods_differ_comparison`); elsewhere that gap only qualifies the answer, and the rest count by question type (`risk`; `figure_trend` and `outlook` as trends; `sector`).
 
 ### The rewritten version 1 cases
 
@@ -214,7 +216,7 @@ The third batch, version 1's GE Capital, Citigroup and Bristol Myers Squibb case
 
 ### The new cases
 
-Version 2's 53 new cases are drafted in six slices of at most ten, one slice at a time, each with its own kinds of question and Companies. Every new case is `pending` until the last slice is done and the split is frozen, and a test checks that every case version 1 does not hold is `pending`. Each is drafted by the same rules as the rewrites, from the whole of each relevant Section and never from what retrieval returns, after reading every case already in both Golden Set versions and the Brief Suite so that none asks the same Companies about the same topic.
+Version 2's 53 new cases are drafted in six slices of at most ten, one slice at a time, each with its own kinds of question and Companies. Every new case was `pending` until the last slice was done and the split [frozen](#the-frozen-split). Each is drafted by the same rules as the rewrites, from the whole of each relevant Section and never from what retrieval returns, after reading every case already in both Golden Set versions and the Brief Suite so that none asks the same Companies about the same topic.
 
 The first slice is nine multi-Company risk comparisons among information technology, communication services and consumer Companies: six compare two Companies and three compare three, across the Risk Factors, Legal Proceedings and Market Risk Sections. A test checks the slice's ids, kinds, Sectors and Sections.
 
@@ -350,6 +352,25 @@ The sixth and last slice is five Coverage Gap cases and three follow-ups, comple
 - **Sections.** Microsoft's MD&A gives the change in its capital expenditures but not the totals, so its total facts cite the cash flow statement in its Financial Statements. NVIDIA's and Netflix's stock split passages sit in Item 5 and in notes that follow Item 15, which the Corpus seam names Other.
 - **Fact wording.** As in the earlier slices, each fact states one claim in the Filing's own terms and names its Company, and none renames a period or states a cause or change the Filing does not: Apple's facts keep its fiscal years and quarters, and Caterpillar's change is the Filing's own 4 percent.
 
+### The frozen split
+
+Frozen on 2026-10-17 (issue #72), once all 53 new cases existed and before any version 2 result was seen. Of the new cases, the 20 whose ids have the lowest SHA-256 hex digests (UTF-8) are `holdout` and the other 33 `dev`; the 27 rewritten version 1 cases stay `dev`. That gives **60 dev cases and 20 holdout cases, none pending**, 80 in all. The file lists the holdout ids (`holdout_ids`):
+
+`followup-aapl-buybacks-change`, `followup-cat-de-dealers`, `followup-cmcsa-to-telecom-competition`, `followup-lmt-to-rtx-market-risk`, `followup-topic-change-stock-splits`, `gap-aapl-nvda-research-spending-periods-differ`, `missing-broadcom-revenue`, `outlook-amzn-q1-2026-guidance`, `risk-abbv-jnj-loss-of-exclusivity`, `risk-cvx-xom-commodity-prices`, `risk-nflx-dis-streaming-competition`, `risk-nke-tsla-amzn-tariffs`, `risk-ups-market-risk`, `risk-v-ma-cybersecurity`, `sector-aerospace-supply-chain`, `sector-financials-digital-assets`, `sector-retailers-workforce`, `trend-aapl-msft-net-income-fy2025`, `trend-amzn-net-sales-2025`, `trend-tsla-energy-two-years`.
+
+The mix by kind of question, counted as in [Checks](#the-file), against [ADR 0012's table](#what-is-decided):
+
+| Kind of question | Dev | ADR 0012 dev | Holdout | ADR 0012 holdout |
+|---|---|---|---|---|
+| Multi-Company risk comparisons | 14 | ~15 | 6 | ~5 |
+| Figure and outlook trends | 12 | ~15 | 4 | ~5 |
+| Sector questions | 13 | ~12 | 3 | ~4 |
+| Coverage Gap cases | 15 | ~10 | 2 | ~3 |
+| Follow-ups | 6 | ~8 | 5 | ~3 |
+| **Total** | **60** | 60 | **20** | 20 |
+
+The hash decided the holdout's mix, so it is reported and not adjusted: the holdout has more follow-ups and fewer Coverage Gap cases than the table, and dev the reverse. All five new follow-ups fell in the holdout, so dev's six are version 1's rewrites. Dev's Coverage Gap count is high because nine of the 27 rewritten version 1 cases are Coverage Gap cases, beside six new ones. The rewritten cases count 4 risk, 5 trend, 3 sector, 9 Coverage Gap and 6 follow-up cases, all dev; the new ones 16 risk (10 dev, 6 holdout), 11 trend (7, 4), 13 sector (10, 3), 8 Coverage Gap (6, 2) and 5 follow-ups (0, 5). No case moves from here on: a case added later is `dev` unless a new Golden Set version says otherwise, and version 2's holdout is scored once, on the final version 2 setup ([the holdout rule](evaluation.md#the-holdout-rule)).
+
 ### What is decided
 
 Version 1 has too few cases for a comparison to see a real difference, and some of its labels make the judge misread answers ([Evaluation version 2](evaluation.md#evaluation-version-2)).
@@ -367,6 +388,6 @@ Version 1 has too few cases for a comparison to see a real difference, and some 
 
   Figure facts are labelled from the SEC company-facts reference, independently of the system's own Financial Facts.
 - **Version 1's 27 cases other than the brief's join dev**, including its 10 holdout cases, which were scored once and never tuned on. Their labels are rewritten in the new format.
-- **A split recorded per case.** The 33 new dev cases and 20 holdout cases are drafted together, and the 20 whose ids have the lowest SHA-256 digests are the holdout. Every case records its split, and no case moves when another is added. This replaces the ranking rule above, under which adding a case could move another. The recorded split, with `pending` until it is frozen, is built ([The file](#the-file)); all 53 new cases now exist, and freezing it is next.
+- **A split recorded per case.** The 33 new dev cases and 20 holdout cases are drafted together, and the 20 whose ids have the lowest SHA-256 digests are the holdout. Every case records its split, and no case moves when another is added. This replaces the ranking rule above, under which adding a case could move another. The recorded split is built and frozen ([The file](#the-file), [The frozen split](#the-frozen-split)).
 - **One-claim Required Facts, must-state or detail.** Each fact states one claim and names its Company. A must-state fact is something any good answer covers. A detail is reported, but Fact Recall is scored on the must-state facts. The tiers are built: the loader and the generation harness handle them ([Tiers](#fields)). A fact that bundles two claims ("up 62% from a year earlier and 22% sequentially") becomes two. Every fact keeps a verbatim evidence quote, checked by the tests as before.
 - **Drafted from whole Sections.** Candidate facts are drafted in Claude Code from the whole of each relevant Section, not from what retrieval returns. The developer should review every drafted fact, but because this is a quick-turn demo, it is acceptable not to, and the developer chose not to (decided 2026-10-17, recorded on #43). The mechanical checks (every evidence quote verbatim in the Corpus, every figure in the SEC company-facts reference, and the duplicate-question check) and the implementer's read-back stand in for the review. A question's every half gets facts: the pharmaceutical question's "how are they addressing them" and the NVIDIA question's "growth outlook changed" have almost none in version 1.

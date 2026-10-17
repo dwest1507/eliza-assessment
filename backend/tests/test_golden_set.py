@@ -6,8 +6,10 @@ the mechanical half of the review: every expected Filing and Section exists in t
 Corpus, and every Required Fact's evidence quote is found word for word in its Section.
 Version 2 adds: no question repeated across the three files, version 2's and the Brief
 Suite's figure facts against the SEC company-facts reference (skipped without its
-cache), the Brief Suite's variants of the brief's questions, and version 2's mix of
-question kinds, reported against ADR 0012's table but not yet enforced.
+cache), the Brief Suite's variants of the brief's questions, version 2's frozen split
+(recomputed from the digests of its 53 new cases), and its mix of question kinds,
+reported against ADR 0012's table but not adjusted to it, since the hash decides the
+holdout's.
 """
 
 import csv
@@ -22,7 +24,8 @@ from edgar_rag.golden_set import (
     COVERAGE_GAP_KINDS,
     DEFAULT_BRIEF_SUITE,
     DEFAULT_GOLDEN_SET,
-    DEFAULT_GOLDEN_SET_V2,
+    GOLDEN_SET_V1,
+    GOLDEN_SET_V2,
     QUESTION_TYPES,
     SPLIT_RULE,
     SPLIT_RULE_V2,
@@ -47,12 +50,12 @@ BRIEF_QUESTIONS = {
 
 @pytest.fixture(scope="module")
 def golden_set():
-    return load_golden_set()
+    return load_golden_set(GOLDEN_SET_V1)
 
 
 @pytest.fixture(scope="module")
 def golden_set_v2():
-    return load_golden_set(DEFAULT_GOLDEN_SET_V2)
+    return load_golden_set(GOLDEN_SET_V2)
 
 
 @pytest.fixture(scope="module")
@@ -81,7 +84,7 @@ def company_names():
     return names
 
 
-def _rewrite(tmp_path, edit, source=DEFAULT_GOLDEN_SET):
+def _rewrite(tmp_path, edit, source=GOLDEN_SET_V1):
     data = json.loads(source.read_text(encoding="utf-8"))
     edit(data)
     path = tmp_path / source.name
@@ -138,7 +141,7 @@ def test_the_loader_rejects_an_unknown_coverage_gap_kind(tmp_path):
 
 
 def test_version_1_facts_have_no_tier_and_load_as_must_state(golden_set):
-    raw = json.loads(DEFAULT_GOLDEN_SET.read_text(encoding="utf-8"))
+    raw = json.loads(GOLDEN_SET_V1.read_text(encoding="utf-8"))
     assert golden_set.version == 1
     assert not any("tier" in f for c in raw["cases"] for f in c["required_facts"])
     assert {f.tier for c in golden_set.cases for f in c.required_facts} == {"must_state"}
@@ -298,7 +301,7 @@ VERSION_1_SHA256 = "4127b0df5ea101918dd1b181491030ce570eec50a0d6ca9ac571ca7b6a69
 
 
 def test_version_1s_golden_set_file_is_unchanged():
-    digest = hashlib.sha256(DEFAULT_GOLDEN_SET.read_bytes()).hexdigest()
+    digest = hashlib.sha256(GOLDEN_SET_V1.read_bytes()).hexdigest()
 
     assert digest == VERSION_1_SHA256
 
@@ -334,7 +337,7 @@ def test_the_loader_rejects_an_id_in_both_the_brief_suite_and_golden_set_version
     v2 = _v2_file(tmp_path, [clash])
 
     with pytest.raises(ValueError, match="brief-risk-aapl-tsla-jpm"):
-        load_brief_suite(DEFAULT_BRIEF_SUITE, (DEFAULT_GOLDEN_SET, v2))
+        load_brief_suite(DEFAULT_BRIEF_SUITE, (GOLDEN_SET_V1, v2))
 
 
 def test_every_brief_suite_case_has_facts_in_both_tiers(brief_suite):
@@ -504,7 +507,7 @@ def test_whitespace_normalisation_only_collapses_whitespace():
 def _v2_case(case_id, split="dev"):
     """A version 1 case rewritten for version 2: the same id, a tier on every fact and a
     recorded split."""
-    raw = json.loads(DEFAULT_GOLDEN_SET.read_text(encoding="utf-8"))
+    raw = json.loads(GOLDEN_SET_V1.read_text(encoding="utf-8"))
     case = next(c for c in raw["cases"] if c["id"] == case_id)
     for fact in case["required_facts"]:
         fact["tier"] = "must_state"
@@ -547,7 +550,8 @@ def test_version_1_has_no_pending_split(tmp_path):
 
 
 def test_the_version_2_file_sits_beside_version_1_and_loads(golden_set_v2):
-    assert DEFAULT_GOLDEN_SET_V2.parent == DEFAULT_GOLDEN_SET.parent
+    assert GOLDEN_SET_V2.parent == GOLDEN_SET_V1.parent
+    assert DEFAULT_GOLDEN_SET == GOLDEN_SET_V2  # the harnesses' default
     assert golden_set_v2.version == 2
     assert golden_set_v2.split_rule == SPLIT_RULE_V2
     ids = [case.id for case in golden_set_v2.cases]
@@ -580,16 +584,6 @@ def test_a_rewritten_version_1_case_keeps_its_question_and_history_and_is_dev(
         assert case.question_type == old.question_type, case.id
         assert case.starter == old.starter, case.id
         assert "brief_example" not in old.tags, case.id  # the brief's are in the Brief Suite
-
-
-def test_new_version_2_cases_are_pending_until_the_split_is_frozen(golden_set, golden_set_v2):
-    """A case version 1 does not hold is new, and stays pending until every new case is
-    drafted and the split is frozen (ADR 0012)."""
-    version_1 = {case.id for case in golden_set.cases}
-
-    new = [case for case in golden_set_v2.cases if case.id not in version_1]
-
-    assert all(case.split == "pending" for case in new), [c.id for c in new]
 
 
 NEW_SLICE_1 = {
@@ -989,6 +983,111 @@ def test_version_2_holds_all_53_new_cases(golden_set, golden_set_v2):
     assert len(golden_set_v2.cases) == 80
 
 
+NEW_CASES = {
+    *NEW_SLICE_1,
+    *NEW_SLICE_2_RISK,
+    *NEW_SLICE_2_FOLLOW_UPS,
+    *NEW_SLICE_3,
+    *NEW_SLICE_4_OUTLOOK,
+    *NEW_SLICE_4_SECTOR,
+    *NEW_SLICE_5_SECTOR,
+    NEW_SLICE_5_GAP,
+    *NEW_SLICE_6_GAPS,
+    *NEW_SLICE_6_FOLLOW_UPS,
+}
+"""The 53 new cases the split was frozen over (issue #72), named by their slices, so a
+case added later never enters the recomputation."""
+
+
+def _lowest_digests(case_ids, n):
+    return sorted(case_ids, key=lambda i: hashlib.sha256(i.encode("utf-8")).hexdigest())[:n]
+
+
+def test_version_2s_split_is_frozen_with_60_dev_and_20_holdout_cases(golden_set_v2):
+    golden_set_v2.require_frozen()
+
+    assert len(golden_set_v2.split("dev")) == 60
+    assert len(golden_set_v2.split("holdout")) == 20
+    assert golden_set_v2.split("pending") == []
+
+
+def test_the_frozen_holdout_is_the_20_new_cases_with_the_lowest_digests(golden_set_v2):
+    """Recomputed over the 53 new cases: a holdout id removed from the frozen list, or a
+    recorded split changed, fails here or in the loader."""
+    assert len(NEW_CASES) == 53
+
+    expected = _lowest_digests(NEW_CASES, 20)
+
+    assert golden_set_v2.holdout_ids == tuple(sorted(expected))
+    assert {c.id for c in golden_set_v2.split("holdout")} == set(expected)
+    assert all(c.split == "dev" for c in golden_set_v2.cases if c.id not in expected)
+
+
+def test_the_split_rule_says_a_later_case_is_dev(golden_set_v2):
+    assert "added later" in golden_set_v2.split_rule
+
+
+def _frozen_file(tmp_path, splits, holdout_ids):
+    cases = [_v2_case(case_id, split) for case_id, split in splits.items()]
+    path = _v2_file(tmp_path, cases)
+    data = json.loads(path.read_text(encoding="utf-8"))
+    data["holdout_ids"] = holdout_ids
+    path.write_text(json.dumps(data), encoding="utf-8")
+    return path
+
+
+def test_a_frozen_file_loads_its_holdout_list(tmp_path):
+    path = _frozen_file(
+        tmp_path,
+        {"risk-unh-cybersecurity": "dev", "trend-aapl-revenue-fy2025": "holdout"},
+        ["trend-aapl-revenue-fy2025"],
+    )
+
+    golden = load_golden_set(path)
+
+    assert golden.holdout_ids == ("trend-aapl-revenue-fy2025",)
+    golden.require_frozen()
+
+
+def test_version_1_and_a_file_still_being_drafted_have_no_holdout_list(golden_set, tmp_path):
+    drafting = load_golden_set(_v2_file(tmp_path, [_v2_case("outlook-tsla-2026", "pending")]))
+
+    assert golden_set.holdout_ids is None
+    assert drafting.holdout_ids is None
+
+
+@pytest.mark.parametrize(
+    ("splits", "holdout_ids", "problem"),
+    [
+        # A dev case moved to the holdout, or a case added later recorded as holdout.
+        ({"risk-unh-cybersecurity": "holdout", "outlook-tsla-2026": "holdout"},
+         ["outlook-tsla-2026"], "risk-unh-cybersecurity"),
+        # A holdout case moved to dev.
+        ({"risk-unh-cybersecurity": "dev", "outlook-tsla-2026": "dev"},
+         ["outlook-tsla-2026"], "outlook-tsla-2026"),
+        # A holdout case removed from the file.
+        ({"risk-unh-cybersecurity": "dev"}, ["outlook-tsla-2026"], "outlook-tsla-2026"),
+        # A pending case once the split is frozen.
+        ({"risk-unh-cybersecurity": "pending", "outlook-tsla-2026": "holdout"},
+         ["outlook-tsla-2026"], "risk-unh-cybersecurity"),
+    ],
+)  # fmt: skip
+def test_the_loader_rejects_a_recorded_split_that_disagrees_with_the_frozen_list(
+    tmp_path, splits, holdout_ids, problem
+):
+    path = _frozen_file(tmp_path, splits, holdout_ids)
+
+    with pytest.raises(ValueError, match=problem):
+        load_golden_set(path)
+
+
+def test_only_version_2_and_later_freeze_a_holdout_list(tmp_path):
+    path = _rewrite(tmp_path, lambda d: d.update(holdout_ids=[]))
+
+    with pytest.raises(ValueError, match="holdout_ids"):
+        load_golden_set(path)
+
+
 def test_a_missing_evidence_quote_or_section_fails_the_label_checks(tmp_path, filings_by_id):
     case = _v2_case("risk-unh-cybersecurity")
     case["required_facts"][0]["evidence"] = "UnitedHealth sells ice cream on the moon."
@@ -1244,19 +1343,32 @@ def test_the_mix_counts_each_case_once_by_its_kind_of_question(tmp_path):
     }
 
 
+FROZEN_MIX = {
+    "risk": {"dev": 14, "holdout": 6},
+    "trend": {"dev": 12, "holdout": 4},
+    "sector": {"dev": 13, "holdout": 3},
+    "coverage_gap": {"dev": 15, "holdout": 2},
+    "follow_up": {"dev": 6, "holdout": 5},
+}
+"""Version 2's mix once its split was frozen (issue #72), as `docs/golden-set.md` records
+it. The hash decided the holdout's, so it is reported against `MIX_TARGET`, not adjusted
+to it."""
+
+
 def test_the_version_2_mix_is_reported_against_adr_0012s_table(golden_set_v2, capsys):
-    """Reported, not yet enforced: the set is still being drafted."""
+    """Reported, not enforced against the table: the hash decides the holdout mix. It is
+    pinned as recorded in the docs, so a case that changes kind or split shows here."""
     mix = _question_mix(golden_set_v2.cases)
 
-    assert set(mix) <= set(MIX_TARGET)
+    assert mix == FROZEN_MIX
+    assert set(MIX_TARGET) == set(FROZEN_MIX)
     with capsys.disabled():
         print(f"\nGolden Set version 2 mix ({len(golden_set_v2.cases)} cases), against ADR 0012:")
         for kind, (dev, holdout) in MIX_TARGET.items():
             counts = mix.get(kind, {})
-            pending = f", {counts['pending']} pending" if counts.get("pending") else ""
             print(
                 f"  {kind:<13} dev {counts.get('dev', 0)}/~{dev}, "
-                f"holdout {counts.get('holdout', 0)}/~{holdout}{pending}"
+                f"holdout {counts.get('holdout', 0)}/~{holdout}"
             )
 
 

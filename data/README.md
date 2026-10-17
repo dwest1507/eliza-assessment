@@ -60,11 +60,11 @@ Names match in any case, with spaces or hyphens between words ("Bristol-Myers Sq
 
 ## Golden Set (`eval/golden_set.json`)
 
-The evaluation's ground truth: 30 labelled questions, each with the (Filing ID, Section) pairs that should be retrieved, the Required Facts an answer must state (each with an evidence quote from its Section) and the Coverage Gaps it must state. Six of them are the front-end's starter prompts. Like the Sector table it is ours to edit, and tests check every label against the Corpus. Its fields, split rule and review are described in [`docs/golden-set.md`](../docs/golden-set.md). Version 1's file stays unchanged as a record.
+The evaluation's ground truth: 30 labelled questions, each with the (Filing ID, Section) pairs that should be retrieved, the Required Facts an answer must state (each with an evidence quote from its Section) and the Coverage Gaps it must state. Six of them are the front-end's starter prompts. Like the Sector table it is ours to edit, and tests check every label against the Corpus. Its fields, split rule and review are described in [`docs/golden-set.md`](../docs/golden-set.md). Version 1's file stays unchanged as a record; a harness run names it to use it.
 
 ## Golden Set version 2 (`eval/golden_set_v2.json`)
 
-Version 2 of the Golden Set, beside version 1, holding all 27 of version 1's non-brief cases, rewritten, and all six slices of its new cases, fifty-three in all, `pending`, eighty cases ([ADR 0012](../docs/adr/0012-golden-set-version-2-and-the-brief-suite.md)). The same schema with a tier on every Required Fact, and each case records its split: `dev`, `holdout`, or `pending` until the split is frozen. The harnesses run version 1 unless this file is named, and refuse it while any case is pending. The same tests check its labels; see [`docs/golden-set.md`](../docs/golden-set.md#version-2).
+Version 2 of the Golden Set, beside version 1, holding all 27 of version 1's non-brief cases, rewritten, and all six slices of its new cases, fifty-three in all, eighty cases ([ADR 0012](../docs/adr/0012-golden-set-version-2-and-the-brief-suite.md)). The same schema with a tier on every Required Fact, and each case records its split. The split is frozen: 60 `dev` and 20 `holdout` cases, none `pending`, with the holdout ids listed in the file (`holdout_ids`), which the loader checks every recorded split against; a case added later is `dev`. It is the harnesses' default. The same tests check its labels; see [`docs/golden-set.md`](../docs/golden-set.md#version-2).
 
 ## Brief Suite (`eval/brief_suite.json`)
 

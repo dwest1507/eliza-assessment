@@ -531,7 +531,12 @@ def main(
         metavar="TOKENS",
         help="tokens of Sources per Answer Context (ADR 0010)",
     )
-    parser.add_argument("--golden-set", type=Path, default=DEFAULT_GOLDEN_SET)
+    parser.add_argument(
+        "--golden-set",
+        type=Path,
+        default=DEFAULT_GOLDEN_SET,
+        help="a Golden Set file (default: version 2; name data/eval/golden_set.json for 1)",
+    )
     parser.add_argument("--json", type=Path, help="also write the report as JSON here")
     args = parser.parse_args(argv)
     if arms is None:

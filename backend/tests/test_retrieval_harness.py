@@ -11,6 +11,7 @@ from edgar_eval.arms import ARMS
 from edgar_eval.metrics import hit_at_k, mcnemar_exact, recall_at_k, reciprocal_rank
 from edgar_eval.retrieval import Arm, evaluate, main, print_screen
 from edgar_rag.golden_set import (
+    GOLDEN_SET_V1,
     ExpectedSource,
     GoldenCase,
     Message,
@@ -473,7 +474,7 @@ def test_the_command_scores_a_chosen_context_budget_and_records_the_setting(tmp_
 def test_evidence_reached_counts_the_required_facts_whose_quote_reaches_the_prompt(index):
     """Whether each Required Fact's evidence quote is in the Answer Context's Sources: a
     smaller budget leaves some of the brief's risk comparison out."""
-    case = next(c for c in load_golden_set().cases if c.id == "risk-aapl-tsla-jpm")
+    case = next(c for c in load_golden_set(GOLDEN_SET_V1).cases if c.id == "risk-aapl-tsla-jpm")
     fts5 = next(arm for arm in ARMS if arm.name == "fts5")
 
     full = evaluate([case], [fts5], index).arms["fts5"]
@@ -588,10 +589,23 @@ def test_a_version_2_run_names_its_file_and_scores_its_recorded_split(
     assert report["case_ids"] + report["unscored"] == ["risk-unh-cybersecurity"]
 
 
-def test_version_1_stays_the_default(index, tmp_path):
+def test_version_2_is_the_default_and_version_1_runs_by_naming_its_file(index, tmp_path):
+    from edgar_rag.golden_set import GOLDEN_SET_V1, load_golden_set
+
     arms = [Arm("fts5", "shipped", lambda messages, index, **settings: [], shipped=True)]
-    out = tmp_path / "retrieval-dev.json"
+    default, version_1 = tmp_path / "retrieval-dev.json", tmp_path / "retrieval-dev-v1.json"
 
-    main(["--index", str(index), "--json", str(out)], arms=arms)
+    main(["--index", str(index), "--json", str(default)], arms=arms)
+    main(
+        ["--golden-set", str(GOLDEN_SET_V1), "--index", str(index), "--json", str(version_1)],
+        arms=arms,
+    )
 
-    assert json.loads(out.read_text())["golden_set_version"] == 1
+    report = json.loads(default.read_text())
+    assert report["golden_set_version"] == 2
+    assert len(report["case_ids"] + report["unscored"]) == 60
+    report = json.loads(version_1.read_text())
+    assert report["golden_set_version"] == 1
+    assert len(report["case_ids"] + report["unscored"]) == len(
+        load_golden_set(GOLDEN_SET_V1).split("dev")
+    )

@@ -94,7 +94,9 @@ from edgar_rag.corpus import DEFAULT_SECTOR_TABLE
 from edgar_rag.golden_set import (
     DEFAULT_BRIEF_SUITE,
     DEFAULT_GOLDEN_SET,
-    DEFAULT_GOLDEN_SET_V2,
+    GOLDEN_SET_FILES,
+    GOLDEN_SET_V1,
+    GOLDEN_SET_V2,
     GoldenCase,
     Tier,
     load_brief_suite,
@@ -646,7 +648,12 @@ def main(
         metavar="TOKENS",
         help="tokens of Sources per Answer Call (ADR 0010)",
     )
-    parser.add_argument("--golden-set", type=Path, default=DEFAULT_GOLDEN_SET)
+    parser.add_argument(
+        "--golden-set",
+        type=Path,
+        default=DEFAULT_GOLDEN_SET,
+        help="a Golden Set file (default: version 2; name data/eval/golden_set.json for 1)",
+    )
     parser.add_argument(
         "--brief-suite",
         type=Path,
@@ -687,9 +694,14 @@ def main(
         for path in args.rescore:
             report = json.loads(path.read_text(encoding="utf-8"))
             saved_arm = by_name[report["arm"]] if report.get("arm") else arm
+            # Each report against its own Golden Set version (version 1 if it records
+            # none, as reports from before the version was recorded): the file named if
+            # it is that version, else that version's own file.
+            version = report.get("golden_set_version", 1)
+            own = golden if golden.version == version else None
             rescored = rescore_figures(
                 report,
-                golden.cases,
+                (own or load_golden_set(GOLDEN_SET_FILES[version])).cases,
                 args.index,
                 fact_values=fact_values or corpus_fact_values,
                 prepare=saved_arm.prepare or prepare_answer_context,
@@ -705,7 +717,7 @@ def main(
         return 0
     if args.brief_suite:
         # The suite's cases replace version 1 cases, whichever Golden Set file is named.
-        golden_sets = dict.fromkeys((DEFAULT_GOLDEN_SET, DEFAULT_GOLDEN_SET_V2, args.golden_set))
+        golden_sets = dict.fromkeys((GOLDEN_SET_V1, GOLDEN_SET_V2, args.golden_set))
         suite = load_brief_suite(args.brief_suite, golden_sets)
         cases, where, runs = suite.cases, "Brief Suite", args.runs or BRIEF_SUITE_RUNS
         if runs < 1:

@@ -109,9 +109,10 @@ ask: $(INDEX) ## Answer a question from the command line: make ask Q="..." (need
 api: $(INDEX) ## Run the chat API on http://localhost:8000, or API_PORT (answers need OPENAI_API_KEY)
 	$(UV) uvicorn edgar_api.app:create_app --factory --host 127.0.0.1 --port $(API_PORT)
 
-eval-retrieval: $(EVAL_INDEX) $(if $(filter dense hybrid,$(or $(ARMS),dense)),$(EMBEDDINGS)) $(if $(filter dense-local hybrid-local,$(or $(ARMS),dense-local)),$(LOCAL_EMBEDDINGS)) ## Score retrieval Arms on the Golden Set: make eval-retrieval [SPLIT=dev|holdout|all] [ARMS="fts5 ..."] [CHUNK_TOKENS=...] [CONTEXT_BUDGET=...]
+eval-retrieval: $(EVAL_INDEX) $(if $(filter dense hybrid,$(or $(ARMS),dense)),$(EMBEDDINGS)) $(if $(filter dense-local hybrid-local,$(or $(ARMS),dense-local)),$(LOCAL_EMBEDDINGS)) ## Score retrieval Arms on the Golden Set (version 2 unless GOLDEN_SET= names a file): make eval-retrieval [SPLIT=dev|holdout|all] [ARMS="fts5 ..."] [CHUNK_TOKENS=...] [CONTEXT_BUDGET=...] [GOLDEN_SET=data/eval/golden_set.json]
 	$(UV) python -m edgar_eval.retrieval --split $(SPLIT) $(foreach arm,$(ARMS),--arm $(arm)) \
-		$(SETTINGS_ARGS) --json ../data/derived/eval/retrieval-$(SPLIT)$(SETTINGS).json
+		$(SETTINGS_ARGS) $(if $(GOLDEN_SET),--golden-set ../$(GOLDEN_SET)) \
+		--json ../data/derived/eval/retrieval-$(SPLIT)$(SETTINGS).json
 
 eval-generation: $(EVAL_INDEX) $(if $(filter dense hybrid,$(ARM)),$(EMBEDDINGS)) $(if $(filter dense-local hybrid-local,$(ARM)),$(LOCAL_EMBEDDINGS)) ## Score answers on the Golden Set: make eval-generation [SPLIT=...] [MODEL=...] [ARM=...] [CHUNK_TOKENS=...] [CONTEXT_BUDGET=...] (costs money)
 	@keys=$$($(GENERATOR_KEYS) $(MODEL)) || exit 1; \
@@ -224,10 +225,12 @@ $(LOCAL_EMBEDDINGS):
 	@$(MAKE) --no-print-directory local-embeddings
 
 # `make eval-export` runs the retrieval harness first when its report is missing, on the
-# Shipped Arm only (it makes no LLM call and needs no embeddings). The generation harness
-# costs money, so it only ever runs when asked for.
+# Shipped Arm only (it makes no LLM call and needs no embeddings), and on Golden Set
+# version 1, which the export describes. The generation harness costs money, so it only
+# ever runs when asked for.
 $(RETRIEVAL_REPORT):
-	@$(MAKE) --no-print-directory eval-retrieval SPLIT=$(SPLIT) ARMS=fts5
+	@$(MAKE) --no-print-directory eval-retrieval SPLIT=$(SPLIT) ARMS=fts5 \
+		GOLDEN_SET=data/eval/golden_set.json
 
 # The EDA reads the cached company-facts; fetch them only when the cache is missing.
 $(SEC_FACTS_INDEX):

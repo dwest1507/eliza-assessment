@@ -17,19 +17,30 @@ from edgar_eval import generation, retrieval, selection
 from edgar_eval.export import coverage_grid, main
 from edgar_eval.judge import JEV_MODEL
 from edgar_eval.retrieval import Arm
-from edgar_rag.golden_set import load_golden_set
+from edgar_rag.golden_set import GOLDEN_SET_V1, load_golden_set
 
 TODAY = date(2026, 10, 16)
 
 
+def _version_1():
+    """The Golden Set the export describes: version 1, which the page shows until a later
+    spec moves it to version 2."""
+    return load_golden_set(GOLDEN_SET_V1)
+
+
 def _first_expected(messages, index, **settings):
     """A fake Arm that finds each case's first expected pair, by its question."""
-    cases = {c.question: c for c in load_golden_set().cases}
+    from edgar_rag.golden_set import GOLDEN_SET_V2
+
+    # Version 1's labels win where a rewritten version 2 case asks the same question.
+    cases = {
+        c.question: c for p in (GOLDEN_SET_V2, GOLDEN_SET_V1) for c in load_golden_set(p).cases
+    }
     case = cases[messages[-1].content]
     return [(s.filing_id, s.section) for s in case.expected_sources[:1]]
 
 
-def _write_retrieval_report(eval_dir, split="dev"):
+def _write_retrieval_report(eval_dir, split="dev", golden_set=GOLDEN_SET_V1):
     arms = [
         Arm("fts5", "shipped", _first_expected, shipped=True),
         Arm("nothing", "finds nothing", lambda messages, index, **settings: []),
@@ -37,7 +48,10 @@ def _write_retrieval_report(eval_dir, split="dev"):
     path = eval_dir / f"retrieval-{split}.json"
     assert (
         retrieval.main(
-            ["--split", split, "--index", str(eval_dir / "no-index.sqlite"), "--json", str(path)],
+            [
+                *("--split", split, "--golden-set", str(golden_set)),
+                *("--index", str(eval_dir / "no-index.sqlite"), "--json", str(path)),
+            ],
             arms=arms,
             out=io.StringIO(),
         )
@@ -83,7 +97,16 @@ def _write_generation_report(
 ):
     path = eval_dir / f"generation-{split}{suffix}.json"
     code = generation.main(
-        ["--case", "risk-aapl-tsla-jpm", "--index", str(index), "--log", str(tmp_path / "log")]
+        [
+            "--golden-set",
+            str(GOLDEN_SET_V1),
+            "--case",
+            "risk-aapl-tsla-jpm",
+            "--index",
+            str(index),
+            "--log",
+            str(tmp_path / "log"),
+        ]
         + ["--json", str(path)],
         model=FakeModel(model, answer),
         judge=FakeJudge(),
@@ -120,7 +143,7 @@ def test_the_export_carries_each_arms_scores_and_its_comparison_with_the_shipped
 
     data = _export(tmp_path, eval_dir, indexed_filings)
 
-    golden = load_golden_set()
+    golden = _version_1()
     assert data["exportedOn"] == "2026-10-16"
     assert data["split"] == "dev"
     assert data["goldenSet"] == {
@@ -233,7 +256,7 @@ def test_the_export_carries_every_holdout_run_beside_the_dev_reports(
     assert data["split"] == "dev"
     assert [run["report"] for run in data["generation"]] == ["generation-dev.json"]
     holdout = data["holdout"]
-    assert holdout["splitCases"] == len(load_golden_set().split("holdout"))
+    assert holdout["splitCases"] == len(_version_1().split("holdout"))
     assert [arm["name"] for arm in holdout["retrieval"]["arms"]] == ["fts5", "nothing"]
     first, second = holdout["generation"]
     assert first["report"] == "generation-holdout.json"
@@ -262,8 +285,24 @@ def test_the_export_reads_the_chosen_splits_reports(tmp_path, eval_dir, indexed_
     assert data["split"] == "holdout"
     assert data["holdout"] is None  # the holdout is the split itself
     assert data["retrieval"]["scoredCases"] + len(data["retrieval"]["unscored"]) == len(
-        load_golden_set().split("holdout")
+        _version_1().split("holdout")
     )
+
+
+def test_the_export_refuses_a_retrieval_report_of_another_golden_set_version(tmp_path, eval_dir):
+    """The export describes version 1 by default, so a report the retrieval harness wrote
+    on its own default, version 2, is refused rather than mixed with version 1's counts."""
+    from edgar_rag.golden_set import GOLDEN_SET_V2
+
+    _write_retrieval_report(eval_dir, golden_set=GOLDEN_SET_V2)
+
+    with pytest.raises(SystemExit, match="version 2"):
+        main(
+            ["--eval-dir", str(eval_dir), "--out", str(tmp_path / "x.json")],
+            filings=[],
+            today=TODAY,
+            out=io.StringIO(),
+        )
 
 
 def test_a_missing_retrieval_report_names_the_command_that_writes_it(tmp_path, eval_dir):

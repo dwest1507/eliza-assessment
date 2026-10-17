@@ -150,8 +150,8 @@ from edgar_eval.judge import (
 from edgar_eval.metrics import cohen_kappa, fisher_exact, mcnemar_exact, wilson_interval
 from edgar_rag.golden_set import (
     DEFAULT_BRIEF_SUITE,
-    DEFAULT_GOLDEN_SET,
-    DEFAULT_GOLDEN_SET_V2,
+    GOLDEN_SET_V1,
+    GOLDEN_SET_V2,
     BriefSuite,
     GoldenSet,
     RequiredFact,
@@ -1936,8 +1936,8 @@ def main(
     sample.add_argument("--sheet", type=Path, default=DEFAULT_SHEET)
     sample.add_argument("--sample", type=Path, default=DEFAULT_SAMPLE)
     sample.add_argument("--index", type=Path, default=DEFAULT_INDEX)
-    sample.add_argument("--golden-set", type=Path, default=DEFAULT_GOLDEN_SET)
-    sample.add_argument("--golden-set-v2", type=Path, default=DEFAULT_GOLDEN_SET_V2)
+    sample.add_argument("--golden-set", type=Path, default=GOLDEN_SET_V1)
+    sample.add_argument("--golden-set-v2", type=Path, default=GOLDEN_SET_V2)
     sample.add_argument("--brief-suite", type=Path, default=DEFAULT_BRIEF_SUITE)
     judge = commands.add_parser(
         "judge", help=f"judge every sampled item: Jev {JUDGE_RUNS} times (costs money)"

@@ -60,10 +60,10 @@ def golden_set_v2_file(tmp_path):
     "dev"})`."""
     import json
 
-    from edgar_rag.golden_set import DEFAULT_GOLDEN_SET, SPLIT_RULE_V2
+    from edgar_rag.golden_set import GOLDEN_SET_V1, SPLIT_RULE_V2
 
     def make(splits):
-        version_1 = json.loads(DEFAULT_GOLDEN_SET.read_text(encoding="utf-8"))["cases"]
+        version_1 = json.loads(GOLDEN_SET_V1.read_text(encoding="utf-8"))["cases"]
         cases = []
         for case in (c for c in version_1 if c["id"] in splits):
             for fact in case["required_facts"]:

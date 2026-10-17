@@ -9,7 +9,7 @@ import sys
 
 from edgar_eval.judge import Evidence
 from edgar_eval.judge_study import draw_sample, write_sheet
-from edgar_rag.golden_set import RequiredFact
+from edgar_rag.golden_set import GOLDEN_SET_V1, RequiredFact
 
 GENERATORS = ("gpt-6-luna", "claude-sonnet-5-5", "claude-haiku-5-5")
 
@@ -201,9 +201,9 @@ def test_an_answer_whose_sources_cannot_be_rebuilt_gives_no_claim_item():
 def _v2_file(tmp_path, rewritten):
     """A Golden Set version 2 file of version 1 cases rewritten with these one-claim
     facts, by case id."""
-    from edgar_rag.golden_set import DEFAULT_GOLDEN_SET, SPLIT_RULE_V2
+    from edgar_rag.golden_set import GOLDEN_SET_V1, SPLIT_RULE_V2
 
-    version_1 = json.loads(DEFAULT_GOLDEN_SET.read_text(encoding="utf-8"))["cases"]
+    version_1 = json.loads(GOLDEN_SET_V1.read_text(encoding="utf-8"))["cases"]
     cases = []
     for case in (c for c in version_1 if c["id"] in rewritten):
         facts = [
@@ -232,7 +232,7 @@ def _sample_command(tmp_path, reports, v2, *extra, sources=_sources):
 def test_fact_items_use_the_rewritten_facts_never_a_version_1_compound_fact(tmp_path):
     from edgar_rag.golden_set import load_brief_suite, load_golden_set
 
-    version_1 = {c.id: c for c in load_golden_set().cases}
+    version_1 = {c.id: c for c in load_golden_set(GOLDEN_SET_V1).cases}
     brief = {c.replaces: c for c in load_brief_suite().cases if c.replaces}
     rewritten = {
         "risk-unh-cybersecurity": [
@@ -421,7 +421,7 @@ def test_the_sample_command_calls_no_provider_and_rebuilds_sources_offline(
     for key in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY", "JEV_API_KEY"):
         monkeypatch.setenv(key, "placeholder")
 
-    case = next(c for c in load_golden_set().cases if c.id == "risk-aapl-tsla-jpm")
+    case = next(c for c in load_golden_set(GOLDEN_SET_V1).cases if c.id == "risk-aapl-tsla-jpm")
     shipped = next(a for a in ARMS if a.shipped)
     given = shipped.prepare(conversation(case), index).sources
     answer = "Apple relies on outsourcing partners. [S1]\n\nTesla depends on Elon Musk. [S2]"

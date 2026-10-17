@@ -38,7 +38,7 @@ from typing import Any, TextIO
 
 from edgar_eval.metrics import mcnemar_exact
 from edgar_rag.corpus import Filing, load_corpus, report_quarter
-from edgar_rag.golden_set import DEFAULT_GOLDEN_SET, load_golden_set
+from edgar_rag.golden_set import GOLDEN_SET_V1, load_golden_set
 from edgar_rag.paths import DERIVED_DIR, REPO_ROOT
 
 __all__ = ["DEFAULT_EVAL_DIR", "DEFAULT_EXPORT", "coverage_grid", "export", "main"]
@@ -56,9 +56,13 @@ def export(
     eval_dir: Path,
     filings: Sequence[Filing],
     today: date,
-    golden_set: Path = DEFAULT_GOLDEN_SET,
+    golden_set: Path = GOLDEN_SET_V1,
 ) -> dict[str, Any]:
-    """The front-end's export for a split, from the harnesses' reports in `eval_dir`."""
+    """The front-end's export for a split, from the harnesses' reports in `eval_dir`.
+
+    It describes Golden Set version 1 by default, though the harnesses default to version
+    2: the page shows version 1 until a later spec moves it. A retrieval report of another
+    version is refused rather than mixed with this version's counts."""
     retrieval_path = eval_dir / f"retrieval-{split}.json"
     if not retrieval_path.exists():
         raise SystemExit(
@@ -66,6 +70,13 @@ def export(
             f"`make eval-retrieval SPLIT={split}` first."
         )
     golden = load_golden_set(golden_set)
+    retrieval = _read(retrieval_path)
+    if retrieval.get("golden_set_version", 1) != golden.version:
+        raise SystemExit(
+            f"error: {retrieval_path} scores Golden Set version "
+            f"{retrieval.get('golden_set_version', 1)}, and the export describes version "
+            f"{golden.version} ({golden_set})."
+        )
     cases = golden.cases if split == "all" else golden.split(split)
     choice_path = eval_dir / f"generator-choice-{split}.json"
     return {
@@ -76,7 +87,7 @@ def export(
             "cases": len(golden.cases),
             "splitCases": len(cases),
         },
-        "retrieval": _retrieval(_read(retrieval_path)),
+        "retrieval": _retrieval(retrieval),
         "generation": [_generation(path) for path in _generation_paths(eval_dir, split)],
         "generatorChoice": _generator_choice(_read(choice_path)) if choice_path.exists() else None,
         "holdout": None if split == "holdout" else _holdout(eval_dir, len(golden.split("holdout"))),
@@ -303,7 +314,7 @@ def main(
     )
     parser.add_argument("--split", choices=("dev", "holdout", "all"), default="dev")
     parser.add_argument("--eval-dir", type=Path, default=DEFAULT_EVAL_DIR)
-    parser.add_argument("--golden-set", type=Path, default=DEFAULT_GOLDEN_SET)
+    parser.add_argument("--golden-set", type=Path, default=GOLDEN_SET_V1)
     parser.add_argument("--out", type=Path, default=DEFAULT_EXPORT)
     args = parser.parse_args(argv)
 
