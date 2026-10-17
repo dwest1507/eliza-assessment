@@ -31,27 +31,43 @@ _Avoid_: Limitation, missing data, caveat
 ### Evaluation
 
 **Golden Set**:
-The labelled questions retrieval and answers are scored against, each with its expected (Filing ID, Section) pairs, Required Facts and expected Coverage Gaps, split into dev and holdout by a hash of the case id.
+The labelled questions retrieval and answers are scored against, each with its expected (Filing ID, Section) pairs, Required Facts and expected Coverage Gaps, and each assigned to dev or holdout by a hash of its id, a split it keeps for good. From version 2 each case records its split, which is pending while new cases are drafted; a set with a pending case is not run. Version 2's split is frozen, with its holdout ids listed in the file, and a case added later is dev.
 _Avoid_: Test set, benchmark, eval data
 
+**Brief Suite**:
+The brief's example questions and variants of them, kept outside the Golden Set's split: a must-pass check that every change which could alter an answer is run against, case by case.
+_Avoid_: Demo set, smoke test, starter prompts
+
 **Required Fact**:
-A self-contained sentence, naming its Company, that a good answer to a Golden Set question must state, with an evidence quote from the Section that supports it.
+One claim, naming its Company, that a good answer to a Golden Set or Brief Suite question must state, with an evidence quote from the Section that supports it. Each is either must-state (something any good answer covers) or a detail.
 _Avoid_: Expected answer, key point
 
 **Fact Recall**:
-The share of a Golden Set case's Required Facts that an answer states, as judged by Jev.
+The share of a case's must-state Required Facts that an answer states, as judged by Jev: a fact is stated when Jev's probability reaches the fact cut-off, 0.6, set by the judge study (ADR 0013). The same share over its details is detail recall, reported beside Fact Recall and never decided on. An answer cut off at the Answer Call's token cap fails, with a Fact Recall of 0.
 _Avoid_: Recall (unqualified), coverage
 
 **Faithfulness**:
-The share of an answer's cited claims that the Sources they cite support, as judged by Jev.
+The share of an answer's claims that the Sources they cite support, as judged by Jev. Every sentence of the answer is a claim, except its headings, its Coverage Gap wordings and its lead-ins ending in a colon. A claim that cites no Source is unsupported.
 _Avoid_: Groundedness, accuracy, hallucination rate
 
+**Contradicted Claim**:
+A claim whose cited Sources say something different from it: another figure, period, Company or direction of change. One fails the answer, whatever its Faithfulness.
+_Avoid_: Error, hallucination
+
+**Evidence Reached**:
+Whether a Required Fact's evidence quote is in the text of an Answer Context's Sources: retrieval's measure of whether an answer could state that fact at all.
+_Avoid_: Recall (unqualified), coverage
+
+**Control Run**:
+The shipped choice run again beside its challengers in a comparison, so the comparison shows its own run-to-run noise. If it comes out ahead of the shipped run, the comparison is inconclusive and the shipped choice stands. The comparisons of one round (the same code, prompt and Golden Set version) share one shipped run and one Control Run.
+_Avoid_: Baseline, rerun
+
 **Arm**:
-One way of ranking the chunks that become an Answer Call's Sources (FTS5, dense embeddings, a hybrid, a re-ranker), scored by the retrieval and generation harnesses on the Golden Set.
+One way of ranking the chunks that become an Answer Call's Sources (FTS5, dense embeddings, a hybrid, a re-ranker), scored by the retrieval and generation harnesses on the Golden Set. Each Arm records whether it makes an API call at query time, such as a hosted embedding of the question; under the one-call rule (the Answer Call is a question's only API call) such an Arm can't ship, and is reported as available if the one-call limit is lifted.
 _Avoid_: Retriever, strategy, variant
 
 **Shipped Arm**:
-The Arm the product uses, which every other Arm is compared with question by question. FTS5 unless a challenger is shown to be better.
+The Arm the product uses, which every other Arm is compared with question by question. FTS5 unless a challenger that makes no API call at query time is shown to be better.
 _Avoid_: Baseline, default retriever
 
 ### Filings

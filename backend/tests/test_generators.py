@@ -22,10 +22,12 @@ def test_the_table_lists_each_compared_generator_once_the_shipped_default_first(
         "gpt-6.1-sol",
         "claude-sonnet-5-5",
         "claude-opus-5-5",
+        "claude-haiku-5-5",
     ]
     assert [g.provider.key_env_var for g in GENERATORS] == [
         "OPENAI_API_KEY",
         "OPENAI_API_KEY",
+        "ANTHROPIC_API_KEY",
         "ANTHROPIC_API_KEY",
         "ANTHROPIC_API_KEY",
     ]
@@ -43,6 +45,30 @@ def test_answer_cost_prices_input_and_output_tokens_per_million():
     assert answer_cost("claude-sonnet-5-5", 1_000_000, 100_000) == pytest.approx(3.0)
     assert answer_cost("claude-opus-5-5", 1_000_000, 100_000) == pytest.approx(6.0)
     assert all(answer_cost(g.model, 1, 1) is not None for g in GENERATORS)
+
+
+def test_claude_haiku_5_5_is_an_anthropic_generator_at_gpt_6_luna_s_price(monkeypatch):
+    from edgar_answer.anthropic_model import AnthropicAnswerModel
+
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
+
+    # $0.10 per million input tokens, $0.50 per million output tokens (under 100k).
+    assert answer_cost("claude-haiku-5-5", 1_000_000, 100_000) == pytest.approx(0.15)
+    assert answer_cost("claude-haiku-5-5", 26_000, 900) == pytest.approx(0.00305)
+    haiku = answer_model("claude-haiku-5-5")
+    assert isinstance(haiku, AnthropicAnswerModel) and haiku.model == "claude-haiku-5-5"
+
+
+def test_the_version_1_generators_keep_their_prices():
+    # The version 1 reports were priced from these rows; adding a generator changes none.
+    prices = {g.model: (g.price.input, g.price.output) for g in GENERATORS}
+
+    assert {m: prices[m] for m in prices if m != "claude-haiku-5-5"} == {
+        "gpt-6-luna": (0.10, 0.50),
+        "gpt-6.1-sol": (2.00, 10.00),
+        "claude-sonnet-5-5": (2.00, 10.00),
+        "claude-opus-5-5": (4.00, 20.00),
+    }
 
 
 def test_answer_cost_is_unknown_for_a_model_without_a_price():
@@ -98,6 +124,8 @@ def test_the_keys_command_names_the_api_keys_a_run_needs(monkeypatch, capsys):
     assert main(["keys"]) == 0  # the default generator
     assert capsys.readouterr().out.split() == ["OPENAI_API_KEY"]
     assert main(["keys", "--all"]) == 0  # every compared generator, each key once
+    assert capsys.readouterr().out.split() == ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]
+    assert main(["keys", "gpt-6-luna", "claude-haiku-5-5"]) == 0  # a list, each key once
     assert capsys.readouterr().out.split() == ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]
     with pytest.raises(SystemExit) as stopped:
         main(["keys", "gemini-9"])

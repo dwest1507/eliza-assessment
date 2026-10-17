@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Retrieval quality gate: rebuilds the index from the Corpus, scores the Shipped Arm
 # (FTS5) on the Golden Set's dev split, and fails if hit@10, recall@10 or MRR drops below
-# its Floor in data/eval/retrieval_floors.json, or that record is stale (ADR 0011).
+# its Floor in data/eval/retrieval_floors.json, or that record is stale (ADR 0014).
 # Called by `make eval-gate` and .github/workflows/backend-ci.yml.
 #
 # Retrieval makes no LLM call and FTS5 needs no embeddings, so this costs nothing. The

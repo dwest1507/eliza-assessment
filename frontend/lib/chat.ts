@@ -122,15 +122,25 @@ export function messageSources(message: MessageLike): Source[] {
   return Array.isArray(sources) ? sources : []
 }
 
-/** The Filing ID each Source tag of an answer cited, from its `data-sources` part. */
+/** A Source tag as the backend writes it: `S1`, `S2`, ... */
+const SOURCE_TAG = /^S\d+$/
+
+/**
+ * The Filing ID each Source tag of an answer cited, from its `data-sources` part. The
+ * browser sends these back with the history, so a tag that is not a Source tag (such as
+ * `__proto__`) is skipped rather than used as a key.
+ */
 export function messageCitedFilings(message: MessageLike): Record<string, string> {
-  const cited: Record<string, string> = {}
-  for (const source of messageSources(message) as unknown[]) {
-    if (isRecord(source) && typeof source.tag === 'string' && typeof source.filingId === 'string') {
-      cited[source.tag] = source.filingId
-    }
-  }
-  return cited
+  return Object.fromEntries(
+    (messageSources(message) as unknown[]).flatMap((source) =>
+      isRecord(source) &&
+      typeof source.tag === 'string' &&
+      SOURCE_TAG.test(source.tag) &&
+      typeof source.filingId === 'string'
+        ? [[source.tag, source.filingId]]
+        : []
+    )
+  )
 }
 
 /**

@@ -1,15 +1,20 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
 import {
+  type BriefSuiteResults,
   type CoverageCompany,
   type EvalExport,
   type GenerationRun,
   type GenerationSummary,
   type GeneratorChoice,
+  type GeneratorComparison,
   type HoldoutResults,
   type RetrievalResults,
   type RetrievalSummary,
+  type Screen,
   type SignTest,
+  difference,
+  pValue,
   quarterLabel,
   questionType,
   score,
@@ -17,10 +22,13 @@ import {
   usd,
 } from '@/lib/evalExport'
 
+type Thresholds = EvalExport['thresholds']
+
 /**
- * The "How it works" page: the architecture, the evaluation scoreboard (with the generator
- * comparison), the holdout run and the Corpus coverage grid, all read from the evaluation
- * export so the evidence sits in the product.
+ * The "How it works" page: the architecture, the evaluation scoreboard (the shipped run
+ * beside its Control Run, the retrieval Arms and their screen, and the generator
+ * comparison), the Brief Suite's verdicts, the holdout run beside dev and the Corpus
+ * coverage grid, all read from the evaluation export so the evidence sits in the product.
  */
 export default function HowItWorks({ data }: { data: EvalExport }) {
   return (
@@ -43,7 +51,8 @@ export default function HowItWorks({ data }: { data: EvalExport }) {
       <main className="mx-auto flex max-w-5xl flex-col gap-20 px-5 py-14">
         <Architecture data={data} />
         <Scoreboard data={data} />
-        {data.holdout && <Holdout holdout={data.holdout} />}
+        {data.briefSuite && <BriefSuite brief={data.briefSuite} />}
+        {data.holdout && <Holdout holdout={data.holdout} dev={data} />}
         <CoverageGrid data={data} />
       </main>
     </div>
@@ -88,7 +97,8 @@ interface Stage {
 function Architecture({ data }: { data: EvalExport }) {
   const shipped = data.retrieval.arms.find((arm) => arm.shipped)?.name
   const generator =
-    data.generation.find((run) => run.model === data.generatorChoice?.chosen) ?? data.generation[0]
+    data.generation.find((run) => run.model === data.generatorChoice?.chosen && !run.controlRun) ??
+    data.generation[0]
   const filings = data.coverage.companies.reduce((n, c) => n + c.filings.length, 0)
 
   const builtOnce: Stage[] = [
@@ -140,14 +150,25 @@ function Architecture({ data }: { data: EvalExport }) {
       ),
     },
   ]
+  const evidence = data.retrieval.gatingMetric === 'evidence reached'
   const measured: Stage[] = [
     {
       name: 'Golden Set',
-      text: `${data.goldenSet.cases} labelled questions (version ${data.goldenSet.version}) with expected Sources, Required Facts and Coverage Gaps, split into dev and holdout by a hash rule.`,
+      text: `${data.goldenSet.cases} labelled questions (version ${data.goldenSet.version}) with expected Sources, Required Facts and Coverage Gaps, split into dev and holdout by a hash rule${data.goldenSet.version >= 2 ? ' and frozen, each case recording its split' : ''}.`,
     },
+    ...(data.briefSuite
+      ? [
+          {
+            name: 'Brief Suite',
+            text: `The brief’s three example questions and variants of each, ${data.briefSuite.cases.length} cases outside the split, each answered ${data.briefSuite.runs} times and passed or failed on its own.`,
+          },
+        ]
+      : []),
     {
       name: 'Harnesses',
-      text: 'Retrieval: hit@k, recall@k and MRR, with no LLM call. Generation: citation, figure and Coverage Gap checks in code, Fact Recall and Faithfulness judged by a pinned Jev version, cost and latency.',
+      text: evidence
+        ? 'Retrieval: Evidence Reached per Required Fact (the gate), with hit@k, recall@k and MRR, and no LLM call. Generation: citation, figure and Coverage Gap checks in code, must-state Fact Recall and Faithfulness judged by a pinned Jev version, Contradicted Claims, cost and latency.'
+        : 'Retrieval: hit@k, recall@k and MRR, with no LLM call. Generation: citation, figure and Coverage Gap checks in code, Fact Recall and Faithfulness judged by a pinned Jev version, cost and latency.',
     },
   ]
 
@@ -208,28 +229,46 @@ const th =
   'border-b border-line bg-raised px-3 py-1.5 text-left font-mono text-[11px] font-medium tracking-wide whitespace-nowrap text-muted'
 const td = 'border-b border-line px-3 py-1.5 whitespace-nowrap tabular-nums'
 const caption = 'mb-3 text-left text-[14px] font-semibold text-white'
+const note = 'mt-2 text-[12.5px] leading-relaxed text-muted'
+const badge =
+  'ml-2 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 font-mono text-[10px] tracking-widest text-accent-strong'
+const quietBadge =
+  'ml-2 rounded-full border border-line px-2 py-0.5 font-mono text-[10px] tracking-widest text-muted'
+
+/** How a version's verdicts are worded: directional under version 2, as the docs word them. */
+function verdictRule(thresholds: Thresholds): string {
+  return thresholds
+    ? `Verdicts are directional: one-sided p < ${thresholds.aheadP.toFixed(2)} for ahead and p < ${thresholds.behindP.toFixed(2)} for behind, fixed before running`
+    : 'Version 1’s rule: verdicts are two-sided, ahead or behind only at p < 0.05'
+}
 
 function Scoreboard({ data }: { data: EvalExport }) {
-  const { retrieval, split, goldenSet } = data
+  const { retrieval, split, goldenSet, thresholds } = data
   return (
     <Section
       id="scoreboard"
       title="Evaluation scoreboard"
       intro={
         <>
-          The harnesses’ latest results on the Golden Set’s {split} split, exported on{' '}
-          {data.exportedOn}. Choices are tuned on dev; the holdout is scored once per final setup,
-          never to choose{data.holdout ? ', and its run follows' : ''}. Scores are shares from 0 to
-          1.
+          The harnesses’ latest results on Golden Set version {goldenSet.version}’s {split} split,
+          exported on {data.exportedOn}. Choices are tuned on dev; the holdout is scored once per
+          final setup, never to choose{data.holdout ? ', and its run follows' : ''}. Scores are
+          shares from 0 to 1. {verdictRule(thresholds)}.
         </>
       }
     >
-      <RetrievalTable retrieval={retrieval} split={split} splitCases={goldenSet.splitCases} />
+      <RetrievalTable
+        retrieval={retrieval}
+        split={split}
+        splitCases={goldenSet.splitCases}
+        thresholds={thresholds}
+      />
+      {retrieval.screen && <ScreenTable screen={retrieval.screen} thresholds={thresholds} />}
       {data.generation.length > 0 ? (
         <GenerationTable
           runs={data.generation}
           split={split}
-          shipped={data.generatorChoice?.chosen}
+          shipped={data.generatorChoice?.chosen ?? data.generation[0].model}
         />
       ) : (
         <p className="card px-4 py-3 text-[14px] text-muted">
@@ -239,32 +278,117 @@ function Scoreboard({ data }: { data: EvalExport }) {
           <code className="font-mono text-[13px]">make eval-export</code>.
         </p>
       )}
-      {data.generatorChoice && <GeneratorChoiceTable choice={data.generatorChoice} />}
+      {data.generatorChoice && (
+        <GeneratorChoiceTable choice={data.generatorChoice} thresholds={thresholds} />
+      )}
     </Section>
   )
 }
 
-function Holdout({ holdout }: { holdout: HoldoutResults }) {
+function BriefSuite({ brief }: { brief: BriefSuiteResults }) {
+  const failing = brief.cases.filter((c) => !c.passed)
+  const missed = failing.flatMap((c) => c.missed)
+  const notReached = missed.filter((f) => f.evidenceReachedRuns === 0).length
+  return (
+    <Section
+      id="brief-suite"
+      title="The Brief Suite"
+      intro={
+        <>
+          The brief’s three example questions and variants of each, outside the dev/holdout split,
+          each answered {brief.runs} times by <code className="font-mono">{brief.model}</code>{' '}
+          (prompt {brief.promptVersion}). A case passes when every must-state Required Fact is
+          stated in at least {brief.passRuns} of {brief.runs} runs and no run has a Contradicted
+          Claim. Verdicts are reported case by case, never averaged:{' '}
+          <span className="font-medium text-accent-strong">
+            {brief.casesPassed} of {brief.cases.length} cases pass.
+          </span>
+        </>
+      }
+    >
+      <div className="card overflow-x-auto p-3">
+        <table className="min-w-full border-collapse text-[13px]">
+          <caption className={caption}>Brief Suite: does each brief question pass?</caption>
+          <thead>
+            <tr>
+              <th className={th}>Case</th>
+              <th className={th}>Verdict</th>
+              <th className={th}>Must-state facts</th>
+              <th className={th}>Missed</th>
+              <th className={th}>Of them, evidence never reached</th>
+              <th className={th}>Runs with a Contradicted Claim</th>
+            </tr>
+          </thead>
+          <tbody>
+            {brief.cases.map((c) => (
+              <tr key={c.caseId}>
+                <th scope="row" className={`${td} text-left font-medium`} title={c.question}>
+                  <code className="font-mono">{c.caseId}</code>
+                  {c.briefQuestion && <span className={badge}>brief</span>}
+                </th>
+                <td className={`${td} ${c.passed ? 'font-semibold text-accent-strong' : ''}`}>
+                  {c.passed ? 'pass' : 'fail'}
+                </td>
+                <td className={td}>{c.mustState}</td>
+                <td className={td}>{c.missed.length}</td>
+                <td className={td}>{c.missed.filter((f) => f.evidenceReachedRuns === 0).length}</td>
+                <td className={td}>{c.contradictedRuns.length}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className={note}>
+          A missed fact is stated in fewer than {brief.passRuns} runs. Of the {missed.length}{' '}
+          must-state facts the {failing.length} failing cases miss, {notReached} have evidence that
+          never reached the Answer Context in any run: retrieval misses, which no generator could
+          state from the Sources. Hover a case for its question.
+        </p>
+      </div>
+    </Section>
+  )
+}
+
+function Holdout({ holdout, dev }: { holdout: HoldoutResults; dev: EvalExport }) {
   const { splitCases } = holdout
+  // The round's shipped run and Control Run on dev, shown beside the holdout's answers.
+  const devRuns = dev.generation.filter(
+    (run) => run.controlRun || run.report === `generation-${dev.split}.json`
+  )
+  const devArm = dev.retrieval.arms.find((arm) => arm.shipped)
   return (
     <Section
       id="holdout"
       title="The holdout run"
       intro={
         <>
-          The shipped setup, scored on the Golden Set’s {splitCases} holdout cases after every
-          choice above was made on dev. The holdout is scored once per final setup and never used to
-          choose: nothing was changed after it. On {splitCases} cases one case moves a share by{' '}
-          {(1 / splitCases).toFixed(2)}, so it shows whether the dev choices overfitted badly, not
-          that one split scores better than the other.
+          The shipped setup, scored on Golden Set version {dev.goldenSet.version}’s {splitCases}{' '}
+          holdout cases after every choice above was made on dev, shown beside dev. The holdout is
+          scored once per final setup and never used to choose: nothing was changed after it. On{' '}
+          {splitCases} cases one case moves a share by {(1 / splitCases).toFixed(2)}, so it shows
+          whether the dev choices overfitted badly, not that one split scores better than the other.
         </>
       }
     >
       {holdout.retrieval && (
-        <RetrievalTable retrieval={holdout.retrieval} split="holdout" splitCases={splitCases} />
+        <RetrievalTable
+          retrieval={holdout.retrieval}
+          split="holdout"
+          splitCases={splitCases}
+          thresholds={dev.thresholds}
+          beside={
+            devArm ? { label: `${dev.split}, ${devArm.name}`, summary: devArm.overall } : undefined
+          }
+        />
       )}
       {holdout.generation.length > 0 && (
-        <GenerationTable runs={holdout.generation} split="holdout" />
+        <GenerationTable
+          runs={holdout.generation}
+          split="holdout"
+          beside={devRuns.map((run) => ({
+            label: `${dev.split}, ${run.controlRun ? 'Control Run' : 'shipped run'}`,
+            run,
+          }))}
+        />
       )}
     </Section>
   )
@@ -274,13 +398,20 @@ function RetrievalTable({
   retrieval,
   split,
   splitCases,
+  thresholds,
+  beside,
 }: {
   retrieval: RetrievalResults
   split: string
   splitCases: number
+  thresholds: Thresholds
+  /** Another split's Shipped Arm, shown as an extra row for comparison. */
+  beside?: { label: string; summary: RetrievalSummary }
 }) {
   const verdicts = new Map(retrieval.comparisons.map((c) => [c.arm, c]))
   const shipped = retrieval.arms.find((arm) => arm.shipped)
+  const evidence = retrieval.gatingMetric === 'evidence reached'
+  const unshippable = retrieval.arms.some((arm) => !arm.shippable)
   return (
     <div className="flex flex-col gap-3">
       <div className="card overflow-x-auto p-3">
@@ -289,7 +420,11 @@ function RetrievalTable({
             Retrieval: do the right Sections reach the Answer Call?
           </caption>
           <thead>
-            <RetrievalHeader retrieval={retrieval} first="Arm" extra="Against the Shipped Arm" />
+            <RetrievalHeader
+              retrieval={retrieval}
+              first="Arm"
+              extra={retrieval.comparisons.length > 0 ? 'Against the Shipped Arm' : undefined}
+            />
           </thead>
           <tbody>
             {retrieval.arms.map((arm) => {
@@ -298,35 +433,60 @@ function RetrievalTable({
                 <tr key={arm.name}>
                   <th scope="row" className={`${td} text-left font-medium`}>
                     <code className="font-mono">{arm.name}</code>
-                    {arm.shipped && (
-                      <span className="ml-2 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 font-mono text-[10px] tracking-widest text-accent-strong">
-                        shipped
-                      </span>
-                    )}
+                    {arm.shipped && <span className={badge}>shipped</span>}
+                    {!arm.shippable && <span className={quietBadge}>API call: can’t ship</span>}
                   </th>
                   <RetrievalCells summary={arm.overall} retrieval={retrieval} />
-                  <td className={td}>
-                    {c
-                      ? `${c.verdict} (${c.challengerOnly} won, ${c.shippedOnly} lost, p = ${c.pValue.toFixed(2)})`
-                      : '–'}
-                  </td>
+                  {retrieval.comparisons.length > 0 && (
+                    <td className={td}>
+                      {c
+                        ? c.pAhead !== null && c.pBehind !== null
+                          ? `${c.verdict} (${c.challengerOnly} facts gained, ${c.shippedOnly} lost, p ahead = ${pValue(c.pAhead)}, p behind = ${pValue(c.pBehind)})`
+                          : `${c.verdict} (${c.challengerOnly} won, ${c.shippedOnly} lost, p = ${c.pValue.toFixed(2)})`
+                        : '–'}
+                    </td>
+                  )}
                 </tr>
               )
             })}
+            {beside && (
+              <tr>
+                <th scope="row" className={`${td} text-left font-medium text-muted`}>
+                  {beside.label}
+                </th>
+                <RetrievalCells summary={beside.summary} retrieval={retrieval} />
+                {retrieval.comparisons.length > 0 && <td className={td}>–</td>}
+              </tr>
+            )}
           </tbody>
         </table>
-        <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
+        <p className={note}>
           Scored on {retrieval.scoredCases} of {splitCases} {split} cases
           {retrieval.unscored.length > 0 &&
-            `; ${retrieval.unscored.length} have no expected Source to find (a Company missing from the Corpus, General Electric today)`}
-          . Gating metric {retrieval.gatingMetric}
-          {retrieval.comparisons.length > 0 &&
-            ': each challenger is compared with the Shipped Arm case by case by McNemar’s exact test, and called ahead or behind only at p < 0.05'}
-          .
+            `; ${retrieval.unscored.length} have no expected Source to find (a Company missing from the Corpus)`}
+          .{' '}
+          {evidence ? (
+            <>
+              The gate is Evidence Reached: the Required Facts whose evidence quote reaches the
+              Answer Context.
+              {retrieval.comparisons.length > 0 &&
+                ` Each challenger is compared with the Shipped Arm fact by fact by McNemar’s exact test, one-sided${thresholds ? ` (ahead at p < ${thresholds.aheadP.toFixed(2)}, behind at p < ${thresholds.behindP.toFixed(2)}, fixed before running)` : ''}.`}{' '}
+              hit@k, recall@k and MRR are reported, not gated on.
+            </>
+          ) : (
+            <>
+              Gating metric {retrieval.gatingMetric}
+              {retrieval.comparisons.length > 0 &&
+                ', as version 1 gated it: each challenger is compared with the Shipped Arm case by case by McNemar’s exact test, and called ahead or behind only at p < 0.05'}
+              .
+            </>
+          )}
+          {unshippable &&
+            ' An Arm that makes an API call at query time is measured but can’t ship: the Answer Call is a question’s only API call.'}
           {shipped && shipped.missed.length > 0 && (
             <>
               {' '}
-              Missed by {shipped.name} at {retrieval.gatingMetric}: {shipped.missed.join(', ')}.
+              Missed by {shipped.name} at hit@{retrieval.k}: {shipped.missed.join(', ')}.
             </>
           )}
         </p>
@@ -378,10 +538,11 @@ function RetrievalHeader({
           hit@{k}
         </th>
       ))}
-      <th className={th}>recall@{retrieval.gatingMetric.split('@')[1]}</th>
+      <th className={th}>recall@{retrieval.k}</th>
       <th className={th}>recall@all</th>
       <th className={th}>MRR</th>
       <th className={th}>Sources</th>
+      {retrieval.gatingMetric === 'evidence reached' && <th className={th}>Evidence Reached</th>}
       {extra && <th className={th}>{extra}</th>}
     </tr>
   )
@@ -394,7 +555,9 @@ function RetrievalCells({
   summary: RetrievalSummary
   retrieval: RetrievalResults
 }) {
-  const gate = retrieval.gatingMetric.split('@')[1]
+  const gate = retrieval.gatingMetric.startsWith('hit@')
+    ? retrieval.gatingMetric.split('@')[1]
+    : null
   return (
     <>
       <td className={td}>{summary.cases}</td>
@@ -403,11 +566,67 @@ function RetrievalCells({
           {score(summary.hitAt[String(k)] ?? null)}
         </td>
       ))}
-      <td className={td}>{score(summary.recallAt[gate] ?? null)}</td>
+      <td className={td}>{score(summary.recallAt[String(retrieval.k)] ?? null)}</td>
       <td className={td}>{score(summary.recallAll)}</td>
       <td className={td}>{score(summary.mrr)}</td>
       <td className={td}>{summary.meanSources.toFixed(1)}</td>
+      {retrieval.gatingMetric === 'evidence reached' && (
+        <td className={`${td} font-semibold`}>
+          {summary.facts !== null && summary.factsReached !== null
+            ? `${summary.factsReached} of ${summary.facts}`
+            : '–'}
+        </td>
+      )}
     </>
+  )
+}
+
+function ScreenTable({ screen, thresholds }: { screen: Screen; thresholds: Thresholds }) {
+  return (
+    <div className="card overflow-x-auto p-3">
+      <table className="min-w-full border-collapse text-[13px]">
+        <caption className={caption}>
+          The screen: which challengers go on to paid Answer Calls?
+        </caption>
+        <thead>
+          <tr>
+            <th className={th}>Candidate</th>
+            <th className={th}>Can ship</th>
+            <th className={th}>Evidence Reached</th>
+            <th className={th}>Gained / lost</th>
+            <th className={th}>p behind</th>
+            <th className={th}>Screen</th>
+          </tr>
+        </thead>
+        <tbody>
+          {screen.candidates.map((c) => (
+            <tr key={c.name}>
+              <th scope="row" className={`${td} text-left font-medium`}>
+                <code className="font-mono">{c.name}</code>
+              </th>
+              <td className={td}>{c.shippable ? 'yes' : 'no: API call at query time'}</td>
+              <td className={td}>
+                {c.factsReached} of {c.facts}
+              </td>
+              <td className={td}>
+                {c.gained} / {c.lost}
+              </td>
+              <td className={td}>{pValue(c.pBehind)}</td>
+              <td className={`${td} whitespace-normal`}>{c.reason}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className={note}>
+        Free, before any paid run: each candidate is compared with {screen.shipped} on Evidence
+        Reached, and goes on only if not behind
+        {thresholds ? ` (one-sided p < ${thresholds.behindP.toFixed(2)})` : ''} and able to ship; at
+        most {screen.limit} go on, the most Evidence Reached first.{' '}
+        <span className="font-medium text-accent-strong">
+          Go on: {screen.kept.join(', ') || 'none'}.
+        </span>
+      </p>
+    </div>
   )
 }
 
@@ -417,7 +636,9 @@ const GENERATION_COLUMNS: [string, (s: GenerationSummary) => string][] = [
   ['Figures exact', (s) => score(s.figuresExact)],
   ['Gaps stated', (s) => score(s.coverageGapsStated)],
   ['Fact Recall', (s) => score(s.factRecall)],
+  ['Detail recall', (s) => score(s.detailRecall)],
   ['Faithfulness', (s) => score(s.faithfulness)],
+  ['Contradicted', (s) => (s.answersContradicted === null ? '–' : String(s.answersContradicted))],
   ['$ per answer', (s) => usd(s.meanCostUsd)],
   ['Latency', (s) => seconds(s.meanLatencyS)],
   ['First text', (s) => seconds(s.meanFirstTokenS)],
@@ -427,15 +648,21 @@ function GenerationTable({
   runs,
   split,
   shipped,
+  beside = [],
 }: {
   runs: GenerationRun[]
   split: string
   /** The generator the rule chose, marked on its row. */
   shipped?: string
+  /** Another split's runs, shown as extra rows for comparison. */
+  beside?: { label: string; run: GenerationRun }[]
 }) {
   const judges = [...new Set(runs.map((run) => run.judgeModel))].join(', ')
+  const cutoffs = [...new Set(runs.map((run) => run.factCutoff).filter((c) => c !== null))]
+  const versioned = runs.some((run) => run.overall.detailRecall !== null)
   // Name the report when two runs share a generator, e.g. two holdout runs.
-  const repeated = (run: GenerationRun) => runs.filter((r) => r.model === run.model).length > 1
+  const repeated = (run: GenerationRun) =>
+    !run.controlRun && runs.filter((r) => r.model === run.model && !r.controlRun).length > 1
   return (
     <div className="flex flex-col gap-3">
       <div className="card overflow-x-auto p-3">
@@ -456,10 +683,10 @@ function GenerationTable({
               <tr key={run.report}>
                 <th scope="row" className={`${td} text-left font-medium`}>
                   <code className="font-mono">{run.model}</code>
-                  {run.model === shipped && (
-                    <span className="ml-2 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 font-mono text-[10px] tracking-widest text-accent-strong">
-                      shipped
-                    </span>
+                  {run.controlRun ? (
+                    <span className={quietBadge}>Control Run</span>
+                  ) : (
+                    run.model === shipped && <span className={badge}>shipped</span>
                   )}
                   <span className="ml-2 text-[11.5px] text-muted">prompt {run.promptVersion}</span>
                   {repeated(run) && (
@@ -473,18 +700,36 @@ function GenerationTable({
                 ))}
               </tr>
             ))}
+            {beside.map(({ label, run }) => (
+              <tr key={`beside-${run.report}`}>
+                <th scope="row" className={`${td} text-left font-medium text-muted`}>
+                  {label}
+                </th>
+                {GENERATION_COLUMNS.map(([name, value]) => (
+                  <td key={name} className={`${td} text-muted`}>
+                    {value(run.overall)}
+                  </td>
+                ))}
+              </tr>
+            ))}
           </tbody>
         </table>
-        <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
+        <p className={note}>
           One real Answer Call per {split} case. Citations, figures and Coverage Gaps are checked in
           code; Fact Recall and Faithfulness are judged by {judges}, pinned to an exact version and
-          from neither generator’s family. Cost is the list price of the tokens used, an upper
-          bound. A dash means there was nothing to score.
+          from neither generator’s family
+          {versioned &&
+            `. Fact Recall is over the must-state Required Facts${cutoffs.length ? `, a fact counting as stated at Jev’s probability ${cutoffs.join(', ')} or more` : ''}; detail recall is shown beside it; Contradicted counts the answers with a Contradicted Claim, each of which fails`}
+          {runs.some((run) => run.controlRun) &&
+            '. The Control Run is the shipped choice run again: its distance from the shipped run is the noise every comparison is read against'}
+          . Cost is the list price of the tokens used, an upper bound. A dash means there was
+          nothing to score.
         </p>
       </div>
       {runs.map(
         (run) =>
-          run.byType.length > 0 && (
+          run.byType.length > 0 &&
+          !run.controlRun && (
             <details key={run.report} className="card p-3">
               <summary className="cursor-pointer text-[13px] font-medium">
                 {run.model} by question type{repeated(run) && ` (${run.report})`}
@@ -525,11 +770,41 @@ function GenerationTable({
   )
 }
 
-function signTest(test: SignTest): string {
-  return `${test.verdict} (${test.challengerOnly} higher, ${test.shippedOnly} lower, p = ${test.pValue.toFixed(2)})`
+function signTest(test: SignTest | null): ReactNode {
+  if (!test) return '–'
+  if (test.pAhead === null || test.pBehind === null) {
+    return `${test.verdict} (${test.challengerOnly} higher, ${test.shippedOnly} lower, p = ${test.pValue.toFixed(2)})`
+  }
+  return (
+    <>
+      {test.verdict} ({test.challengerOnly} higher, {test.shippedOnly} lower, p ahead ={' '}
+      {pValue(test.pAhead)}, p behind = {pValue(test.pBehind)})
+      {test.difference && (
+        <span className="block text-[11.5px] text-muted">{difference(test.difference)}</span>
+      )}
+    </>
+  )
 }
 
-function GeneratorChoiceTable({ choice }: { choice: GeneratorChoice }) {
+function GeneratorChoiceRow({ c }: { c: GeneratorComparison }) {
+  return (
+    <>
+      <td className={td}>{c.cases}</td>
+      <td className={td}>{signTest(c.factRecall)}</td>
+      <td className={td}>{signTest(c.faithfulness)}</td>
+      <td className={td}>{signTest(c.coverageGaps)}</td>
+      <td className={td}>{signTest(c.contradictedClaims)}</td>
+    </>
+  )
+}
+
+function GeneratorChoiceTable({
+  choice,
+  thresholds,
+}: {
+  choice: GeneratorChoice
+  thresholds: Thresholds
+}) {
   return (
     <div className="card overflow-x-auto p-3">
       <table className="min-w-full border-collapse text-[13px]">
@@ -538,34 +813,59 @@ function GeneratorChoiceTable({ choice }: { choice: GeneratorChoice }) {
         </caption>
         <thead>
           <tr>
-            <th className={th}>Challenger vs {choice.shipped}</th>
+            <th className={th}>Against {choice.shipped}</th>
             <th className={th}>Cases</th>
             <th className={th}>Fact Recall</th>
             <th className={th}>Faithfulness</th>
             <th className={th}>Coverage Gaps</th>
+            <th className={th}>No Contradicted Claim</th>
             <th className={th}>Qualifies</th>
           </tr>
         </thead>
         <tbody>
+          {choice.control && (
+            <tr>
+              <th scope="row" className={`${td} text-left font-medium`}>
+                Control Run
+                <span className="ml-2 text-[11.5px] text-muted">{choice.shipped} again</span>
+              </th>
+              <GeneratorChoiceRow c={choice.control} />
+              <td className={td}>–</td>
+            </tr>
+          )}
           {choice.comparisons.map((c) => (
             <tr key={c.model}>
               <th scope="row" className={`${td} text-left font-medium`}>
                 <code className="font-mono">{c.model}</code>
               </th>
-              <td className={td}>{c.cases}</td>
-              <td className={td}>{signTest(c.factRecall)}</td>
-              <td className={td}>{signTest(c.faithfulness)}</td>
-              <td className={td}>{signTest(c.coverageGaps)}</td>
+              <GeneratorChoiceRow c={c} />
               <td className={td}>{c.qualifies ? 'yes' : 'no'}</td>
             </tr>
           ))}
         </tbody>
       </table>
-      <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
-        Each challenger is compared with {choice.shipped} on the cases both answered, by an exact
-        sign test on each case’s score. It qualifies only if ahead on Fact Recall or Coverage Gaps
-        and behind on none of Fact Recall, Faithfulness and Coverage Gaps, each at p &lt; 0.05; the
-        cheapest qualifier wins.{' '}
+      <p className={note}>
+        {thresholds ? (
+          <>
+            Each challenger is compared with {choice.shipped} on the cases both scored, by an exact
+            sign test on each case’s score, one-sided. It qualifies only if ahead on Fact Recall or
+            Coverage Gaps (p &lt; {thresholds.aheadP.toFixed(2)}) and behind on none of Fact Recall,
+            Faithfulness, Coverage Gaps and Contradicted Claims (p &lt;{' '}
+            {thresholds.behindP.toFixed(2)}); the cheapest qualifier wins. These verdicts are
+            directional: one-sided, at thresholds fixed before running. Under each verdict, the mean
+            paired difference (challenger minus shipped) and its 95% bootstrap interval, shown and
+            not decided on. If the Control Run came out ahead of the shipped run, the comparison
+            would be inconclusive and the shipped generator would stand.
+          </>
+        ) : (
+          <>
+            Version 1’s rule: each challenger is compared with {choice.shipped} on the cases both
+            answered, by an exact sign test on each case’s score. It qualifies only if ahead on Fact
+            Recall or Coverage Gaps and behind on none of Fact Recall, Faithfulness and Coverage
+            Gaps, each at two-sided p &lt; 0.05; the cheapest qualifier wins.
+          </>
+        )}{' '}
+        {choice.inconclusive && <>Inconclusive: {choice.reason}. </>}
         <span className="font-medium text-accent-strong">Chosen: {choice.chosen}.</span>
       </p>
     </div>

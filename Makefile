@@ -11,6 +11,7 @@ NPM := cd $(FRONTEND) && npm run --silent
 SEC_FACTS_INDEX := data/derived/sec_companyfacts/index.json
 INDEX := data/derived/edgar_rag.sqlite
 EMBEDDINGS := data/derived/embeddings/text-embedding-3-small.npy
+LOCAL_EMBEDDINGS := data/derived/embeddings/bge-small-en-v1.5.npy
 API_PORT ?= 8000
 WEB_PORT ?= 3000
 
@@ -44,7 +45,7 @@ for key in $(1); do \
 	done
 endef
 
-.PHONY: help install test lint format eda sec-facts index embeddings ask api eval-retrieval eval-generation eval-rescore eval-arms eval-generators eval-export deck dev frontend-deps \
+.PHONY: help install test lint format eda sec-facts index embeddings local-embeddings ask api eval-retrieval eval-generation eval-brief eval-rescore eval-arms eval-generators eval-settings eval-export judge-study-sample judge-study-judge judge-study-score deck dev frontend-deps \
 	ci-cd backend-lint backend-test eval-gate eval-floors frontend-quality frontend-test frontend-build security-audit lighthouse
 
 help: ## List targets
@@ -86,13 +87,16 @@ sec-facts: ## Fetch SEC XBRL company-facts for Tracked Companies (evaluation onl
 index: ## Rebuild the retrieval index (data/derived/edgar_rag.sqlite) from the Corpus
 	$(UV) python -m edgar_rag.retrieval
 
-embeddings: $(INDEX) ## Embed every chunk for the dense and hybrid Arms (evaluation only; needs OPENAI_API_KEY; costs about 35 cents and takes about 25 minutes)
+embeddings: $(INDEX) ## Embed every chunk with OpenAI for the dense and hybrid Arms (evaluation only; needs OPENAI_API_KEY; costs about 35 cents and takes about 25 minutes)
 	@if [ -z "$$OPENAI_API_KEY" ]; then \
 		echo 'error: OPENAI_API_KEY is not set. Copy backend/.env.example to backend/.env' >&2; \
 		echo 'and fill it in.' >&2; \
 		exit 1; \
 	fi
 	$(UV) python -m edgar_eval.embeddings
+
+local-embeddings: $(INDEX) ## Embed every chunk locally for the dense-local and hybrid-local Arms (evaluation only; no API call, no cost; downloads the pinned model once and takes about 30 minutes)
+	$(UV) python -m edgar_eval.embeddings --local
 
 ask: $(INDEX) ## Answer a question from the command line: make ask Q="..." (needs OPENAI_API_KEY)
 	@if [ -z "$$Q" ]; then echo 'usage: make ask Q="your question"' >&2; exit 1; fi
@@ -106,16 +110,24 @@ ask: $(INDEX) ## Answer a question from the command line: make ask Q="..." (need
 api: $(INDEX) ## Run the chat API on http://localhost:8000, or API_PORT (answers need OPENAI_API_KEY)
 	$(UV) uvicorn edgar_api.app:create_app --factory --host 127.0.0.1 --port $(API_PORT)
 
-eval-retrieval: $(EVAL_INDEX) $(if $(filter dense hybrid,$(or $(ARMS),dense)),$(EMBEDDINGS)) ## Score retrieval Arms on the Golden Set: make eval-retrieval [SPLIT=dev|holdout|all] [ARMS="fts5 ..."] [CHUNK_TOKENS=...] [CONTEXT_BUDGET=...]
+eval-retrieval: $(EVAL_INDEX) $(if $(filter dense hybrid,$(or $(ARMS),dense)),$(EMBEDDINGS)) $(if $(filter dense-local hybrid-local,$(or $(ARMS),dense-local)),$(LOCAL_EMBEDDINGS)) ## Score retrieval Arms on the Golden Set (version 2 unless GOLDEN_SET= names a file): make eval-retrieval [SPLIT=dev|holdout|all] [ARMS="fts5 ..."] [CHUNK_TOKENS=...] [CONTEXT_BUDGET=...] [GOLDEN_SET=data/eval/golden_set.json]
 	$(UV) python -m edgar_eval.retrieval --split $(SPLIT) $(foreach arm,$(ARMS),--arm $(arm)) \
-		$(SETTINGS_ARGS) --json ../data/derived/eval/retrieval-$(SPLIT)$(SETTINGS).json
+		$(SETTINGS_ARGS) $(if $(GOLDEN_SET),--golden-set ../$(GOLDEN_SET)) \
+		--json ../data/derived/eval/retrieval-$(SPLIT)$(SETTINGS).json
 
-eval-generation: $(EVAL_INDEX) $(if $(filter dense hybrid,$(ARM)),$(EMBEDDINGS)) ## Score answers on the Golden Set: make eval-generation [SPLIT=...] [MODEL=...] [ARM=...] [CHUNK_TOKENS=...] [CONTEXT_BUDGET=...] (costs money)
+eval-generation: $(EVAL_INDEX) $(if $(filter dense hybrid,$(ARM)),$(EMBEDDINGS)) $(if $(filter dense-local hybrid-local,$(ARM)),$(LOCAL_EMBEDDINGS)) ## Score answers on the Golden Set: make eval-generation [SPLIT=...] [MODEL=...] [ARM=...] [CHUNK_TOKENS=...] [CONTEXT_BUDGET=...] (costs money)
 	@keys=$$($(GENERATOR_KEYS) $(MODEL)) || exit 1; \
 	$(call require_keys,$$keys JEV_API_KEY)
 	$(UV) python -m edgar_eval.generation --split $(SPLIT) $(if $(MODEL),--model $(MODEL)) \
 		$(if $(ARM),--arm $(ARM)) $(SETTINGS_ARGS) \
 		--json ../data/derived/eval/generation-$(if $(ARM),arms-$(SPLIT)-$(ARM),$(SPLIT)$(if $(MODEL),-$(MODEL)))$(SETTINGS).json
+
+eval-brief: $(EVAL_INDEX) $(if $(filter dense hybrid,$(ARM)),$(EMBEDDINGS)) $(if $(filter dense-local hybrid-local,$(ARM)),$(LOCAL_EMBEDDINGS)) ## Run the Brief Suite, 5 runs a case, a verdict per case: make eval-brief [RUNS=...] [MODEL=...] [ARM=...] [CHUNK_TOKENS=...] [CONTEXT_BUDGET=...] (costs money)
+	@keys=$$($(GENERATOR_KEYS) $(MODEL)) || exit 1; \
+	$(call require_keys,$$keys JEV_API_KEY)
+	$(UV) python -m edgar_eval.generation --brief-suite $(if $(RUNS),--runs $(RUNS)) \
+		$(if $(MODEL),--model $(MODEL)) $(if $(ARM),--arm $(ARM)) $(SETTINGS_ARGS) \
+		--json ../data/derived/eval/brief-suite$(if $(ARM),-$(ARM))$(if $(MODEL),-$(MODEL))$(SETTINGS).json
 
 # Every saved generation report, the prompt iterations' included.
 GENERATION_REPORTS = $(wildcard data/derived/eval/generation-*.json data/derived/eval/prompt-iterations/generation-*.json)
@@ -124,21 +136,48 @@ eval-rescore: $(INDEX) ## Redo the figure check of every saved generation report
 	@if [ -z "$(GENERATION_REPORTS)" ]; then echo 'No saved generation reports in data/derived/eval/.'; exit 0; fi
 	$(UV) python -m edgar_eval.generation --rescore $(addprefix ../,$(GENERATION_REPORTS))
 
-eval-arms: $(INDEX) $(EMBEDDINGS) ## Answer the split through every Arm and choose one by the selection rule (costs money)
+# The comparison commands share a round's shipped run (generation-<split>.json) and Control
+# Run (generation-control-<split>.json), reusing them while the code, prompt and Golden Set
+# version are unchanged, and running them first otherwise (ADR 0011).
+
+eval-arms: $(INDEX) $(EMBEDDINGS) $(LOCAL_EMBEDDINGS) ## Screen every Arm on Evidence Reached (free), answer the split through the shippable ones kept, with the round's shipped run and Control Run, and choose one by the selection rule (costs money)
 	@keys=$$($(GENERATOR_KEYS)) || exit 1; \
 	$(call require_keys,$$keys JEV_API_KEY)
 	$(UV) python -m edgar_eval.selection arms --split $(SPLIT)
 
-eval-generators: $(INDEX) ## Answer the split with each of the four generators and choose one by the selection rule (costs money)
-	@keys=$$($(GENERATOR_KEYS) --all) || exit 1; \
+# The generators `make eval-generators` compares: Golden Set version 2's two by default.
+# MODELS="..." names other rows of the table; MODELS= (empty) runs every one.
+MODELS ?= gpt-6-luna claude-haiku-5-5
+
+eval-generators: $(INDEX) ## Answer the split with gpt-6-luna and claude-haiku-5-5 and choose one by the selection rule [MODELS="..."; empty for every generator] (costs money)
+	@keys=$$( ($(GENERATOR_KEYS)) && ($(GENERATOR_KEYS) $(or $(MODELS),--all)) ) || exit 1; \
 	$(call require_keys,$$keys JEV_API_KEY)
-	$(UV) python -m edgar_eval.selection generators --split $(SPLIT)
+	$(UV) python -m edgar_eval.selection generators --split $(SPLIT) $(foreach m,$(MODELS),--model $(m))
+
+# The settings `make eval-settings` compares, each CHUNKS:BUDGET (ADR 0010's grid).
+CANDIDATES ?=
+
+eval-settings: $(INDEX) ## Screen each chunk size and context budget named on Evidence Reached (free), answer the split at the ones kept and choose by the selection rule: make eval-settings CANDIDATES="450:32000 600:48000" (costs money)
+	@if [ -z "$(CANDIDATES)" ]; then echo 'usage: make eval-settings CANDIDATES="450:32000 ..."' >&2; exit 1; fi
+	@keys=$$($(GENERATOR_KEYS)) || exit 1; \
+	$(call require_keys,$$keys JEV_API_KEY)
+	$(UV) python -m edgar_eval.selection settings --split $(SPLIT) $(foreach s,$(CANDIDATES),--setting $(s))
 
 SPLIT ?= dev
 RETRIEVAL_REPORT = data/derived/eval/retrieval-$(SPLIT).json
 
-eval-export: $(RETRIEVAL_REPORT) ## Export the latest eval results and Corpus coverage for the "How it works" page [SPLIT=...]
+eval-export: $(RETRIEVAL_REPORT) ## Export the latest eval results (Golden Set version 2) and Corpus coverage for the "How it works" page [SPLIT=...]
 	$(UV) python -m edgar_eval.export --split $(SPLIT)
+
+judge-study-sample: $(INDEX) ## Draw the judge study's items from the saved reports and write its blind labelling sheet to data/eval/judge_study/ (no provider call) [SEED=...]
+	$(UV) python -m edgar_eval.judge_study sample $(if $(SEED),--seed $(SEED))
+
+judge-study-judge: ## Judge every sampled item: Jev twice, claude-haiku-5-5 once with REFERENCE=1, and the trial LLM claim split with LLM_SPLIT=1; prints the cost first (costs money) [REFERENCE=1] [LLM_SPLIT=1]
+	@$(call require_keys,JEV_API_KEY $(if $(or $(REFERENCE),$(LLM_SPLIT)),ANTHROPIC_API_KEY))
+	$(UV) python -m edgar_eval.judge_study judge $(if $(REFERENCE),--reference) $(if $(LLM_SPLIT),--llm-split)
+
+judge-study-score: ## Score the stored verdicts against the sheet's labels (no provider call); refuses while items are unlabelled unless PARTIAL=1 or the stopping rule is met [PARTIAL=1]
+	$(UV) python -m edgar_eval.judge_study score $(if $(PARTIAL),--partial)
 
 # The slide deck is Markdown for Marp (docs/deck.md); npx fetches the pinned Marp CLI.
 MARP := npx --yes @marp-team/marp-cli@4.5.1
@@ -216,9 +255,14 @@ data/derived/edgar_rag-chunks%.sqlite:
 $(EMBEDDINGS):
 	@$(MAKE) --no-print-directory embeddings
 
+# Likewise the dense-local and hybrid-local Arms' local chunk embeddings, which are free.
+$(LOCAL_EMBEDDINGS):
+	@$(MAKE) --no-print-directory local-embeddings
+
 # `make eval-export` runs the retrieval harness first when its report is missing, on the
-# Shipped Arm only (it makes no LLM call and needs no embeddings). The generation harness
-# costs money, so it only ever runs when asked for.
+# Shipped Arm only (it makes no LLM call and needs no embeddings), and on Golden Set
+# version 2, which the export describes. The generation harness costs money, so it only
+# ever runs when asked for.
 $(RETRIEVAL_REPORT):
 	@$(MAKE) --no-print-directory eval-retrieval SPLIT=$(SPLIT) ARMS=fts5
 

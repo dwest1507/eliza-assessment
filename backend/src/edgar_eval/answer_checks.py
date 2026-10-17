@@ -71,6 +71,14 @@ class Unit:
     exempt: bool
     """True for a unit that need not cite: a heading, a table header, a lead-in, a
     bold label, or anything in the closing Coverage note."""
+    lead_in: bool = False
+    """True for a paragraph exempt only because it ends with a colon: its sentences
+    before the colon still make claims."""
+    heading: str = ""
+    """The nearest heading or bold label above the unit, without its markup or tags;
+    empty above the first."""
+    table_header: str = ""
+    """For a table row after the first, the table's header row without its tags."""
 
 
 @dataclass(frozen=True)
@@ -107,11 +115,17 @@ def units(answer: str) -> list[Unit]:
     in_coverage = False
     paragraph: list[str] = []
     table_rows = 0
+    heading = header = ""
 
     def flush() -> None:
+        nonlocal heading
         if paragraph:
             text = " ".join(paragraph)
-            result.append(_unit(text, in_coverage or _is_lead_in(text)))
+            lead_in = not in_coverage and _is_lead_in(text)
+            unit = _unit(text, in_coverage or lead_in, heading, lead_in)
+            result.append(unit)
+            if _BOLD_ONLY.match(text):
+                heading = _heading_text(text)  # a bold label heads what follows
             paragraph.clear()
 
     for raw in answer.splitlines():
@@ -122,7 +136,11 @@ def units(answer: str) -> list[Unit]:
                 continue
             table_rows += 1
             # The first row of a table is its header; a separator row follows it.
-            result.append(_unit(line, in_coverage or table_rows == 1))
+            if table_rows == 1:
+                header = strip_tags(line)
+                result.append(_unit(line, True, heading))
+            else:
+                result.append(_unit(line, in_coverage, heading, table_header=header))
             continue
         table_rows = 0
         if not line or _RULE.match(line):
@@ -131,7 +149,8 @@ def units(answer: str) -> list[Unit]:
         if _HEADING.match(line):
             flush()
             in_coverage = bool(_COVERAGE.match(line))
-            result.append(_unit(line, True))
+            result.append(_unit(line, True, heading))
+            heading = _heading_text(line)
             continue
         if _LIST_ITEM.match(line):
             flush()
@@ -149,8 +168,24 @@ def units(answer: str) -> list[Unit]:
     return result
 
 
-def _unit(text: str, exempt: bool) -> Unit:
-    return Unit(text=text, tags=tags_in(text), exempt=exempt or bool(_BOLD_ONLY.match(text)))
+def _unit(
+    text: str, exempt: bool, heading: str, lead_in: bool = False, table_header: str = ""
+) -> Unit:
+    bold = bool(_BOLD_ONLY.match(text))
+    return Unit(
+        text=text,
+        tags=tags_in(text),
+        exempt=exempt or bold,
+        lead_in=lead_in and not bold,
+        heading=heading,
+        table_header=table_header,
+    )
+
+
+def _heading_text(line: str) -> str:
+    """A heading or bold label as context for what follows: "## Apple's risks [S1]" is
+    "Apple's risks"."""
+    return strip_tags(re.sub(r"^#{1,6}\s+", "", line).strip("*_: ").strip())
 
 
 def _is_lead_in(text: str) -> bool:
@@ -395,6 +430,13 @@ _COMPANY_FREE_GAPS = {"periods_differ"}
 
 _SENTENCE_END = re.compile(r"(?<=[.!?])\s+(?=[\[(*\"“A-Z])")
 
+_ABBREVIATION_END = re.compile(
+    r"(?:(?<![\w.])(?:[A-Z]\.){2,}"  # initialisms: "U.S.", "U.K.", "J.P."
+    r"|\b(?:Inc|Corp|Co|Ltd|Mr|Mrs|Ms|Dr|Jr|Sr|St|No|vs|e\.g|i\.e)\.)$"
+)
+"""The end of a part of a sentence that stops at an abbreviation, not at a full stop:
+"... depend on U.S." before "Government ..."."""
+
 
 @dataclass(frozen=True)
 class CoverageGapCheck:
@@ -473,32 +515,61 @@ def _flatten(text: str) -> str:
 
 @dataclass(frozen=True)
 class Claim:
-    """One cited sentence of an answer and the Source tags it rests on."""
+    """One sentence of an answer and the Source tags it rests on."""
 
     text: str
     """The sentence without its tags."""
     tags: tuple[str, ...]
+    """Empty for a sentence that cites no Source: it is unsupported, with nothing to
+    judge it against."""
+    heading: str = ""
+    """Context, not part of the claim: the nearest heading or bold label above the
+    sentence, so "It" keeps its subject. Empty above the first heading."""
+    table_header: str = ""
+    """Context, not part of the claim: for a table row, the table's header row, so a
+    row of numbers keeps its meaning. Empty outside a table."""
 
 
 def claims(answer: str) -> list[Claim]:
-    """The answer's claims: every sentence of every unit that cites a Source.
+    """The answer's claims: every sentence of the answer, except its structure and what
+    it says the Sources could not answer.
 
     A sentence carries the tags written in it; one without tags of its own rests on all
     the tags of its unit, since a citation often closes a paragraph of several
-    sentences. Units that cite nothing make no judgeable claim; the citation check
-    reports them.
+    sentences. A sentence that rests on no tag is still a claim, with no tags: the judge
+    counts it unsupported.
+
+    Not claims: headings (with table header rows and bold labels, which head what
+    follows) and the closing Coverage note; and, among the sentences that rest on no
+    tag, lead-ins ending in a colon and sentences stating a Coverage Gap (the fixed
+    wordings and the plain variants `check_coverage_gaps` recognises) or saying what
+    the Sources lack, which have nothing to cite. A sentence that rests on a tag is
+    judged whatever it says.
+
+    Each claim carries its context for the judge: the nearest heading above it and, for
+    a table row, the table's header row (`Claim.heading`, `Claim.table_header`).
     """
     found: list[Claim] = []
     for unit in units(answer):
-        if unit.exempt or not unit.tags:
+        if unit.exempt and not unit.lead_in:
             continue
-        for sentence in _sentences(unit.text):
+        for sentence in _sentences(unit.text, abbreviations=True):
             if _COVERAGE.match(sentence):
                 break  # the Coverage note, which says what the Sources could not answer
-            text = strip_tags(sentence)
-            if re.search(r"\w", text):
-                found.append(Claim(text=text, tags=tags_in(sentence) or unit.tags))
+            text, tags = strip_tags(sentence), tags_in(sentence) or unit.tags
+            if not re.search(r"\w", text):
+                continue
+            if not tags and (text.endswith(":") or _states_gap(text)):
+                continue
+            found.append(Claim(text, tags, unit.heading, unit.table_header))
     return found
+
+
+def _states_gap(sentence: str) -> bool:
+    """Whether the sentence states a Coverage Gap or says what the Sources lack."""
+    return bool(_ABSENCE.search(sentence)) or any(
+        marker.search(sentence) for marker in _GAP_MARKERS.values()
+    )
 
 
 # --- Answer structure -------------------------------------------------------------------
@@ -594,14 +665,23 @@ def _words(answer: str) -> int:
     return len([w for w in re.split(r"[\s|]+", text) if re.search(r"\w", w)])
 
 
-def _sentences(text: str) -> list[str]:
+def _sentences(text: str, abbreviations: bool = False) -> list[str]:
     """The unit's sentences, a tag written after a full stop kept with the sentence
-    before it. A table row is one sentence."""
+    before it. A table row is one sentence.
+
+    With `abbreviations` (the claim split), a common abbreviation such as "U.S.",
+    "Inc." or "Corp." ends no sentence, even before a capital, unless a tag follows
+    it: "Apple relies on the U.S. Government [S1]." is one sentence. The other checks
+    split without it, as they always have."""
     if text.startswith("|"):
         return [text]
     parts = _SENTENCE_END.split(text)
     merged: list[str] = []
     for part in parts:
+        if abbreviations and merged and _ABBREVIATION_END.search(merged[-1]):
+            if not part.startswith("["):
+                merged[-1] += " " + part
+                continue
         if merged and (run := _TAG_RUN.match(part)):
             merged[-1] += " " + run.group().strip()
             part = part[run.end() :].strip()

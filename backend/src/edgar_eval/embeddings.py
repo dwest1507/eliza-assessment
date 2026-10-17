@@ -11,17 +11,26 @@ beside it as a matrix, and searched by exact inner product over the filtered row
   rerun of the harnesses makes no embedding call.
 
 `make embeddings` runs it over the whole index with OpenAI's `text-embedding-3-small`.
-It needs `OPENAI_API_KEY` and costs about $0.35 (17.4 million tokens).
+It needs `OPENAI_API_KEY` and costs about $0.35 (17.4 million tokens). Those vectors are
+the `dense` and `hybrid` Arms', which embed each question with OpenAI too: a second API
+call per question, so under the one-call rule they can't ship.
 
-    python -m edgar_eval.embeddings [--index PATH] [--model MODEL]
+`make local-embeddings` (`--local`) runs it with `OnnxEmbedder` instead: the local
+`BAAI/bge-small-en-v1.5`, pinned to a commit and run by ONNX Runtime on the CPU, for the
+`dense-local` and `hybrid-local` Arms, which embed the question with the same model. It
+makes no API call and costs nothing; the whole index takes about 30 minutes.
 
-This module needs numpy, which is in the backend's dev dependency group only: the
-product never loads it.
+    python -m edgar_eval.embeddings [--index PATH] [--model MODEL | --local]
+
+This module needs numpy (and, for the local model, ONNX Runtime, `tokenizers` and
+`huggingface-hub`), which are in the backend's dev dependency group only: the product
+never loads them.
 """
 
 from __future__ import annotations
 
 import argparse
+import copy
 import hashlib
 import json
 import shutil
@@ -40,8 +49,12 @@ from edgar_rag.retrieval import DEFAULT_INDEX
 
 __all__ = [
     "DEFAULT_EMBEDDING_MODEL",
+    "LOCAL_EMBEDDING_MODEL",
+    "LOCAL_EMBEDDING_REPO",
+    "LOCAL_EMBEDDING_REVISION",
     "ChunkEmbeddings",
     "Embedder",
+    "OnnxEmbedder",
     "OpenAIEmbedder",
     "QueryEmbeddings",
     "build_embeddings",
@@ -49,6 +62,15 @@ __all__ = [
 ]
 
 DEFAULT_EMBEDDING_MODEL = "text-embedding-3-small"
+
+LOCAL_EMBEDDING_MODEL = "bge-small-en-v1.5"
+"""The local embedding model of the `dense-local` and `hybrid-local` Arms, as its
+embeddings' file names give it."""
+LOCAL_EMBEDDING_REPO = "BAAI/bge-small-en-v1.5"
+LOCAL_EMBEDDING_REVISION = "5c38ec7c405ec4b44b94cc5a9bb96e735b38267a"
+"""The Hugging Face commit the local embedding model is pinned to, never a branch."""
+LOCAL_QUERY_PREFIX = "Represent this sentence for searching relevant passages: "
+"""What the model's card says to put before a question (never before a passage)."""
 
 EMBEDDING_PRICES = {"text-embedding-3-small": 0.02, "text-embedding-3-large": 0.13}
 """US dollars per million input tokens, OpenAI's standard tier."""
@@ -77,6 +99,80 @@ class OpenAIEmbedder:
             self._client = OpenAI(max_retries=10)
         response = self._client.embeddings.create(model=self.model, input=list(texts))
         return [item.embedding for item in sorted(response.data, key=lambda d: d.index)]
+
+
+class OnnxEmbedder:
+    """A local embedding model run by ONNX Runtime on the CPU: no API call. It is
+    downloaded once from Hugging Face at a pinned revision and read from the local cache
+    after that, so loading it makes no network call either once it is there. A text is
+    embedded as the model's CLS token, truncated to its 512 tokens (a long chunk is
+    embedded on its opening); `prefix` goes before every text (`for_queries` gives the
+    question's). Texts run `batch_size` at a time on `threads` CPU threads (ONNX
+    Runtime's default when None): on 512-token chunks one at a time is fastest, and
+    two callers at once with 8 threads each beat one with 16."""
+
+    def __init__(
+        self,
+        repo: str = LOCAL_EMBEDDING_REPO,
+        revision: str = LOCAL_EMBEDDING_REVISION,
+        model: str = LOCAL_EMBEDDING_MODEL,
+        *,
+        prefix: str = "",
+        max_length: int = 512,
+        batch_size: int = 1,
+        threads: int | None = None,
+    ):
+        import onnxruntime
+        from tokenizers import Tokenizer
+
+        tokenizer = Tokenizer.from_file(_hub_file(repo, "tokenizer.json", revision))
+        tokenizer.enable_truncation(max_length=max_length)
+        tokenizer.enable_padding()
+        self.tokenizer = tokenizer
+        options = onnxruntime.SessionOptions()
+        if threads:
+            options.intra_op_num_threads = threads
+        self.session = onnxruntime.InferenceSession(
+            _hub_file(repo, "onnx/model.onnx", revision),
+            options,
+            providers=["CPUExecutionProvider"],
+        )
+        self.inputs = {i.name for i in self.session.get_inputs()}
+        self.model = model
+        self.prefix = prefix
+        self.batch_size = batch_size
+
+    def for_queries(self, prefix: str = LOCAL_QUERY_PREFIX) -> OnnxEmbedder:
+        """The same model, sharing its session, putting `prefix` before every text."""
+        queries = copy.copy(self)
+        queries.prefix = prefix
+        return queries
+
+    def __call__(self, texts: Sequence[str]) -> list[list[float]]:
+        vectors: list[list[float]] = []
+        for start in range(0, len(texts), self.batch_size):
+            batch = [self.prefix + t for t in texts[start : start + self.batch_size]]
+            encoded = self.tokenizer.encode_batch(batch)
+            feed = {
+                "input_ids": np.array([e.ids for e in encoded], dtype=np.int64),
+                "attention_mask": np.array([e.attention_mask for e in encoded], dtype=np.int64),
+                "token_type_ids": np.array([e.type_ids for e in encoded], dtype=np.int64),
+            }
+            (hidden,) = self.session.run(None, {k: v for k, v in feed.items() if k in self.inputs})
+            vectors += _unit(hidden[:, 0]).tolist()  # the CLS token
+        return vectors
+
+
+def _hub_file(repo: str, filename: str, revision: str) -> str:
+    """A model file at a pinned revision: from the local cache when it is there, with no
+    network call, and downloaded into it otherwise."""
+    from huggingface_hub import hf_hub_download
+    from huggingface_hub.errors import LocalEntryNotFoundError
+
+    try:
+        return hf_hub_download(repo, filename, revision=revision, local_files_only=True)
+    except LocalEntryNotFoundError:
+        return hf_hub_download(repo, filename, revision=revision)
 
 
 def embeddings_dir(index: str | Path) -> Path:
@@ -260,12 +356,31 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Embed every chunk of the index.")
     parser.add_argument("--index", type=Path, default=DEFAULT_INDEX)
     parser.add_argument("--model", default=DEFAULT_EMBEDDING_MODEL)
+    parser.add_argument(
+        "--local",
+        action="store_true",
+        help=f"embed with the local {LOCAL_EMBEDDING_MODEL} instead: no API call, no cost",
+    )
     args = parser.parse_args(argv)
     directory = embeddings_dir(args.index)
 
     def progress(done: int, total: int) -> None:
         if done == total or done % 20 == 0:
             print(f"  {done}/{total} batches embedded", flush=True)
+
+    if args.local:
+        # On the CPU, about 30 chunks a second: the whole index takes about 30 minutes.
+        store = build_embeddings(
+            args.index,
+            OnnxEmbedder(threads=8),
+            directory,
+            batch_tokens=10**9,
+            batch_size=64,
+            workers=2,
+            progress=progress,
+        )
+        print(f"{len(store.ids)} chunk embeddings written to {directory / (store.model + '.npy')}")
+        return 0
 
     # The index's token estimates run a few percent under OpenAI's count, so pacing at
     # 700k estimated tokens a minute stays under a 1M tokens-per-minute rate limit. The

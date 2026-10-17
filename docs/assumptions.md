@@ -11,7 +11,7 @@ Status:
 
 | # | Assumption | Asked in email | Status |
 |---|---|---|---|
-| 1 | One generative LLM call per question; retrieval uses no LLM | Question 1 | confirmed |
+| 1 | One API call per question, the Answer Call; retrieval uses no LLM and only local models | Question 1 | confirmed |
 | 2 | Answers use only the provided Filings; no gap-filling from EDGAR | Question 2 | confirmed |
 | 3 | Every Filing is kept, whatever its date; GE Capital's is flagged | Question 3 | confirmed |
 | 4 | Both trend and cross-Company questions will be asked | No | not confirmed |
@@ -23,12 +23,13 @@ Status:
 | 10 | A mainstream hosted LLM API is acceptable for the demo | No | not confirmed |
 | 11 | Questions are asked in a chat, and follow-ups build on earlier ones | No | not confirmed |
 
-## 1. One generative LLM call per question
+## 1. One API call per question
 
-- **Assumption:** The brief says the final answer must be produced in one API request, while indexing and retrieval can run beforehand. We read it strictly: exactly one generative LLM call per question (the Answer Call), hosted or local. Embedding models and cross-encoder rerankers are allowed inside retrieval because they score text and don't generate it. Query parsing (Companies, periods, sector phrases) is rule-based, so there is no LLM call to generate SQL or extract entities.
-- **Why it matters:** It decides whether query understanding and structured lookups (text-to-SQL over the Financial Facts store) can use an LLM, or whether retrieval must be fully deterministic.
+- **Assumption:** The brief says the final answer must be produced in one API request, while indexing and retrieval can run beforehand. We read it strictly: a question makes exactly one API call of any kind, the Answer Call. There is no hosted embedding call and no other request at query time. Local models inside retrieval are allowed, such as a local embedding model or the local cross-encoder, because they run on the machine and make no request. Query parsing (Companies, periods, sector phrases) is rule-based, so there is no LLM call to generate SQL or extract entities.
+- **Why it matters:** It decides whether query understanding and structured lookups (text-to-SQL over the Financial Facts store) can use an LLM, or whether retrieval must be fully deterministic. It also decides which retrieval Arms can ship: an Arm that embeds the question with a hosted model makes a second API call.
 - **Asked in email:** Question 1. We asked whether an earlier LLM call that only builds a SQL query, never answer text, counts as part of retrieval.
 - **Client's answer:** A single LLM call is a hard requirement across the entire question-answering pipeline, so there can't be one generative call for retrieval and another for writing the answer. This matches our strict reading: query parsing, text-to-SQL and follow-up rewriting stay rule-based (ADR 0001, ADR 0003), and multi-step research that needs more than one generative call is out of scope, not a future-state option.
+- **The stricter reading (2026-10-17):** Until 2026-10-17 we read the rule as one *generative* call, so a hosted embedding call inside retrieval was allowed. On 2026-10-17 the developer accepted the stricter reading: one API call of any kind per question. The `dense` and `hybrid` Arms embed each question with OpenAI `text-embedding-3-small`, a second call, so they can't ship. They are still measured and shown, as an improvement available if the one-call limit is lifted. The `fts5` and `rerank` Arms and the local embedding Arms, `dense-local` and `hybrid-local`, make no API call and can ship ([ADR 0008](adr/0008-fts5-stays-the-shipped-arm.md), [Evaluation](evaluation.md#the-one-call-rule-and-the-local-arms)).
 - **Status:** confirmed
 
 ## 2. Answers use only the provided Filings

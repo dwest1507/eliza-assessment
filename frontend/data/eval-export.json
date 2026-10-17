@@ -1,19 +1,24 @@
 {
-  "exportedOn": "2026-10-16",
+  "exportedOn": "2026-10-17",
   "split": "dev",
   "goldenSet": {
-    "version": 1,
-    "cases": 30,
-    "splitCases": 20
+    "version": 2,
+    "cases": 80,
+    "splitCases": 60
+  },
+  "thresholds": {
+    "aheadP": 0.1,
+    "behindP": 0.2
   },
   "retrieval": {
-    "gatingMetric": "hit@10",
+    "gatingMetric": "evidence reached",
+    "k": 10,
     "ks": [
       5,
       10,
       20
     ],
-    "scoredCases": 17,
+    "scoredCases": 57,
     "unscored": [
       "stale-ge-recent-performance",
       "missing-citigroup",
@@ -23,45 +28,52 @@
       {
         "name": "fts5",
         "shipped": true,
+        "shippable": true,
         "overall": {
-          "cases": 17,
+          "cases": 57,
           "hitAt": {
-            "5": 0.8235294117647058,
-            "10": 0.8823529411764706,
-            "20": 0.9411764705882353
+            "5": 0.8947368421052632,
+            "10": 0.9298245614035088,
+            "20": 0.9649122807017544
           },
           "recallAt": {
-            "5": 0.7745098039215685,
-            "10": 0.8235294117647058,
-            "20": 0.8431372549019608
+            "5": 0.793233082706767,
+            "10": 0.8523391812865497,
+            "20": 0.9154970760233918
           },
-          "hitAll": 0.9411764705882353,
-          "recallAll": 0.9117647058823529,
-          "mrr": 0.734593837535014,
-          "meanSources": 12.294117647058824
+          "hitAll": 0.9649122807017544,
+          "recallAll": 0.9359649122807018,
+          "mrr": 0.7841478696741855,
+          "meanSources": 11.614035087719298,
+          "facts": 939,
+          "factsReached": 740,
+          "meanSourceTokens": 27321.385964912282
         },
         "byType": [
           {
             "questionType": "figure_trend",
-            "cases": 4,
+            "cases": 14,
             "hitAt": {
-              "5": 0.5,
-              "10": 0.75,
+              "5": 0.7857142857142857,
+              "10": 0.9285714285714286,
               "20": 1.0
             },
             "recallAt": {
-              "5": 0.5,
-              "10": 0.625,
-              "20": 0.7083333333333334
+              "5": 0.6785714285714286,
+              "10": 0.7797619047619048,
+              "20": 0.8988095238095238
             },
             "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 0.43452380952380953,
-            "meanSources": 25.25
+            "recallAll": 0.9821428571428571,
+            "mrr": 0.514030612244898,
+            "meanSources": 24.214285714285715,
+            "facts": 159,
+            "factsReached": 104,
+            "meanSourceTokens": 32150.0
           },
           {
             "questionType": "missing_company",
-            "cases": 2,
+            "cases": 3,
             "hitAt": {
               "5": 1.0,
               "10": 1.0,
@@ -75,65 +87,77 @@
             "hitAll": 1.0,
             "recallAll": 1.0,
             "mrr": 1.0,
-            "meanSources": 1.0
+            "meanSources": 2.6666666666666665,
+            "facts": 39,
+            "factsReached": 36,
+            "meanSourceTokens": 20931.333333333332
           },
           {
             "questionType": "outlook",
-            "cases": 2,
-            "hitAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "recallAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 0.625,
-            "meanSources": 26.5
-          },
-          {
-            "questionType": "risk",
             "cases": 6,
             "hitAt": {
               "5": 0.8333333333333334,
               "10": 0.8333333333333334,
-              "20": 0.8333333333333334
+              "20": 1.0
             },
             "recallAt": {
-              "5": 0.75,
-              "10": 0.75,
-              "20": 0.75
+              "5": 0.8333333333333334,
+              "10": 0.8333333333333334,
+              "20": 1.0
             },
-            "hitAll": 0.8333333333333334,
-            "recallAll": 0.75,
-            "mrr": 0.8333333333333334,
-            "meanSources": 4.333333333333333
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 0.7222222222222222,
+            "meanSources": 13.666666666666666,
+            "facts": 61,
+            "factsReached": 44,
+            "meanSourceTokens": 29576.833333333332
+          },
+          {
+            "questionType": "risk",
+            "cases": 18,
+            "hitAt": {
+              "5": 0.8888888888888888,
+              "10": 0.8888888888888888,
+              "20": 0.8888888888888888
+            },
+            "recallAt": {
+              "5": 0.8333333333333334,
+              "10": 0.8333333333333334,
+              "20": 0.8518518518518519
+            },
+            "hitAll": 0.8888888888888888,
+            "recallAll": 0.8518518518518519,
+            "mrr": 0.8518518518518519,
+            "meanSources": 5.388888888888889,
+            "facts": 340,
+            "factsReached": 265,
+            "meanSourceTokens": 23669.666666666668
           },
           {
             "questionType": "sector",
-            "cases": 2,
+            "cases": 14,
             "hitAt": {
               "5": 1.0,
               "10": 1.0,
               "20": 1.0
             },
             "recallAt": {
-              "5": 0.8333333333333333,
-              "10": 1.0,
-              "20": 1.0
+              "5": 0.7653061224489797,
+              "10": 0.9047619047619048,
+              "20": 0.9476190476190477
             },
             "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 0.75,
-            "meanSources": 9.5
+            "recallAll": 0.9476190476190477,
+            "mrr": 0.9166666666666667,
+            "meanSources": 9.071428571428571,
+            "facts": 313,
+            "factsReached": 269,
+            "meanSourceTokens": 28821.35714285714
           },
           {
             "questionType": "stale_filing",
-            "cases": 1,
+            "cases": 2,
             "hitAt": {
               "5": 1.0,
               "10": 1.0,
@@ -147,56 +171,68 @@
             "hitAll": 1.0,
             "recallAll": 1.0,
             "mrr": 1.0,
-            "meanSources": 8.0
+            "meanSources": 4.5,
+            "facts": 27,
+            "factsReached": 22,
+            "meanSourceTokens": 18705.5
           }
         ],
         "missed": [
           "trend-tsla-net-income-three-years",
-          "followup-topic-change-export-controls"
+          "outlook-msft-cloud",
+          "followup-topic-change-export-controls",
+          "risk-aapl-msft-market-risk"
         ]
       },
       {
         "name": "dense",
         "shipped": false,
+        "shippable": false,
         "overall": {
-          "cases": 17,
+          "cases": 57,
           "hitAt": {
-            "5": 0.7647058823529411,
-            "10": 0.8823529411764706,
-            "20": 0.8823529411764706
+            "5": 0.8245614035087719,
+            "10": 0.9122807017543859,
+            "20": 0.9473684210526315
           },
           "recallAt": {
-            "5": 0.7156862745098039,
-            "10": 0.8235294117647058,
-            "20": 0.8235294117647058
+            "5": 0.6999582289055973,
+            "10": 0.8201754385964912,
+            "20": 0.887719298245614
           },
-          "hitAll": 0.9411764705882353,
-          "recallAll": 0.892156862745098,
-          "mrr": 0.7561751973516679,
-          "meanSources": 10.588235294117647
+          "hitAll": 0.9649122807017544,
+          "recallAll": 0.9125730994152047,
+          "mrr": 0.7393259589854018,
+          "meanSources": 10.982456140350877,
+          "facts": 939,
+          "factsReached": 737,
+          "meanSourceTokens": 28477.263157894737
         },
         "byType": [
           {
             "questionType": "figure_trend",
-            "cases": 4,
+            "cases": 14,
             "hitAt": {
-              "5": 0.5,
-              "10": 0.75,
-              "20": 0.75
+              "5": 0.6428571428571429,
+              "10": 0.7857142857142857,
+              "20": 0.9285714285714286
             },
             "recallAt": {
-              "5": 0.5,
+              "5": 0.4880952380952381,
               "10": 0.625,
-              "20": 0.625
+              "20": 0.8571428571428571
             },
             "hitAll": 1.0,
-            "recallAll": 0.9166666666666666,
-            "mrr": 0.553030303030303,
-            "meanSources": 17.0
+            "recallAll": 0.9583333333333333,
+            "mrr": 0.4384008148714031,
+            "meanSources": 20.857142857142858,
+            "facts": 159,
+            "factsReached": 82,
+            "meanSourceTokens": 32172.714285714286
           },
           {
             "questionType": "missing_company",
-            "cases": 2,
+            "cases": 3,
             "hitAt": {
               "5": 1.0,
               "10": 1.0,
@@ -210,319 +246,16 @@
             "hitAll": 1.0,
             "recallAll": 1.0,
             "mrr": 1.0,
-            "meanSources": 1.0
+            "meanSources": 3.3333333333333335,
+            "facts": 39,
+            "factsReached": 38,
+            "meanSourceTokens": 27352.0
           },
           {
             "questionType": "outlook",
-            "cases": 2,
-            "hitAt": {
-              "5": 0.5,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "recallAt": {
-              "5": 0.5,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 0.5714285714285714,
-            "meanSources": 29.0
-          },
-          {
-            "questionType": "risk",
             "cases": 6,
             "hitAt": {
-              "5": 0.8333333333333334,
-              "10": 0.8333333333333334,
-              "20": 0.8333333333333334
-            },
-            "recallAt": {
-              "5": 0.75,
-              "10": 0.75,
-              "20": 0.75
-            },
-            "hitAll": 0.8333333333333334,
-            "recallAll": 0.75,
-            "mrr": 0.8333333333333334,
-            "meanSources": 4.333333333333333
-          },
-          {
-            "questionType": "sector",
-            "cases": 2,
-            "hitAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "recallAt": {
-              "5": 0.8333333333333333,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 1.0,
-            "meanSources": 10.0
-          },
-          {
-            "questionType": "stale_filing",
-            "cases": 1,
-            "hitAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "recallAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 0.5,
-            "meanSources": 6.0
-          }
-        ],
-        "missed": [
-          "trend-tsla-net-income-three-years",
-          "followup-topic-change-export-controls"
-        ]
-      },
-      {
-        "name": "hybrid",
-        "shipped": false,
-        "overall": {
-          "cases": 17,
-          "hitAt": {
-            "5": 0.8235294117647058,
-            "10": 0.8823529411764706,
-            "20": 0.8823529411764706
-          },
-          "recallAt": {
-            "5": 0.7745098039215685,
-            "10": 0.8235294117647058,
-            "20": 0.8235294117647058
-          },
-          "hitAll": 0.9411764705882353,
-          "recallAll": 0.8725490196078431,
-          "mrr": 0.8033273915626856,
-          "meanSources": 11.588235294117647
-        },
-        "byType": [
-          {
-            "questionType": "figure_trend",
-            "cases": 4,
-            "hitAt": {
-              "5": 0.5,
-              "10": 0.75,
-              "20": 0.75
-            },
-            "recallAt": {
-              "5": 0.5,
-              "10": 0.625,
-              "20": 0.625
-            },
-            "hitAll": 1.0,
-            "recallAll": 0.8333333333333334,
-            "mrr": 0.5391414141414141,
-            "meanSources": 20.5
-          },
-          {
-            "questionType": "missing_company",
-            "cases": 2,
-            "hitAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "recallAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 1.0,
-            "meanSources": 1.0
-          },
-          {
-            "questionType": "outlook",
-            "cases": 2,
-            "hitAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "recallAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 1.0,
-            "meanSources": 29.0
-          },
-          {
-            "questionType": "risk",
-            "cases": 6,
-            "hitAt": {
-              "5": 0.8333333333333334,
-              "10": 0.8333333333333334,
-              "20": 0.8333333333333334
-            },
-            "recallAt": {
-              "5": 0.75,
-              "10": 0.75,
-              "20": 0.75
-            },
-            "hitAll": 0.8333333333333334,
-            "recallAll": 0.75,
-            "mrr": 0.8333333333333334,
-            "meanSources": 4.333333333333333
-          },
-          {
-            "questionType": "sector",
-            "cases": 2,
-            "hitAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "recallAt": {
-              "5": 0.8333333333333333,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 1.0,
-            "meanSources": 10.5
-          },
-          {
-            "questionType": "stale_filing",
-            "cases": 1,
-            "hitAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "recallAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 0.5,
-            "meanSources": 8.0
-          }
-        ],
-        "missed": [
-          "trend-tsla-net-income-three-years",
-          "followup-topic-change-export-controls"
-        ]
-      },
-      {
-        "name": "rerank",
-        "shipped": false,
-        "overall": {
-          "cases": 17,
-          "hitAt": {
-            "5": 0.7647058823529411,
-            "10": 0.8823529411764706,
-            "20": 0.9411764705882353
-          },
-          "recallAt": {
-            "5": 0.6764705882352942,
-            "10": 0.8235294117647058,
-            "20": 0.8431372549019608
-          },
-          "hitAll": 0.9411764705882353,
-          "recallAll": 0.9117647058823529,
-          "mrr": 0.6823062558356676,
-          "meanSources": 12.294117647058824
-        },
-        "byType": [
-          {
-            "questionType": "figure_trend",
-            "cases": 4,
-            "hitAt": {
-              "5": 0.5,
-              "10": 0.75,
-              "20": 1.0
-            },
-            "recallAt": {
-              "5": 0.41666666666666663,
-              "10": 0.625,
-              "20": 0.7083333333333334
-            },
-            "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 0.42063492063492064,
-            "meanSources": 25.25
-          },
-          {
-            "questionType": "missing_company",
-            "cases": 2,
-            "hitAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "recallAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 1.0,
-            "meanSources": 1.0
-          },
-          {
-            "questionType": "outlook",
-            "cases": 2,
-            "hitAt": {
-              "5": 0.5,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "recallAt": {
-              "5": 0.5,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 0.20833333333333331,
-            "meanSources": 26.5
-          },
-          {
-            "questionType": "risk",
-            "cases": 6,
-            "hitAt": {
-              "5": 0.8333333333333334,
-              "10": 0.8333333333333334,
-              "20": 0.8333333333333334
-            },
-            "recallAt": {
-              "5": 0.75,
-              "10": 0.75,
-              "20": 0.75
-            },
-            "hitAll": 0.8333333333333334,
-            "recallAll": 0.75,
-            "mrr": 0.8333333333333334,
-            "meanSources": 4.333333333333333
-          },
-          {
-            "questionType": "sector",
-            "cases": 2,
-            "hitAt": {
-              "5": 1.0,
+              "5": 0.6666666666666666,
               "10": 1.0,
               "20": 1.0
             },
@@ -533,12 +266,133 @@
             },
             "hitAll": 1.0,
             "recallAll": 1.0,
-            "mrr": 0.75,
-            "meanSources": 9.5
+            "mrr": 0.5978835978835979,
+            "meanSources": 16.0,
+            "facts": 61,
+            "factsReached": 40,
+            "meanSourceTokens": 31822.0
+          },
+          {
+            "questionType": "risk",
+            "cases": 18,
+            "hitAt": {
+              "5": 0.8333333333333334,
+              "10": 0.8888888888888888,
+              "20": 0.8888888888888888
+            },
+            "recallAt": {
+              "5": 0.7407407407407408,
+              "10": 0.8148148148148148,
+              "20": 0.8148148148148148
+            },
+            "hitAll": 0.8888888888888888,
+            "recallAll": 0.8148148148148148,
+            "mrr": 0.8009259259259259,
+            "meanSources": 5.333333333333333,
+            "facts": 340,
+            "factsReached": 285,
+            "meanSourceTokens": 25079.277777777777
+          },
+          {
+            "questionType": "sector",
+            "cases": 14,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.7664965986394557,
+              "10": 0.880952380952381,
+              "20": 0.9238095238095239
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.9238095238095239,
+            "mrr": 0.9642857142857143,
+            "meanSources": 8.928571428571429,
+            "facts": 313,
+            "factsReached": 265,
+            "meanSourceTokens": 29267.0
           },
           {
             "questionType": "stale_filing",
-            "cases": 1,
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 0.75,
+            "meanSources": 3.5,
+            "facts": 27,
+            "factsReached": 27,
+            "meanSourceTokens": 19316.5
+          }
+        ],
+        "missed": [
+          "trend-tsla-net-income-three-years",
+          "followup-topic-change-export-controls",
+          "risk-aapl-msft-market-risk",
+          "trend-dis-segments-fy2025",
+          "trend-ko-revenue-two-years"
+        ]
+      },
+      {
+        "name": "hybrid",
+        "shipped": false,
+        "shippable": false,
+        "overall": {
+          "cases": 57,
+          "hitAt": {
+            "5": 0.8596491228070176,
+            "10": 0.9298245614035088,
+            "20": 0.9473684210526315
+          },
+          "recallAt": {
+            "5": 0.7759816207184628,
+            "10": 0.8771929824561403,
+            "20": 0.9052631578947369
+          },
+          "hitAll": 0.9649122807017544,
+          "recallAll": 0.9242690058479531,
+          "mrr": 0.7888578770157718,
+          "meanSources": 11.280701754385966,
+          "facts": 939,
+          "factsReached": 801,
+          "meanSourceTokens": 28460.701754385966
+        },
+        "byType": [
+          {
+            "questionType": "figure_trend",
+            "cases": 14,
+            "hitAt": {
+              "5": 0.6428571428571429,
+              "10": 0.8571428571428571,
+              "20": 0.9285714285714286
+            },
+            "recallAt": {
+              "5": 0.5833333333333333,
+              "10": 0.7738095238095238,
+              "20": 0.8571428571428571
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.9345238095238095,
+            "mrr": 0.5082070707070707,
+            "meanSources": 22.357142857142858,
+            "facts": 159,
+            "factsReached": 110,
+            "meanSourceTokens": 32234.071428571428
+          },
+          {
+            "questionType": "missing_company",
+            "cases": 3,
             "hitAt": {
               "5": 1.0,
               "10": 1.0,
@@ -552,12 +406,578 @@
             "hitAll": 1.0,
             "recallAll": 1.0,
             "mrr": 1.0,
-            "meanSources": 8.0
+            "meanSources": 2.6666666666666665,
+            "facts": 39,
+            "factsReached": 39,
+            "meanSourceTokens": 27386.666666666668
+          },
+          {
+            "questionType": "outlook",
+            "cases": 6,
+            "hitAt": {
+              "5": 0.8333333333333334,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.8333333333333334,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 0.7666666666666666,
+            "meanSources": 14.666666666666666,
+            "facts": 61,
+            "factsReached": 46,
+            "meanSourceTokens": 31759.833333333332
+          },
+          {
+            "questionType": "risk",
+            "cases": 18,
+            "hitAt": {
+              "5": 0.8888888888888888,
+              "10": 0.8888888888888888,
+              "20": 0.8888888888888888
+            },
+            "recallAt": {
+              "5": 0.8333333333333334,
+              "10": 0.8518518518518519,
+              "20": 0.8518518518518519
+            },
+            "hitAll": 0.8888888888888888,
+            "recallAll": 0.8518518518518519,
+            "mrr": 0.8472222222222222,
+            "meanSources": 5.222222222222222,
+            "facts": 340,
+            "factsReached": 293,
+            "meanSourceTokens": 25059.222222222223
+          },
+          {
+            "questionType": "sector",
+            "cases": 14,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.7903061224489797,
+              "10": 0.9166666666666667,
+              "20": 0.9476190476190477
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.9476190476190477,
+            "mrr": 0.9642857142857143,
+            "meanSources": 9.357142857142858,
+            "facts": 313,
+            "factsReached": 286,
+            "meanSourceTokens": 29193.928571428572
+          },
+          {
+            "questionType": "stale_filing",
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 0.75,
+            "meanSources": 4.5,
+            "facts": 27,
+            "factsReached": 27,
+            "meanSourceTokens": 19241.5
           }
         ],
         "missed": [
           "trend-tsla-net-income-three-years",
-          "followup-topic-change-export-controls"
+          "followup-topic-change-export-controls",
+          "risk-aapl-msft-market-risk",
+          "trend-goog-meta-net-income-two-years"
+        ]
+      },
+      {
+        "name": "rerank",
+        "shipped": false,
+        "shippable": true,
+        "overall": {
+          "cases": 57,
+          "hitAt": {
+            "5": 0.8771929824561403,
+            "10": 0.9298245614035088,
+            "20": 0.9649122807017544
+          },
+          "recallAt": {
+            "5": 0.7555137844611529,
+            "10": 0.8698830409356726,
+            "20": 0.9111111111111111
+          },
+          "hitAll": 0.9649122807017544,
+          "recallAll": 0.9359649122807018,
+          "mrr": 0.7704615073036125,
+          "meanSources": 11.491228070175438,
+          "facts": 939,
+          "factsReached": 739,
+          "meanSourceTokens": 27353.701754385966
+        },
+        "byType": [
+          {
+            "questionType": "figure_trend",
+            "cases": 14,
+            "hitAt": {
+              "5": 0.7857142857142857,
+              "10": 0.8571428571428571,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.5535714285714286,
+              "10": 0.7321428571428571,
+              "20": 0.880952380952381
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.9821428571428571,
+            "mrr": 0.5731034838177695,
+            "meanSources": 24.214285714285715,
+            "facts": 159,
+            "factsReached": 104,
+            "meanSourceTokens": 32150.0
+          },
+          {
+            "questionType": "missing_company",
+            "cases": 3,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 1.0,
+            "meanSources": 2.6666666666666665,
+            "facts": 39,
+            "factsReached": 36,
+            "meanSourceTokens": 20931.333333333332
+          },
+          {
+            "questionType": "outlook",
+            "cases": 6,
+            "hitAt": {
+              "5": 0.6666666666666666,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.6666666666666666,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 0.5099206349206349,
+            "meanSources": 13.666666666666666,
+            "facts": 61,
+            "factsReached": 44,
+            "meanSourceTokens": 29576.833333333332
+          },
+          {
+            "questionType": "risk",
+            "cases": 18,
+            "hitAt": {
+              "5": 0.8888888888888888,
+              "10": 0.8888888888888888,
+              "20": 0.8888888888888888
+            },
+            "recallAt": {
+              "5": 0.8518518518518519,
+              "10": 0.8518518518518519,
+              "20": 0.8518518518518519
+            },
+            "hitAll": 0.8888888888888888,
+            "recallAll": 0.8518518518518519,
+            "mrr": 0.8611111111111112,
+            "meanSources": 5.277777777777778,
+            "facts": 340,
+            "factsReached": 265,
+            "meanSourceTokens": 23657.722222222223
+          },
+          {
+            "questionType": "sector",
+            "cases": 14,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.7843537414965986,
+              "10": 0.9285714285714286,
+              "20": 0.9476190476190477
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.9476190476190477,
+            "mrr": 0.880952380952381,
+            "meanSources": 8.714285714285714,
+            "facts": 313,
+            "factsReached": 268,
+            "meanSourceTokens": 28968.285714285714
+          },
+          {
+            "questionType": "stale_filing",
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 1.0,
+            "meanSources": 4.5,
+            "facts": 27,
+            "factsReached": 22,
+            "meanSourceTokens": 18705.5
+          }
+        ],
+        "missed": [
+          "trend-aapl-revenue-fy2025",
+          "trend-tsla-net-income-three-years",
+          "followup-topic-change-export-controls",
+          "risk-aapl-msft-market-risk"
+        ]
+      },
+      {
+        "name": "dense-local",
+        "shipped": false,
+        "shippable": true,
+        "overall": {
+          "cases": 57,
+          "hitAt": {
+            "5": 0.8421052631578947,
+            "10": 0.9122807017543859,
+            "20": 0.9649122807017544
+          },
+          "recallAt": {
+            "5": 0.7160401002506266,
+            "10": 0.8111111111111111,
+            "20": 0.8921052631578947
+          },
+          "hitAll": 0.9649122807017544,
+          "recallAll": 0.921345029239766,
+          "mrr": 0.755795739348371,
+          "meanSources": 11.017543859649123,
+          "facts": 939,
+          "factsReached": 720,
+          "meanSourceTokens": 28464.280701754386
+        },
+        "byType": [
+          {
+            "questionType": "figure_trend",
+            "cases": 14,
+            "hitAt": {
+              "5": 0.7142857142857143,
+              "10": 0.8571428571428571,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.5178571428571429,
+              "10": 0.6845238095238095,
+              "20": 0.8630952380952381
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.9821428571428571,
+            "mrr": 0.519345238095238,
+            "meanSources": 22.642857142857142,
+            "facts": 159,
+            "factsReached": 71,
+            "meanSourceTokens": 32221.14285714286
+          },
+          {
+            "questionType": "missing_company",
+            "cases": 3,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 1.0,
+            "meanSources": 3.0,
+            "facts": 39,
+            "factsReached": 39,
+            "meanSourceTokens": 27381.0
+          },
+          {
+            "questionType": "outlook",
+            "cases": 6,
+            "hitAt": {
+              "5": 0.6666666666666666,
+              "10": 0.8333333333333334,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.6666666666666666,
+              "10": 0.8333333333333334,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 0.7083333333333334,
+            "meanSources": 13.5,
+            "facts": 61,
+            "factsReached": 46,
+            "meanSourceTokens": 31817.333333333332
+          },
+          {
+            "questionType": "risk",
+            "cases": 18,
+            "hitAt": {
+              "5": 0.8333333333333334,
+              "10": 0.8888888888888888,
+              "20": 0.8888888888888888
+            },
+            "recallAt": {
+              "5": 0.7407407407407408,
+              "10": 0.7962962962962963,
+              "20": 0.8148148148148148
+            },
+            "hitAll": 0.8888888888888888,
+            "recallAll": 0.8148148148148148,
+            "mrr": 0.7996031746031745,
+            "meanSources": 5.0,
+            "facts": 340,
+            "factsReached": 273,
+            "meanSourceTokens": 25082.61111111111
+          },
+          {
+            "questionType": "sector",
+            "cases": 14,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.8022108843537415,
+              "10": 0.8797619047619047,
+              "20": 0.9357142857142857
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.9357142857142857,
+            "mrr": 0.869047619047619,
+            "meanSources": 8.857142857142858,
+            "facts": 313,
+            "factsReached": 264,
+            "meanSourceTokens": 29167.0
+          },
+          {
+            "questionType": "stale_filing",
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 1.0,
+            "meanSources": 3.5,
+            "facts": 27,
+            "factsReached": 27,
+            "meanSourceTokens": 19248.0
+          }
+        ],
+        "missed": [
+          "trend-tsla-net-income-three-years",
+          "outlook-meta-capex-2026",
+          "followup-topic-change-export-controls",
+          "risk-aapl-msft-market-risk",
+          "trend-dis-segments-fy2025"
+        ]
+      },
+      {
+        "name": "hybrid-local",
+        "shipped": false,
+        "shippable": true,
+        "overall": {
+          "cases": 57,
+          "hitAt": {
+            "5": 0.8771929824561403,
+            "10": 0.9473684210526315,
+            "20": 0.9649122807017544
+          },
+          "recallAt": {
+            "5": 0.7406015037593985,
+            "10": 0.8786549707602339,
+            "20": 0.9067251461988304
+          },
+          "hitAll": 0.9649122807017544,
+          "recallAll": 0.9359649122807018,
+          "mrr": 0.7912489557226399,
+          "meanSources": 11.035087719298245,
+          "facts": 939,
+          "factsReached": 774,
+          "meanSourceTokens": 28387.43859649123
+        },
+        "byType": [
+          {
+            "questionType": "figure_trend",
+            "cases": 14,
+            "hitAt": {
+              "5": 0.7857142857142857,
+              "10": 0.9285714285714286,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.5178571428571429,
+              "10": 0.7916666666666667,
+              "20": 0.8630952380952381
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.9821428571428571,
+            "mrr": 0.5566326530612244,
+            "meanSources": 22.428571428571427,
+            "facts": 159,
+            "factsReached": 104,
+            "meanSourceTokens": 32132.785714285714
+          },
+          {
+            "questionType": "missing_company",
+            "cases": 3,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 1.0,
+            "meanSources": 3.0,
+            "facts": 39,
+            "factsReached": 39,
+            "meanSourceTokens": 27280.666666666668
+          },
+          {
+            "questionType": "outlook",
+            "cases": 6,
+            "hitAt": {
+              "5": 0.6666666666666666,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.6666666666666666,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 0.7041666666666666,
+            "meanSources": 13.666666666666666,
+            "facts": 61,
+            "factsReached": 46,
+            "meanSourceTokens": 31800.5
+          },
+          {
+            "questionType": "risk",
+            "cases": 18,
+            "hitAt": {
+              "5": 0.8888888888888888,
+              "10": 0.8888888888888888,
+              "20": 0.8888888888888888
+            },
+            "recallAt": {
+              "5": 0.8333333333333334,
+              "10": 0.8518518518518519,
+              "20": 0.8518518518518519
+            },
+            "hitAll": 0.8888888888888888,
+            "recallAll": 0.8518518518518519,
+            "mrr": 0.8472222222222222,
+            "meanSources": 4.888888888888889,
+            "facts": 340,
+            "factsReached": 280,
+            "meanSourceTokens": 25042.666666666668
+          },
+          {
+            "questionType": "sector",
+            "cases": 14,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.7831632653061226,
+              "10": 0.9047619047619048,
+              "20": 0.9476190476190477
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.9476190476190477,
+            "mrr": 0.9166666666666667,
+            "meanSources": 9.142857142857142,
+            "facts": 313,
+            "factsReached": 280,
+            "meanSourceTokens": 28991.64285714286
+          },
+          {
+            "questionType": "stale_filing",
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 1.0,
+            "meanSources": 4.0,
+            "facts": 27,
+            "factsReached": 25,
+            "meanSourceTokens": 19464.5
+          }
+        ],
+        "missed": [
+          "trend-tsla-net-income-three-years",
+          "followup-topic-change-export-controls",
+          "risk-aapl-msft-market-risk"
         ]
       }
     ],
@@ -565,31 +985,129 @@
       {
         "arm": "dense",
         "shippedArm": "fts5",
-        "metric": "hit@10",
-        "challengerOnly": 0,
-        "shippedOnly": 0,
-        "pValue": 1.0,
+        "metric": "evidence reached",
+        "facts": 939,
+        "challengerOnly": 79,
+        "shippedOnly": 82,
+        "pValue": 0.8748178672015419,
+        "pAhead": 0.6236555214228672,
+        "pBehind": 0.43740893360077093,
         "verdict": "indistinguishable"
       },
       {
         "arm": "hybrid",
         "shippedArm": "fts5",
-        "metric": "hit@10",
-        "challengerOnly": 0,
-        "shippedOnly": 0,
-        "pValue": 1.0,
-        "verdict": "indistinguishable"
+        "metric": "evidence reached",
+        "facts": 939,
+        "challengerOnly": 72,
+        "shippedOnly": 11,
+        "pValue": 3.918121146030225e-12,
+        "pAhead": 1.9590605730151125e-12,
+        "pBehind": 0.99999999999971,
+        "verdict": "ahead"
       },
       {
         "arm": "rerank",
         "shippedArm": "fts5",
-        "metric": "hit@10",
-        "challengerOnly": 0,
-        "shippedOnly": 0,
+        "metric": "evidence reached",
+        "facts": 939,
+        "challengerOnly": 14,
+        "shippedOnly": 15,
         "pValue": 1.0,
+        "pAhead": 0.644464448094368,
+        "pBehind": 0.5,
         "verdict": "indistinguishable"
+      },
+      {
+        "arm": "dense-local",
+        "shippedArm": "fts5",
+        "metric": "evidence reached",
+        "facts": 939,
+        "challengerOnly": 74,
+        "shippedOnly": 94,
+        "pValue": 0.14245334559436543,
+        "pAhead": 0.9475440425926089,
+        "pBehind": 0.07122667279718271,
+        "verdict": "behind"
+      },
+      {
+        "arm": "hybrid-local",
+        "shippedArm": "fts5",
+        "metric": "evidence reached",
+        "facts": 939,
+        "challengerOnly": 56,
+        "shippedOnly": 22,
+        "pValue": 0.00014948153872377523,
+        "pAhead": 7.474076936188761e-05,
+        "pBehind": 0.9999721444175677,
+        "verdict": "ahead"
       }
-    ]
+    ],
+    "screen": {
+      "shipped": "fts5",
+      "limit": 3,
+      "kept": [
+        "hybrid-local",
+        "rerank"
+      ],
+      "candidates": [
+        {
+          "name": "dense",
+          "facts": 939,
+          "factsReached": 737,
+          "gained": 79,
+          "lost": 82,
+          "pBehind": 0.43740893360077093,
+          "kept": false,
+          "shippable": false,
+          "reason": "dropped: makes an API call at query time, so it can't ship (indistinguishable on Evidence Reached, p behind = 0.437; available if the one-call limit is lifted)"
+        },
+        {
+          "name": "hybrid",
+          "facts": 939,
+          "factsReached": 801,
+          "gained": 72,
+          "lost": 11,
+          "pBehind": 0.99999999999971,
+          "kept": false,
+          "shippable": false,
+          "reason": "dropped: makes an API call at query time, so it can't ship (ahead on Evidence Reached, p behind = 1.000; available if the one-call limit is lifted)"
+        },
+        {
+          "name": "rerank",
+          "facts": 939,
+          "factsReached": 739,
+          "gained": 14,
+          "lost": 15,
+          "pBehind": 0.5,
+          "kept": true,
+          "shippable": true,
+          "reason": "kept: not behind (p behind = 0.500), 2 of 2 not behind on Evidence Reached"
+        },
+        {
+          "name": "dense-local",
+          "facts": 939,
+          "factsReached": 720,
+          "gained": 74,
+          "lost": 94,
+          "pBehind": 0.07122667279718271,
+          "kept": false,
+          "shippable": true,
+          "reason": "dropped: behind on Evidence Reached (p behind = 0.071 < 0.20)"
+        },
+        {
+          "name": "hybrid-local",
+          "facts": 939,
+          "factsReached": 774,
+          "gained": 56,
+          "lost": 22,
+          "pBehind": 0.9999721444175677,
+          "kept": true,
+          "shippable": true,
+          "reason": "kept: not behind (p behind = 1.000), 1 of 2 not behind on Evidence Reached"
+        }
+      ]
+    }
   },
   "generation": [
     {
@@ -597,755 +1115,1374 @@
       "model": "gpt-6-luna",
       "judgeModel": "jev-1.13.0",
       "promptVersion": "v7",
+      "controlRun": false,
+      "factCutoff": 0.6,
+      "answersPassed": 45,
       "overall": {
-        "cases": 19,
-        "citationsValid": 0.9473684210526315,
-        "figuresExact": 1.0,
+        "cases": 60,
+        "citationsValid": 0.8666666666666667,
+        "figuresExact": 0.9,
         "coverageGapsStated": 1.0,
-        "factRecall": 0.6160714285714286,
-        "faithfulness": 0.8994521103896104,
-        "meanCostUsd": 0.002503342105263158,
-        "totalCostUsd": 0.0475635,
-        "meanLatencyS": 7.858,
-        "maxLatencyS": 12.576,
-        "meanFirstTokenS": 2.759105263157895,
-        "meanInputTokens": 21151.315789473683,
-        "meanOutputTokens": 776.421052631579,
-        "judgeCostUsd": 0.022891428000000002
+        "structureFollowed": 0.7166666666666667,
+        "meanWords": 458.81666666666666,
+        "factRecall": 0.7168722116090537,
+        "detailRecall": 0.4781808605338017,
+        "faithfulness": 0.9275970952524469,
+        "answersContradicted": 7,
+        "truncated": 0,
+        "judgmentsFailed": 2,
+        "meanCostUsd": 0.002792131666666667,
+        "totalCostUsd": 0.1675279,
+        "meanLatencyS": 8.162583333333334,
+        "maxLatencyS": 11.736,
+        "meanFirstTokenS": 2.204266666666667,
+        "meanInputTokens": 23760.316666666666,
+        "meanOutputTokens": 832.2,
+        "judgeCostUsd": 0.09170481600000001
       },
       "byType": [
         {
           "questionType": "figure_trend",
-          "cases": 3,
-          "citationsValid": 1.0,
-          "figuresExact": 1.0,
-          "coverageGapsStated": null,
-          "factRecall": 0.611111111111111,
-          "faithfulness": 0.9761904761904763,
-          "meanCostUsd": 0.0041252,
-          "totalCostUsd": 0.0123756,
-          "meanLatencyS": 8.196,
-          "maxLatencyS": 8.81,
-          "meanFirstTokenS": 2.3543333333333334,
-          "meanInputTokens": 36710.333333333336,
-          "meanOutputTokens": 908.3333333333334,
-          "judgeCostUsd": 0.002457126
+          "cases": 14,
+          "citationsValid": 0.9285714285714286,
+          "figuresExact": 0.6428571428571429,
+          "coverageGapsStated": 1.0,
+          "structureFollowed": 0.9285714285714286,
+          "meanWords": 369.07142857142856,
+          "factRecall": 0.8005952380952381,
+          "detailRecall": 0.47277880849309417,
+          "faithfulness": 0.9228113485704579,
+          "answersContradicted": 4,
+          "truncated": 0,
+          "judgmentsFailed": 2,
+          "meanCostUsd": 0.004257778571428571,
+          "totalCostUsd": 0.0596089,
+          "meanLatencyS": 7.9315,
+          "maxLatencyS": 9.912,
+          "meanFirstTokenS": 2.2046428571428573,
+          "meanInputTokens": 38357.78571428572,
+          "meanOutputTokens": 844.0,
+          "judgeCostUsd": 0.024357102000000002
         },
         {
           "questionType": "missing_company",
-          "cases": 4,
-          "citationsValid": 1.0,
+          "cases": 5,
+          "citationsValid": 0.8,
           "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
-          "factRecall": 0.75,
-          "faithfulness": 0.75,
-          "meanCostUsd": 0.0011017,
-          "totalCostUsd": 0.0044068,
-          "meanLatencyS": 5.7749999999999995,
-          "maxLatencyS": 9.924,
-          "meanFirstTokenS": 2.49175,
-          "meanInputTokens": 8463.25,
-          "meanOutputTokens": 510.75,
-          "judgeCostUsd": 0.0016400160000000002
+          "structureFollowed": 1.0,
+          "meanWords": 308.0,
+          "factRecall": 0.9166666666666666,
+          "detailRecall": 0.6898148148148149,
+          "faithfulness": 0.9444444444444445,
+          "answersContradicted": 0,
+          "truncated": 0,
+          "judgmentsFailed": 0,
+          "meanCostUsd": 0.0012324,
+          "totalCostUsd": 0.006162,
+          "meanLatencyS": 5.1658,
+          "maxLatencyS": 8.413,
+          "meanFirstTokenS": 1.31,
+          "meanInputTokens": 9891.0,
+          "meanOutputTokens": 486.6,
+          "judgeCostUsd": 0.002719794
         },
         {
           "questionType": "outlook",
-          "cases": 2,
-          "citationsValid": 1.0,
-          "figuresExact": 1.0,
-          "coverageGapsStated": 1.0,
-          "factRecall": 0.75,
-          "faithfulness": 0.9642857142857143,
-          "meanCostUsd": 0.003621,
-          "totalCostUsd": 0.007242,
-          "meanLatencyS": 7.875500000000001,
-          "maxLatencyS": 8.143,
-          "meanFirstTokenS": 3.6814999999999998,
-          "meanInputTokens": 32312.5,
-          "meanOutputTokens": 779.5,
-          "judgeCostUsd": 0.0008295420000000001
-        },
-        {
-          "questionType": "risk",
-          "cases": 6,
-          "citationsValid": 1.0,
-          "figuresExact": 1.0,
-          "coverageGapsStated": 1.0,
-          "factRecall": 0.5595238095238095,
-          "faithfulness": 0.8888888888888888,
-          "meanCostUsd": 0.0023061,
-          "totalCostUsd": 0.013836600000000001,
-          "meanLatencyS": 9.0205,
-          "maxLatencyS": 12.026,
-          "meanFirstTokenS": 2.7261666666666664,
-          "meanInputTokens": 18581.0,
-          "meanOutputTokens": 896.0,
-          "judgeCostUsd": 0.013427106000000001
-        },
-        {
-          "questionType": "sector",
-          "cases": 2,
-          "citationsValid": 1.0,
-          "figuresExact": 1.0,
-          "coverageGapsStated": 1.0,
-          "factRecall": 0.3333333333333333,
-          "faithfulness": 0.8958333333333333,
-          "meanCostUsd": 0.0028801499999999997,
-          "totalCostUsd": 0.0057602999999999994,
-          "meanLatencyS": 11.2705,
-          "maxLatencyS": 12.576,
-          "meanFirstTokenS": 4.038,
-          "meanInputTokens": 23509.0,
-          "meanOutputTokens": 1058.5,
-          "judgeCostUsd": 0.003628422
-        },
-        {
-          "questionType": "stale_filing",
-          "cases": 2,
-          "citationsValid": 0.5,
-          "figuresExact": 1.0,
-          "coverageGapsStated": 1.0,
-          "factRecall": 1.0,
-          "faithfulness": 0.9090909090909091,
-          "meanCostUsd": 0.0019711,
-          "totalCostUsd": 0.0039422,
-          "meanLatencyS": 4.5995,
-          "maxLatencyS": 7.29,
-          "meanFirstTokenS": 1.7985,
-          "meanInputTokens": 17381.0,
-          "meanOutputTokens": 466.0,
-          "judgeCostUsd": 0.000909216
-        }
-      ],
-      "failing": {
-        "citations": [
-          "stale-ge-recent-performance"
-        ],
-        "figures": [],
-        "coverageGaps": []
-      },
-      "errors": [
-        "trend-jpm-revenue-snapshot"
-      ]
-    },
-    {
-      "report": "generation-dev-claude-opus-5-5.json",
-      "model": "claude-opus-5-5",
-      "judgeModel": "jev-1.13.0",
-      "promptVersion": "v7",
-      "overall": {
-        "cases": 19,
-        "citationsValid": 0.3684210526315789,
-        "figuresExact": 1.0,
-        "coverageGapsStated": 1.0,
-        "factRecall": 0.75,
-        "faithfulness": 0.9285118349526394,
-        "meanCostUsd": 0.16406042105263158,
-        "totalCostUsd": 3.117148,
-        "meanLatencyS": 15.824526315789473,
-        "maxLatencyS": 21.732,
-        "meanFirstTokenS": 3.657,
-        "meanInputTokens": 32695.894736842107,
-        "meanOutputTokens": 1663.842105263158,
-        "judgeCostUsd": 0.028932666
-      },
-      "byType": [
-        {
-          "questionType": "figure_trend",
-          "cases": 3,
-          "citationsValid": 0.3333333333333333,
-          "figuresExact": 1.0,
-          "coverageGapsStated": null,
-          "factRecall": 0.8888888888888888,
-          "faithfulness": 0.9210727969348659,
-          "meanCostUsd": 0.251228,
-          "totalCostUsd": 0.753684,
-          "meanLatencyS": 16.959333333333333,
-          "maxLatencyS": 20.398,
-          "meanFirstTokenS": 4.419,
-          "meanInputTokens": 53465.333333333336,
-          "meanOutputTokens": 1868.3333333333333,
-          "judgeCostUsd": 0.0054145980000000005
-        },
-        {
-          "questionType": "missing_company",
-          "cases": 4,
-          "citationsValid": 0.0,
-          "figuresExact": 1.0,
-          "coverageGapsStated": 1.0,
-          "factRecall": 1.0,
-          "faithfulness": 0.9821428571428572,
-          "meanCostUsd": 0.078602,
-          "totalCostUsd": 0.314408,
-          "meanLatencyS": 11.37725,
-          "maxLatencyS": 15.276,
-          "meanFirstTokenS": 1.23025,
-          "meanInputTokens": 13813.0,
-          "meanOutputTokens": 1167.5,
-          "judgeCostUsd": 0.001966776
-        },
-        {
-          "questionType": "outlook",
-          "cases": 2,
-          "citationsValid": 0.0,
-          "figuresExact": 1.0,
-          "coverageGapsStated": 1.0,
-          "factRecall": 0.75,
-          "faithfulness": 0.9237132352941176,
-          "meanCostUsd": 0.22853800000000002,
-          "totalCostUsd": 0.45707600000000004,
-          "meanLatencyS": 17.701,
-          "maxLatencyS": 18.675,
-          "meanFirstTokenS": 4.519,
-          "meanInputTokens": 47944.5,
-          "meanOutputTokens": 1838.0,
-          "judgeCostUsd": 0.002429868
-        },
-        {
-          "questionType": "risk",
           "cases": 6,
           "citationsValid": 0.8333333333333334,
           "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
+          "structureFollowed": 0.8333333333333334,
+          "meanWords": 387.0,
           "factRecall": 0.6944444444444445,
-          "faithfulness": 0.9034811165845649,
-          "meanCostUsd": 0.15764466666666666,
-          "totalCostUsd": 0.9458679999999999,
-          "meanLatencyS": 17.229333333333333,
-          "maxLatencyS": 21.57,
-          "meanFirstTokenS": 4.029,
-          "meanInputTokens": 30312.833333333332,
-          "meanOutputTokens": 1819.6666666666667,
-          "judgeCostUsd": 0.012180294000000001
-        },
-        {
-          "questionType": "sector",
-          "cases": 2,
-          "citationsValid": 0.5,
-          "figuresExact": 1.0,
-          "coverageGapsStated": 1.0,
-          "factRecall": 0.3333333333333333,
-          "faithfulness": 0.9480431848852902,
-          "meanCostUsd": 0.199628,
-          "totalCostUsd": 0.399256,
-          "meanLatencyS": 20.125,
-          "maxLatencyS": 21.732,
-          "meanFirstTokenS": 5.469,
-          "meanInputTokens": 38354.5,
-          "meanOutputTokens": 2310.5,
-          "judgeCostUsd": 0.005886888
-        },
-        {
-          "questionType": "stale_filing",
-          "cases": 2,
-          "citationsValid": 0.0,
-          "figuresExact": 1.0,
-          "coverageGapsStated": 1.0,
-          "factRecall": 1.0,
-          "faithfulness": 0.9642857142857143,
-          "meanCostUsd": 0.123428,
-          "totalCostUsd": 0.246856,
-          "meanLatencyS": 12.6255,
-          "maxLatencyS": 14.367,
-          "meanFirstTokenS": 3.5775,
-          "meanInputTokens": 25549.5,
-          "meanOutputTokens": 1061.5,
-          "judgeCostUsd": 0.001054242
-        }
-      ],
-      "failing": {
-        "citations": [
-          "sector-pharma-regulatory",
-          "missing-wells-fargo-vs-jpm",
-          "stale-ge-recent-performance",
-          "stale-gecc-eni-2014",
-          "trend-meta-revenue-two-years",
-          "outlook-tsla-2026",
-          "outlook-meta-capex-2026",
-          "missing-citigroup",
-          "missing-bms-with-merck",
-          "followup-switch-to-msft",
-          "followup-topic-change-export-controls",
-          "followup-ge-to-honeywell"
-        ],
-        "figures": [],
-        "coverageGaps": []
-      },
-      "errors": [
-        "trend-jpm-revenue-snapshot"
-      ]
-    },
-    {
-      "report": "generation-dev-claude-sonnet-5-5.json",
-      "model": "claude-sonnet-5-5",
-      "judgeModel": "jev-1.13.0",
-      "promptVersion": "v7",
-      "overall": {
-        "cases": 20,
-        "citationsValid": 0.6,
-        "figuresExact": 1.0,
-        "coverageGapsStated": 1.0,
-        "factRecall": 0.7352941176470589,
-        "faithfulness": 0.9166340793892775,
-        "meanCostUsd": 0.0805176,
-        "totalCostUsd": 1.610352,
-        "meanLatencyS": 9.2987,
-        "maxLatencyS": 13.867,
-        "meanFirstTokenS": 1.3202500000000001,
-        "meanInputTokens": 33923.55,
-        "meanOutputTokens": 1267.05,
-        "judgeCostUsd": 0.027149598
-      },
-      "byType": [
-        {
-          "questionType": "figure_trend",
-          "cases": 4,
-          "citationsValid": 0.75,
-          "figuresExact": 1.0,
-          "coverageGapsStated": 1.0,
-          "factRecall": 0.7916666666666666,
-          "faithfulness": 0.9408764967975494,
-          "meanCostUsd": 0.122895,
-          "totalCostUsd": 0.49158,
-          "meanLatencyS": 9.8995,
-          "maxLatencyS": 10.19,
-          "meanFirstTokenS": 1.44375,
-          "meanInputTokens": 54411.25,
-          "meanOutputTokens": 1407.25,
-          "judgeCostUsd": 0.006614328000000001
-        },
-        {
-          "questionType": "missing_company",
-          "cases": 4,
-          "citationsValid": 0.5,
-          "figuresExact": 1.0,
-          "coverageGapsStated": 1.0,
-          "factRecall": 1.0,
-          "faithfulness": 0.9852941176470589,
-          "meanCostUsd": 0.037466,
-          "totalCostUsd": 0.149864,
-          "meanLatencyS": 7.3295,
-          "maxLatencyS": 10.281,
-          "meanFirstTokenS": 0.89775,
-          "meanInputTokens": 13813.0,
-          "meanOutputTokens": 984.0,
-          "judgeCostUsd": 0.001948464
-        },
-        {
-          "questionType": "outlook",
-          "cases": 2,
-          "citationsValid": 1.0,
-          "figuresExact": 1.0,
-          "coverageGapsStated": 1.0,
-          "factRecall": 0.75,
-          "faithfulness": 0.9444444444444444,
-          "meanCostUsd": 0.108824,
-          "totalCostUsd": 0.217648,
-          "meanLatencyS": 10.363,
-          "maxLatencyS": 11.03,
-          "meanFirstTokenS": 2.393,
-          "meanInputTokens": 47944.5,
-          "meanOutputTokens": 1293.5,
-          "judgeCostUsd": 0.002239734
+          "detailRecall": 0.42096560846560843,
+          "faithfulness": 0.8511904761904762,
+          "answersContradicted": 0,
+          "truncated": 0,
+          "judgmentsFailed": 0,
+          "meanCostUsd": 0.003080916666666667,
+          "totalCostUsd": 0.018485500000000002,
+          "meanLatencyS": 6.8435,
+          "maxLatencyS": 8.584,
+          "meanFirstTokenS": 2.1518333333333333,
+          "meanInputTokens": 27340.833333333332,
+          "meanOutputTokens": 693.6666666666666,
+          "judgeCostUsd": 0.00654738
         },
         {
           "questionType": "risk",
-          "cases": 6,
-          "citationsValid": 0.6666666666666666,
-          "figuresExact": 1.0,
+          "cases": 18,
+          "citationsValid": 0.8888888888888888,
+          "figuresExact": 0.9444444444444444,
           "coverageGapsStated": 1.0,
-          "factRecall": 0.6944444444444445,
-          "faithfulness": 0.8597222222222222,
-          "meanCostUsd": 0.07437566666666666,
-          "totalCostUsd": 0.446254,
-          "meanLatencyS": 10.3105,
-          "maxLatencyS": 13.867,
-          "meanFirstTokenS": 1.4589999999999999,
-          "meanInputTokens": 30312.833333333332,
-          "meanOutputTokens": 1375.0,
-          "judgeCostUsd": 0.00976164
+          "structureFollowed": 0.6111111111111112,
+          "meanWords": 518.3888888888889,
+          "factRecall": 0.6593694885361552,
+          "detailRecall": 0.488743894993895,
+          "faithfulness": 0.947736396968853,
+          "answersContradicted": 1,
+          "truncated": 0,
+          "judgmentsFailed": 0,
+          "meanCostUsd": 0.0022439055555555556,
+          "totalCostUsd": 0.040390300000000004,
+          "meanLatencyS": 8.698555555555556,
+          "maxLatencyS": 11.644,
+          "meanFirstTokenS": 2.4459999999999997,
+          "meanInputTokens": 18113.5,
+          "meanOutputTokens": 865.1111111111111,
+          "judgeCostUsd": 0.028838628
         },
         {
           "questionType": "sector",
-          "cases": 2,
-          "citationsValid": 0.0,
+          "cases": 14,
+          "citationsValid": 0.8571428571428571,
           "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
-          "factRecall": 0.3333333333333333,
-          "faithfulness": 0.9007314524555904,
-          "meanCostUsd": 0.092424,
-          "totalCostUsd": 0.184848,
-          "meanLatencyS": 10.9395,
-          "maxLatencyS": 11.153,
-          "meanFirstTokenS": 0.8775,
-          "meanInputTokens": 38354.5,
-          "meanOutputTokens": 1571.5,
-          "judgeCostUsd": 0.004207098
+          "structureFollowed": 0.42857142857142855,
+          "meanWords": 576.9285714285714,
+          "factRecall": 0.6572427572427573,
+          "detailRecall": 0.44605553759965527,
+          "faithfulness": 0.9333432518306468,
+          "answersContradicted": 1,
+          "truncated": 0,
+          "judgmentsFailed": 0,
+          "meanCostUsd": 0.002724807142857143,
+          "totalCostUsd": 0.0381473,
+          "meanLatencyS": 9.853642857142857,
+          "maxLatencyS": 11.736,
+          "meanFirstTokenS": 2.458142857142857,
+          "meanInputTokens": 22108.428571428572,
+          "meanOutputTokens": 1027.9285714285713,
+          "judgeCostUsd": 0.028112448
         },
         {
           "questionType": "stale_filing",
-          "cases": 2,
-          "citationsValid": 0.5,
+          "cases": 3,
+          "citationsValid": 0.6666666666666666,
           "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
-          "factRecall": 1.0,
-          "faithfulness": 1.0,
-          "meanCostUsd": 0.060079,
-          "totalCostUsd": 0.120158,
-          "meanLatencyS": 6.295,
-          "maxLatencyS": 9.036,
-          "meanFirstTokenS": 0.8719999999999999,
-          "meanInputTokens": 25549.5,
-          "meanOutputTokens": 898.0,
-          "judgeCostUsd": 0.002378334
+          "structureFollowed": 1.0,
+          "meanWords": 364.0,
+          "factRecall": 0.8333333333333333,
+          "detailRecall": 0.5,
+          "faithfulness": 0.9411764705882353,
+          "answersContradicted": 1,
+          "truncated": 0,
+          "judgmentsFailed": 0,
+          "meanCostUsd": 0.0015779666666666666,
+          "totalCostUsd": 0.0047339,
+          "meanLatencyS": 5.766333333333333,
+          "maxLatencyS": 7.883,
+          "meanFirstTokenS": 1.1626666666666665,
+          "meanInputTokens": 13183.0,
+          "meanOutputTokens": 519.3333333333334,
+          "judgeCostUsd": 0.0011294640000000002
         }
       ],
       "failing": {
         "citations": [
-          "sector-pharma-regulatory",
           "stale-ge-recent-performance",
-          "sector-aerospace-government",
-          "risk-bac-change-snapshot",
-          "missing-citigroup",
-          "followup-switch-to-msft",
-          "followup-topic-change-export-controls",
-          "followup-ge-to-honeywell"
+          "trend-aapl-revenue-fy2025",
+          "outlook-tsla-2026",
+          "followup-regulatory-exposure",
+          "risk-nke-sbux-hd-consumer-demand",
+          "sector-health-care-liability-claims",
+          "sector-consumer-staples-key-customers",
+          "missing-kroger-with-walmart"
         ],
-        "figures": [],
+        "figures": [
+          "trend-tsla-net-income-three-years",
+          "risk-meta-amzn-legal-proceedings",
+          "trend-goog-cloud-two-years",
+          "trend-goog-meta-net-income-two-years",
+          "gap-cat-sales-snapshot",
+          "gap-msft-goog-capex-periods-differ"
+        ],
         "coverageGaps": []
       },
       "errors": []
     },
     {
-      "report": "generation-dev-gpt-6.1-sol.json",
-      "model": "gpt-6.1-sol",
+      "report": "generation-control-dev.json",
+      "model": "gpt-6-luna",
       "judgeModel": "jev-1.13.0",
       "promptVersion": "v7",
+      "controlRun": true,
+      "factCutoff": 0.6,
+      "answersPassed": 45,
       "overall": {
-        "cases": 19,
-        "citationsValid": 0.7894736842105263,
-        "figuresExact": 0.8947368421052632,
+        "cases": 60,
+        "citationsValid": 0.8666666666666667,
+        "figuresExact": 0.9,
         "coverageGapsStated": 1.0,
-        "factRecall": 0.7321428571428571,
-        "faithfulness": 0.9510668452923887,
-        "meanCostUsd": 0.04921842105263158,
-        "totalCostUsd": 0.93515,
-        "meanLatencyS": 13.215315789473685,
-        "maxLatencyS": 19.815,
-        "meanFirstTokenS": 1.4013684210526316,
-        "meanInputTokens": 21151.315789473683,
-        "meanOutputTokens": 691.578947368421,
-        "judgeCostUsd": 0.023610216
+        "structureFollowed": 0.75,
+        "meanWords": 466.5833333333333,
+        "factRecall": 0.7115255115255115,
+        "detailRecall": 0.4855706270566951,
+        "faithfulness": 0.9192743295444041,
+        "answersContradicted": 8,
+        "truncated": 0,
+        "judgmentsFailed": 2,
+        "meanCostUsd": 0.002808931666666667,
+        "totalCostUsd": 0.16853590000000002,
+        "meanLatencyS": 8.478816666666667,
+        "maxLatencyS": 11.949,
+        "meanFirstTokenS": 2.327716666666667,
+        "meanInputTokens": 23760.316666666666,
+        "meanOutputTokens": 865.8,
+        "judgeCostUsd": 0.09085881000000001
       },
       "byType": [
         {
           "questionType": "figure_trend",
-          "cases": 3,
-          "citationsValid": 1.0,
-          "figuresExact": 0.6666666666666666,
-          "coverageGapsStated": null,
-          "factRecall": 0.7222222222222222,
-          "faithfulness": 0.9209401709401709,
-          "meanCostUsd": 0.08271066666666667,
-          "totalCostUsd": 0.24813200000000002,
-          "meanLatencyS": 15.183,
-          "maxLatencyS": 15.953,
-          "meanFirstTokenS": 1.4110000000000003,
-          "meanInputTokens": 36710.333333333336,
-          "meanOutputTokens": 929.0,
-          "judgeCostUsd": 0.00339171
+          "cases": 14,
+          "citationsValid": 0.6428571428571429,
+          "figuresExact": 0.6428571428571429,
+          "coverageGapsStated": 1.0,
+          "structureFollowed": 1.0,
+          "meanWords": 380.5,
+          "factRecall": 0.7827380952380952,
+          "detailRecall": 0.49792310863739436,
+          "faithfulness": 0.851419413919414,
+          "answersContradicted": 2,
+          "truncated": 0,
+          "judgmentsFailed": 2,
+          "meanCostUsd": 0.004312314285714286,
+          "totalCostUsd": 0.0603724,
+          "meanLatencyS": 9.126214285714285,
+          "maxLatencyS": 11.949,
+          "meanFirstTokenS": 3.1064285714285718,
+          "meanInputTokens": 38357.78571428572,
+          "meanOutputTokens": 953.0714285714286,
+          "judgeCostUsd": 0.020191962
         },
         {
           "questionType": "missing_company",
-          "cases": 4,
-          "citationsValid": 0.5,
+          "cases": 5,
+          "citationsValid": 1.0,
           "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
-          "factRecall": 1.0,
-          "faithfulness": 0.9782608695652174,
-          "meanCostUsd": 0.0212065,
-          "totalCostUsd": 0.084826,
-          "meanLatencyS": 9.2065,
-          "maxLatencyS": 15.062,
-          "meanFirstTokenS": 1.45975,
-          "meanInputTokens": 8463.25,
-          "meanOutputTokens": 428.0,
-          "judgeCostUsd": 0.00174216
+          "structureFollowed": 1.0,
+          "meanWords": 317.4,
+          "factRecall": 0.8333333333333334,
+          "detailRecall": 0.6759259259259259,
+          "faithfulness": 0.9228291836987489,
+          "answersContradicted": 0,
+          "truncated": 0,
+          "judgmentsFailed": 0,
+          "meanCostUsd": 0.0012433,
+          "totalCostUsd": 0.0062165,
+          "meanLatencyS": 5.42,
+          "maxLatencyS": 8.976,
+          "meanFirstTokenS": 1.525,
+          "meanInputTokens": 9891.0,
+          "meanOutputTokens": 508.4,
+          "judgeCostUsd": 0.004250778
         },
         {
           "questionType": "outlook",
-          "cases": 2,
+          "cases": 6,
           "citationsValid": 1.0,
-          "figuresExact": 0.5,
+          "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
-          "factRecall": 1.0,
-          "faithfulness": 1.0,
-          "meanCostUsd": 0.07139999999999999,
-          "totalCostUsd": 0.14279999999999998,
-          "meanLatencyS": 11.978000000000002,
-          "maxLatencyS": 14.23,
-          "meanFirstTokenS": 1.3119999999999998,
-          "meanInputTokens": 32312.5,
-          "meanOutputTokens": 677.5,
-          "judgeCostUsd": 0.001049328
+          "structureFollowed": 0.8333333333333334,
+          "meanWords": 402.1666666666667,
+          "factRecall": 0.7361111111111112,
+          "detailRecall": 0.4417989417989418,
+          "faithfulness": 0.9248366013071895,
+          "answersContradicted": 2,
+          "truncated": 0,
+          "judgmentsFailed": 0,
+          "meanCostUsd": 0.0030670833333333336,
+          "totalCostUsd": 0.018402500000000002,
+          "meanLatencyS": 6.546500000000001,
+          "maxLatencyS": 8.054,
+          "meanFirstTokenS": 1.6049999999999998,
+          "meanInputTokens": 27340.833333333332,
+          "meanOutputTokens": 666.0,
+          "judgeCostUsd": 0.005353992
         },
         {
           "questionType": "risk",
-          "cases": 6,
-          "citationsValid": 0.8333333333333334,
-          "figuresExact": 1.0,
+          "cases": 18,
+          "citationsValid": 0.9444444444444444,
+          "figuresExact": 0.9444444444444444,
           "coverageGapsStated": 1.0,
-          "factRecall": 0.6468253968253969,
-          "faithfulness": 0.9446969696969697,
-          "meanCostUsd": 0.04486866666666667,
-          "totalCostUsd": 0.269212,
-          "meanLatencyS": 15.123166666666668,
-          "maxLatencyS": 19.138,
-          "meanFirstTokenS": 1.2651666666666668,
-          "meanInputTokens": 18581.0,
-          "meanOutputTokens": 770.6666666666666,
-          "judgeCostUsd": 0.011738412
+          "structureFollowed": 0.6666666666666666,
+          "meanWords": 520.6666666666666,
+          "factRecall": 0.674074074074074,
+          "detailRecall": 0.48770234395234396,
+          "faithfulness": 0.9592673814165043,
+          "answersContradicted": 1,
+          "truncated": 0,
+          "judgmentsFailed": 0,
+          "meanCostUsd": 0.0022507666666666667,
+          "totalCostUsd": 0.0405138,
+          "meanLatencyS": 8.764055555555554,
+          "maxLatencyS": 10.568,
+          "meanFirstTokenS": 2.362888888888889,
+          "meanInputTokens": 18113.5,
+          "meanOutputTokens": 878.8333333333334,
+          "judgeCostUsd": 0.030884616000000004
         },
         {
           "questionType": "sector",
-          "cases": 2,
-          "citationsValid": 1.0,
+          "cases": 14,
+          "citationsValid": 0.8571428571428571,
           "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
-          "factRecall": 0.3333333333333333,
-          "faithfulness": 0.9772727272727273,
-          "meanCostUsd": 0.056073,
-          "totalCostUsd": 0.112146,
-          "meanLatencyS": 18.6705,
-          "maxLatencyS": 19.815,
-          "meanFirstTokenS": 1.884,
-          "meanInputTokens": 23509.0,
-          "meanOutputTokens": 905.5,
-          "judgeCostUsd": 0.00510762
+          "structureFollowed": 0.42857142857142855,
+          "meanWords": 591.2142857142857,
+          "factRecall": 0.6582348207348208,
+          "detailRecall": 0.4624563286853203,
+          "faithfulness": 0.9268801906727603,
+          "answersContradicted": 2,
+          "truncated": 0,
+          "judgmentsFailed": 0,
+          "meanCostUsd": 0.0027356285714285715,
+          "totalCostUsd": 0.0382988,
+          "meanLatencyS": 10.067214285714286,
+          "maxLatencyS": 11.706,
+          "meanFirstTokenS": 2.3047142857142857,
+          "meanInputTokens": 22108.428571428572,
+          "meanOutputTokens": 1049.5714285714287,
+          "judgeCostUsd": 0.028664790000000002
         },
         {
           "questionType": "stale_filing",
-          "cases": 2,
-          "citationsValid": 0.5,
+          "cases": 3,
+          "citationsValid": 1.0,
           "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
-          "factRecall": 1.0,
-          "faithfulness": 0.875,
-          "meanCostUsd": 0.039017,
-          "totalCostUsd": 0.078034,
-          "meanLatencyS": 8.34,
-          "maxLatencyS": 13.396,
-          "meanFirstTokenS": 1.2855,
-          "meanInputTokens": 17381.0,
-          "meanOutputTokens": 425.5,
-          "judgeCostUsd": 0.000580986
+          "structureFollowed": 1.0,
+          "meanWords": 339.6666666666667,
+          "factRecall": 0.6666666666666666,
+          "detailRecall": 0.3875,
+          "faithfulness": 0.9251336898395721,
+          "answersContradicted": 1,
+          "truncated": 0,
+          "judgmentsFailed": 0,
+          "meanCostUsd": 0.0015773000000000002,
+          "totalCostUsd": 0.004731900000000001,
+          "meanLatencyS": 5.296333333333334,
+          "maxLatencyS": 7.118,
+          "meanFirstTokenS": 1.3733333333333333,
+          "meanInputTokens": 13183.0,
+          "meanOutputTokens": 518.0,
+          "judgeCostUsd": 0.001512672
         }
       ],
       "failing": {
         "citations": [
-          "stale-ge-recent-performance",
-          "risk-bac-change-snapshot",
-          "missing-citigroup",
-          "followup-ge-to-honeywell"
+          "sector-aerospace-government",
+          "trend-jpm-revenue-snapshot",
+          "followup-regulatory-exposure",
+          "trend-goog-cloud-two-years",
+          "trend-ko-revenue-two-years",
+          "trend-goog-meta-net-income-two-years",
+          "sector-energy-operational-risks",
+          "gap-cat-sales-snapshot"
         ],
         "figures": [
+          "trend-aapl-revenue-fy2025",
           "trend-tsla-net-income-three-years",
-          "outlook-meta-capex-2026"
+          "risk-meta-amzn-legal-proceedings",
+          "trend-xom-net-income-2025",
+          "gap-cat-sales-snapshot",
+          "gap-msft-goog-capex-periods-differ"
         ],
         "coverageGaps": []
       },
-      "errors": [
-        "trend-jpm-revenue-snapshot"
-      ]
+      "errors": []
+    },
+    {
+      "report": "generation-dev-claude-haiku-5-5.json",
+      "model": "claude-haiku-5-5",
+      "judgeModel": "jev-1.13.0",
+      "promptVersion": "v7",
+      "controlRun": false,
+      "factCutoff": 0.6,
+      "answersPassed": 19,
+      "overall": {
+        "cases": 60,
+        "citationsValid": 0.4166666666666667,
+        "figuresExact": 0.9,
+        "coverageGapsStated": 0.9722222222222222,
+        "structureFollowed": 0.5,
+        "meanWords": 422.71666666666664,
+        "factRecall": 0.3798454469507101,
+        "detailRecall": 0.44244162413667054,
+        "faithfulness": 0.8237513839401098,
+        "answersContradicted": 10,
+        "truncated": 27,
+        "judgmentsFailed": 0,
+        "meanCostUsd": 0.004711805,
+        "totalCostUsd": 0.2827083,
+        "meanLatencyS": 9.534233333333333,
+        "maxLatencyS": 12.543,
+        "meanFirstTokenS": 5.3015593220338975,
+        "meanInputTokens": 36649.96666666667,
+        "meanOutputTokens": 2093.616666666667,
+        "judgeCostUsd": 0.086904384
+      },
+      "byType": [
+        {
+          "questionType": "figure_trend",
+          "cases": 14,
+          "citationsValid": 0.14285714285714285,
+          "figuresExact": 0.7142857142857143,
+          "coverageGapsStated": 1.0,
+          "structureFollowed": 0.5714285714285714,
+          "meanWords": 349.14285714285717,
+          "factRecall": 0.46726190476190477,
+          "detailRecall": 0.403027726242012,
+          "faithfulness": 0.7791130298273156,
+          "answersContradicted": 4,
+          "truncated": 6,
+          "judgmentsFailed": 0,
+          "meanCostUsd": 0.006598592857142857,
+          "totalCostUsd": 0.0923803,
+          "meanLatencyS": 10.017714285714286,
+          "maxLatencyS": 11.869,
+          "meanFirstTokenS": 6.221428571428571,
+          "meanInputTokens": 55039.142857142855,
+          "meanOutputTokens": 2189.3571428571427,
+          "judgeCostUsd": 0.020902854000000002
+        },
+        {
+          "questionType": "missing_company",
+          "cases": 5,
+          "citationsValid": 1.0,
+          "figuresExact": 1.0,
+          "coverageGapsStated": 1.0,
+          "structureFollowed": 1.0,
+          "meanWords": 345.8,
+          "factRecall": 0.6944444444444445,
+          "detailRecall": 0.6620370370370371,
+          "faithfulness": 0.9276895943562611,
+          "answersContradicted": 0,
+          "truncated": 0,
+          "judgmentsFailed": 0,
+          "meanCostUsd": 0.00229808,
+          "totalCostUsd": 0.0114904,
+          "meanLatencyS": 6.4226,
+          "maxLatencyS": 9.779,
+          "meanFirstTokenS": 3.1374,
+          "meanInputTokens": 16144.8,
+          "meanOutputTokens": 1367.2,
+          "judgeCostUsd": 0.0037473240000000002
+        },
+        {
+          "questionType": "outlook",
+          "cases": 6,
+          "citationsValid": 0.5,
+          "figuresExact": 1.0,
+          "coverageGapsStated": 1.0,
+          "structureFollowed": 0.8333333333333334,
+          "meanWords": 470.3333333333333,
+          "factRecall": 0.5833333333333334,
+          "detailRecall": 0.6646825396825397,
+          "faithfulness": 0.8638278388278389,
+          "answersContradicted": 2,
+          "truncated": 2,
+          "judgmentsFailed": 0,
+          "meanCostUsd": 0.0053425,
+          "totalCostUsd": 0.032055,
+          "meanLatencyS": 9.8155,
+          "maxLatencyS": 11.306,
+          "meanFirstTokenS": 5.4206666666666665,
+          "meanInputTokens": 42537.5,
+          "meanOutputTokens": 2177.5,
+          "judgeCostUsd": 0.010077816
+        },
+        {
+          "questionType": "risk",
+          "cases": 18,
+          "citationsValid": 0.5,
+          "figuresExact": 0.9444444444444444,
+          "coverageGapsStated": 1.0,
+          "structureFollowed": 0.3888888888888889,
+          "meanWords": 485.1111111111111,
+          "factRecall": 0.35,
+          "detailRecall": 0.4598496410996411,
+          "faithfulness": 0.8143002655362402,
+          "answersContradicted": 3,
+          "truncated": 8,
+          "judgmentsFailed": 0,
+          "meanCostUsd": 0.003996277777777777,
+          "totalCostUsd": 0.071933,
+          "meanLatencyS": 9.594000000000001,
+          "maxLatencyS": 11.737,
+          "meanFirstTokenS": 4.923555555555556,
+          "meanInputTokens": 29305.555555555555,
+          "meanOutputTokens": 2131.4444444444443,
+          "judgeCostUsd": 0.026609646
+        },
+        {
+          "questionType": "sector",
+          "cases": 14,
+          "citationsValid": 0.2857142857142857,
+          "figuresExact": 0.9285714285714286,
+          "coverageGapsStated": 0.9230769230769231,
+          "structureFollowed": 0.14285714285714285,
+          "meanWords": 434.57142857142856,
+          "factRecall": 0.09948979591836735,
+          "detailRecall": 0.3089488942430119,
+          "faithfulness": 0.8204400887724816,
+          "answersContradicted": 1,
+          "truncated": 11,
+          "judgmentsFailed": 0,
+          "meanCostUsd": 0.004779864285714286,
+          "totalCostUsd": 0.06691810000000001,
+          "meanLatencyS": 10.608428571428572,
+          "maxLatencyS": 12.543,
+          "meanFirstTokenS": 6.142769230769231,
+          "meanInputTokens": 36166.142857142855,
+          "meanOutputTokens": 2326.5,
+          "judgeCostUsd": 0.022977696000000002
+        },
+        {
+          "questionType": "stale_filing",
+          "cases": 3,
+          "citationsValid": 0.6666666666666666,
+          "figuresExact": 1.0,
+          "coverageGapsStated": 1.0,
+          "structureFollowed": 1.0,
+          "meanWords": 369.3333333333333,
+          "factRecall": 0.9166666666666667,
+          "detailRecall": 0.5,
+          "faithfulness": 0.9666666666666667,
+          "answersContradicted": 0,
+          "truncated": 0,
+          "judgmentsFailed": 0,
+          "meanCostUsd": 0.0026438333333333335,
+          "totalCostUsd": 0.007931500000000001,
+          "meanLatencyS": 6.53,
+          "maxLatencyS": 10.696,
+          "meanFirstTokenS": 3.0003333333333333,
+          "meanInputTokens": 19558.333333333332,
+          "meanOutputTokens": 1376.0,
+          "judgeCostUsd": 0.002589048
+        }
+      ],
+      "failing": {
+        "citations": [
+          "risk-aapl-nvda-supply-chain",
+          "sector-software-ai-risks",
+          "sector-aerospace-government",
+          "trend-jpm-revenue-snapshot",
+          "stale-ge-recent-performance",
+          "trend-aapl-revenue-fy2025",
+          "trend-tsla-net-income-three-years",
+          "trend-amzn-aws-two-years",
+          "outlook-msft-cloud",
+          "outlook-meta-capex-2026",
+          "followup-switch-to-msft",
+          "followup-tsla-risk-change",
+          "followup-topic-change-export-controls",
+          "risk-meta-amzn-legal-proceedings",
+          "risk-goog-meta-ai",
+          "risk-t-vz-cmcsa-regulation",
+          "risk-nke-sbux-hd-consumer-demand",
+          "risk-nvda-amd-competition",
+          "risk-wmt-tgt-legal-proceedings",
+          "trend-goog-cloud-two-years",
+          "trend-dis-segments-fy2025",
+          "trend-ko-revenue-two-years",
+          "trend-pfe-jnj-revenue-2024",
+          "trend-goog-meta-net-income-two-years",
+          "outlook-nflx-growth",
+          "sector-industrials-tariffs",
+          "sector-banks-capital-liquidity",
+          "sector-software-cybersecurity",
+          "sector-pharma-research-and-development",
+          "sector-health-care-liability-claims",
+          "sector-consumer-staples-key-customers",
+          "sector-consumer-discretionary-climate",
+          "sector-communication-services-advertising",
+          "gap-cat-sales-snapshot",
+          "gap-msft-goog-capex-periods-differ"
+        ],
+        "figures": [
+          "trend-aapl-revenue-fy2025",
+          "trend-amzn-aws-two-years",
+          "followup-topic-change-export-controls",
+          "sector-industrials-tariffs",
+          "gap-cat-sales-snapshot",
+          "gap-msft-goog-capex-periods-differ"
+        ],
+        "coverageGaps": [
+          "sector-semiconductors-customer-concentration"
+        ]
+      },
+      "errors": []
     }
   ],
   "generatorChoice": {
     "shipped": "gpt-6-luna",
     "chosen": "gpt-6-luna",
+    "inconclusive": false,
+    "reason": null,
+    "control": {
+      "model": "Control Run",
+      "cases": 60,
+      "factRecall": {
+        "challengerOnly": 11,
+        "shippedOnly": 10,
+        "pValue": 1.0,
+        "pAhead": 0.5,
+        "pBehind": 0.6681880950927734,
+        "paired": 57,
+        "leftOut": 0,
+        "verdict": "indistinguishable",
+        "difference": {
+          "mean": -0.005346700083542193,
+          "low": -0.05788081314397105,
+          "high": 0.038923698134224444,
+          "confidence": 0.95
+        }
+      },
+      "faithfulness": {
+        "challengerOnly": 17,
+        "shippedOnly": 23,
+        "pValue": 0.42959050784338615,
+        "pAhead": 0.8659063744726154,
+        "pBehind": 0.21479525392169307,
+        "paired": 56,
+        "leftOut": 0,
+        "verdict": "indistinguishable",
+        "difference": {
+          "mean": -0.008322765708042754,
+          "low": -0.04164079377908387,
+          "high": 0.02792601559727977,
+          "confidence": 0.95
+        }
+      },
+      "coverageGaps": {
+        "challengerOnly": 0,
+        "shippedOnly": 0,
+        "pValue": 1.0,
+        "pAhead": 1.0,
+        "pBehind": 1.0,
+        "paired": 36,
+        "leftOut": 0,
+        "verdict": "indistinguishable",
+        "difference": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "confidence": 0.95
+        }
+      },
+      "contradictedClaims": {
+        "challengerOnly": 3,
+        "shippedOnly": 4,
+        "pValue": 1.0,
+        "pAhead": 0.7734375,
+        "pBehind": 0.5,
+        "paired": 59,
+        "leftOut": 0,
+        "verdict": "indistinguishable",
+        "difference": {
+          "mean": -0.01694915254237288,
+          "low": -0.1016949152542373,
+          "high": 0.06779661016949153,
+          "confidence": 0.95
+        }
+      },
+      "qualifies": false
+    },
     "comparisons": [
       {
-        "model": "gpt-6.1-sol",
-        "cases": 19,
+        "model": "claude-haiku-5-5",
+        "cases": 60,
         "factRecall": {
-          "challengerOnly": 4,
+          "challengerOnly": 5,
+          "shippedOnly": 35,
+          "pValue": 1.382612026645802e-06,
+          "pAhead": 0.9999999071487764,
+          "pBehind": 6.91306013322901e-07,
+          "paired": 57,
+          "leftOut": 0,
+          "verdict": "behind",
+          "difference": {
+            "mean": -0.3370267646583436,
+            "low": -0.4355843961107119,
+            "high": -0.24081401055085266,
+            "confidence": 0.95
+          }
+        },
+        "faithfulness": {
+          "challengerOnly": 11,
+          "shippedOnly": 37,
+          "pValue": 0.00022224496262168714,
+          "pAhead": 0.9999691517961118,
+          "pBehind": 0.00011112248131084357,
+          "paired": 55,
+          "leftOut": 2,
+          "verdict": "behind",
+          "difference": {
+            "mean": -0.0991537285742929,
+            "low": -0.15341404937498496,
+            "high": -0.04755918397881455,
+            "confidence": 0.95
+          }
+        },
+        "coverageGaps": {
+          "challengerOnly": 0,
           "shippedOnly": 1,
-          "pValue": 0.375,
-          "verdict": "indistinguishable"
-        },
-        "faithfulness": {
-          "challengerOnly": 8,
-          "shippedOnly": 4,
-          "pValue": 0.3876953125,
-          "verdict": "indistinguishable"
-        },
-        "coverageGaps": {
-          "challengerOnly": 0,
-          "shippedOnly": 0,
           "pValue": 1.0,
-          "verdict": "indistinguishable"
+          "pAhead": 1.0,
+          "pBehind": 0.5,
+          "paired": 36,
+          "leftOut": 0,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": -0.027777777777777776,
+            "low": -0.08333333333333333,
+            "high": 0.0,
+            "confidence": 0.95
+          }
         },
-        "qualifies": false
-      },
-      {
-        "model": "claude-sonnet-5-5",
-        "cases": 19,
-        "factRecall": {
+        "contradictedClaims": {
           "challengerOnly": 5,
-          "shippedOnly": 0,
-          "pValue": 0.0625,
-          "verdict": "indistinguishable"
-        },
-        "faithfulness": {
-          "challengerOnly": 8,
-          "shippedOnly": 6,
-          "pValue": 0.79052734375,
-          "verdict": "indistinguishable"
-        },
-        "coverageGaps": {
-          "challengerOnly": 0,
-          "shippedOnly": 0,
-          "pValue": 1.0,
-          "verdict": "indistinguishable"
-        },
-        "qualifies": false
-      },
-      {
-        "model": "claude-opus-5-5",
-        "cases": 19,
-        "factRecall": {
-          "challengerOnly": 5,
-          "shippedOnly": 0,
-          "pValue": 0.0625,
-          "verdict": "indistinguishable"
-        },
-        "faithfulness": {
-          "challengerOnly": 8,
-          "shippedOnly": 6,
-          "pValue": 0.79052734375,
-          "verdict": "indistinguishable"
-        },
-        "coverageGaps": {
-          "challengerOnly": 0,
-          "shippedOnly": 0,
-          "pValue": 1.0,
-          "verdict": "indistinguishable"
+          "shippedOnly": 7,
+          "pValue": 0.7744140625,
+          "pAhead": 0.80615234375,
+          "pBehind": 0.38720703125,
+          "paired": 59,
+          "leftOut": 1,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": -0.03389830508474576,
+            "low": -0.15254237288135594,
+            "high": 0.0847457627118644,
+            "confidence": 0.95
+          }
         },
         "qualifies": false
       }
     ]
   },
+  "briefSuite": {
+    "model": "gpt-6-luna",
+    "judgeModel": "jev-1.13.0",
+    "promptVersion": "v7",
+    "settings": "chunks-600-budget-32000",
+    "runs": 5,
+    "passRuns": 4,
+    "casesPassed": 1,
+    "cases": [
+      {
+        "caseId": "brief-risk-aapl-tsla-jpm",
+        "question": "What are the primary risk factors facing Apple, Tesla, and JPMorgan, and how do they compare?",
+        "briefQuestion": true,
+        "passed": false,
+        "mustState": 9,
+        "missed": [
+          {
+            "fact": "Apple says it is subject to antitrust investigations and litigation in various jurisdictions around the world.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          }
+        ],
+        "contradictedRuns": [],
+        "truncatedRuns": [],
+        "failedRuns": []
+      },
+      {
+        "caseId": "brief-outlook-nvda-revenue-two-years",
+        "question": "How has NVIDIA's revenue and growth outlook changed over the last two years?",
+        "briefQuestion": true,
+        "passed": false,
+        "mustState": 7,
+        "missed": [
+          {
+            "fact": "NVIDIA said at the end of fiscal 2024 that it expected its next-generation products to be supply-constrained based on demand indications.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "NVIDIA says its Blackwell architectures are the majority of its Data Center revenue.",
+            "statedRuns": 2,
+            "evidenceReachedRuns": 5
+          },
+          {
+            "fact": "NVIDIA incurred a charge in the first quarter of fiscal 2026 for H20 excess inventory and purchase obligations.",
+            "statedRuns": 2,
+            "evidenceReachedRuns": 0
+          }
+        ],
+        "contradictedRuns": [],
+        "truncatedRuns": [],
+        "failedRuns": []
+      },
+      {
+        "caseId": "brief-sector-pharma-regulatory",
+        "question": "What regulatory risks do the major pharmaceutical companies face, and how are they addressing them?",
+        "briefQuestion": true,
+        "passed": false,
+        "mustState": 9,
+        "missed": [
+          {
+            "fact": "AbbVie says the Inflation Reduction Act will reduce prices and reimbursements for certain of its products.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Johnson & Johnson says the Inflation Reduction Act has subjected certain of its products to government-established pricing beginning in 2026.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Johnson & Johnson's Janssen unit filed litigation in July 2023 challenging the constitutionality of the IRA's Medicare Drug Price Negotiation Program.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Eli Lilly announced preliminary voluntary agreements with the U.S. government in November 2025 under which it agreed to lower Medicaid and certain other drug prices for U.S. patients.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Merck expects U.S. sales of Keytruda to decline beginning in January 2028 when government pricing under the Inflation Reduction Act takes effect.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Merck has sued the U.S. government over the IRA's Drug Price Negotiation Program.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Pfizer says changes in U.S. and international regulations that mandate price controls could adversely affect its future results.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Pfizer says it has engaged with major payors and the U.S. government to explore opportunities to improve access and reimbursement.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          }
+        ],
+        "contradictedRuns": [],
+        "truncatedRuns": [],
+        "failedRuns": []
+      },
+      {
+        "caseId": "brief-risk-aapl-tsla-jpm-rephrased",
+        "question": "How do the biggest risks that Apple, Tesla and JPMorgan disclose stack up against each other?",
+        "briefQuestion": false,
+        "passed": false,
+        "mustState": 9,
+        "missed": [
+          {
+            "fact": "Apple says it is subject to antitrust investigations and litigation in various jurisdictions around the world.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Tesla says U.S. trade policy changes in 2025, including higher import tariffs, have impacted its supply chain costs.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "JPMorgan says its ability to distribute capital to shareholders could be limited if it does not satisfy regulatory capital requirements.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 5
+          }
+        ],
+        "contradictedRuns": [],
+        "truncatedRuns": [],
+        "failedRuns": []
+      },
+      {
+        "caseId": "brief-risk-msft-xom-unh",
+        "question": "What are the primary risk factors facing Microsoft, Exxon Mobil, and UnitedHealth, and how do they compare?",
+        "briefQuestion": false,
+        "passed": false,
+        "mustState": 9,
+        "missed": [
+          {
+            "fact": "Microsoft says it faces intense competition across all markets for its products and services.",
+            "statedRuns": 3,
+            "evidenceReachedRuns": 5
+          },
+          {
+            "fact": "Microsoft says it is incurring significant costs to build and maintain infrastructure for cloud-based and AI services, reducing its operating margins.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Microsoft says it has experienced cybersecurity incidents in which threat actors gained unauthorized access to its systems and data.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "ExxonMobil says government policies to reduce greenhouse gas emissions could reduce demand for hydrocarbons.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "UnitedHealth says a reduction or protracted delay in government funding for the health care programs it participates in may materially and adversely affect its results.",
+            "statedRuns": 2,
+            "evidenceReachedRuns": 5
+          }
+        ],
+        "contradictedRuns": [],
+        "truncatedRuns": [],
+        "failedRuns": []
+      },
+      {
+        "caseId": "brief-risk-aapl-tsla-jpm-fy2025-quarterly-updates",
+        "question": "What new or updated risk factors did Apple, Tesla and JPMorgan report in their fiscal 2025 quarterly reports?",
+        "briefQuestion": false,
+        "passed": false,
+        "mustState": 5,
+        "missed": [
+          {
+            "fact": "Apple's first-quarter fiscal 2025 10-Q says the DOJ's proposed remedies against Google could prohibit Google from offering Apple commercial terms for search distribution for up to 10 years.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Apple's second-quarter fiscal 2025 10-Q says new U.S. tariffs were announced beginning in the second quarter of fiscal 2025, including on imports from China and India.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Tesla's first-quarter 2025 10-Q says the United States has announced changes to trade policy, including increasing tariffs on imports.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Tesla's second-quarter 2025 10-Q says recent government actions have repealed or restricted consumer, manufacturing and charging infrastructure tax credits.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "JPMorgan's first-quarter 2025 10-Q refers to the risk factors in its 2024 Form 10-K rather than setting out new ones.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          }
+        ],
+        "contradictedRuns": [
+          4
+        ],
+        "truncatedRuns": [],
+        "failedRuns": []
+      },
+      {
+        "caseId": "brief-followup-aapl-tsla-jpm-cybersecurity",
+        "question": "How do their cybersecurity risks compare?",
+        "briefQuestion": false,
+        "passed": false,
+        "mustState": 6,
+        "missed": [
+          {
+            "fact": "Tesla says its information technology systems or data could be subject to cyber-attacks that could result in data breaches and intellectual property theft.",
+            "statedRuns": 2,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Tesla says malicious entities have reportedly attempted to gain unauthorized access to its products' systems to gain control of or change their functionality.",
+            "statedRuns": 2,
+            "evidenceReachedRuns": 5
+          }
+        ],
+        "contradictedRuns": [],
+        "truncatedRuns": [],
+        "failedRuns": []
+      },
+      {
+        "caseId": "brief-outlook-nvda-revenue-rephrased",
+        "question": "Over the past two years, what has happened to NVIDIA's revenue, and how has its view of future growth shifted?",
+        "briefQuestion": false,
+        "passed": false,
+        "mustState": 7,
+        "missed": [
+          {
+            "fact": "NVIDIA incurred a charge in the first quarter of fiscal 2026 for H20 excess inventory and purchase obligations.",
+            "statedRuns": 3,
+            "evidenceReachedRuns": 5
+          }
+        ],
+        "contradictedRuns": [],
+        "truncatedRuns": [],
+        "failedRuns": []
+      },
+      {
+        "caseId": "brief-outlook-unh-revenue-two-years",
+        "question": "How has UnitedHealth's revenue and growth outlook changed over the last two years?",
+        "briefQuestion": false,
+        "passed": false,
+        "mustState": 5,
+        "missed": [
+          {
+            "fact": "UnitedHealth said in its 2023 annual report that increased care patterns, primarily for seniors' outpatient procedures, were expected to persist throughout 2024.",
+            "statedRuns": 2,
+            "evidenceReachedRuns": 5
+          }
+        ],
+        "contradictedRuns": [
+          1,
+          4
+        ],
+        "truncatedRuns": [],
+        "failedRuns": []
+      },
+      {
+        "caseId": "brief-outlook-nvda-revenue-fy2024",
+        "question": "How did NVIDIA's revenue and growth outlook change during fiscal 2024?",
+        "briefQuestion": false,
+        "passed": false,
+        "mustState": 5,
+        "missed": [
+          {
+            "fact": "NVIDIA said in the second quarter of fiscal 2024 that demand for its data center systems and products had surged, with demand visibility extending into the next year.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "NVIDIA said at the end of fiscal 2024 that it expected its next-generation products to be supply-constrained based on demand indications.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          }
+        ],
+        "contradictedRuns": [],
+        "truncatedRuns": [],
+        "failedRuns": []
+      },
+      {
+        "caseId": "brief-followup-nvda-net-income",
+        "question": "How did its net income change over the same period?",
+        "briefQuestion": false,
+        "passed": true,
+        "mustState": 3,
+        "missed": [],
+        "contradictedRuns": [],
+        "truncatedRuns": [],
+        "failedRuns": []
+      },
+      {
+        "caseId": "brief-sector-pharma-regulatory-rephrased",
+        "question": "Which regulatory risks do the big drugmakers disclose, and what are they doing in response?",
+        "briefQuestion": false,
+        "passed": false,
+        "mustState": 9,
+        "missed": [
+          {
+            "fact": "AbbVie says the Inflation Reduction Act will reduce prices and reimbursements for certain of its products.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Johnson & Johnson says the Inflation Reduction Act has subjected certain of its products to government-established pricing beginning in 2026.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Johnson & Johnson's Janssen unit filed litigation in July 2023 challenging the constitutionality of the IRA's Medicare Drug Price Negotiation Program.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Eli Lilly announced preliminary voluntary agreements with the U.S. government in November 2025 under which it agreed to lower Medicaid and certain other drug prices for U.S. patients.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Merck expects U.S. sales of Keytruda to decline beginning in January 2028 when government pricing under the Inflation Reduction Act takes effect.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Merck has sued the U.S. government over the IRA's Drug Price Negotiation Program.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Pfizer says changes in U.S. and international regulations that mandate price controls could adversely affect its future results.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Pfizer says it has engaged with major payors and the U.S. government to explore opportunities to improve access and reimbursement.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          }
+        ],
+        "contradictedRuns": [],
+        "truncatedRuns": [],
+        "failedRuns": []
+      },
+      {
+        "caseId": "brief-sector-health-care-regulatory",
+        "question": "What regulatory risks do the major health care companies face, and how are they addressing them?",
+        "briefQuestion": false,
+        "passed": false,
+        "mustState": 13,
+        "missed": [
+          {
+            "fact": "AbbVie says the Inflation Reduction Act will reduce prices and reimbursements for certain of its products.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Johnson & Johnson says the Inflation Reduction Act has subjected certain of its products to government-established pricing beginning in 2026.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Johnson & Johnson's Janssen unit filed litigation in July 2023 challenging the constitutionality of the IRA's Medicare Drug Price Negotiation Program.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Eli Lilly announced preliminary voluntary agreements with the U.S. government in November 2025 under which it agreed to lower Medicaid and certain other drug prices for U.S. patients.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Merck expects U.S. sales of Keytruda to decline beginning in January 2028 when government pricing under the Inflation Reduction Act takes effect.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Merck has sued the U.S. government over the IRA's Drug Price Negotiation Program.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Pfizer says changes in U.S. and international regulations that mandate price controls could adversely affect its future results.",
+            "statedRuns": 3,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Pfizer says it has engaged with major payors and the U.S. government to explore opportunities to improve access and reimbursement.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Thermo Fisher has internal controls and compliance systems to protect it against acts by employees, agents or acquired businesses that would violate U.S. or non-U.S. laws.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "UnitedHealth says CMS has in the past reduced or frozen Medicare Advantage benchmarks and additional cuts are possible.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 5
+          }
+        ],
+        "contradictedRuns": [],
+        "truncatedRuns": [],
+        "failedRuns": []
+      },
+      {
+        "caseId": "brief-pharma-regulatory-pfe",
+        "question": "What regulatory risks does Pfizer face, and how is it addressing them?",
+        "briefQuestion": false,
+        "passed": false,
+        "mustState": 4,
+        "missed": [
+          {
+            "fact": "Pfizer says Eliquis was among the first ten medicines subject to the IRA's Medicare drug price negotiation program.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Pfizer announced preliminary agreements with the Trump Administration in September 2025 to make certain drug prices for U.S. patients more comparable to those in other developed countries.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Pfizer says it has engaged with major payors and the U.S. government to explore opportunities to improve access and reimbursement.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          }
+        ],
+        "contradictedRuns": [],
+        "truncatedRuns": [],
+        "failedRuns": []
+      },
+      {
+        "caseId": "brief-followup-pharma-340b",
+        "question": "How are they dealing with the 340B drug discount program?",
+        "briefQuestion": false,
+        "passed": false,
+        "mustState": 8,
+        "missed": [
+          {
+            "fact": "Johnson & Johnson maintains a policy that no end customer is permitted direct delivery of product to a location other than the billing location.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Eli Lilly has implemented a Contract Pharmacy Limited Distribution System for sales through the 340B program.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Merck says it remains committed to the 340B Program and to providing 340B discounts to eligible covered entities.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Pfizer says changes to the Medicaid Drug Rebate Program or the 340B Program could have a material impact on its business.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Pfizer implemented a policy in 2022 to help improve contract pharmacy integrity under the 340B Program.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
+          }
+        ],
+        "contradictedRuns": [],
+        "truncatedRuns": [],
+        "failedRuns": []
+      }
+    ]
+  },
   "holdout": {
-    "splitCases": 10,
+    "splitCases": 20,
     "retrieval": {
-      "gatingMetric": "hit@10",
+      "gatingMetric": "evidence reached",
+      "k": 10,
       "ks": [
         5,
         10,
         20
       ],
-      "scoredCases": 10,
-      "unscored": [],
+      "scoredCases": 19,
+      "unscored": [
+        "missing-broadcom-revenue"
+      ],
       "arms": [
         {
           "name": "fts5",
           "shipped": true,
+          "shippable": true,
           "overall": {
-            "cases": 10,
+            "cases": 19,
             "hitAt": {
-              "5": 0.9,
-              "10": 0.9,
-              "20": 1.0
+              "5": 0.8421052631578947,
+              "10": 0.8947368421052632,
+              "20": 0.9473684210526315
             },
             "recallAt": {
-              "5": 0.8083333333333333,
-              "10": 0.875,
-              "20": 0.975
+              "5": 0.7318295739348372,
+              "10": 0.8157894736842105,
+              "20": 0.881578947368421
             },
-            "hitAll": 1.0,
-            "recallAll": 0.975,
-            "mrr": 0.7166666666666667,
-            "meanSources": 12.8
+            "hitAll": 0.9473684210526315,
+            "recallAll": 0.9210526315789473,
+            "mrr": 0.7471804511278195,
+            "meanSources": 15.263157894736842,
+            "facts": 319,
+            "factsReached": 261,
+            "meanSourceTokens": 26293.21052631579
           },
           "byType": [
             {
               "questionType": "figure_trend",
-              "cases": 2,
+              "cases": 5,
               "hitAt": {
-                "5": 1.0,
-                "10": 1.0,
+                "5": 0.6,
+                "10": 0.8,
                 "20": 1.0
               },
               "recallAt": {
-                "5": 1.0,
-                "10": 1.0,
-                "20": 1.0
+                "5": 0.4666666666666667,
+                "10": 0.7,
+                "20": 0.85
               },
               "hitAll": 1.0,
               "recallAll": 1.0,
-              "mrr": 0.29166666666666663,
-              "meanSources": 28.5
+              "mrr": 0.3392857142857143,
+              "meanSources": 33.4,
+              "facts": 48,
+              "factsReached": 39,
+              "meanSourceTokens": 32123.0
             },
             {
               "questionType": "outlook",
-              "cases": 2,
+              "cases": 1,
               "hitAt": {
-                "5": 0.5,
-                "10": 0.5,
+                "5": 1.0,
+                "10": 1.0,
                 "20": 1.0
               },
               "recallAt": {
-                "5": 0.16666666666666666,
-                "10": 0.5,
+                "5": 1.0,
+                "10": 1.0,
                 "20": 1.0
               },
               "hitAll": 1.0,
               "recallAll": 1.0,
-              "mrr": 0.2916666666666667,
-              "meanSources": 20.5
+              "mrr": 1.0,
+              "meanSources": 42.0,
+              "facts": 10,
+              "factsReached": 8,
+              "meanSourceTokens": 31457.0
             },
             {
               "questionType": "risk",
-              "cases": 3,
+              "cases": 9,
+              "hitAt": {
+                "5": 0.8888888888888888,
+                "10": 0.8888888888888888,
+                "20": 0.8888888888888888
+              },
+              "recallAt": {
+                "5": 0.7777777777777778,
+                "10": 0.7777777777777778,
+                "20": 0.8333333333333334
+              },
+              "hitAll": 0.8888888888888888,
+              "recallAll": 0.8333333333333334,
+              "mrr": 0.8888888888888888,
+              "meanSources": 5.777777777777778,
+              "facts": 182,
+              "factsReached": 141,
+              "meanSourceTokens": 21157.666666666668
+            },
+            {
+              "questionType": "sector",
+              "cases": 4,
               "hitAt": {
                 "5": 1.0,
                 "10": 1.0,
                 "20": 1.0
               },
               "recallAt": {
-                "5": 1.0,
+                "5": 0.8928571428571428,
                 "10": 1.0,
                 "20": 1.0
               },
               "hitAll": 1.0,
               "recallAll": 1.0,
-              "mrr": 1.0,
-              "meanSources": 6.333333333333333
-            },
-            {
-              "questionType": "sector",
-              "cases": 3,
-              "hitAt": {
-                "5": 1.0,
-                "10": 1.0,
-                "20": 1.0
-              },
-              "recallAt": {
-                "5": 0.9166666666666666,
-                "10": 0.9166666666666666,
-                "20": 0.9166666666666666
-              },
-              "hitAll": 1.0,
-              "recallAll": 0.9166666666666666,
-              "mrr": 1.0,
-              "meanSources": 3.6666666666666665
+              "mrr": 0.875,
+              "meanSources": 7.25,
+              "facts": 79,
+              "factsReached": 73,
+              "meanSourceTokens": 29270.0
             }
           ],
           "missed": [
-            "outlook-msft-cloud"
+            "followup-topic-change-stock-splits",
+            "followup-aapl-buybacks-change"
           ]
         }
       ],
-      "comparisons": []
+      "comparisons": [],
+      "screen": {
+        "shipped": "fts5",
+        "limit": 3,
+        "kept": [],
+        "candidates": []
+      }
     },
     "generation": [
       {
@@ -1353,96 +2490,155 @@
         "model": "gpt-6-luna",
         "judgeModel": "jev-1.13.0",
         "promptVersion": "v7",
+        "controlRun": false,
+        "factCutoff": 0.6,
+        "answersPassed": 16,
         "overall": {
-          "cases": 10,
-          "citationsValid": 1.0,
+          "cases": 20,
+          "citationsValid": 0.95,
           "figuresExact": 0.9,
           "coverageGapsStated": 1.0,
-          "factRecall": 0.6683333333333333,
-          "faithfulness": 0.9490634514675435,
-          "meanCostUsd": 0.00302542,
-          "totalCostUsd": 0.030254200000000002,
-          "meanLatencyS": 9.4677,
-          "maxLatencyS": 11.221,
-          "meanFirstTokenS": 3.1093,
-          "meanInputTokens": 25471.7,
-          "meanOutputTokens": 956.5,
-          "judgeCostUsd": 0.012363036
+          "structureFollowed": 0.6,
+          "meanWords": 435.45,
+          "factRecall": 0.7406015037593985,
+          "detailRecall": 0.5901234730182099,
+          "faithfulness": 0.9518755175264871,
+          "answersContradicted": 3,
+          "truncated": 0,
+          "judgmentsFailed": 0,
+          "meanCostUsd": 0.0028444050000000004,
+          "totalCostUsd": 0.056888100000000004,
+          "meanLatencyS": 7.80495,
+          "maxLatencyS": 11.936,
+          "meanFirstTokenS": 2.26905,
+          "meanInputTokens": 24494.55,
+          "meanOutputTokens": 789.9,
+          "judgeCostUsd": 0.027966162000000003
         },
         "byType": [
           {
             "questionType": "figure_trend",
-            "cases": 2,
+            "cases": 5,
             "citationsValid": 1.0,
-            "figuresExact": 0.5,
-            "coverageGapsStated": null,
-            "factRecall": 0.6666666666666666,
-            "faithfulness": 0.9017857142857143,
-            "meanCostUsd": 0.0045566,
-            "totalCostUsd": 0.0091132,
-            "meanLatencyS": 8.198,
-            "maxLatencyS": 8.425,
-            "meanFirstTokenS": 2.95,
-            "meanInputTokens": 41113.5,
-            "meanOutputTokens": 890.5,
-            "judgeCostUsd": 0.002276778
+            "figuresExact": 0.6,
+            "coverageGapsStated": 1.0,
+            "structureFollowed": 0.8,
+            "meanWords": 330.4,
+            "factRecall": 0.9,
+            "detailRecall": 0.6571428571428571,
+            "faithfulness": 0.9321478521478521,
+            "answersContradicted": 3,
+            "truncated": 0,
+            "judgmentsFailed": 0,
+            "meanCostUsd": 0.0044628,
+            "totalCostUsd": 0.022314,
+            "meanLatencyS": 7.3862,
+            "maxLatencyS": 9.575,
+            "meanFirstTokenS": 2.5564,
+            "meanInputTokens": 40718.0,
+            "meanOutputTokens": 782.0,
+            "judgeCostUsd": 0.006099660000000001
+          },
+          {
+            "questionType": "missing_company",
+            "cases": 1,
+            "citationsValid": 1.0,
+            "figuresExact": 1.0,
+            "coverageGapsStated": 1.0,
+            "structureFollowed": 1.0,
+            "meanWords": 62.0,
+            "factRecall": null,
+            "detailRecall": null,
+            "faithfulness": null,
+            "answersContradicted": 0,
+            "truncated": 0,
+            "judgmentsFailed": 0,
+            "meanCostUsd": 0.0001276,
+            "totalCostUsd": 0.0001276,
+            "meanLatencyS": 1.694,
+            "maxLatencyS": 1.694,
+            "meanFirstTokenS": 1.04,
+            "meanInputTokens": 876.0,
+            "meanOutputTokens": 80.0,
+            "judgeCostUsd": 0.0
           },
           {
             "questionType": "outlook",
-            "cases": 2,
+            "cases": 1,
             "citationsValid": 1.0,
             "figuresExact": 1.0,
-            "coverageGapsStated": 1.0,
-            "factRecall": 0.41666666666666663,
-            "faithfulness": 0.9666666666666667,
-            "meanCostUsd": 0.003491,
-            "totalCostUsd": 0.006982,
-            "meanLatencyS": 10.0465,
-            "maxLatencyS": 10.624,
-            "meanFirstTokenS": 3.7005,
-            "meanInputTokens": 29807.5,
-            "meanOutputTokens": 1020.5,
-            "judgeCostUsd": 0.002334024
+            "coverageGapsStated": null,
+            "structureFollowed": 0.0,
+            "meanWords": 265.0,
+            "factRecall": 1.0,
+            "detailRecall": 0.75,
+            "faithfulness": 1.0,
+            "answersContradicted": 0,
+            "truncated": 0,
+            "judgmentsFailed": 0,
+            "meanCostUsd": 0.0043017,
+            "totalCostUsd": 0.0043017,
+            "meanLatencyS": 5.262,
+            "maxLatencyS": 5.262,
+            "meanFirstTokenS": 1.546,
+            "meanInputTokens": 40732.0,
+            "meanOutputTokens": 457.0,
+            "judgeCostUsd": 0.00024759
           },
           {
             "questionType": "risk",
-            "cases": 3,
-            "citationsValid": 1.0,
+            "cases": 9,
+            "citationsValid": 0.8888888888888888,
             "figuresExact": 1.0,
             "coverageGapsStated": 1.0,
-            "factRecall": 0.8888888888888888,
-            "faithfulness": 0.9665032679738562,
-            "meanCostUsd": 0.0022464,
-            "totalCostUsd": 0.0067392,
-            "meanLatencyS": 9.533,
-            "maxLatencyS": 11.221,
-            "meanFirstTokenS": 3.1473333333333335,
-            "meanInputTokens": 17837.333333333332,
-            "meanOutputTokens": 925.3333333333334,
-            "judgeCostUsd": 0.0021239400000000004
+            "structureFollowed": 0.5555555555555556,
+            "meanWords": 484.6666666666667,
+            "factRecall": 0.6396825396825396,
+            "detailRecall": 0.5294159544159543,
+            "faithfulness": 0.9533509700176368,
+            "answersContradicted": 0,
+            "truncated": 0,
+            "judgmentsFailed": 0,
+            "meanCostUsd": 0.002144888888888889,
+            "totalCostUsd": 0.019304,
+            "meanLatencyS": 8.02211111111111,
+            "maxLatencyS": 9.799,
+            "meanFirstTokenS": 2.287333333333333,
+            "meanInputTokens": 17455.0,
+            "meanOutputTokens": 798.7777777777778,
+            "judgeCostUsd": 0.013376832000000002
           },
           {
             "questionType": "sector",
-            "cases": 3,
+            "cases": 4,
             "citationsValid": 1.0,
             "figuresExact": 1.0,
             "coverageGapsStated": 1.0,
-            "factRecall": 0.6166666666666667,
-            "faithfulness": 0.9514066496163682,
-            "meanCostUsd": 0.0024732666666666668,
-            "totalCostUsd": 0.007419800000000001,
-            "meanLatencyS": 9.863,
-            "maxLatencyS": 10.704,
-            "meanFirstTokenS": 2.7833333333333337,
-            "meanInputTokens": 19787.666666666668,
-            "meanOutputTokens": 989.0,
-            "judgeCostUsd": 0.005628294000000001
+            "structureFollowed": 0.5,
+            "meanWords": 592.0,
+            "factRecall": 0.7035714285714285,
+            "detailRecall": 0.602972027972028,
+            "faithfulness": 0.9611842105263158,
+            "answersContradicted": 0,
+            "truncated": 0,
+            "judgmentsFailed": 0,
+            "meanCostUsd": 0.0027102000000000003,
+            "totalCostUsd": 0.010840800000000001,
+            "meanLatencyS": 10.00325,
+            "maxLatencyS": 11.936,
+            "meanFirstTokenS": 2.35675,
+            "meanInputTokens": 21899.5,
+            "meanOutputTokens": 1040.5,
+            "judgeCostUsd": 0.00824208
           }
         ],
         "failing": {
-          "citations": [],
+          "citations": [
+            "followup-topic-change-stock-splits"
+          ],
           "figures": [
-            "trend-aapl-revenue-fy2025"
+            "trend-tsla-energy-two-years",
+            "trend-aapl-msft-net-income-fy2025"
           ],
           "coverageGaps": []
         },

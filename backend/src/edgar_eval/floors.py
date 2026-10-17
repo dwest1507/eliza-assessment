@@ -4,7 +4,7 @@
 for each gated metric (hit@10, recall@10 and MRR, overall) and the settings the Floors
 were measured at: the Golden Set version, the number of scored cases, the chunk size and
 the context budget. CI runs the retrieval harness (no LLM call, so it costs nothing) and
-checks its report against the record (ADR 0011):
+checks its report against the record (ADR 0014):
 
 - a metric below its Floor fails, naming the metric;
 - a report measured at other settings fails as stale, since its scores and the Floors

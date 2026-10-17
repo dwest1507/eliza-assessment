@@ -1,0 +1,354 @@
+# Judge study label reasons
+
+One line per sheet item, as each labeller wrote it: `- <id>: <label> | <reason>`. The labels in `sheet.md` are these. Labelled by Claude (claude-opus-5-5) on the developer's delegation; see the README.
+
+- F-4dfbaa7c59: stated | Answer says UnitedHealth "expects incidents to continue despite detection, containment, response and employee-awareness programs."
+- F-b0c05b75a5: not stated | The answer says nothing about J&J's delivery or billing-location policy.
+- F-a692aade88: not stated | The answer only says Tesla "continued to expand and refine its Robotaxi service" and never says the launch unlocks significant growth.
+- F-500d813356: not stated | The answer lists Apple's laws and DMA penalties but never says compliance is onerous and expensive.
+- F-a3b5c15b0a: stated | "Possible HHS changes could make it harder for the FDA to approve drugs and vaccines."
+- F-b7c8f6d9e8: not stated | Only quarterly noninterest revenue changes are given (Q3 up 17%, Q2 down 21%); there is no full-year 2025 figure of up 2%.
+- F-4ee8838fd9: not stated | The answer mentions rules that may restrict features and vague "regulatory scrutiny relating to product technologies," but not past and expected claims and scrutiny over driver assistance.
+- F-154e7d04d7: not stated | The answer says only "dependence on key employees, including its CEO"; it never names Elon Musk or says "highly dependent."
+- F-b5b5471c46: not stated | The answer mentions the 2024 Change Healthcare cyberattack but not the February 21, 2024 identification of threat-actor access.
+- F-520851a9f2: stated | Table gives FY2025 revenue of $200,966 million, "+22.2%" over FY2024.
+- F-fb44fd70bb: not stated | FY2024 revenue is given without a growth rate; the 15% figure is for FY2025, not FY2024's 16%.
+- F-e513b98a6b: stated | "On January 17, 2025, HHS announced Janumet and Janumet XR for price setting, effective January 1, 2027."
+- F-327fc27152: stated | "FY2024 (10-K): revenue rose $33.2 billion or 16%."
+- F-b8a0f0a297: not stated | The answer covers Lilly's pricing agreement with the government but not a government direct-to-patient purchasing platform.
+- F-dfa1cf0c25: not stated | Apple's answer mentions trade among its regulatory subjects but not that products could be banned, delayed or prohibited from importation.
+- F-7fe3156a94: not stated | The answer covers only Apple and never mentions NVIDIA or H20 sales.
+- F-1f4cb9feb5: not stated | The answer mentions only "potential fines and business impacts" in general, not that the DMA provides for significant fines and penalties.
+- F-54170d3064: stated | The answer says "the Q1 and Q2 FY2025 10-Qs describe changes to trade policy," and that the 2025 U.S. trade-policy changes included "heightened import tariffs."
+- F-74428752b8: not stated | The answer says Keytruda U.S. sales will decline after the price takes effect, but gives no January 2028 date.
+- F-a84d08d9a5: not stated | The answer says only that the Q1 FY2025 10-Q "discussed international operating and tariff uncertainty," not an added risk factor on U.S. trade policy changes with significantly higher import tariffs.
+- F-2bb9c62b7c: stated | "Exiting non-core businesses to reduce ENI could lower net earnings in the short term."
+- F-302cfcc50e: stated | "Increased use of the 340B Federal Drug Discount Program ... are negatively affecting performance."
+- F-341df39869: not stated | Pfizer's section mentions no ongoing evaluation of the Inflation Reduction Act's impact.
+- F-c9f69bbd17: not stated | The answer covers only Apple and never mentions NVIDIA's gross margin or the H20 charge.
+- F-fc0979900a: not stated | The answer names a new Bots/Optimus risk in a "nascent industry" but does not say the business's growth depends on developing and commercializing Bots.
+- F-e5466f60ef: not stated | The JPMorgan section covers regulation, markets, credit, liquidity, cyber and climate but never names tariffs or trade policies as government policies affecting growth or market volatility.
+- F-3f92aa0408: not stated | The Pfizer section mentions affordability boards and EU reform, but not private-payor pricing pressure as IRA prices become public.
+- F-9ecb302816: stated | The FY2025 paragraph says "impressions up 12% and price per ad up 9%".
+- F-f556f3f821: not stated | The answer names the EU, Japan and China only for marketing approval ("approval from the FDA and foreign authorities"), not for government-fixed pricing and reimbursement.
+- F-ea268ff5a8: not stated | The only JPMorgan tariff mention is a table cell, "Market-risk factor"; it does not say tariffs and trade policies are government policies that could affect economic growth and market volatility.
+- F-c4f015cef5: not stated | The Merck section covers pricing laws, tariffs, climate and patents but never mentions the American Rescue Plan Act removing the Medicaid rebate cap.
+- F-803f90c2d7: stated | The answer says "Ad impressions rose 12% in 2025", within Meta's advertising (Family of Apps) revenue.
+- F-29d9444ce8: not stated | The answer says Apple "relies heavily on outsourcing partners" but never says a significant majority of manufacturing is located primarily in the six named countries; it lists those countries only for tariffs.
+- F-323a90c634: not stated | The answer compares the FY2024 and FY2025 10-Ks and is cut off before saying anything about a risk factor added in the Q1 2025 10-Q.
+- F-053c9e9789: not stated | The answer never mentions Merck's commitment to the 340B Program.
+- F-ac5a6e54e0: not stated | The answer mentions "reliance on outsourcing partners" but neither the significant-majority share nor the six countries where they are located.
+- F-e45dd77465: stated | The answer says "Microsoft Cloud revenue increased 23% to $168.9 billion" in FY2025.
+- F-edb2d7d21e: not stated | The JPMorgan section mentions "disrupted trade routes" as a market-loss cause, not tariffs or trade policies as government policies affecting growth and volatility.
+- F-a521a17fac: stated | The answer says "The U.S. government is RTX's largest customer, 'representing a substantial majority of our total defense sales'".
+- F-0eb210a057: stated | From the FY2025 filing, the answer says "its Robotaxi service launched in June 2025", making autonomous ride-hailing part of its business.
+- F-4417b9d9f8: not stated | The answer starts at FY2023 and gives no 2022 figure, so it never says net income rose in 2023 versus 2022.
+- F-f407a74083: not stated | For AbbVie the answer mentions complex biologics regulation and quality controls, but not the expense, time and effort needed to comply.
+- F-7754d69f34: not stated | The answer mentions "market and credit conditions" and consumer exposure to interest-rate changes, but not market risk from changes in interest rates and credit spreads as a principal risk factor.
+- F-2f8b65e935: stated | The answer says the Q3 FY2025 10-Q reports "no material changes from the risk factors" in the 2024 Form 10-K.
+- F-80d9f4222c: not stated | The answer says capital requirements can rise through CCAR and the SCB, but not that failing to meet them could limit capital distributions to shareholders.
+- F-966a449e95: stated | The answer says "The F-35 is the largest program at 27% of sales" in Lockheed's FY2025 10-K.
+- F-0d15fd5352: not stated | The answer says the Q1 FY2025 filing "highlights heightened uncertainty around U.S. tariffs", but not that it added a risk factor on trade-policy changes including significantly higher import tariffs.
+- F-aa016385b4: not stated | The answer never mentions the Google remedies or the search distribution terms.
+- F-0197457587: not stated | The answer mentions the 2024 Change Healthcare cyberattack, but not the February 21, 2024 identification of threat actors' access.
+- F-b419393ab0: not stated | The answer covers only Apple and says no company is identified; it never mentions AMD's MI308 charges.
+- F-e0f9fa0cd2: not stated | Mentions the 2024 Change Healthcare cyberattack but not the February 21, 2024 identification of threat actors' access.
+- F-6652a63e03: not stated | Apple's DMA fines and penalties are not mentioned; the answer only lists generic "litigation and regulation".
+- F-c4646597e4: not stated | AbbVie section covers patents and post-marketing findings, nothing on fraud and abuse laws or exclusion from health care programs.
+- F-1ff8dbc37d: not stated | Says Tesla's features "may be affected by" regulations, not that it has faced and expects to face claims and regulatory scrutiny.
+- F-05f33ff6d6: not stated | Cites "the 2024 cyberattack" on Change Healthcare but not the February 21, 2024 discovery of threat actors' access.
+- F-8a18002538: not stated | RTX section lists shutdowns, stop-work orders and debarment; termination for convenience is attributed only to Boeing.
+- F-a91ea29114: stated | "FY2025's Q2 10-Q ... says governmental and regulatory actions had repealed or restricted consumer, manufacturing and charging-infrastructure tax credits".
+- F-8d172c8341: stated | "The Q2 FY2025 10-Q ... added that recent governmental actions 'have repealed and/or restricted consumer, manufacturing and charging infrastructure tax credits'".
+- F-ba219a12b4: not stated | Attributes the repeal/restriction of credits to the FY2025 10-K; the Q2 10-Q is cited only for solar and storage incentive changes.
+- F-b8df51a18b: not stated | No mention of Synchrony Financial or a split-off exit.
+- F-aae22951f4: stated | Within FY2026, April 2025, "NVIDIA reported a $4.5 billion charge tied to H20 excess inventory and purchase obligations", which falls in Q1 FY2026.
+- F-4dc8219c33: not stated | Merck section mentions the IRA generally but not Januvia's selection or a price effective January 1, 2026.
+- F-01711bb6c3: not stated | Cites the 2024 Change Healthcare cyberattack but not the February 21, 2024 identification of threat actors' access.
+- F-cc3285ee70: not stated | Says rules "could delay, restrict or prohibit autonomous functionalities", not that Tesla has faced and expects claims and regulatory scrutiny.
+- F-fcffbe4f12: stated | Lists "Credit" among JPM's principal risk factors and describes client deterioration (CRE clients, consumer credit) and counterparty (CCP) default losses.
+- F-8549eb3eb8: stated | "Pfizer cites U.S. and international pricing and reimbursement measures" as regulatory risks, the same substance as price-control regulations.
+- F-012a3a7fbe: stated | Q2 FY2025 10-Q "now says recent actions 'have repealed and/or restricted consumer, manufacturing and charging infrastructure tax credits'".
+- F-91ac8f2ca9: not stated | States "a significant majority of manufacturing is performed ... by outsourcing partners" but not the partners' locations.
+- F-6ea44d830c: not stated | Lilly section mentions only Jardiance effective 2026, not Trulicity and Verzenio for 2028.
+- F-89c226e877: not stated | Gives Boeing's U.S. government share (35%) but not the 46% from non-U.S. customers.
+- F-8606e3323c: stated | "JPMorgan's filing foregrounds extensive supervision and regulation" and its risk profile "centers on financial regulation".
+- F-e2bb8e5abd: not stated | For FY2024 it reports ad revenue growth of $28.68 billion but does not say the 2024 revenue increase was due to it.
+- F-143809b646: stated | JPM's risk profile "centers on ... market and credit conditions", with consumer clients' deterioration raising delinquencies and charge-offs.
+- F-afe6118cc4: not stated | No 2023 revenue figure is given; only FY2024 and FY2025 revenue.
+- F-a11c19981b: not stated | Attributes the 2025 trade-policy and tariff risk to the FY2025 10-K, not to a risk factor added in the Q1 2025 10-Q.
+- F-40db2ab0bf: stated | The answer says "UnitedHealth says it is regularly targeted by attempted cyberattacks".
+- F-898e306ce4: stated | The answer says "In Q2 FY2026, Microsoft 365 Commercial cloud revenue grew 17%".
+- F-d09442b4cb: stated | The answer gives "$7,091 million in FY2024" for net income attributable to common stockholders.
+- F-988a6a56c3: not stated | The answer lists generic consequences of compromises but never says future risks from the Change Healthcare attack itself could adversely affect financial condition or results.
+- F-3e4de4732f: not stated | No mention of Optum Insight or revenue lost to Change Healthcare business disruption; only generic "loss of revenue" consequences.
+- F-6b8ded2870: not stated | The answer gives a 2026 capex range "to support its AI efforts" but does not say AI initiatives will require significantly increased infrastructure investment.
+- F-b1a6b40da1: not stated | The answer covers only Apple and says nothing about NVIDIA or H20 licensing.
+- F-18747d955f: stated | Net income fell from "$7,091 million in FY2024" to "$3,794 million in FY2025", "-46.5%".
+- F-db4280277c: not stated | The answer mentions government arrangements and LillyDirect but no government direct-to-patient purchasing platform offering discounts to list prices.
+- F-686609fdb1: stated | The answer says FY2025 advertising growth came "alongside a 12% increase in ad impressions".
+- F-41c82d2c06: not stated | The answer says the Q1 FY2025 10-Q "continued to describe" tariff uncertainty, not that it added a risk factor on significantly higher tariffs.
+- F-575d0cad30: not stated | The AbbVie row does not mention the Inflation Reduction Act or evaluating its impact.
+- F-2705c610a9: not stated | The answer covers only Apple; no NVIDIA H20 charge is mentioned.
+- F-e586b65137: not stated | The February 21, 2024 identification of threat actors' access is not mentioned.
+- F-95c6681623: stated | The answer says "Increased use of the 340B Federal Drug Discount Program ... are hurting performance".
+- F-02a62a736a: not stated | The answer covers only Apple; no NVIDIA gross margin or H20 charge.
+- F-5dbd64199f: stated | For Q1 FY2026 (fiscal year ends June 30) the answer quotes revenue "increased $12.1 billion or 18%".
+- F-078be9810b: stated | The answer says Tesla released "the valuation allowance on U.S. deferred tax assets in Q4 FY2023" with a "50% benefit in FY2023", which is the 2023 tax benefit.
+- F-c7176eefa8: not stated | The answer gives Azure growth of 34% for FY2025 and 40%/39% for FY2026 quarters, but no 30% for FY2024.
+- F-2cc9e30d90: stated | The answer says "repealed or restricted consumer, manufacturing and charging-infrastructure tax credits may hurt demand and results".
+- F-3d532ca330: not stated | The Tesla section lists tariffs, safety, autonomy, privacy and incentives, but nothing on limits to selling vehicles directly.
+- F-fbf1325c1a: stated | The answer says GE Capital "planned to exit businesses considered non-strategic or underperforming".
+- F-598b215637: not stated | The Pfizer section cites affordability boards and EU reform but not regulations mandating price controls that could hurt future results.
+- F-7ca06c33ca: not stated | The answer covers only Apple; no NVIDIA H20 charge is mentioned.
+- F-2ab55d11ad: stated | The answer says "Meta reported FY2025 revenue growth of 22%" over FY2024.
+- F-6c26f2c067: not stated | The answer lists cyber attacks as threats but never says future breaches are "inevitable".
+- F-3da5914480: stated | "Its largest program, F-35, represented 27% of total consolidated sales in 2025".
+- F-57a6a453e5: not stated | Tariff risk is attributed to the FY2025 10-K; the answer says the Q1 filing reported "no material changes to the other risks", not that it added a tariff risk factor.
+- F-bdb7e8bece: stated | Tesla's central execution risk is ramping products "at planned ... output", specifically "mass-market vehicles including Cybercab", which conveys the dependence on increasing that production.
+- F-89cf3fb265: stated | Tesla "calls out driver-assistance and autonomous-driving development" among the central risks to developing its products and features.
+- F-d95dfdb736: stated | "HHS selected Januvia in 2023, and a government-set price becomes effective January 1, 2026", with price setting starting in 2026.
+- F-d8255020fa: not stated | Panasonic and CATL are never mentioned; only "Battery-cell production" in general.
+- F-c5a72c1e66: stated | A security incident could cause "significant remediation costs" and "materially harm its business".
+- F-0c0ad6f465: not stated | It mentions the 2024 Change Healthcare cyberattack but not the February 21, 2024 identification of threat-actor access.
+- F-aca363cd47: not stated | The answer covers only Apple; nothing about NVIDIA H20 licenses granted in August 2025.
+- F-d03d802a41: not stated | The answer is empty.
+- F-e1730f98eb: not stated | The answer attributes the 2025 increase to advertising; it gives no driver for the 2024 increase.
+- F-395318f2f7: not stated | It cites "the April 2025 U.S. export-licensing requirement for H20 products" but never says the license is for exports to China.
+- F-59a4087f2b: stated | "Merck identifies Januvia as selected for a government-set price effective January 1, 2026", with Part D price setting starting in 2026.
+- F-93569eabe3: not stated | Apple's US antitrust lawsuits alleging smartphone monopolization are not mentioned.
+- F-8ae5bef075: stated | JPMorgan identifies "different treatment versus less-regulated competitors" as a risk, which carries the substance.
+- F-1177968357: not stated | The answer says RTX gives no percentage; the 46% and 38% figures are absent.
+- F-f5b694ea52: not stated | J&J's policy on delivery only to the billing location is not mentioned.
+- F-386d007812: not stated | It says autonomy "moved further into the foreground" but not that future business depends on developing driver-assistance and autonomous driving.
+- F-2fd9422076: stated | Net income attributable to common stockholders was "$3,794 million in FY2025".
+- F-b0b81204ab: stated | "Azure and other cloud services revenue grew 34%" in FY2025.
+- F-c8534842a1: stated | "Reality Labs (RL) revenue increased $61 million, or 3%" in FY2025.
+- F-02516b374d: stated | The Q1 FY2025 10-Q states "no material changes" from the FY2024 10-K risk factors.
+- F-66f6567f9d: not stated | Tesla is said only to cite GDPR; the significant risk of fines is not stated.
+- F-3673bc8ee1: not stated | It says changing rules may restrict designs, not that Tesla has faced and expects claims and regulatory scrutiny over these features.
+- F-ea0025f73f: not stated | The answer mentions Bots production lines but never says Tesla is advancing development of Optimus, a general purpose autonomous humanoid robot.
+- F-b7304d83b6: not stated | It mentions "a cyberattack in 2024" on Change Healthcare but not the February 21, 2024 identification of threat actors gaining access.
+- F-744ba3f3e1: not stated | Apple's regulatory exposure is given as DMA changes and a U.S. court order, with no statement that it faces antitrust investigations and litigation in various jurisdictions.
+- F-d0db104a32: not stated | The Merck row cites the IRA as pricing pressure but never mentions Januvia's selection or its January 1, 2026 set price.
+- F-037235a1db: stated | "Lilly also reports continuing production and sale of counterfeit, misbranded, adulterated and mass-compounded incretins" gives the substance; the answer leaves out only the market scope.
+- F-2d4bc8714f: not stated | The answer covers Lilly's pricing arrangements but never mentions a government direct-to-patient purchasing platform.
+- F-59badcae03: not stated | It gives Q3 FY2025 commentary that Blackwell demand would exceed supply, not the end-of-FY2024 expectation that next-generation products would be supply-constrained.
+- F-b2218657a2: not stated | It describes a 2024 cyberattack on Change Healthcare but not the February 21, 2024 identification of threat-actor access.
+- F-ad02261085: not stated | The Pfizer section never says Pfizer continues to evaluate the IRA's impact.
+- F-e7779cd999: not stated | JPM's liquidity is mentioned only generally; credit rating downgrades and their effect on funding cost are not.
+- F-0bddedac7f: stated | "capital expenditures of approximately $115 billion to $135 billion in 2026."
+- F-96e8909f5f: not stated | The AbbVie section never says AbbVie must incur expense and spend time and effort to comply with complex regulations.
+- F-a361890307: not stated | It says FDA approval is "generally required to release each commercial human vaccine lot," not that Merck's products cannot be marketed without obtaining and maintaining approval.
+- F-e675c3b1a1: not stated | It names "legal proceedings and government investigations, including competition-related requirements and the EU Digital Markets Act," but not antitrust investigations and litigation in various jurisdictions around the world.
+- F-b87aee9934: not stated | The Pfizer section has no cGMP statement about warning letters, manufacturing suspension or recalls (cGMP appears only under Lilly).
+- F-92a197669e: not stated | It attributes FY2025 growth to advertising; for FY2024 it gives only the 22% increase, with no driver.
+- F-96a33bbb31: not stated | It says FY2025 Intelligent Cloud growth was "driven by Azure," not FY2024.
+- F-2e855ca1cd: not stated | It cites Q3 FY2025 supply constraints, not the end-of-fiscal-2024 expectation that next-generation products would be supply-constrained.
+- F-bff420d75f: not stated | It cites the FY2025 10-K and the Q2 FY2025 10-Q, not a trade-policy risk factor added in the Q1 2025 10-Q.
+- F-e63281185b: stated | "recently acquired or non-integrated businesses can create heightened vulnerabilities."
+- F-c8267b61c1: not stated | It says Keytruda's price would take effect January 1, 2028 but not that Merck expects U.S. Keytruda sales to decline then.
+- F-646257f332: not stated | The JPM section lists no market risk from changes in interest rates and credit spreads; only "trade route disruption as market risk" appears.
+- F-96f4ac1864: stated | "U.S. trade policy changes in 2025, including heightened tariffs, have impacted supply chain costs."
+- F-fb65339715: not stated | The answer covers only Apple and never mentions AMD, MI308 or the 15% revenue share.
+- F-27638e153b: not stated | It says Tesla continued to expand Robotaxi after launch, not that the launch unlocks potential for significant business growth.
+- C-d1f252ec1b: supported | BAC's climate risk factor names physical risks ("extreme weather events"), damage to collateral and "insurance shortfalls", transition risk to "a low-carbon economy", and "existing and pending disclosure requirements" expected to raise legal, compliance and disclosure risks.
+- C-6aa991a2d1: supported | Merck's pricing pressure risk factor lists "the Medicare Prescription Drug Improvement and Modernization Act of 2003, the ACA, and the IRA", "practices of managed care groups and institutional and governmental purchasers" and "state activities aimed at increasing price transparency".
+- C-d6f4d7e934: unsupported | The FY2014 GECC MD&A describes its plans at that time (ENI target, "2015 funding plan") but nowhere says it is not evidence of current balance-sheet plans; that is the answer's own conclusion.
+- C-799ff23a0a: supported | META FY2025 MD&A: "Ad impressions delivered ... in 2025 increased 12% year-over-year, and our average price per ad increased 9% year-over-year."
+- C-8f96447b25: supported | The cited Apple 10-K and 10-Q risk factors mention export controls and trade restrictions only in general terms and name no company that took a charge because of new U.S. export controls on products sold to China, so the statement about the Sources is accurate.
+- C-30938583e0: supported | The AAPL, JPM and TSLA risk-factor Sources describe regulatory risks only qualitatively and give no measure that would let the three be ranked, which matches the claim.
+- C-4954f95d99: unsupported | The only cited Source is Merck's 10-K Risk Factors; it says nothing about Bristol Myers Squibb or which Filings are provided, so the claim of absence is not established by it.
+- C-f00c08c475: supported | The AAPL Q1 FY2026 10-Q (Report Period 2025-12-27) says "There have been no material changes to the Company's risk factors since the 2025 Form 10-K," otherwise only pointing to the 10-K.
+- C-db968ae9ef: supported | BAC's Source lists "declines in ... property values", "changes in international trade policy including tariff rates", "rising or elevated unemployment levels", "elevated inflation" as credit-portfolio risks that could increase "defaulting or becoming delinquent" and "credit losses".
+- C-70210d6d67: supported | PFE's Source: "In April 2024, the European Parliament introduced amendments to the EC's proposal ... This reform may alter regulatory exclusivity periods for our products."
+- C-5c2fa5705a: supported | All cited Sources are FY2025 10-Qs (BAC Q1-Q3 2025) that only refer back to "the Corporation's 2024 Annual Report on Form 10-K"; none is a 10-K before FY2024.
+- C-0b35764807: unsupported | S34 does give the FY2023 total of "$134,902" million, but it holds no FY2025 revenue at all (its table is 2024, 2023 and 2022), so the claim about FY2025 revenue goes beyond it.
+- C-4e97eadd33: contradicted | The 10-Q says "Other than the risk factors set forth below, there have been no material changes", so it does report new risk factors, while the claim says there were none.
+- C-fa724944b9: supported | S1: "we have not experienced material losses or other material consequences" from cybersecurity incidents and technology failures, and "we expect to continue to experience such events and impacts ... with increased frequency and severity".
+- C-36d26a9e30: supported | S1: "Certain sectors also remain at risk (e.g., commercial real estate, particularly office) as a result of shifts in demand and tight financial and credit conditions."
+- C-724121dfa1: supported | S5 says "Other than the risk factors set forth below, there have been no material changes" and the excerpt ends there, so the added factors are indeed not in it.
+- C-3f82a116e8: supported | S7 gives Q3 FY2025 revenue "$51,242 million" and "+26.2% from a year earlier".
+- C-2ff9fa7940: supported | S22 shows Q1-Q3 2024 net income attributable to common stockholders "Before adoption" (1,129 / 1,478 / 2,167) versus "As adjusted" (1,390 / 1,400 / 2,173), so a caveat that those quarters' originally reported figures were later adjusted is directly implied.
+- C-1b5361e900: supported | The Apple risk-factor Sources discuss export controls and possible write-downs only as general risks ("controls on imports or exports... can materially adversely affect"), and name no charge taken because of new China export controls.
+- C-77679decda: unsupported | S2-S4 only say there are "no material changes" from the 2024 10-K risk factors; they do not state the coverage range or that Bank of America is a "Snapshot Company".
+- C-8624c1d64d: supported | S6 names "Undefinitized Contract Action (UCA)" with the Government's right "to unilaterally definitize contracts" and "Bid Protests" as risk factors.
+- C-96538cb3f5: contradicted | S1's "2026 Outlook" gives a quantified 2026 company expectation ("We currently expect our capital expenditures to be in excess of $20 billion in 2026"), so the claim that the filing gives no company guidance for 2026 conflicts with it.
+- C-1e9e1d78c2: supported | S4 gives "$131.05 billion of contractual commitments ... mostly related to third-party cloud capacity arrangements ... servers and network infrastructure, data centers, and consumer hardware products in Reality Labs", and S12 calls them "non-cancelable contractual commitments", total $131,046 million.
+- C-1bb64c806b: supported | S3: "In most jurisdictions, we generally self-insure against the risk of product liability claims for vehicle exposure".
+- C-604d084016: unsupported | The Apple risk-factor excerpt says nothing about which Companies are in scope; the claim describes the answer's scope, which the Source does not state.
+- C-c13930e157: supported | The Source is headed "MRK 10-K FY2024 ... Report Period 2024-12-31" and its text names "Merck's business", which matches the claim.
+- C-e1d950c13b: unsupported | The cited META MD&A says nothing about whether anything in the filings "updates it"; the claim's referent and its claim of absence are not in the Source.
+- C-b968f6ed57: supported | The Source lists "inability to access account information", "exfiltration of customer personal data", "recording of duplicative transactions", "call center services", "future breaches are inevitable", custodians, cloud, clearing and payment systems, AI and quantum computing, and "quantum-resistant encryption".
+- C-3a032fde1c: supported | The fragment "U.S." asserts nothing beyond a term the Source uses repeatedly ("sales outside the U.S."), so it adds no information and contradicts nothing.
+- C-6b04a4662e: unsupported | The Source has a "2026 Outlook" section with "we currently expect our capital expenditures to exceed $20 billion in 2026" but never says there is "no company guidance" or that this is "not formal guidance"; that distinction is the answer's own.
+- C-edd8e153bf: supported | The Q1 and Q3 2025 10-Q MD&As attribute the revenue increase to advertising, "due to increases in ad impressions delivered and average price per ad", so the quarterly commentary does show those drivers.
+- C-778babd54f: supported | The Q2 2025 10-Q shows 2024 net income attributable to common stockholders of $1,478 adjusted by $(78) to $1,400, and the Q3 2025 10-Q shows $2,167 adjusted by $6 to $2,173, the comparatives used.
+- C-1d1891cddd: supported | The 10-K states "We appealed the European Commission's decision on July 4, 2025, but further modifications ... could result in ... a significant impact to our European business and revenue."
+- C-4a9084a4b3: supported | LMT's 10-K states "The U.S. Government has the right to unilaterally definitize contracts" under a UCA.
+- C-ad1fa23683: unsupported | The cited Sources are 10-K risk factor excerpts and contain no Sector table, no "Aerospace & Defense" industry classification and no statement of which Companies are in scope.
+- C-a7937f16cf: supported | S8 states FY2025 revenue "$281,724 million ... +14.9% from a year earlier".
+- C-cce06cfb22: unsupported | S1 is JPM risk factors only and says nothing about the corpus lacking a Wells Fargo filing.
+- C-178a0076b6: unsupported | S1 (a JPM 10-Q) shows 2025 interim figures against 2024, but says nothing about what the FY2025 10-K excerpts contain.
+- C-51b8ef3112: contradicted | S3 gives "a comparative discussion ... for the two-year period ended December 31, 2025" and tables for 2025, 2024 and 2023.
+- C-c0d8c59d74: supported | S1: "the Company expects that, as a result, U.S. sales of Keytruda will decline after that time".
+- C-4b0309b97f: supported | S1 says "as we reduce our ENI through exiting non-core businesses, the overall level of our net earnings may be reduced, which potentially could include impairments, restructurings and other non-cash charges."
+- C-8c0b545fd6: supported | S25 shows a $(5,962)M "Change in valuation allowance" turning 2023 taxes into a $(5,001)M benefit, and S36 attributes the tax swing to "releasing the valuation allowance on our U.S. deferred tax assets in the fourth quarter of 2023", which directly implies FY2023 earnings were flattered by a non-operating item.
+- C-344ac02cda: supported | S12: "Microsoft 365 Commercial cloud revenue grew 15% with Microsoft 365 Commercial seat growth of 6% ... as well as growth in revenue per user" and "Consumer cloud revenue grew 11% driven by ... subscriber growth of 8% to 89.0 million, as well as growth in revenue per user from the price increase announced in January 2025."
+- C-87223e7a95: unsupported | S5 confirms a FY2014 10-K of "General Electric Capital Corporation" for the year ended December 31, 2014, but nothing in it says this is "the only General Electric Filing" or that it "does not describe General Electric today".
+- C-65fd1ff5d7: supported | S1 "sets forth the material risk factors that could affect JPMorganChase" and calls them "potential risks"; it never mentions Wells Fargo, so it contains no such comparison.
+- C-f61eb5e856: supported | The only cited Source is BAC's 10-K Risk Factors Filing text (not Financial Facts), and the figures it holds, such as "our SCB increased by 70 bps to 3.2 percent", are in that text.
+- C-d082a2acfd: supported | UNH Risk Factors says the techniques "change frequently and are increasing in sophistication, in part due to use of evolving AI/ML technologies" and that it "may be unable to anticipate these techniques and threats, timely detect" incidents.
+- C-9f48e9651e: supported | The Source is one 10-K (FY2024) listing "our material risk factors" over many areas, with no comparison to another year's risk factors, so it does not show how the risks changed.
+- C-b6d6cf3a80: unsupported | The cited Sources are the five companies' Risk Factors sections, and none mentions a Sector table or how "pharmaceutical companies" maps to these companies.
+- C-2b8d927b73: supported | S4 gives "Revenue, Q4 FY2024 ... $64,727 million (derived: FY2024 less Q1–Q3 FY2024)", which matches $245,122M - $56,517M - $62,020M - $61,858M.
+- C-06fb0dc62b: supported | S1 says "our Change Healthcare business, which we had recently acquired, was subject to a cyberattack in 2024, in which the data involved contained protected health information or personally identifiable information."
+- C-1d12fd0c9d: supported | S1 says "cash flows provided by operating activities were $14.75 billion in 2025 compared to $14.92 billion in 2024."
+- C-e671fc35eb: supported | The Sources give firmwide total net revenue only for Q2 and Q3 2025 and full-year 2025 vs 2024 figures only for segments (e.g. AWM "Net revenue was $24.1 billion") or line items, so no full-year firmwide revenue change can be computed.
+- C-9758250988: supported | S1 says "we may be unable to anticipate these techniques and threats, timely detect data security incidents or implement adequate preventive measures."
+- C-0dbcb4b3e1: unsupported | S3 discusses autonomous-driving rules, incentives and dealer laws, but also privacy, environmental, trade, international and energy regulation, and never says Tesla's exposure is "concentrated" in those three areas.
+- C-4b8a871062: supported | S1-S3 and S5-S7 give every quarterly revenue figure ($36,455m/$39,071m/$40,589m and $42,314m/$47,516m/$51,242m) and the derived +16.1%, +21.6%, +26.2% growth.
+- C-ee63750ab8: supported | BA says "35% of our revenues were earned pursuant to U.S. government contracts", LMT "72% of our total consolidated sales from the U.S. Government", while RTX gives only "a substantial majority of our total defense sales", so substantial dependence for all three and a numeric figure only for Boeing and Lockheed both follow.
+- C-a1413535d5: supported | S4: "Capital expenditures, including principal payments on finance leases, were $72.22 billion for the year ended December 31, 2025."
+- C-3fbfda9cc7: supported | S6: "our ability to grow in key areas such as hypersonics programs, classified programs and next-generation franchise programs ... all of which are dependent on U.S. Government authorization and funding."
+- C-294cbb849f: unsupported | S13 gives AWS sales and 19% growth and explains AWS operating income, but nowhere attributes AWS sales growth to "increased customer usage" or mentions pricing changes from long-term customer contracts.
+- C-2c1c8b8c48: supported | S18 states "In 2026, we will be ramping six new production lines across vehicle, Bots, energy storage and battery manufacturing".
+- C-b60edebcaa: supported | S1 states "JPMorganChase experiences numerous cyber attacks" and "future breaches are inevitable".
+- C-1abeb2f344: unsupported | S1 has a "2026 Outlook" MD&A section and says "we currently expect our capital expenditures to be in excess of $20 billion in 2026", but nowhere says the filings give no formal guidance or that this is "not guidance".
+- C-8b1c83775b: supported | S34 states "the online commerce vertical was the largest contributor to the increase in advertising revenue in 2024 compared to 2023".
+- C-b408ffbb2b: unsupported | The cited Merck Risk Factors source never mentions Bristol Myers Squibb or which Filings are provided, so the coverage claim is not in it.
+- C-9eb0a1b612: supported | S8 covers patent loss/challenges, biosimilars, safety or efficacy issues, international "legal and regulatory requirements that are subject to change" and "pricing restrictions", and states AbbVie "responds to challenges by vigorously defending its patents, including by filing patent infringement lawsuits" and must manufacture "in sufficient quantities and in compliance with requirements of the FDA and similar foreign regulatory agencies".
+- C-e80cdb4cd0: supported | S1's header reads "JPM 10-K FY2025 ... Report Period 2025-12-31".
+- C-6dfe887592: contradicted | The cited MD&A has a "Management Opportunities, Challenges and Uncertainties and 2026 Outlook" section in which Tesla says "We currently expect our capital expenditures to be in excess of $20 billion in 2026", which is Tesla's own guidance; and no risk-factors Source is cited.
+- C-490d166715: supported | S10 and S11 say only that U.S. government sales are "a significant portion of our consolidated sales" and "a substantial majority of our total defense sales", with no percentage of 2025 sales, so "not quantified" holds.
+- C-9eda60cb36: supported | S2: "Goodwill balances decreased $(1,169) million in 2014, primarily as a result of currency exchange effects ..., the sale of GEMB-Nordic and other dispositions and a reclassification of goodwill associated with Budapest Bank to assets of businesses held for sale."
+- C-6eccb5a3de: supported | S2 is "LLY 10-K FY2025 ... Report Period 2025-12-31", matching the filing and period stated.
+- C-b2b339f808: supported | S4 (FY2024) lists "trade restrictions, customs regulations, tariffs ... preferences in foreign nations for domestically manufactured products"; S3 (FY2025) says tariffs "have impacted our supply chain costs", uncertainty "impacted the pricing for our products", and EV/energy-storage battery parts "are difficult or impossible to source within the United States".
+- C-c90d7cb15b: supported | S1 is "MRK 10-K FY2024 ... Report Period 2024-12-31" (Merck), and it contains nothing on Bristol Myers Squibb, so no comparison is possible from it.
+- C-f0e1c886d9: supported | The cited AAPL, TSLA and JPM risk-factor sections each describe their own regulatory risks qualitatively, with no shared measure or ranking of exposure, consistent with the claim.
+- C-be5ea13954: supported | S1 is "JPM 10-Q Q3 FY2025 ... Report Period 2025-09-30", matching the label exactly.
+- C-402180bc71: supported | FY2023 $14,997M to FY2025 $3,794M is a 74.7% decrease, and FY2024's "-52.7%" exceeds FY2025's "-46.5%", so FY2024 had the largest decline.
+- C-393fec9de6: supported | JPM's reported "Total net revenue" table gives nine-month figures of "$136,649" vs "$134,788" with a change of "1 %" (managed basis differs at 138,814).
+- C-65b44fd4dd: supported | The three Risk Factors sources cover each named theme (Apple supply chain outside the U.S., product "transitions", App Store commission limits; Tesla autonomy, Bots/Optimus, profitability; JPM credit, market, liquidity and capital risks; cybersecurity, competition and economic conditions in all three), and the stated periods match the Filing IDs.
+- C-20ea478ac2: supported | Apple's Risk Factors repeatedly point to the U.S., e.g. "new tariffs were announced on imports to the U.S. (\"U.S. Tariffs\")" and the U.S. App Store court order.
+- C-3997b1096e: supported | The source lists "slow growth or recession, high unemployment, inflation, tighter credit, higher interest rates, and currency fluctuations" and "Beginning in the second quarter of 2025, new tariffs ... on imports from China, India, Japan, South Korea, Taiwan, Vietnam and the European Union (\"EU\"), among others."
+- C-6014a9ccf3: supported | S4 gives FY2023 net income attributable to common stockholders of "$14,997 million" and no prior-year figure, so no change can be computed from Financial Facts.
+- C-0b27f212e6: supported | S1 frames the plan as a goal and belief ("We have communicated our goal of reducing our ENI ... targeting a balance of less than $300 billion", "we believe that this strategy will improve"), i.e. expectations rather than reported results.
+- C-c63c9b6b03: supported | S1 and S2 are the AAPL 10-K FY2025 (2025-09-27) and 10-Q Q1 FY2026 (2025-12-27) Risk Factors; they only say the Company "may incur write-downs, impairments and other charges" and report no actual charge.
+- C-1e61355e9e: supported | S1 states "We rely in some circumstances on third-party vendors to process, store and transmit large amounts of data ... these vendors are subject to similar risks, but are outside our direct oversight and control."
+- C-84644a86c7: supported | S1 lists "class actions ... investigations and enforcement actions ... including criminal proceedings" and warns resolutions bring "significant penalties", "new or enhanced regulatory requirements or restrictions" and "material restrictions on ... its businesses."
+- C-9820ce7dd1: supported | JPM lists among negative effects of operational disruptions "extended delays for call center services".
+- C-1e506cde26: supported | JPM "has experienced ... failures and disruptions" resulting in "the inability to access account information or transact", "the exfiltration of customer personal data" and "the recording of duplicative transactions".
+- C-214590ad5c: supported | Merck: "HHS could undergo changes that could make it more difficult for the FDA to grant regulatory approvals for drugs and vaccines and the ... CDC to issue or maintain recommendations for vaccines".
+- C-418b8cdb3c: supported | Apple 10-Q (report period 2025-12-27): "There have been no material changes to the Company's risk factors since the 2025 Form 10-K."
+- C-9175892694: supported | UNH: "operational interruptions, delays, or cessation of service and loss of existing or potential customers", material costs to address threats, "litigation and liability, including regulatory penalties", "damage our brand and reputation".
+- C-8d0d4074ec: supported | S4 states "Revenue, FY2024, 12 months ended 2024-12-31: $164,501 million" for META.
+- C-af87f9a136: supported | S1 is "UNH 10-K FY2024, Risk Factors (Item 1A)... Report Period 2024-12-31", matching the attribution exactly.
+- C-d202a133f7: supported | Apple's S1 discusses U.S. Tariffs at length; Tesla's S3 says tariffs "have impacted our supply chain costs"; JPM's S4 lists "trade policies" among factors affecting market conditions in its market-risk discussion.
+- C-bb9d5c53c4: supported | Tesla's S3 says "the General Data Protection Regulation applies..." and names "the California Consumer Privacy Act".
+- C-8d56a519e9: unsupported | The cited JPM Risk Factors source never mentions Wells Fargo or what the Corpus covers, so the coverage statement isn't in the Source.
+- C-af8b7dfa08: supported | S4 states each point: "must comply with applicable law in all of the jurisdictions", supervision "significantly affects the way that it conducts its business and structures its operations", the listed modifications (limiting products, increasing prices, reducing market-making liquidity, higher taxes, disposing of assets, forgoing opportunities), the noncompliance consequences, and "larger firms such as JPMorganChase often face more stringent supervision" with competitors "less regulated".
+- C-1b28a42ef3: unsupported | S1 confirms the JPM 10-K FY2025, report period 2025-12-31, but contains nothing about Wells Fargo, so the conclusion that "any comparison of JPM with Wells Fargo is therefore unavailable" is added by the answer.
+- C-f0956050c6: supported | S1 describes IRA price setting for selected products (Januvia, Janumet, expected Keytruda with "U.S. sales of Keytruda will decline"), the elimination of the Medicaid rebate cap, and "increased utilization of the 340B Federal Drug Discount Program".
+- C-a1963b330a: supported | S1 frames GE Capital's expected effects as expectations, e.g. "net earnings may be reduced" and "we believe that this strategy will improve our long-term performance", not as reported results.
+- C-0d068d5e9b: supported | The claim is cut off mid-sentence, but what it says matches S6: "Changes in the U.S. Government's priorities, or delays or reductions in spending could have a material adverse effect on our business."
+- C-0939dbb6f1: supported | S2 (AAPL 10-Q Q1 FY2026) states "There have been no material changes to the Company's risk factors since the 2025 Form 10-K."
+- C-fea33c5a23: supported | Both cited Sources (S1, S2) are Apple filings only, so the Sources do contain no other company's filings, as the claim says.
+- C-e8ba4d6b2d: unsupported | S1 says GE "signed an agreement to sell our consumer finance business Budapest Bank to Hungary's government" but says nothing about customary closing conditions, regulatory approvals or a 2015 target close.
+- C-d0546f83fa: contradicted | S1 cites a "2026 Outlook" section of the MD&A and states "we currently expect our capital expenditures to exceed $20 billion in 2026", which is Tesla's own forward guidance in the Filing.
+- C-8ac4898283: supported | S4 Credit risk factor: JPMorganChase "could incur losses ... in connection with a default by a client or counterparty" and "If a CCP ... otherwise defaults" it would face costs and losses.
+- C-e13e5dfdb0: supported | S1 says regulatory initiatives outside the U.S. could require "establishing locally-based intermediate holding companies", "maintaining minimum amounts of capital or liquidity in locally-based subsidiaries" and "separating (or 'ring fencing')".
+- C-3cb33c5296: supported | S1 states "a strategy of exiting those businesses that are deemed to be non-strategic or that are underperforming" and focusing on products "where we have deep domain experience, broad distribution, the ability to earn a consistent return on capital and are competitively advantaged".
+- C-b0d7ca00e7: supported | S1 says "we may be unable to anticipate these techniques and threats, timely detect data security incidents or implement adequate preventive measures."
+- C-b9589f7c4e: unsupported | The only cited Source is the FY2025 10-K MD&A; nothing in it shows a FY2024 10-K or any 10-Q for Q2 FY2025 or Q2 FY2026 as a source.
+- C-9f833752e6: supported | S1: "On January 17, 2025, HHS announced that Janumet and Janumet XR have been selected for government price setting, which will become effective on January 1, 2027."
+- C-2aadde36c4: supported | S2 (AAPL 10-Q, Report Period 2025-12-27) states "There have been no material changes to the Company's risk factors since the 2025 Form 10-K."
+- C-e8009afcba: supported | S3 describes a "comparative discussion ... for the two-year period ended December 31, 2025" (2025 vs 2024), and the excerpt gives only segment revenue ($24.1 billion), no firmwide annual revenue.
+- C-9aee38e52b: supported | S3's risk factors cover Cybercab, Bots/Optimus and AI products, suppliers and "heightened import tariffs", and being "highly dependent on the services of Elon Musk".
+- C-fa22740602: contradicted | S3 is a full-year 10-K giving "year ended December 31, 2025" figures and a discussion "for the two-year period ended December 31, 2025", not a nine-month comparison.
+- C-65b3da6cea: supported | S3 names "the Medicare Prescription Drug Improvement and Modernization Act of 2003, the ACA, and the IRA" and "state activities aimed at increasing price transparency, including new laws" as sources of pricing pressure.
+- C-ae899ed8af: supported | S14 states "Cost of revenue increased $4.2 billion or 19% driven by growth in Microsoft Cloud" and "Microsoft Cloud gross margin percentage decreased to 67% driven by continued investments in AI infrastructure and growing AI product usage, offset in part by efficiency gains".
+- C-cc53a97e02: supported | The cited Apple risk factors only say the Company "may incur write-downs, impairments and other charges" and the 10-Q reports no material changes, so the cited disclosures establish no charge taken by Apple or anyone else.
+- C-d1950f3a2f: unsupported | S4 and S8 give only Meta total Revenue figures; no Reality Labs revenue, and neither $2,146 million nor $2,207 million, appears.
+- C-6e3d962c09: supported | S1 lists government actions such as "confiscation, expropriation, nationalization or blocking access to property, including client assets and intellectual property" among country risks.
+- C-745c548438: supported | The cited Sources are three 2025 10-Qs that each say only "There are no material changes from the risk factors" of the 2024 10-K, so they cannot show change over two years.
+- C-f3da49fa37: supported | S1 says "In response, several countries have imposed, or threatened to impose, reciprocal tariffs on imports from the U.S."
+- C-4a02caaefb: supported | S4 gives Q4 FY2024 revenue "$48,386 million (derived)" and S8 gives Q4 FY2025 "$59,894 million (derived); +23.8% from a year earlier".
+- C-5ccd392059: unsupported | No Source says Tesla gives no 2026 guidance or calls its outlook "not formal guidance"; S1 has a "2026 Outlook" section and "expect our capital expenditures to be in excess of $20 billion in 2026", so the claim's characterization is the answer's own conclusion.
+- C-792bf8c64b: supported | S8 "-52.7% from a year earlier" for FY2024, S12 "-46.5%" for FY2025, and $3,794M vs FY2023's $14,997M is about 25%.
+- C-6570a451f3: supported | S4 lists "regulatory and compliance challenges arising from rapidly evolving applicable law, including differences, inconsistencies and conflicts in international standards, which could increase costs, lead to fines and sanctions, and restrict JPMorganChase's use of AI technologies".
+- C-8307c2934b: unsupported | The Source gives the Q3-to-Q4 rises (17%, 19%, 17%) and Q4-to-Q1 declines, but nothing attributes Q4 strength to "holiday demand".
+- C-9fe1561000: supported | The Source says "the Company expects that, as a result, U.S. sales of Keytruda will decline after that time" (after IRA price setting from January 1, 2028).
+- C-5587b30c6d: supported | The Source gives "Revenue, FY2025, 12 months ended 2025-06-30: $281,724 million (reported as "Total revenue")".
+- C-b3cdb90801: supported | The Source names environmental laws "in the U.S., China, Germany", the General Data Protection Regulation, the California Consumer Privacy Act, interconnection rules, and net metering "contested ... before the Federal Energy Regulatory Commission".
+- C-4c32e6cd16: unsupported | The Sources describe each company's regulatory risks, but none ranks JPMorgan's discussion "the broadest"; that comparison is the answer's own conclusion.
+- C-c1081fe10d: supported | S4/S8 give $164,501M and $200,966M with "+22.2% (derived)", S34/S14 report 22% growth "due to an increase in advertising revenue" in both years, and quarterly YoY of +16.1%, +21.6%, +26.2% then +23.8% in Q4 shows acceleration through Q3 and moderation in Q4.
+- C-a8e8e90ca6: unsupported | The only cited Source is Merck's FY2024 Risk Factors, which never mentions Bristol Myers Squibb or what the Filings cover.
+- C-8103bc7e49: supported | S4 states "Capital expenditures, including principal payments on finance leases, were $72.22 billion for the year ended December 31, 2025."
+- C-8ff59fea99: supported | S5 gives Q1 FY2025 revenue "$42,314 million" and "+16.1% from a year earlier (derived)".
+- C-3b561289b1: supported | S1 says physical risks "may lead to lower asset values, increased insurance costs" and transition risks include "carbon taxes".
+- C-57684d4d0b: supported | The fragment asserts nothing beyond what S1 discusses: changes on the "U.S. storefront of the iOS and iPadOS App Store regarding alternative purchasing mechanisms" and a court order barring "any commission or fee on certain purchases that consumers make".
+- C-35f3d0211d: supported | S3 says "we are highly dependent on the services of Elon Musk, Technoking of Tesla and our Chief Executive Officer" under the key-employee risk.
+- C-d2b27c4650: supported | S4 says "the significant expansion of private credit could worsen losses ... disrupt borrowers' ability to refinance ... especially if non-bank lenders have weaker underwriting standards, loans are less liquid, or transparency is limited".
+- C-4071af70f5: supported | S2 says "Our BDS and BGS defense businesses each generated approximately 60% of their 2025 revenues from fixed-price contracts" and that these "subject us to losses when we have cost overruns".
+- C-587a43845a: supported | The TSLA FY2024 source cites "the availability and cost of energy, processing power limitations and the substantial power requirements for our data centers".
+- C-2d11301c73: supported | The cited Sources are JPM, AAPL and TSLA Item 1A risk-factor texts that describe risks only qualitatively and give no quantified expected regulatory cost or loss, so describing the comparison as qualitative is directly implied.
+- C-cd4a7fcb90: supported | TSLA 10-K FY2025 Business states "We began manufacturing a new residential retrofit solar panel in 2025, and began initial customer deliveries in January 2026."
+- C-c43f29c22c: unsupported | The BAC 10-K FY2024 Risk Factors source never mentions 10-Qs or any later filing referring back to it as a baseline.
+- C-8578bccc40: supported | META MD&A gives capex of "approximately $115 billion to $135 billion in 2026 to support our AI efforts and core business" with no breakdown by category.
+- C-55e2a7c7f4: supported | UNH Risk Factors: "we have programs in place to detect, contain and respond to data security incidents and provide employee awareness training regarding phishing, malware and other cyber threats."
+- C-969fa762e2: unsupported | S1 lists a broad range of regulatory subjects ("antitrust; privacy, data security...; online safety; age verification; ... tax") alongside competition rules and the DMA, so the conclusion that exposure is "concentrated" in competition and digital-platform rules is not stated.
+- C-a0a21d86a5: supported | S3 ties production ramp delays to "Cybercab, our purpose-built Robotaxi product" and says "we may experience delays in launching and ramping the production of" Bots, and "We have yet to commercialize Bots, including Optimus".
+- C-fcf82d5e78: supported | S1 says 2026 capex is "driven by our AI initiatives, including investments in compute infrastructure and data centers, the expansion and ramp of our manufacturing and R&D production lines and facilities, and growth in our fleet of company-operated AI-enabled assets and our retail, service and charging footprint".
+- C-a35466b1f9: supported | S3: "Upon launching our Robotaxi service in June 2025 ... our success will be dependent upon ... the acceptance and adoption by consumers of autonomous driving solutions, and Robotaxi".
+- C-b9762bb24f: supported | The cited Sources are exactly the AAPL, TSLA and JPM 10-K FY2025 Risk Factors, so the comparison does use Apple, Tesla and JPMorgan; "listed in Coverage" points to the answer's own section and adds no fact about the companies.
+- C-35b5684fe0: contradicted | The cited MD&A has a "2026 Outlook" section stating "We currently expect our capital expenditures to be in excess of $20 billion in 2026", a quantified company expectation for 2026, so "do not provide company guidance for 2026" conflicts with the Source.
+- C-3f3d9253aa: supported | JPM's risk factors cover "extensive supervision and regulation" and "enforcement actions", "interconnectivity across credit markets" and operational interconnectivity, interest rates and "constrained liquidity", and competition from "generative and agentic AI"; the Wells Fargo line only notes a coverage gap, and no cited Source covers Wells Fargo.
+- C-4870561bff: unsupported | The cited risk-factor and business excerpts say nothing about which figures the answer used or about a "Financial Facts table", so the Sources cannot back this statement about where the figures came from.
+- C-a51599815c: supported | S1: "by excluding liquidity, it provides a meaningful measure of assets requiring capital to fund its GE Capital segment as a substantial amount of liquidity resulted from debt issuances to pre-fund future debt maturities and will not be used to fund additional assets", and the measure is used to "measure the size of its GE Capital segment".
+- C-c42d6f7243: supported | The FY2025 10-K covers economic conditions ("depend significantly on global and regional economic conditions"), "sales outside the U.S. representing a majority", tariffs, concentrated supply chains, outsourcing partners, quality, competition, foreign exchange, privacy, cybersecurity, the investment portfolio and receivables, and the 10-Q says "no material changes to the Company's risk factors since the 2025 Form 10-K".
+- C-dd6f523473: supported | S1 says ENI is "a useful indicator of the capital (debt or equity) required to fund a business as it adjusts for non-interest bearing current liabilities" and excludes liquidity because it "resulted from debt issuances to pre-fund future debt maturities and will not be used to fund additional assets".
+- C-16025ef680: supported | S1 frames the ENI-reduction benefits as management's beliefs ("we believe that this strategy will improve our long-term performance", earnings "may be reduced"), i.e. stated expectations rather than reported results.
+- C-d6e1c737ab: supported | S14 (MSFT 10-Q Q2 FY2026) states verbatim "Revenue increased $11.6 billion or 17% driven by Intelligent Cloud and Productivity and Business Processes, offset in part by More Personal Computing."
+- C-f60ab6a5c6: supported | S12 (FY2025 10-K) shows More Personal Computing revenue $54,649 vs $50,838, "7%", and says it "increased driven by Gaming and Search and news advertising".
+- C-6f49228cfb: supported | S1 states "Some of the data we process, store and transmit may be outside of the United States due to our information technology systems and international business operations."
+- C-99fd778043: supported | Sources give no consolidated percentage ("a significant portion of our consolidated sales") but say the U.S. government represents "a substantial majority of our total defense sales".
+- C-93401db3f3: unsupported | The only cited Source is the Q3 FY2025 10-Q; nothing in it says JPMorgan is a Snapshot Company or that coverage runs from 2025-03-31 to 2025-12-31.
+- C-0948010229: supported | S35 says the provision "decreased by $414 million ... primarily due to a reduction in income before income taxes" and the "effective tax rate increased from 20% to 27%".
+- C-d74d83e0ce: supported | S7, S8, S9 and S10 give $70,066M +13.3%, $76,441M (derived FY less Q1–Q3) +18.1%, $77,673M +18.4% and $81,273M +16.7%, exactly as claimed.
+- C-f1b3808db5: supported | S1 says "the significant expansion of private credit could worsen losses among non-bank lenders and their borrowers".
+- C-56dadddf71: supported | S3 names the pricing laws ("Medicare Prescription Drug Improvement and Modernization Act of 2003, the ACA, and the IRA") as pricing-pressure risks and describes no response to them, so the claim about the excerpt holds.
+- C-601f5f614f: supported | S1 is a list of JNJ risks; its only response-like statements are general ("closely monitors these proposals" on tax, cyber investments), and it sets out no regulatory-specific plan, which matches the claim.
+- C-0ff7ceb282: supported | S4 says "with the European Regulation on Health Technology Assessment (EU HTA-R) taking effect in January 2025, we are engaging and monitoring application of the EU's new clinical assessment program to new oncology products and certain biologic products submitted to the EMA."
+- C-17e2457724: supported | S1 says unauthorized dissemination "could expose us or them to the risk of financial or medical identity theft... and loss or misuse of this information, result in litigation and liability... damage our brand and reputation."
+- C-3576a57485: unsupported | The cited Sources are only revenue Financial Facts; they say nothing about guidance, MD&A commentary or risk factors, so they cannot support the claim about what the Filings contain or what the outlook is based on.
+- C-48e4be0ab7: supported | S1 says "A significant majority of the Company's manufacturing is performed in whole or in part by outsourcing partners located primarily in China mainland, India, Japan, South Korea, Taiwan and Vietnam".
+- C-8dcd657434: supported | S8 names "government-mandated price reductions" in Europe, Medicaid rebates from government programs, and private payers' leverage "to negotiate higher or additional rebates or discounts".
+- C-115300cf6d: supported | S1 says "In 2014, our average assets of $507.2 billion were 3.0% lower than in 2013".
+- C-deea35909d: supported | S12 marks the year-over-year changes in the Financial Facts as derived ("-46.5% from a year earlier (derived)", "-63.7% from a year earlier (derived)").
+- C-029b14803e: supported | The claim is a truncated fragment that asserts only that Apple says something about the U.S., and S1 does discuss the U.S. (e.g. "new tariffs were announced on imports to the U.S."), so it adds nothing beyond the Source.
+- C-ecd9d4f277: unsupported | The Source is the TSLA 10-K FY2025 MD&A (report period 2025-12-31), but it does not establish that Tesla's guidance is absent; it has a "2026 Outlook" and "expect our capital expenditures to be in excess of $20 billion in 2026", and no risk factors are cited.
+- C-2d01de0ddc: supported | The 10-K risk factors describe "controls on imports or exports of goods, technology or data" as a risk, the 10-Q reports "no material changes", and neither reports any charge for it.
+- C-06a937357b: supported | Both the TSLA 10-K FY2024 and the 10-Q Q1 FY2025 risk factors say "we monitor tax legislation changes ... arising as a result of the Organization for Economic Cooperation and Development's multi-jurisdictional plan of action to address base erosion and profit shifting".
+- C-10448c6d5a: contradicted | The FY2024 risk says much more than "only" that: incentives "may be reduced, eliminated, amended or exhausted", have "expired or were cancelled or temporarily unavailable, and in some cases were not eventually replaced", and may favour domestic manufacturers.
+- C-a1bd1c9b26: supported | The MD&A says "Changes in trade policy may necessitate adjustments to our project timelines, potentially impacting our capital expenditure expectations."
+- C-ca2a9edef1: supported | YoY growth was +16.1% (Q1), +21.6% (Q2), +26.2% (Q3) then +23.8% (Q4 FY2025): accelerating through Q3, moderating in Q4.
+- C-43954a41fc: unsupported | A statement about the answer's own method; the cited Risk Factors text says nothing about a "qualitative comparison" or a measure of exposure.
+- C-7cc870f1c4: supported | Pfizer says "Post-marketing studies ... and other emerging data ... may also adversely affect the availability" of products, citing its "decision to voluntarily withdraw Oxbryta" on clinical data.
+- C-f382fafe01: supported | Merck: "increased utilization of the 340B Federal Drug Discount Program and restrictions on the Company's ability to identify inappropriate discounts are having a negative impact on the Company's performance."
+- C-4688a37058: supported | TSLA FY2024 cites "delays in launching and ramping," "cost-effective manufacturing" at "California, Nevada, Texas, China, Germany and any future sites such as Mexico"; FY2025 broadens to developing and commercializing new products.
+- C-9d3401ab9f: unsupported | The cited Sources give only Tesla net income figures and say nothing about a tax benefit in FY2023 or bitcoin remeasurements in FY2024 and FY2025.
+- C-b0312f64a3: supported | The cited Apple risk factors discuss export controls only as a general risk ("controls on imports or exports ... can materially adversely affect") and state no charge taken because of new China export controls, which is what the claim says.
+- C-d2c11b6df1: supported | S1 states GE Capital "reduced its ending net investment (ENI), excluding liquidity, to $363 billion at December 31, 2014" and "most recently targeting a balance of less than $300 billion", calling ENI the measure of capital in the financial services business.
+- C-efeeefef38: unsupported | The only cited Source is JPM's 10-K (report period 2025-12-31); it says nothing about Apple's FY2025 ending 2025-09-27 or Tesla's FY2025 period.
+- C-b22863f0d5: supported | S4 says "the significant expansion of private credit could worsen losses among non-bank lenders and their borrowers".
+- C-ad016b7761: supported | S1 states "New products introduced within the past five years accounted for approximately 25% of 2025 sales", that development is "necessary to offset revenue losses ... due to ... competition and loss of patent exclusivity", and that approval and commercial success are uncertain.
+- C-ec2f8abced: supported | S2 says "The U.S. government may modify, curtail or terminate one or more of our contracts" and "Fixed-price contracts subject us to the risk of ... losses if we are unable to achieve estimated costs".
+- C-10bdbc9325: supported | Both Sources are Apple's; they discuss "Restrictions on international trade, such as tariffs" and "U.S. Tariffs" as risks, and neither states that Apple recorded a tariff charge.
+- C-c96d842d53: supported | S1: the American Rescue Plan Act "eliminates the statutory cap on rebates drug manufacturers pay to Medicaid beginning in January 2024".
+- C-cf2faddd31: supported | Each Source's Risk Factors carry the named themes: Apple's demand, gross margins, product transitions and supply chain; Tesla's production ramps, suppliers and indebtedness/funding; JPMorgan's regulatory, credit, market, liquidity, capital and operational risks.
+- C-39041f5720: supported | The Q1 2025 10-Q states "We anticipate making capital expenditures of approximately $64 billion to $72 billion in 2025."
+- C-56af839a18: unsupported | The cited Risk Factors describe trade restrictions and tariffs as risks, but excerpts of Risk Factors alone cannot establish that the filings "do not report such a charge" (the 10-K says these statements "are not representations as to whether such matters have or have not occurred").
+- C-035c957bf7: supported | Under "evolving laws and regulations", the 10-K cites "standards relating to vehicle safety, fuel economy and emissions", "certification ... by foreign regulatory agencies" and "foreign reporting and recall management systems requirements", and says regulations "may delay, restrict or prohibit" driver assistance, autonomous capability and "the pace at which we expand our Robotaxi business".
+- C-2114f0c2bc: supported | The GE Capital passage presents its goals as management's view ("most recently targeting", "we believe that this strategy will improve our long-term performance"), so calling them stated expectations rather than outcomes is consistent with it.
+- C-6cd8aea0b0: supported | The cited 2025-vs-2024 figures are segment-level ("Revenue from Asset Management", "Revenue from Global Private Bank", net revenue $24.1 billion) and line-item figures (mortgage fees), not a firmwide revenue comparison.

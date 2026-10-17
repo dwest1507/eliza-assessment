@@ -125,6 +125,27 @@ describe('messageCitedFilings', () => {
     }
     expect(messageCitedFilings(message)).toEqual({ S1: 'TSLA_10-K_2025-12-31' })
   })
+
+  it('skips a tag that is not a Source tag, so the history cannot set an object key', () => {
+    const message = {
+      parts: [
+        {
+          type: 'data-sources',
+          data: {
+            sources: [
+              { tag: '__proto__', filingId: 'AAPL_10-K_2025-09-27' },
+              { tag: 'constructor', filingId: 'AAPL_10-K_2025-09-27' },
+              { tag: 'S1 ', filingId: 'AAPL_10-K_2025-09-27' },
+              { tag: 'S2', filingId: 'TSLA_10-K_2025-12-31' },
+            ],
+          },
+        },
+      ],
+    }
+    const cited = messageCitedFilings(message)
+    expect(cited).toEqual({ S2: 'TSLA_10-K_2025-12-31' })
+    expect(Object.getPrototypeOf(cited)).toBe(Object.prototype)
+  })
 })
 
 describe('the turn limit', () => {

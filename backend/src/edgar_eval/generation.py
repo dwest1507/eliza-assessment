@@ -6,11 +6,23 @@ Call to the generator under test. The answer is then scored three ways:
 
 - **In code** (`edgar_eval.answer_checks`): citation validity, figure exactness,
   Coverage Gap statements, and the answer's structure (assumption 8).
-- **By Jev** (`edgar_eval.judge`), pinned to an exact version: Fact Recall against the
-  case's Required Facts, and Faithfulness of each claim to the Sources it cites.
+- **By Jev** (`edgar_eval.judge`), pinned to an exact version: whether the answer
+  states each of the case's Required Facts, and Faithfulness of each claim to the
+  Sources it cites. Fact Recall is scored on the must-state facts only; detail recall,
+  on the details, is reported beside it and decides nothing. Any claim Jev
+  judges contradicted by its Sources, a Contradicted Claim, fails the answer
+  (`ContradictionCheck`), beside the citation and Coverage Gap checks in code, whatever
+  its Faithfulness.
+  A judgment Jev fails to make is recorded in its case, which keeps its code checks
+  and other judgments; the score that depends on it is missing for that case, and the
+  report counts and lists every failed judgment.
 - **Cost and latency**, from the Answer Call's logged record: its token usage priced
   at the model's price in `edgar_eval.generators.GENERATORS`, and its latency to the
   first text and to the end.
+
+An answer the model stopped at the Answer Call's token cap (its stop reason is
+`token_cap`) is truncated: it fails, its Fact Recall is 0, its Faithfulness is still
+judged on what it wrote, and the run counts it.
 
 `make eval-generation` runs it on the dev split with the default generator, prints the
 scores and writes them, with every answer, as JSON under `data/derived/eval/`:
@@ -22,6 +34,13 @@ scores and writes them, with every answer, as JSON under `data/derived/eval/`:
 Sources per Answer Call (ADR 0010); the report records both, and names the setting
 (`chunks-600-budget-32000`) for the selection rule.
 
+`--brief-suite` answers the Brief Suite instead of a Golden Set split, each case
+`--runs` times (5 by default), and gives each case a pass/fail verdict
+(`edgar_eval.brief_suite`; `make eval-brief`). A Golden Set run answers each case once.
+Every paid run prints its estimated cost (`edgar_eval.brief_suite.estimate_cost`) before
+the first Answer Call. Each case result records Evidence Reached for each Required Fact:
+whether its evidence quote is in the text of the Answer Context's Sources.
+
 `--model` takes a generator from `edgar_eval.generators.GENERATORS`, which says which
 provider answers with it. It calls the generator and Jev, so it needs `JEV_API_KEY` and
 the key of the generator's provider (`OPENAI_API_KEY` or `ANTHROPIC_API_KEY`), and it
@@ -32,12 +51,18 @@ about a third of a cent per case with `gpt-6-luna`, Jev included.
 reports from their stored answers, in place, with no Answer Call and no Jev call
 (`rescore_figures`). A changed check is a fixed measurement, not a new choice, so
 rescoring is allowed on the holdout.
+
+A Golden Set report records the round it was run in (`current_round`): the code version
+(a digest of the backend's source, `code_version`), the prompt version and the Golden
+Set version. The selection commands reuse a round's shipped run and Control Run only
+when all three match (ADR 0011).
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import re
 import sys
@@ -62,14 +87,27 @@ from edgar_eval.answer_checks import (
     claims,
 )
 from edgar_eval.generators import answer_cost, answer_model
-from edgar_eval.judge import Evidence, Judgments
+from edgar_eval.judge import FACT_CUTOFF, Evidence, Judgments
 from edgar_eval.retrieval import Arm, Prepare, conversation
-from edgar_rag.answer_model import DEFAULT_ANSWER_LOG, AnswerCall, AnswerModel
+from edgar_rag.answer_model import DEFAULT_ANSWER_LOG, AnswerCall, AnswerModel, StopReason
 from edgar_rag.corpus import DEFAULT_SECTOR_TABLE
-from edgar_rag.golden_set import DEFAULT_GOLDEN_SET, GoldenCase, load_golden_set
+from edgar_rag.golden_set import (
+    DEFAULT_BRIEF_SUITE,
+    DEFAULT_GOLDEN_SET,
+    GOLDEN_SET_FILES,
+    GOLDEN_SET_V1,
+    GOLDEN_SET_V2,
+    GoldenCase,
+    Tier,
+    load_brief_suite,
+    load_golden_set,
+    normalise_whitespace,
+)
+from edgar_rag.paths import REPO_ROOT
 from edgar_rag.retrieval import (
     CONTEXT_BUDGET_TOKENS,
     DEFAULT_INDEX,
+    PROMPT_VERSION,
     Source,
     index_chunk_tokens,
     prepare_answer_context,
@@ -77,10 +115,13 @@ from edgar_rag.retrieval import (
 
 __all__ = [
     "CaseResult",
+    "ContradictionCheck",
     "GenerationReport",
     "Judge",
     "Summary",
+    "code_version",
     "company_names",
+    "current_round",
     "evaluate",
     "main",
     "rescore_figures",
@@ -88,7 +129,9 @@ __all__ = [
 
 
 class Judge(Protocol):
-    """What the harness needs from a judge: `edgar_eval.judge.JevJudge`, or a fake."""
+    """What the harness needs from a judge: `edgar_eval.judge.JevJudge`, or a fake. A
+    judgment it cannot make goes in `Judgments.failures`; it raises only when no score
+    from it could stand, such as a response from another Jev version."""
 
     def judge(
         self,
@@ -97,6 +140,23 @@ class Judge(Protocol):
         claims: Sequence[Claim],
         sources: dict[str, Evidence],
     ) -> Judgments: ...
+
+
+@dataclass(frozen=True)
+class ContradictionCheck:
+    """The answer's Contradicted Claims: claims Jev judged contradicted by the Sources
+    they cite. Any one fails the answer, whatever its Faithfulness, so a wrong figure is
+    not averaged away."""
+
+    claims: tuple[str, ...]
+
+    @property
+    def count(self) -> int:
+        return len(self.claims)
+
+    @property
+    def passed(self) -> bool:
+        return not self.claims
 
 
 @dataclass(frozen=True)
@@ -118,14 +178,59 @@ class CaseResult:
     """None when the case expects no Coverage Gap."""
     judgments: Judgments
     structure: StructureCheck
+    fact_tiers: tuple[Tier, ...] = ()
+    """Each judged Required Fact's tier, in the order of `judgments.facts`. Empty means
+    every fact is must-state, as in version 1."""
+    stop_reason: StopReason | None = None
+    """Why the model stopped, from the Answer Call's record."""
+    raw_stop_reason: str | None = None
+    evidence_reached: tuple[bool, ...] = ()
+    """Evidence Reached for each Required Fact, in the case's order: whether its evidence
+    quote is in the text of the Answer Context's Sources. Empty in reports saved before
+    it was recorded."""
+
+    @property
+    def truncated(self) -> bool:
+        """Whether the answer was cut off at the Answer Call's token cap."""
+        return self.stop_reason == "token_cap"
+
+    @property
+    def passed(self) -> bool:
+        """Whether the answer passes: not truncated, every citation valid, every
+        expected Coverage Gap stated, and no Contradicted Claim."""
+        gaps = self.coverage_gaps is None or self.coverage_gaps.passed
+        return not self.truncated and self.citations.passed and gaps and self.contradictions.passed
 
     @property
     def fact_recall(self) -> float | None:
-        return self.judgments.fact_recall
+        """The share of must-state Required Facts stated, or None if the case has none
+        or their judgment failed. A truncated answer's is 0: a cut-off answer can't
+        score as complete."""
+        recall = self._recall("must_state")
+        return 0.0 if self.truncated and recall is not None else recall
+
+    @property
+    def detail_recall(self) -> float | None:
+        """The share of detail Required Facts stated, or None if the case has none or
+        their judgment failed."""
+        return self._recall("detail")
+
+    def _recall(self, tier: Tier) -> float | None:
+        if self.judgments.fact_recall is None:  # no fact, or their judgment failed
+            return None
+        tiers = self.fact_tiers or ("must_state",) * len(self.judgments.facts)
+        stated = [f.stated for f, t in zip(self.judgments.facts, tiers, strict=True) if t == tier]
+        return sum(stated) / len(stated) if stated else None
 
     @property
     def faithfulness(self) -> float | None:
         return self.judgments.faithfulness
+
+    @property
+    def contradictions(self) -> ContradictionCheck:
+        return ContradictionCheck(
+            tuple(c.claim for c in self.judgments.claims if c.verdict == "contradicted")
+        )
 
 
 @dataclass(frozen=True)
@@ -145,9 +250,14 @@ class Summary:
     """Share of answers in the PE-analyst structure of assumption 8."""
     mean_words: float
     fact_recall: float | None
-    """Mean share of Required Facts stated, over cases with Required Facts."""
+    """Mean share of must-state Required Facts stated, over cases with any."""
+    detail_recall: float | None
+    """Mean share of detail Required Facts stated, over cases with any. Reported, never
+    decided on."""
     faithfulness: float | None
     """Mean share of claims supported by their cited Sources, over answers with claims."""
+    answers_contradicted: int
+    """Answers with at least one Contradicted Claim, each of which fails."""
     mean_cost_usd: float | None
     total_cost_usd: float | None
     mean_latency_s: float
@@ -156,6 +266,10 @@ class Summary:
     mean_input_tokens: float | None
     mean_output_tokens: float | None
     judge_cost_usd: float
+    truncated: int = 0
+    """Answers cut off at the Answer Call's token cap."""
+    judgments_failed: int = 0
+    """Jev judgments that failed, each leaving its case's score missing (`JudgmentFailure`)."""
 
 
 @dataclass(frozen=True)
@@ -167,13 +281,18 @@ class GenerationReport:
     by_type: dict[str, Summary]
     cases: tuple[CaseResult, ...]
     errors: dict[str, str]
-    """Cases that could not be answered or judged, with the error."""
+    """Cases that could not be answered, with the error. A judgment that failed is
+    recorded in its case's judgments instead, and the case is kept."""
     arm: str | None = None
     """The retrieval Arm the Answer Contexts came from."""
     context_budget: int = CONTEXT_BUDGET_TOKENS
     """Tokens of Sources each Answer Call was allowed (ADR 0010)."""
     chunk_tokens: int | None = None
     """The chunk size of the index the Sources came from, when known (ADR 0010)."""
+    fact_cutoff: float = FACT_CUTOFF
+    """The probability from which Jev's Required Fact counted as stated
+    (`edgar_eval.judge.FACT_CUTOFF`). A report saved before it was recorded was scored at
+    0.5."""
 
     @property
     def settings(self) -> str:
@@ -185,7 +304,15 @@ class GenerationReport:
         data = asdict(self) | {"settings": self.settings}
         for case, result in zip(data["cases"], self.cases, strict=True):
             case["fact_recall"] = result.fact_recall
+            case["detail_recall"] = result.detail_recall
             case["faithfulness"] = result.faithfulness
+            contradictions = result.contradictions
+            case["contradictions"] = asdict(contradictions) | {
+                "count": contradictions.count,
+                "passed": contradictions.passed,
+            }
+            case["truncated"] = result.truncated
+            case["passed"] = result.passed
             case["judgments"]["judge_cost_usd"] = result.judgments.cost_usd
         return data
 
@@ -274,6 +401,7 @@ def _run_case(
 
     passages = {s.number: s.text for s in context.sources}
     evidence = {s.tag: Evidence(s.tag, s.label, s.text) for s in context.sources}
+    source_text = normalise_whitespace("\n".join(s.text for s in context.sources))
     covered = {s.ticker: names.get(s.ticker, (s.ticker,)) for s in context.sources}
     gaps = case.expected_coverage_gaps
     return CaseResult(
@@ -295,6 +423,12 @@ def _run_case(
             answer, [f.fact for f in case.required_facts], claims(answer), evidence
         ),
         structure=check_structure(answer, covered),
+        fact_tiers=tuple(f.tier for f in case.required_facts),
+        stop_reason=record.stop_reason,
+        raw_stop_reason=record.raw_stop_reason,
+        evidence_reached=tuple(
+            normalise_whitespace(f.evidence) in source_text for f in case.required_facts
+        ),
     )
 
 
@@ -325,7 +459,9 @@ def _summarise(results: Sequence[CaseResult]) -> Summary:
         structure_followed=mean(r.structure.passed for r in results) or 0.0,
         mean_words=mean(r.structure.words for r in results) or 0.0,
         fact_recall=mean(r.fact_recall for r in results),
+        detail_recall=mean(r.detail_recall for r in results),
         faithfulness=mean(r.faithfulness for r in results),
+        answers_contradicted=sum(not r.contradictions.passed for r in results),
         mean_cost_usd=fmean(priced) if priced else None,
         total_cost_usd=sum(priced) if priced else None,
         mean_latency_s=mean(r.latency_s for r in results) or 0.0,
@@ -334,6 +470,8 @@ def _summarise(results: Sequence[CaseResult]) -> Summary:
         mean_input_tokens=mean(r.input_tokens for r in results),
         mean_output_tokens=mean(r.output_tokens for r in results),
         judge_cost_usd=sum(r.judgments.cost_usd for r in results),
+        truncated=sum(r.truncated for r in results),
+        judgments_failed=sum(len(r.judgments.failures) for r in results),
     )
 
 
@@ -448,6 +586,31 @@ def corpus_fact_values(filing_id: str) -> tuple[int, ...]:
 # --- Command line -------------------------------------------------------------------------
 
 
+_SOURCE = REPO_ROOT / "backend" / "src"
+
+
+def code_version(source: Path = _SOURCE) -> str:
+    """A digest of every Python file under `source` (the backend's packages by default),
+    their paths and contents: any change to the code that answers, judges or scores a
+    case changes it, and nothing else does."""
+    digest = hashlib.sha256()
+    for path in sorted(source.rglob("*.py")):
+        digest.update(path.relative_to(source).as_posix().encode() + b"\0")
+        digest.update(path.read_bytes() + b"\0")
+    return digest.hexdigest()[:16]
+
+
+def current_round(golden_set: Path = DEFAULT_GOLDEN_SET) -> dict[str, str | int]:
+    """The round a Golden Set run now belongs to: the same code, prompt and Golden Set
+    version (ADR 0011). A report records it, so a selection command can tell whether a
+    shipped run or Control Run already written belongs to this round."""
+    return {
+        "code_version": code_version(),
+        "prompt_version": PROMPT_VERSION,
+        "golden_set_version": load_golden_set(golden_set).version,
+    }
+
+
 def main(
     argv: list[str] | None = None,
     *,
@@ -457,8 +620,17 @@ def main(
     arms: Sequence[Arm] | None = None,
     out: TextIO | None = None,
 ) -> int:
+    from edgar_eval.brief_suite import (
+        BRIEF_SUITE_RUNS,
+        estimate_cost,
+        evaluate_brief_suite,
+        print_brief_suite_report,
+    )
+
     out = out or sys.stdout
-    parser = argparse.ArgumentParser(description="Score generated answers on the Golden Set.")
+    parser = argparse.ArgumentParser(
+        description="Score generated answers on the Golden Set or the Brief Suite."
+    )
     parser.add_argument("--split", choices=("dev", "holdout", "all"), default="dev")
     parser.add_argument(
         "--model", help="a model in GENERATORS (default: OPENAI_MODEL, else the shipped one)"
@@ -476,7 +648,25 @@ def main(
         metavar="TOKENS",
         help="tokens of Sources per Answer Call (ADR 0010)",
     )
-    parser.add_argument("--golden-set", type=Path, default=DEFAULT_GOLDEN_SET)
+    parser.add_argument(
+        "--golden-set",
+        type=Path,
+        default=DEFAULT_GOLDEN_SET,
+        help="a Golden Set file (default: version 2; name data/eval/golden_set.json for 1)",
+    )
+    parser.add_argument(
+        "--brief-suite",
+        type=Path,
+        nargs="?",
+        const=DEFAULT_BRIEF_SUITE,
+        metavar="PATH",
+        help="answer the Brief Suite (default file if no PATH) instead of a Golden Set split",
+    )
+    parser.add_argument(
+        "--runs",
+        type=int,
+        help=f"times each case is answered (the Brief Suite: default {BRIEF_SUITE_RUNS})",
+    )
     parser.add_argument("--log", type=Path, default=DEFAULT_ANSWER_LOG, help="Answer Call log")
     parser.add_argument("--json", type=Path, help="also write the report as JSON here")
     parser.add_argument(
@@ -504,9 +694,14 @@ def main(
         for path in args.rescore:
             report = json.loads(path.read_text(encoding="utf-8"))
             saved_arm = by_name[report["arm"]] if report.get("arm") else arm
+            # Each report against its own Golden Set version (version 1 if it records
+            # none, as reports from before the version was recorded): the file named if
+            # it is that version, else that version's own file.
+            version = report.get("golden_set_version", 1)
+            own = golden if golden.version == version else None
             rescored = rescore_figures(
                 report,
-                golden.cases,
+                (own or load_golden_set(GOLDEN_SET_FILES[version])).cases,
                 args.index,
                 fact_values=fact_values or corpus_fact_values,
                 prepare=saved_arm.prepare or prepare_answer_context,
@@ -520,11 +715,27 @@ def main(
                 file=out,
             )
         return 0
-    cases = golden.cases if args.split == "all" else golden.split(args.split)
+    if args.brief_suite:
+        # The suite's cases replace version 1 cases, whichever Golden Set file is named.
+        golden_sets = dict.fromkeys((GOLDEN_SET_V1, GOLDEN_SET_V2, args.golden_set))
+        suite = load_brief_suite(args.brief_suite, golden_sets)
+        cases, where, runs = suite.cases, "Brief Suite", args.runs or BRIEF_SUITE_RUNS
+        if runs < 1:
+            parser.error("--runs must be at least 1")
+    else:
+        try:
+            golden.require_frozen()
+        except ValueError as error:
+            parser.error(str(error))
+        suite = None
+        cases = golden.cases if args.split == "all" else golden.split(args.split)
+        where, runs = f"{args.split} split", 1
+        if args.runs not in (None, 1):
+            parser.error("--runs applies to the Brief Suite; a Golden Set run answers once")
     if args.case:
         unknown = set(args.case) - {c.id for c in cases}
         if unknown:
-            parser.error(f"no such case in the {args.split} split: {', '.join(sorted(unknown))}")
+            parser.error(f"no such case in the {where}: {', '.join(sorted(unknown))}")
         cases = [c for c in cases if c.id in args.case]
     if model is None:
         model = answer_model(args.model)
@@ -533,12 +744,10 @@ def main(
 
         judge = JevJudge()
 
-    report = evaluate(
-        cases,
-        model,
-        judge,
-        args.index,
-        names=company_names() | _missing_company_names(golden.cases),
+    print(estimate_cost(model.model, len(cases) * runs, args.context_budget).line(), file=out)
+    labelled = (*golden.cases, *(suite.cases if suite else ()))
+    settings = dict(
+        names=company_names() | _missing_company_names(labelled),
         fact_values=fact_values or corpus_fact_values,
         log_path=args.log,
         workers=args.workers,
@@ -547,10 +756,25 @@ def main(
         context_budget=args.context_budget,
         chunk_tokens=index_chunk_tokens(args.index) if args.index.exists() else None,
     )
+    # Whether the Arm makes an API call at query time: if so, it can't ship (the one-call
+    # rule), and the selection rule never chooses it.
+    one_call = {"query_api_call": arm.query_api_call}
+    if suite is not None:
+        brief = evaluate_brief_suite(cases, model, judge, args.index, runs=runs, **settings)
+        print_brief_suite_report(brief, out)
+        if args.json:
+            args.json.parent.mkdir(parents=True, exist_ok=True)
+            data = {"brief_suite_version": suite.version} | brief.to_dict() | one_call
+            args.json.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+            print(f"\nWritten to {args.json.resolve()}", file=out)
+        return 1 if any(r.errors for r in brief.run_reports) else 0
+
+    report = evaluate(cases, model, judge, args.index, **settings)
     _print_report(report, args.split, out)
     if args.json:
         args.json.parent.mkdir(parents=True, exist_ok=True)
-        data = {"split": args.split, "golden_set_version": golden.version} | report.to_dict()
+        data = {"split": args.split} | current_round(args.golden_set) | report.to_dict()
+        data |= one_call
         args.json.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
         print(f"\nWritten to {args.json.resolve()}", file=out)
     return 1 if report.errors else 0
@@ -564,7 +788,9 @@ _COLUMNS = (
     ("structure", lambda s: _share(s.structure_followed)),
     ("words", lambda s: f"{s.mean_words:.0f}"),
     ("recall", lambda s: _share(s.fact_recall)),
+    ("detail", lambda s: _share(s.detail_recall)),
     ("faithful", lambda s: _share(s.faithfulness)),
+    ("contradicted", lambda s: str(s.answers_contradicted)),
     ("$/answer", lambda s: "–" if s.mean_cost_usd is None else f"{s.mean_cost_usd:.4f}"),
     ("latency s", lambda s: f"{s.mean_latency_s:.1f}"),
     ("first s", lambda s: "–" if s.mean_first_token_s is None else f"{s.mean_first_token_s:.1f}"),
@@ -579,7 +805,8 @@ def _print_report(report: GenerationReport, split: str, out: TextIO) -> None:
     print(
         f"Generation on the {split} split: {report.overall.cases} cases answered by "
         f"{report.model} (prompt {report.prompt_version}) on the {report.arm or '?'} Arm "
-        f"({report.settings}), judged by {report.judge_model}",
+        f"({report.settings}), judged by {report.judge_model} "
+        f"at the fact cut-off {report.fact_cutoff}",
         file=out,
     )
     headers = ["", *(name for name, _ in _COLUMNS)]
@@ -596,7 +823,19 @@ def _print_report(report: GenerationReport, split: str, out: TextIO) -> None:
         f"Jev judging cost ${o.judge_cost_usd:.4f}.",
         file=out,
     )
+    print(f"Judgments failed: {o.judgments_failed}", file=out)
+    for r in report.cases:
+        for failure in r.judgments.failures:
+            what = "Fact Recall" if failure.judgment == "fact_recall" else "Faithfulness"
+            noun = "Required Fact" if failure.judgment == "fact_recall" else "claim"
+            count = len(failure.items)
+            print(
+                f"  {r.case_id}: {what} of {count} {noun}{'' if count == 1 else 's'}, "
+                f"left missing: {failure.error}",
+                file=out,
+            )
     for label, failing in (
+        ("Truncated at the token cap", [r.case_id for r in report.cases if r.truncated]),
         ("Citations invalid", [r.case_id for r in report.cases if not r.citations.passed]),
         ("Figures not exact", [r.case_id for r in report.cases if not r.figures.passed]),
         (
@@ -605,6 +844,13 @@ def _print_report(report: GenerationReport, split: str, out: TextIO) -> None:
         ),
     ):
         print(f"{label}: {', '.join(failing) or 'none'}", file=out)
+    print(f"Answers with a Contradicted Claim: {o.answers_contradicted} of {o.cases}", file=out)
+    for r in report.cases:
+        if not r.contradictions.passed:
+            print(
+                f"Contradicted Claims in {r.case_id}: {' | '.join(r.contradictions.claims)}",
+                file=out,
+            )
     for r in report.cases:
         if not r.structure.passed:
             print(

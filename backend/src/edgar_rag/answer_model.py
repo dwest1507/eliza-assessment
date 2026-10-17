@@ -1,13 +1,14 @@
 """The answer model seam: the one generative LLM request per question, the Answer Call.
 
 No LLM framework (ADR 0004). `AnswerModel` is one small protocol that streams an
-answer's text and reports its token usage, with one implementation per provider over
-its official SDK, outside the core package (`edgar_answer.openai_model` for OpenAI,
-`edgar_answer.anthropic_model` for Anthropic). Tests use a fake.
+answer's text and reports its token usage and why the model stopped, with one
+implementation per provider over its official SDK, outside the core package
+(`edgar_answer.openai_model` for OpenAI, `edgar_answer.anthropic_model` for Anthropic).
+Tests use a fake.
 
 `AnswerCall` runs one Answer Call for a prepared Answer Context: it streams the text
-through and, when the stream ends, logs the model, prompt version, token usage and
-latency as one JSON line. Without a framework this log is the tracing, and the
+through and, when the stream ends, logs the model, prompt version, token usage, stop
+reason and latency as one JSON line. Without a framework this log is the tracing, and the
 evaluation's cost and latency figures come from it.
 """
 
@@ -20,7 +21,7 @@ from collections.abc import Iterator, Sequence
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Protocol
+from typing import Literal, Protocol
 
 from edgar_rag.paths import DERIVED_DIR
 from edgar_rag.retrieval import AnswerContext, PromptMessage
@@ -30,6 +31,7 @@ __all__ = [
     "AnswerCall",
     "AnswerCallRecord",
     "AnswerModel",
+    "StopReason",
     "Usage",
 ]
 
@@ -38,14 +40,25 @@ DEFAULT_ANSWER_LOG = DERIVED_DIR / "logs" / "answer_calls.jsonl"
 logger = logging.getLogger(__name__)
 
 
+StopReason = Literal["complete", "token_cap", "other"]
+"""Why the model stopped, the same for every provider: it finished its answer
+(`complete`), it reached the Answer Call's token cap (`token_cap`, so the answer is cut
+off), or anything else the provider reports (`other`)."""
+
+
 @dataclass(frozen=True)
 class Usage:
-    """Tokens one Answer Call consumed, as the provider reports them."""
+    """Tokens one Answer Call consumed, and why the model stopped, as the provider
+    reports them."""
 
     input_tokens: int
     output_tokens: int
     reasoning_tokens: int = 0
     """Reasoning tokens, already counted in `output_tokens`."""
+    stop_reason: StopReason | None = None
+    """None when the provider gave no reason."""
+    raw_stop_reason: str | None = None
+    """The provider's own value, e.g. OpenAI's `length` or Anthropic's `max_tokens`."""
 
 
 class AnswerModel(Protocol):
@@ -78,6 +91,17 @@ class AnswerCallRecord:
     sources: int
     completed: bool
     """False if the stream stopped early: the reader stopped or the provider failed."""
+    stop_reason: StopReason | None = None
+    """Why the model stopped, or None if the provider gave no reason or the stream
+    stopped early. Answer Calls logged before stop reasons were recorded have none."""
+    raw_stop_reason: str | None = None
+    """The provider's own value for `stop_reason`."""
+
+    @classmethod
+    def from_dict(cls, data: dict) -> AnswerCallRecord:
+        """A record from one logged JSON line, including one logged before a field
+        existed: a missing field takes its default."""
+        return cls(**data)
 
 
 class AnswerCall:
@@ -133,6 +157,8 @@ class AnswerCall:
             first_token_s=round(first_token, 3) if first_token is not None else None,
             sources=len(self.context.sources),
             completed=completed,
+            stop_reason=usage.stop_reason if usage else None,
+            raw_stop_reason=usage.raw_stop_reason if usage else None,
         )
         line = json.dumps(asdict(self.record))
         logger.info("answer call %s", line)

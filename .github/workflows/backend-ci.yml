@@ -102,7 +102,7 @@ jobs:
         run: uv sync --frozen
         working-directory: backend
 
-      # Rebuilds the index, scores FTS5 on dev and checks the Floors (ADR 0011).
+      # Rebuilds the index, scores FTS5 on dev and checks the Floors (ADR 0014).
       - name: Retrieval quality gate
         run: ./scripts/backend-eval.sh
 

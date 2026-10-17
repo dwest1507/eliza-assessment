@@ -51,3 +51,27 @@ GAP_TICKERS = {"GE", "BAC"}
 def gap_index(tmp_path_factory):
     filings = [f for f in load_corpus() if f.ticker in GAP_TICKERS]
     return build_index(filings, tmp_path_factory.mktemp("gap_index") / "edgar_rag.sqlite")
+
+
+@pytest.fixture
+def golden_set_v2_file(tmp_path):
+    """Writes a Golden Set version 2 file of version 1 cases rewritten with their ids, a
+    tier on every fact and the split given for each: `make({"risk-unh-cybersecurity":
+    "dev"})`."""
+    import json
+
+    from edgar_rag.golden_set import GOLDEN_SET_V1, SPLIT_RULE_V2
+
+    def make(splits):
+        version_1 = json.loads(GOLDEN_SET_V1.read_text(encoding="utf-8"))["cases"]
+        cases = []
+        for case in (c for c in version_1 if c["id"] in splits):
+            for fact in case["required_facts"]:
+                fact["tier"] = "must_state"
+            cases.append(case | {"split": splits[case["id"]]})
+        path = tmp_path / "golden_set_v2.json"
+        data = {"version": 2, "split_rule": SPLIT_RULE_V2, "cases": cases}
+        path.write_text(json.dumps(data), encoding="utf-8")
+        return path
+
+    return make

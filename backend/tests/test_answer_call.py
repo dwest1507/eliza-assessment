@@ -9,7 +9,7 @@ import pytest
 
 from edgar_answer import ask
 from edgar_answer.openai_model import OpenAIAnswerModel
-from edgar_rag.answer_model import AnswerCall, Usage
+from edgar_rag.answer_model import AnswerCall, AnswerCallRecord, Usage
 from edgar_rag.retrieval import Message, PromptMessage, prepare_answer_context
 
 QUESTION = "What are the primary risk factors facing Apple, Tesla, and JPMorgan?"
@@ -25,7 +25,7 @@ class FakeModel:
     def stream(self, messages):
         self.received = messages
         yield from self.parts
-        yield Usage(input_tokens=1200, output_tokens=300, reasoning_tokens=100)
+        yield Usage(1200, 300, 100, stop_reason="complete", raw_stop_reason="stop")
 
 
 @pytest.fixture
@@ -61,7 +61,23 @@ def test_an_answer_call_logs_model_prompt_version_usage_and_latency(context, tmp
     assert 0 <= record["first_token_s"] <= record["latency_s"]
     assert record["sources"] == len(context.sources)
     assert record["completed"] is True
+    assert (record["stop_reason"], record["raw_stop_reason"]) == ("complete", "stop")
     assert call.record.output_tokens == 300
+    assert AnswerCallRecord.from_dict(record) == call.record
+
+
+def test_an_answer_call_logged_before_stop_reasons_still_loads():
+    line = (
+        '{"timestamp": "2026-10-16T21:19:15+00:00", "model": "gpt-6-luna", '
+        '"prompt_version": "v7", "input_tokens": 22763, "output_tokens": 1201, '
+        '"reasoning_tokens": 175, "latency_s": 14.736, "first_token_s": 4.897, '
+        '"sources": 4, "completed": true}'
+    )
+
+    record = AnswerCallRecord.from_dict(json.loads(line))
+
+    assert record.output_tokens == 1201
+    assert (record.stop_reason, record.raw_stop_reason) == (None, None)
 
 
 def test_an_answer_call_stopped_early_is_logged_as_incomplete(context, tmp_path):
@@ -74,6 +90,7 @@ def test_an_answer_call_stopped_early_is_logged_as_incomplete(context, tmp_path)
     record = json.loads(log.read_text())
     assert record["completed"] is False
     assert record["output_tokens"] is None
+    assert record["stop_reason"] is None
 
 
 # --- The OpenAI implementation ----------------------------------------------------------
@@ -82,16 +99,18 @@ def test_an_answer_call_stopped_early_is_logged_as_incomplete(context, tmp_path)
 class FakeOpenAIClient:
     """Stands in for `openai.OpenAI`: records the request, streams canned chunks."""
 
-    def __init__(self):
+    def __init__(self, finish_reason="stop"):
         self.request = None
+        self.finish_reason = finish_reason
         self.chat = SimpleNamespace(completions=SimpleNamespace(create=self._create))
 
     def _create(self, **request):
         self.request = request
 
-        def chunk(content=None, usage=None):
+        def chunk(content=None, usage=None, finish_reason=None):
             delta = SimpleNamespace(content=content)
-            choices = [] if content is None else [SimpleNamespace(delta=delta)]
+            choice = SimpleNamespace(delta=delta, finish_reason=finish_reason)
+            choices = [] if content is None and finish_reason is None else [choice]
             return SimpleNamespace(choices=choices, usage=usage)
 
         return iter(
@@ -99,6 +118,7 @@ class FakeOpenAIClient:
                 chunk(""),
                 chunk("Apple "),
                 chunk("faces risk [S1]."),
+                chunk(finish_reason=self.finish_reason),
                 chunk(
                     usage=SimpleNamespace(
                         prompt_tokens=900,
@@ -118,7 +138,7 @@ def test_openai_model_defaults_to_gpt_6_luna_with_low_reasoning_and_a_token_cap(
     parts = list(model.stream([PromptMessage("system", "rules"), PromptMessage("user", "q")]))
 
     assert model.model == "gpt-6-luna"
-    assert parts == ["Apple ", "faces risk [S1].", Usage(900, 420, 64)]
+    assert parts == ["Apple ", "faces risk [S1].", Usage(900, 420, 64, "complete", "stop")]
     assert client.request == {
         "model": "gpt-6-luna",
         "messages": [{"role": "system", "content": "rules"}, {"role": "user", "content": "q"}],
@@ -127,6 +147,18 @@ def test_openai_model_defaults_to_gpt_6_luna_with_low_reasoning_and_a_token_cap(
         "stream": True,
         "stream_options": {"include_usage": True},
     }
+
+
+@pytest.mark.parametrize(
+    ("finish_reason", "stop_reason"),
+    [("stop", "complete"), ("length", "token_cap"), ("content_filter", "other")],
+)
+def test_openai_model_reports_why_the_model_stopped(finish_reason, stop_reason):
+    model = OpenAIAnswerModel(client=FakeOpenAIClient(finish_reason))
+
+    *_, usage = model.stream([PromptMessage("user", "q")])
+
+    assert (usage.stop_reason, usage.raw_stop_reason) == (stop_reason, finish_reason)
 
 
 def test_openai_model_is_overridden_by_the_environment(monkeypatch):
@@ -195,7 +227,7 @@ def test_anthropic_model_streams_with_the_same_effort_and_token_cap_as_openai():
     parts = list(model.stream([PromptMessage("system", "rules"), PromptMessage("user", "q")]))
 
     assert model.model == "claude-sonnet-5-5"
-    assert parts == ["Apple ", "faces risk [S1].", Usage(900, 420, 64)]
+    assert parts == ["Apple ", "faces risk [S1].", Usage(900, 420, 64, "complete", "end_turn")]
     assert client.request == {
         "model": "claude-sonnet-5-5",
         "system": "rules",
@@ -204,6 +236,20 @@ def test_anthropic_model_streams_with_the_same_effort_and_token_cap_as_openai():
         "output_config": {"effort": "low"},
         "max_tokens": 2500,
     }
+
+
+@pytest.mark.parametrize(
+    ("raw", "stop_reason"),
+    [("end_turn", "complete"), ("max_tokens", "token_cap"), ("pause_turn", "other")],
+)
+def test_anthropic_model_reports_why_the_model_stopped(raw, stop_reason):
+    from edgar_answer.anthropic_model import AnthropicAnswerModel
+
+    model = AnthropicAnswerModel("claude-opus-5-5", client=FakeAnthropicClient(raw))
+
+    *_, usage = model.stream([PromptMessage("user", "q")])
+
+    assert (usage.stop_reason, usage.raw_stop_reason) == (stop_reason, raw)
 
 
 def test_anthropic_model_raises_when_the_model_declines_to_answer():

@@ -321,7 +321,7 @@ def test_an_answer_with_no_expected_gap_passes():
 # --- Claims for the Faithfulness judgment -------------------------------------------------
 
 
-def test_claims_are_the_cited_sentences_with_the_sources_they_rest_on():
+def test_claims_are_every_sentence_with_the_sources_it_rests_on():
     answer = """\
 Apple outsources most manufacturing [S1]. It also faces new tariffs [S1, S2].
 
@@ -333,7 +333,7 @@ Apple outsources most manufacturing [S1]. It also faces new tariffs [S1, S2].
 |---|---|
 | JPMorgan | Credit risk [S4] |
 
-Tariffs matter.
+Tariffs matter. Tesla's margins fell in 2025.
 
 ## Coverage
 
@@ -346,6 +346,75 @@ No guidance is in the Filings.
         ("Tesla depends on Elon Musk.", ("S3",)),
         ("Losing him would hurt the business.", ("S3",)),
         ("| JPMorgan | Credit risk |", ("S4",)),
+        # A paragraph that cites nothing still makes claims: each rests on no Source.
+        ("Tariffs matter.", ()),
+        ("Tesla's margins fell in 2025.", ()),
+    ]
+
+
+@pytest.mark.parametrize(
+    "exempt",
+    [
+        pytest.param("## Apple's risks", id="heading"),
+        pytest.param("**Apple (AAPL)**", id="bold label"),
+        pytest.param("| Company | Main risk |\n|---|---|", id="table header"),
+        pytest.param("Three risks stand out:", id="colon lead-in"),
+        pytest.param("The Sources do not include Honeywell's filings.", id="missing company"),
+        pytest.param("Tesla gives no 2026 revenue guidance in its Filings.", id="no guidance"),
+        pytest.param("Apple's and Tesla's fiscal years end on different dates.", id="periods"),
+        pytest.param("GE Capital's FY2014 10-K is a decade old.", id="stale filing"),
+        pytest.param("Only Moderna's 2025 10-K is in the Corpus.", id="snapshot trend"),
+        pytest.param("I can't determine Microsoft's revenue trend.", id="absence"),
+        pytest.param("**Coverage:** Apple's FY2025 10-K only.", id="coverage note"),
+    ],
+)
+def test_headings_coverage_gap_wordings_and_colon_lead_ins_make_no_claim(exempt):
+    answer = f"Apple outsources manufacturing [S1].\n\nApple sells iPhones.\n\n{exempt}"
+
+    assert [(c.text, c.tags) for c in claims(answer)] == [
+        ("Apple outsources manufacturing.", ("S1",)),
+        ("Apple sells iPhones.", ()),
+    ]
+
+
+def test_only_the_lead_in_sentence_of_a_paragraph_ending_in_a_colon_is_exempt():
+    answer = "Apple names three risks. They are:\n\n- Tariffs [S1].\n\nApple sells iPhones [S2]:"
+
+    assert [(c.text, c.tags) for c in claims(answer)] == [
+        ("Apple names three risks.", ()),
+        ("Tariffs.", ("S1",)),
+        # A cited sentence is judged whatever it ends with.
+        ("Apple sells iPhones:", ("S2",)),
+    ]
+
+
+def test_each_claim_carries_its_nearest_heading_and_a_table_row_its_header_row():
+    answer = """\
+Apple outsources most manufacturing [S1].
+
+## Apple's risks
+
+It faces new tariffs [S1].
+
+**Tesla (TSLA)**
+
+It depends on its CEO [S2].
+
+| Company | FY2025 revenue [S3] |
+|---|---|
+| Apple | $416.2 billion [S3] |
+
+## Outlook
+
+Revenue may grow [S4].
+"""
+
+    assert [(c.text, c.heading, c.table_header) for c in claims(answer)] == [
+        ("Apple outsources most manufacturing.", "", ""),  # above any heading
+        ("It faces new tariffs.", "Apple's risks", ""),
+        ("It depends on its CEO.", "Tesla (TSLA)", ""),  # a bold label heads what follows
+        ("| Apple | $416.2 billion |", "Tesla (TSLA)", "| Company | FY2025 revenue |"),
+        ("Revenue may grow.", "Outlook", ""),  # a heading ends the table before it
     ]
 
 
@@ -355,6 +424,45 @@ def test_a_run_of_tags_after_the_full_stop_belongs_to_the_sentence_before_it():
     assert [(c.text, c.tags) for c in claims(answer)] == [
         ("Apple faces tariffs.", ("S1", "S5", "S8")),
         ("Tesla faces incentive cuts.", ("S1", "S5", "S8")),
+    ]
+
+
+def test_a_sentence_with_u_s_before_a_capital_is_one_claim():
+    answer = "Apple relies on the U.S. Government for X [S1]. Tesla sells cars [S2]."
+
+    assert [(c.text, c.tags) for c in claims(answer)] == [
+        ("Apple relies on the U.S. Government for X.", ("S1",)),
+        ("Tesla sells cars.", ("S2",)),
+    ]
+
+
+@pytest.mark.parametrize(
+    "sentence",
+    [
+        pytest.param("Lockheed depends on U.S. Government contracts [S1].", id="U.S."),
+        pytest.param("Sales to the U.K. National Health Service grew [S1].", id="U.K."),
+        pytest.param("Apple Inc. Services revenue grew [S1].", id="Inc."),
+        pytest.param("Lockheed Martin Corp. Aeronautics leads its sales [S1].", id="Corp."),
+        pytest.param("JPMorgan Chase & Co. Consumer banking grew [S1].", id="Co."),
+        pytest.param("Arm Holdings Ltd. Licensing revenue rose [S1].", id="Ltd."),
+        pytest.param("**U.S. Government** contracts drive sales [S1].", id="bold U.S."),
+    ],
+)
+def test_common_abbreviations_before_a_capital_do_not_end_a_sentence(sentence):
+    answer = f"{sentence} Tesla sells cars [S2]."
+
+    assert [c.text for c in claims(answer)] == [
+        sentence.replace(" [S1]", ""),
+        "Tesla sells cars.",
+    ]
+
+
+def test_a_tag_after_an_abbreviation_still_ends_the_sentence():
+    answer = "Apple sells in the U.S. [S1] Tesla sells cars [S2]."
+
+    assert [(c.text, c.tags) for c in claims(answer)] == [
+        ("Apple sells in the U.S.", ("S1",)),
+        ("Tesla sells cars.", ("S2",)),
     ]
 
 
@@ -453,8 +561,10 @@ def test_an_answer_in_the_analyst_structure_passes():
         "## Apple (AAPL)",
         "| Company | Main risk |\n|---|---|\n| Apple | Outsourcing [S1] |",
         "- Apple outsources manufacturing [S1].",
-        "Apple outsources [S1]. Tesla depends on Elon Musk [S3]. Both face tariffs [S1]. "
-        "Apple sells abroad [S1]. Tesla builds factories [S3].",
+        (
+            "Apple outsources [S1]. Tesla depends on Elon Musk [S3]. Both face tariffs [S1]. "
+            "Apple sells abroad [S1]. Tesla builds factories [S3]."
+        ),
     ],
 )
 def test_an_answer_that_does_not_open_with_a_short_direct_answer_fails(opening):
@@ -482,8 +592,10 @@ def test_several_companies_need_a_heading_each_or_a_comparison_table():
     "coverage",
     [
         "### Coverage\n\nJPMorgan's risk factors were not among the Sources.",
-        "Tesla also faces tariffs [S3]. **Coverage:** JPMorgan's risk factors were not "
-        "among the Sources.",
+        (
+            "Tesla also faces tariffs [S3]. **Coverage:** JPMorgan's risk factors were not "
+            "among the Sources."
+        ),
     ],
 )
 def test_a_closing_coverage_note_may_be_a_heading_or_a_bold_label(coverage):
@@ -496,8 +608,10 @@ def test_a_closing_coverage_note_may_be_a_heading_or_a_bold_label(coverage):
     "coverage",
     [
         "Tesla also faces tariffs [S3].",
-        "**Coverage:** JPMorgan's risk factors were not among the Sources.\n\n"
-        "## Tesla (TSLA)\n\nTesla also faces tariffs [S3].",
+        (
+            "**Coverage:** JPMorgan's risk factors were not among the Sources.\n\n"
+            "## Tesla (TSLA)\n\nTesla also faces tariffs [S3]."
+        ),
     ],
 )
 def test_an_answer_that_does_not_end_with_a_coverage_note_fails(coverage):
