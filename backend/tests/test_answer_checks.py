@@ -321,7 +321,7 @@ def test_an_answer_with_no_expected_gap_passes():
 # --- Claims for the Faithfulness judgment -------------------------------------------------
 
 
-def test_claims_are_the_cited_sentences_with_the_sources_they_rest_on():
+def test_claims_are_every_sentence_with_the_sources_it_rests_on():
     answer = """\
 Apple outsources most manufacturing [S1]. It also faces new tariffs [S1, S2].
 
@@ -333,7 +333,7 @@ Apple outsources most manufacturing [S1]. It also faces new tariffs [S1, S2].
 |---|---|
 | JPMorgan | Credit risk [S4] |
 
-Tariffs matter.
+Tariffs matter. Tesla's margins fell in 2025.
 
 ## Coverage
 
@@ -346,6 +346,45 @@ No guidance is in the Filings.
         ("Tesla depends on Elon Musk.", ("S3",)),
         ("Losing him would hurt the business.", ("S3",)),
         ("| JPMorgan | Credit risk |", ("S4",)),
+        # A paragraph that cites nothing still makes claims: each rests on no Source.
+        ("Tariffs matter.", ()),
+        ("Tesla's margins fell in 2025.", ()),
+    ]
+
+
+@pytest.mark.parametrize(
+    "exempt",
+    [
+        pytest.param("## Apple's risks", id="heading"),
+        pytest.param("**Apple (AAPL)**", id="bold label"),
+        pytest.param("| Company | Main risk |\n|---|---|", id="table header"),
+        pytest.param("Three risks stand out:", id="colon lead-in"),
+        pytest.param("The Sources do not include Honeywell's filings.", id="missing company"),
+        pytest.param("Tesla gives no 2026 revenue guidance in its Filings.", id="no guidance"),
+        pytest.param("Apple's and Tesla's fiscal years end on different dates.", id="periods"),
+        pytest.param("GE Capital's FY2014 10-K is a decade old.", id="stale filing"),
+        pytest.param("Only Moderna's 2025 10-K is in the Corpus.", id="snapshot trend"),
+        pytest.param("I can't determine Microsoft's revenue trend.", id="absence"),
+        pytest.param("**Coverage:** Apple's FY2025 10-K only.", id="coverage note"),
+    ],
+)
+def test_headings_coverage_gap_wordings_and_colon_lead_ins_make_no_claim(exempt):
+    answer = f"Apple outsources manufacturing [S1].\n\nApple sells iPhones.\n\n{exempt}"
+
+    assert [(c.text, c.tags) for c in claims(answer)] == [
+        ("Apple outsources manufacturing.", ("S1",)),
+        ("Apple sells iPhones.", ()),
+    ]
+
+
+def test_only_the_lead_in_sentence_of_a_paragraph_ending_in_a_colon_is_exempt():
+    answer = "Apple names three risks. They are:\n\n- Tariffs [S1].\n\nApple sells iPhones [S2]:"
+
+    assert [(c.text, c.tags) for c in claims(answer)] == [
+        ("Apple names three risks.", ()),
+        ("Tariffs.", ("S1",)),
+        # A cited sentence is judged whatever it ends with.
+        ("Apple sells iPhones:", ("S2",)),
     ]
 
 

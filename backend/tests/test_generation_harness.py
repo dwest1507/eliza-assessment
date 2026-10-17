@@ -224,9 +224,10 @@ def test_each_case_is_answered_checked_judged_and_priced(index, tmp_path):
     # Jev's judgments, asked about the case's Required Facts and the answer's claims.
     answer, facts, claims, sources = judge.asked[0]
     assert facts == ["Apple uses outsourcing partners.", "Tesla depends on Elon Musk."]
-    assert [c.text for c in claims] == [
-        "Apple relies on outsourcing partners in Asia.",
-        "Tesla depends on its CEO.",
+    assert [(c.text, c.tags) for c in claims] == [
+        ("Apple relies on outsourcing partners in Asia.", ("S1",)),
+        ("Tesla depends on its CEO.", ("S99",)),
+        ("Apple's revenue was $416.2 billion.", ()),  # cites nothing, so is a claim on none
     ]
     assert "S1" in sources and sources["S1"].text
     assert result.fact_recall == 0.5
@@ -333,7 +334,7 @@ def test_a_score_with_nothing_to_score_is_none_not_zero(index, tmp_path):
 
 
 CONTRADICTING_JEV = {"Tesla depends on its CEO.": "contradicted"}
-"""A fake Jev's verdicts: one of `ANSWER`'s two claims contradicted by its Sources."""
+"""A fake Jev's verdicts: one of `ANSWER`'s three claims contradicted by its Sources."""
 
 
 def test_a_contradicted_claim_fails_the_answer_while_its_faithfulness_is_still_reported(
@@ -360,9 +361,9 @@ def test_a_contradicted_claim_fails_the_answer_while_its_faithfulness_is_still_r
         assert result.contradictions.claims == ("Tesla depends on its CEO.",)
         assert result.contradictions.count == 1
         assert not result.contradictions.passed
-        assert result.faithfulness == 0.5  # one of two claims supported: still a score
+        assert result.faithfulness == pytest.approx(2 / 3)  # two of three supported: a score
     assert report.overall.answers_contradicted == 2
-    assert report.overall.faithfulness == 0.5
+    assert report.overall.faithfulness == pytest.approx(2 / 3)
     assert report.by_type["risk"].answers_contradicted == 2
 
 
@@ -382,7 +383,7 @@ def test_an_answer_with_no_contradicted_claim_passes_the_check(index, tmp_path):
     [result] = report.cases
     assert result.contradictions.count == 0
     assert result.contradictions.passed  # unsupported lowers Faithfulness, but is no contradiction
-    assert result.faithfulness == 0.5
+    assert result.faithfulness == pytest.approx(2 / 3)
     assert report.overall.answers_contradicted == 0
 
 
@@ -413,11 +414,55 @@ def test_the_report_and_its_summary_show_each_cases_contradicted_claims(index, t
         "count": 1,
         "passed": False,
     }
-    assert case["faithfulness"] == 0.5
+    assert case["faithfulness"] == pytest.approx(2 / 3)
     assert data["overall"]["answers_contradicted"] == 1
     printed = out.getvalue()
     assert "Answers with a Contradicted Claim: 1 of 1" in printed
     assert "Contradicted Claims in risk-aapl-tsla-jpm: Tesla depends on its CEO." in printed
+
+
+UNCITED_ANSWER = """\
+Apple relies on outsourcing partners in Asia [S1].
+
+## Apple
+
+Apple's main risks are:
+
+- Apple's iPhone sales fell by a third in 2025.
+
+## Coverage
+
+The Sources do not include Honeywell's filings.
+"""
+
+
+def test_an_uncited_sentence_is_unsupported_without_a_jev_call(index, tmp_path):
+    from edgar_eval.generation import evaluate
+
+    jev = FakeJev(choices={"Apple relies on outsourcing partners in Asia.": "supported"})
+
+    report = evaluate(
+        [_case("apple", "What are the primary risk factors facing Apple?")],
+        FakeModel(UNCITED_ANSWER),
+        JevJudge(client=jev),
+        index,
+        names={"AAPL": ("AAPL", "Apple")},
+        fact_values=lambda filing_id: [],
+        log_path=None,
+    )
+
+    [result] = report.cases
+    # Only the cited sentence goes to Jev; the heading, the lead-in and the Coverage Gap
+    # wording are not claims, and the uncited sentence is judged without a request.
+    assert [list(r.questions.values())[0].instructions["claim"] for r in jev.requests] == [
+        "Apple relies on outsourcing partners in Asia."
+    ]
+    assert [(c.claim, c.tags, c.verdict) for c in result.judgments.claims] == [
+        ("Apple relies on outsourcing partners in Asia.", ("S1",), "supported"),
+        ("Apple's iPhone sales fell by a third in 2025.", (), "unsupported"),
+    ]
+    assert result.faithfulness == 0.5
+    assert report.overall.faithfulness == 0.5
 
 
 def test_the_command_line_prints_scores_with_cost_and_latency_and_writes_json(index, tmp_path):

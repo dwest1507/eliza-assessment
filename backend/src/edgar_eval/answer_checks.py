@@ -71,6 +71,9 @@ class Unit:
     exempt: bool
     """True for a unit that need not cite: a heading, a table header, a lead-in, a
     bold label, or anything in the closing Coverage note."""
+    lead_in: bool = False
+    """True for a paragraph exempt only because it ends with a colon: its sentences
+    before the colon still make claims."""
 
 
 @dataclass(frozen=True)
@@ -111,7 +114,8 @@ def units(answer: str) -> list[Unit]:
     def flush() -> None:
         if paragraph:
             text = " ".join(paragraph)
-            result.append(_unit(text, in_coverage or _is_lead_in(text)))
+            lead_in = not in_coverage and _is_lead_in(text)
+            result.append(_unit(text, in_coverage or lead_in, lead_in))
             paragraph.clear()
 
     for raw in answer.splitlines():
@@ -149,8 +153,9 @@ def units(answer: str) -> list[Unit]:
     return result
 
 
-def _unit(text: str, exempt: bool) -> Unit:
-    return Unit(text=text, tags=tags_in(text), exempt=exempt or bool(_BOLD_ONLY.match(text)))
+def _unit(text: str, exempt: bool, lead_in: bool = False) -> Unit:
+    bold = bool(_BOLD_ONLY.match(text))
+    return Unit(text=text, tags=tags_in(text), exempt=exempt or bold, lead_in=lead_in and not bold)
 
 
 def _is_lead_in(text: str) -> bool:
@@ -473,32 +478,52 @@ def _flatten(text: str) -> str:
 
 @dataclass(frozen=True)
 class Claim:
-    """One cited sentence of an answer and the Source tags it rests on."""
+    """One sentence of an answer and the Source tags it rests on."""
 
     text: str
     """The sentence without its tags."""
     tags: tuple[str, ...]
+    """Empty for a sentence that cites no Source: it is unsupported, with nothing to
+    judge it against."""
 
 
 def claims(answer: str) -> list[Claim]:
-    """The answer's claims: every sentence of every unit that cites a Source.
+    """The answer's claims: every sentence of the answer, except its structure and what
+    it says the Sources could not answer.
 
     A sentence carries the tags written in it; one without tags of its own rests on all
     the tags of its unit, since a citation often closes a paragraph of several
-    sentences. Units that cite nothing make no judgeable claim; the citation check
-    reports them.
+    sentences. A sentence that rests on no tag is still a claim, with no tags: the judge
+    counts it unsupported.
+
+    Not claims: headings (with table header rows and bold labels, which head what
+    follows) and the closing Coverage note; and, among the sentences that rest on no
+    tag, lead-ins ending in a colon and sentences stating a Coverage Gap (the fixed
+    wordings and the plain variants `check_coverage_gaps` recognises) or saying what
+    the Sources lack, which have nothing to cite. A sentence that rests on a tag is
+    judged whatever it says.
     """
     found: list[Claim] = []
     for unit in units(answer):
-        if unit.exempt or not unit.tags:
+        if unit.exempt and not unit.lead_in:
             continue
         for sentence in _sentences(unit.text):
             if _COVERAGE.match(sentence):
                 break  # the Coverage note, which says what the Sources could not answer
-            text = strip_tags(sentence)
-            if re.search(r"\w", text):
-                found.append(Claim(text=text, tags=tags_in(sentence) or unit.tags))
+            text, tags = strip_tags(sentence), tags_in(sentence) or unit.tags
+            if not re.search(r"\w", text):
+                continue
+            if not tags and (text.endswith(":") or _states_gap(text)):
+                continue
+            found.append(Claim(text=text, tags=tags))
     return found
+
+
+def _states_gap(sentence: str) -> bool:
+    """Whether the sentence states a Coverage Gap or says what the Sources lack."""
+    return bool(_ABSENCE.search(sentence)) or any(
+        marker.search(sentence) for marker in _GAP_MARKERS.values()
+    )
 
 
 # --- Answer structure -------------------------------------------------------------------

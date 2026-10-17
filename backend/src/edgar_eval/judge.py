@@ -14,9 +14,11 @@ Two judgments, each a narrow question over the state it needs:
   probability of at least `STATED_AT`. Every Required Fact is judged, whatever its tier;
   the generation harness scores Fact Recall on the must-state ones and detail recall on
   the details (`edgar_eval.generation.CaseResult`).
-- **Faithfulness.** The answer's claims (`edgar_eval.answer_checks.claims`) are grouped
-  by the Sources they cite. One request per group: the state is those Sources' text,
-  and each claim is a Choice between supported, unsupported and contradicted.
+- **Faithfulness.** The answer's claims (`edgar_eval.answer_checks.claims`: every
+  sentence but its headings, Coverage Gap wordings and lead-ins) are grouped by the
+  Sources they cite. One request per group: the state is those Sources' text, and each
+  claim is a Choice between supported, unsupported and contradicted. A claim citing no
+  Source of the turn, an uncited sentence among them, is unsupported and never sent.
   Faithfulness is the share of claims supported by the Sources they cite.
 
 The key is read from `JEV_API_KEY` (`backend/.env`). The SDK is a dev dependency and is
