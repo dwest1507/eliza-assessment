@@ -1,0 +1,4 @@
+# False positives: `export OPENAI_API_KEY="" ANTHROPIC_API_KEY="" JEV_API_KEY=""` blanked
+# the keys (no secret); the scripts now unset them instead.
+648f3570adafc3db78799a7c20b2b1a857bac2d3:scripts/backend-test.sh:generic-api-key:10
+648f3570adafc3db78799a7c20b2b1a857bac2d3:scripts/backend-eval.sh:generic-api-key:15

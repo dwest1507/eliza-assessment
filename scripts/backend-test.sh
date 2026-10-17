@@ -5,9 +5,9 @@
 set -euo pipefail
 cd "$(dirname "$0")/../backend"
 
-# Blank the provider keys so no test can reach a paid API, even from a developer's shell
+# Unset the provider keys so no test can reach a paid API, even from a developer's shell
 # or a backend/.env the Makefile exported.
-export OPENAI_API_KEY="" ANTHROPIC_API_KEY="" JEV_API_KEY=""
+unset OPENAI_API_KEY ANTHROPIC_API_KEY JEV_API_KEY
 
 echo "==> Pytest"
 uv run --frozen pytest

@@ -12,7 +12,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/../backend"
 
-export OPENAI_API_KEY="" ANTHROPIC_API_KEY="" JEV_API_KEY=""
+unset OPENAI_API_KEY ANTHROPIC_API_KEY JEV_API_KEY
 
 # Its own report path, so the gate never overwrites `make eval-retrieval`'s report.
 REPORT=../data/derived/eval/retrieval-gate.json
