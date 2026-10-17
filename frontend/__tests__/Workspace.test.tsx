@@ -1,4 +1,4 @@
-import { render, screen, waitFor, within } from '@testing-library/react'
+import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Workspace from '@/components/Workspace'
@@ -33,6 +33,21 @@ const SOURCES = [
     text: 'We may be impacted by trade policies, political uncertainty and tariffs.',
   },
 ]
+
+/** A Source the answer was given but does not cite. */
+const UNCITED_SOURCE = {
+  tag: 'S3',
+  filingId: 'MSFT_10-K_2025-06-30',
+  company: 'Microsoft Corporation',
+  ticker: 'MSFT',
+  formType: '10-K',
+  reportPeriod: '2025-06-30',
+  fiscalPeriod: 'FY2025',
+  section: 'Risk Factors',
+  item: 'Item 1A',
+  label: 'MSFT 10-K FY2025, Risk Factors (Item 1A).',
+  text: 'Our global operations subject us to potential trade restrictions.',
+}
 
 const ANSWER = [
   'Apple and Tesla both face **trade policy** risk. ',
@@ -89,13 +104,17 @@ const FACTS_SOURCE = {
   ],
 }
 
-function uiMessageStream(
+/** One part of the API's UI message stream. */
+type StreamPart = { type: string } & Record<string, unknown>
+
+/** The parts the chat API streams for one answer, in its order. */
+function uiMessageParts(
   answer: string[] = ANSWER,
   scope: object = QUERY_SCOPE,
   sources: object[] = SOURCES,
   gaps: object[] = []
-): Response {
-  const parts = [
+): StreamPart[] {
+  return [
     { type: 'start', messageId: 'msg-1' },
     { type: 'data-query-scope', data: scope },
     { type: 'data-sources', data: { sources } },
@@ -107,20 +126,52 @@ function uiMessageStream(
     { type: 'finish-step' },
     { type: 'finish' },
   ]
-  const body = parts.map((p) => `data: ${JSON.stringify(p)}\n\n`).join('') + 'data: [DONE]\n\n'
-  const encoder = new TextEncoder()
-  const stream = new ReadableStream<Uint8Array>({
-    start(controller) {
-      controller.enqueue(encoder.encode(body))
-      controller.close()
-    },
-  })
+}
+
+const encoder = new TextEncoder()
+
+function encode(parts: StreamPart[]): Uint8Array {
+  return encoder.encode(parts.map((p) => `data: ${JSON.stringify(p)}\n\n`).join(''))
+}
+
+function streamResponse(stream: ReadableStream<Uint8Array>): Response {
   return new Response(stream, {
     headers: {
       'content-type': 'text/event-stream',
       'x-vercel-ai-ui-message-stream': 'v1',
     },
   })
+}
+
+/** The API's UI message stream for one answer, sent whole. */
+function uiMessageStream(...args: Parameters<typeof uiMessageParts>): Response {
+  return heldUiMessageStream(() => false, ...args).response
+}
+
+/**
+ * The API's UI message stream for one answer, held open after the first part that
+ * `holdAfter` matches, so a test can see the answer in progress; `release` sends the rest.
+ */
+function heldUiMessageStream(
+  holdAfter: (part: StreamPart) => boolean,
+  ...args: Parameters<typeof uiMessageParts>
+): { response: Response; release: () => void } {
+  const parts = uiMessageParts(...args)
+  const held = parts.findIndex(holdAfter)
+  const cut = held === -1 ? parts.length : held + 1
+  let rest: () => void = () => {}
+  const stream = new ReadableStream<Uint8Array>({
+    start(controller) {
+      controller.enqueue(encode(parts.slice(0, cut)))
+      rest = () => {
+        controller.enqueue(encode(parts.slice(cut)))
+        controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+        controller.close()
+      }
+      if (held === -1) rest()
+    },
+  })
+  return { response: streamResponse(stream), release: () => act(() => rest()) }
 }
 
 const fetchMock = vi.fn()
@@ -260,8 +311,13 @@ describe('Workspace', () => {
     expect(await screen.findByText(STARTERS[0].question)).toBeInTheDocument()
     expect(screen.getByText('trade policy')).toBeInTheDocument()
     expect(screen.queryByRole('list', { name: 'Starter prompts' })).not.toBeInTheDocument()
-    // The restored answer keeps its Sources, so its citations still open the panel.
+    // The restored answer is complete, so it shows its disclosures.
     const answer = screen.getByRole('article', { name: 'Answer' })
+    expect(within(answer).getByRole('button', { name: 'Sources (2)' })).toBeInTheDocument()
+    expect(
+      within(answer).getByRole('button', { name: 'How this was answered' })
+    ).toBeInTheDocument()
+    // It keeps its Sources, so its citations still open the panel.
     await user.click(within(answer).getByRole('link', { name: 'Source S2' }))
     expect(await screen.findByRole('complementary', { name: 'Sources' })).toBeInTheDocument()
 
@@ -300,13 +356,97 @@ describe('Workspace', () => {
     expect(screen.queryByText('trade policy')).not.toBeInTheDocument()
   })
 
-  it('shows the Query Scope as chips above the answer', async () => {
+  it('shows nothing under or above an answer while it streams, but its citations open the panel', async () => {
+    const { response, release } = heldUiMessageStream(
+      (part) => part.type === 'text-delta' && String(part.delta).includes('[S1]')
+    )
+    fetchMock.mockImplementation(async () => response)
     const user = userEvent.setup()
     render(<Workspace />)
     await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
-    await screen.findByText('trade policy')
 
+    const answer = await screen.findByRole('article', { name: 'Answer' })
+    await within(answer).findByRole('link', { name: 'Source S1' })
+    expect(within(answer).queryByRole('list', { name: 'Query Scope' })).not.toBeInTheDocument()
+    expect(within(answer).queryByRole('button', { name: /^Sources/ })).not.toBeInTheDocument()
+    expect(
+      within(answer).queryByRole('button', { name: 'How this was answered' })
+    ).not.toBeInTheDocument()
+    expect(within(answer).queryByRole('button', { name: /^S\d/ })).not.toBeInTheDocument()
+
+    await user.click(within(answer).getByRole('link', { name: 'Source S1' }))
+    const panel = await screen.findByRole('complementary', { name: 'Sources' })
+    expect(within(panel).getByRole('region', { name: /^S1/ })).toHaveTextContent(
+      'AAPL_10-K_2025-09-27'
+    )
+
+    release()
+    expect(await within(answer).findByRole('button', { name: 'Sources (2)' })).toBeInTheDocument()
+    expect(
+      within(answer).getByRole('button', { name: 'How this was answered' })
+    ).toBeInTheDocument()
+  })
+
+  it('lists only the cited Sources, in tag order, under a collapsed "Sources (N)"', async () => {
+    fetchMock.mockImplementation(async () =>
+      uiMessageStream(
+        ['Tesla is exposed to **tariffs** [S2]; Apple to its partners [S1], as Tesla [S2].'],
+        QUERY_SCOPE,
+        [...SOURCES, UNCITED_SOURCE]
+      )
+    )
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
     const answer = screen.getByRole('article', { name: 'Answer' })
+    const toggle = await within(answer).findByRole('button', { name: 'Sources (2)' })
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(within(answer).queryByRole('list', { name: 'Cited Sources' })).not.toBeInTheDocument()
+
+    await user.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    const list = within(answer).getByRole('list', { name: 'Cited Sources' })
+    expect(
+      within(list)
+        .getAllByRole('button')
+        .map((chip) => chip.textContent)
+    ).toEqual(['S1 AAPL 10-K FY2025, Risk Factors', 'S2 TSLA 10-K FY2025, Risk Factors'])
+
+    await user.click(within(list).getByRole('button', { name: /^S2/ }))
+    const panel = await screen.findByRole('complementary', { name: 'Sources' })
+    expect(within(panel).getByRole('region', { name: /^S2/ })).toHaveTextContent(
+      'TSLA_10-K_2025-12-31'
+    )
+  })
+
+  it('shows no "Sources" list when the answer cites none', async () => {
+    fetchMock.mockImplementation(async () =>
+      uiMessageStream(['The Filings do not discuss **this** at all.'])
+    )
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    await within(answer).findByRole('button', { name: 'How this was answered' })
+
+    expect(within(answer).queryByRole('button', { name: /^Sources/ })).not.toBeInTheDocument()
+  })
+
+  it('holds the Query Scope chips and every retrieved Source under "How this was answered"', async () => {
+    fetchMock.mockImplementation(async () =>
+      uiMessageStream(ANSWER, QUERY_SCOPE, [...SOURCES, UNCITED_SOURCE])
+    )
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    const toggle = await within(answer).findByRole('button', { name: 'How this was answered' })
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(within(answer).queryByRole('list', { name: 'Query Scope' })).not.toBeInTheDocument()
+
+    await user.click(toggle)
     const chips = within(answer).getByRole('list', { name: 'Query Scope' })
     expect(
       within(chips)
@@ -317,9 +457,49 @@ describe('Workspace', () => {
       'title',
       'Company: Apple Inc (tracked)'
     )
-    // The chips come before the answer text.
-    const text = within(answer).getByText('trade policy')
-    expect(chips.compareDocumentPosition(text) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    const retrieved = within(answer).getByRole('list', { name: 'Retrieved Sources' })
+    expect(
+      within(retrieved)
+        .getAllByRole('button')
+        .map((chip) => chip.textContent)
+    ).toEqual([
+      'S1 AAPL 10-K FY2025, Risk Factors',
+      'S2 TSLA 10-K FY2025, Risk Factors',
+      'S3 MSFT 10-K FY2025, Risk Factors',
+    ])
+
+    // An uncited Source opens too, and joins the cited ones in the panel's switcher.
+    await user.click(within(retrieved).getByRole('button', { name: /^S3/ }))
+    const panel = await screen.findByRole('complementary', { name: 'Sources' })
+    expect(within(panel).getByRole('region', { name: /^S3/ })).toHaveTextContent(
+      'MSFT_10-K_2025-06-30'
+    )
+    const switcher = () =>
+      within(within(panel).getByRole('navigation', { name: "This answer's Sources" }))
+        .getAllByRole('button')
+        .map((tab) => tab.textContent)
+    expect(switcher()).toEqual(['S1', 'S2', 'S3'])
+
+    // Opening a cited Source leaves the switcher with the cited Sources only.
+    await user.click(within(answer).getByRole('link', { name: 'Source S1' }))
+    expect(switcher()).toEqual(['S1', 'S2'])
+  })
+
+  it('shows a cited tag that is not among the Sources as unavailable', async () => {
+    fetchMock.mockImplementation(async () =>
+      uiMessageStream(['Apple relies on **partners** [S1] and [S7].'])
+    )
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    await within(answer).findByRole('button', { name: 'Sources (1)' })
+
+    expect(within(answer).getByText('S7')).toHaveAttribute(
+      'title',
+      "Not among this answer's Sources"
+    )
+    expect(within(answer).queryByRole('link', { name: 'Source S7' })).not.toBeInTheDocument()
   })
 
   it('shows a Sector phrase with the Companies it resolved to, and the metric', async () => {
@@ -343,11 +523,10 @@ describe('Workspace', () => {
       screen.getByRole('textbox', { name: 'Question' }),
       'How has net income changed at the major banks over the last two years?{Enter}'
     )
-    await screen.findByText('trade policy')
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    await user.click(await within(answer).findByRole('button', { name: 'How this was answered' }))
 
-    const chips = within(screen.getByRole('article', { name: 'Answer' })).getByRole('list', {
-      name: 'Query Scope',
-    })
+    const chips = within(answer).getByRole('list', { name: 'Query Scope' })
     expect(
       within(chips)
         .getAllByRole('listitem')

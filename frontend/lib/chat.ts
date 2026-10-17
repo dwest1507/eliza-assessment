@@ -1,4 +1,4 @@
-import type { UIMessage } from 'ai'
+import type { ChatStatus, UIMessage } from 'ai'
 
 /** One reported row of a Facts Source, as its Filing prints it. */
 export interface FactRow {
@@ -122,6 +122,19 @@ export function messageSources(message: MessageLike): Source[] {
   return Array.isArray(sources) ? sources : []
 }
 
+/**
+ * Whether an answer has finished: every answer has, except the last message while the
+ * chat is waiting for or streaming its answer. A restored answer always has.
+ */
+export function answerComplete(
+  message: { id: string },
+  messages: readonly { id: string }[],
+  status: ChatStatus
+): boolean {
+  const busy = status === 'submitted' || status === 'streaming'
+  return !(busy && messages.at(-1)?.id === message.id)
+}
+
 /** A Source tag as the backend writes it: `S1`, `S2`, ... */
 const SOURCE_TAG = /^S\d+$/
 
@@ -195,15 +208,38 @@ export function citedTag(href: string | undefined): string | null {
   return match ? match[1] : null
 }
 
+/** A citation in an answer's text: `[S3]`, or a group such as `[S1, S3]`, not yet a link. */
+const CITATION = /\[(S\d+(?:\s*[,;]\s*S\d+)*)\](?!\()/g
+
+/** The tags of one citation group: `S1, S3` gives `S1` and `S3`. */
+function groupTags(group: string): string[] {
+  return group.split(/\s*[,;]\s*/)
+}
+
 /**
  * The answer's Markdown with every citation turned into a link: `[S3]` becomes
  * `[S3](#source-S3)`, and a grouped `[S1, S3]` becomes one link per tag.
  */
 export function linkCitations(markdown: string): string {
-  return markdown.replace(/\[(S\d+(?:\s*[,;]\s*S\d+)*)\](?!\()/g, (_, group: string) =>
-    group
-      .split(/\s*[,;]\s*/)
+  return markdown.replace(CITATION, (_, group: string) =>
+    groupTags(group)
       .map((tag) => `[${tag}](${citationHref(tag)})`)
       .join(' ')
   )
+}
+
+/** A Source tag's number, for putting tags in order: `S11` comes after `S2`. */
+function tagNumber(tag: string): number {
+  return Number(tag.slice(1))
+}
+
+/**
+ * The Sources an answer's text cites, each once and in tag order. A cited tag that is
+ * not among the Sources is skipped: the text shows it as unavailable instead.
+ */
+export function citedSources(text: string, sources: readonly Source[]): Source[] {
+  const cited = new Set([...text.matchAll(CITATION)].flatMap((match) => groupTags(match[1])))
+  return sources
+    .filter((source) => cited.has(source.tag))
+    .sort((a, b) => tagNumber(a.tag) - tagNumber(b.tag))
 }

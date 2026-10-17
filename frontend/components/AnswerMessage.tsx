@@ -1,7 +1,15 @@
 import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
-import { citedTag, linkCitations, type CoverageGap, type QueryScope, type Source } from '@/lib/chat'
+import {
+  citedSources,
+  citedTag,
+  linkCitations,
+  type CoverageGap,
+  type QueryScope,
+  type Source,
+} from '@/lib/chat'
 import CoverageGaps from '@/components/CoverageGaps'
+import Disclosure from '@/components/Disclosure'
 import QueryScopeChips from '@/components/QueryScopeChips'
 import { shortLabel } from '@/components/SourcesPanel'
 
@@ -12,26 +20,31 @@ interface AnswerMessageProps {
   scope: QueryScope | null
   /** What the Filings cannot answer; it arrives before the text. */
   gaps: CoverageGap[]
+  /** Whether the answer has finished: until then nothing shows beneath it. */
+  complete: boolean
   /** The tag open in the Sources panel, if this answer's Sources are shown there. */
   openTag: string | null
   onCite: (tag: string) => void
 }
 
 /**
- * One answer: the Query Scope chips, the Coverage Gap callout, its Markdown, with every `[Sn]` a link that opens
- * the Sources panel at that Source, and the list of Sources it was given. The Query
- * Scope, Coverage Gaps and Sources arrive before the text, so they show while the answer is still
- * streaming.
+ * One answer: the Coverage Gap callout, then its Markdown, with every `[Sn]` a link that
+ * opens the Sources panel at that Source. The Sources arrive before the text, so the
+ * citations work while the answer is still streaming. Once it is complete, two collapsed
+ * disclosures follow: "Sources (N)", the Sources it cites, and "How this was answered",
+ * its Query Scope chips and every Source it was given.
  */
 export default function AnswerMessage({
   text,
   sources,
   scope,
   gaps,
+  complete,
   openTag,
   onCite,
 }: AnswerMessageProps) {
   const tags = new Set(sources.map((s) => s.tag))
+  const cited = citedSources(text, sources)
 
   const components: Components = {
     a: ({ href, children }) => {
@@ -80,7 +93,6 @@ export default function AnswerMessage({
 
   return (
     <article aria-label="Answer" className="flex flex-col gap-3">
-      {scope && <QueryScopeChips scope={scope} />}
       {gaps.length > 0 && <CoverageGaps gaps={gaps} />}
       {text && (
         <div className="answer text-[14.5px] leading-relaxed text-ink">
@@ -89,28 +101,61 @@ export default function AnswerMessage({
           </ReactMarkdown>
         </div>
       )}
-      {sources.length > 0 && (
-        <footer className="border-t border-line pt-3">
-          <h3 className="eyebrow mb-2">Sources</h3>
-          <ul className="flex flex-wrap gap-1.5">
-            {sources.map((source) => (
-              <li key={source.tag}>
-                <button
-                  type="button"
-                  onClick={() => onCite(source.tag)}
-                  aria-pressed={openTag === source.tag}
-                  className="rounded-md border border-line bg-surface px-2 py-1 text-left text-[12px] text-ink transition-colors hover:border-accent/50 hover:bg-raised aria-pressed:border-accent/50 aria-pressed:bg-accent/10"
-                >
-                  <span className="mr-1.5 font-mono font-medium text-accent-strong">
-                    {source.tag}
-                  </span>
-                  {shortLabel(source)}
-                </button>
-              </li>
-            ))}
-          </ul>
+      {complete && (
+        <footer className="flex flex-col gap-1 border-t border-line pt-2">
+          {cited.length > 0 && (
+            <Disclosure summary={`Sources (${cited.length})`}>
+              <SourceChips
+                label="Cited Sources"
+                sources={cited}
+                openTag={openTag}
+                onCite={onCite}
+              />
+            </Disclosure>
+          )}
+          <Disclosure summary="How this was answered">
+            <div className="flex flex-col gap-3">
+              {scope && <QueryScopeChips scope={scope} />}
+              {sources.length > 0 && (
+                <SourceChips
+                  label="Retrieved Sources"
+                  sources={sources}
+                  openTag={openTag}
+                  onCite={onCite}
+                />
+              )}
+            </div>
+          </Disclosure>
         </footer>
       )}
     </article>
+  )
+}
+
+interface SourceChipsProps {
+  label: string
+  sources: Source[]
+  openTag: string | null
+  onCite: (tag: string) => void
+}
+
+/** Sources as chips, each opening the Sources panel at its Source. */
+function SourceChips({ label, sources, openTag, onCite }: SourceChipsProps) {
+  return (
+    <ul aria-label={label} className="flex flex-wrap gap-1.5">
+      {sources.map((source) => (
+        <li key={source.tag}>
+          <button
+            type="button"
+            onClick={() => onCite(source.tag)}
+            aria-pressed={openTag === source.tag}
+            className="rounded-md border border-line bg-surface px-2 py-1 text-left text-[12px] text-ink transition-colors hover:border-accent/50 hover:bg-raised aria-pressed:border-accent/50 aria-pressed:bg-accent/10"
+          >
+            <span className="font-mono font-medium text-accent-strong">{source.tag}</span>{' '}
+            {shortLabel(source)}
+          </button>
+        </li>
+      ))}
+    </ul>
   )
 }

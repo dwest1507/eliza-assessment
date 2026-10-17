@@ -7,11 +7,14 @@ import { DefaultChatTransport } from 'ai'
 import AnswerMessage from '@/components/AnswerMessage'
 import SourcesPanel from '@/components/SourcesPanel'
 import {
+  answerComplete,
+  citedSources,
   messageDataPart,
   messageSources,
   messageText,
   rejectionReason,
   type ResearchMessage,
+  type Source,
 } from '@/lib/chat'
 import { loadConversation, saveConversation } from '@/lib/conversation'
 import { WHATS_COVERED_ID, type CoverageSummary } from '@/lib/coverage'
@@ -82,7 +85,7 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
   }
 
   const openMessage = open ? messages.find((m) => m.id === open.messageId) : undefined
-  const openSources = openMessage ? messageSources(openMessage) : []
+  const openSources = open && openMessage ? switcherSources(openMessage, open.tag) : []
   const last = messages.at(-1)
   const writing = status === 'streaming' && last?.role === 'assistant' && !messageText(last)
 
@@ -129,6 +132,7 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
                       sources={messageSources(message)}
                       scope={messageDataPart(message, 'query-scope')}
                       gaps={messageDataPart(message, 'coverage-gaps')?.gaps ?? []}
+                      complete={answerComplete(message, messages, status)}
                       openTag={open?.messageId === message.id ? open.tag : null}
                       onCite={(tag) => setOpen({ messageId: message.id, tag })}
                     />
@@ -201,6 +205,16 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
       </div>
     </div>
   )
+}
+
+/**
+ * The Sources the panel's switcher lists for one answer: the Sources it cites, plus the
+ * open one when it is not cited, in tag order.
+ */
+function switcherSources(message: ResearchMessage, openTag: string): Source[] {
+  const sources = messageSources(message)
+  const cited = citedSources(messageText(message), sources)
+  return sources.filter((s) => s.tag === openTag || cited.includes(s))
 }
 
 function EmptyState({

@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
+  citedSources,
   HISTORY_TURNS,
   MAX_MESSAGES,
   messageCitedFilings,
@@ -145,6 +146,41 @@ describe('messageCitedFilings', () => {
     const cited = messageCitedFilings(message)
     expect(cited).toEqual({ S2: 'TSLA_10-K_2025-12-31' })
     expect(Object.getPrototypeOf(cited)).toBe(Object.prototype)
+  })
+})
+
+describe('citedSources', () => {
+  /** The Sources an answer was given, S1 to S11, each as a minimal Source. */
+  const given: Source[] = Array.from({ length: 11 }, (_, i) => ({
+    ...appleSource,
+    tag: `S${i + 1}`,
+  }))
+  const tags = (sources: Source[]) => sources.map((s) => s.tag)
+
+  it('lists the Sources the answer cites, in tag order, not citation order', () => {
+    expect(tags(citedSources('Tesla [S3] and Apple [S1].', given))).toEqual(['S1', 'S3'])
+  })
+
+  it('lists a tag cited more than once only once', () => {
+    expect(tags(citedSources('Apple [S2] faces tariffs [S2] and [S2].', given))).toEqual(['S2'])
+  })
+
+  it('skips a cited tag that is not among the Sources', () => {
+    expect(tags(citedSources('Apple [S1] and a made-up [S40].', given))).toEqual(['S1'])
+  })
+
+  it('reads a tag run like [S1][S2] and a grouped [S4, S11] as separate citations', () => {
+    expect(tags(citedSources('Both [S1][S2], and [S4, S11].', given))).toEqual([
+      'S1',
+      'S2',
+      'S4',
+      'S11',
+    ])
+  })
+
+  it('is empty when the answer cites nothing', () => {
+    expect(citedSources('No citations here, nor S1 without brackets.', given)).toEqual([])
+    expect(citedSources('', given)).toEqual([])
   })
 })
 
