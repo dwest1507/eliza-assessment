@@ -430,6 +430,13 @@ _COMPANY_FREE_GAPS = {"periods_differ"}
 
 _SENTENCE_END = re.compile(r"(?<=[.!?])\s+(?=[\[(*\"“A-Z])")
 
+_ABBREVIATION_END = re.compile(
+    r"(?:(?<![\w.])(?:[A-Z]\.){2,}"  # initialisms: "U.S.", "U.K.", "J.P."
+    r"|\b(?:Inc|Corp|Co|Ltd|Mr|Mrs|Ms|Dr|Jr|Sr|St|No|vs|e\.g|i\.e)\.)$"
+)
+"""The end of a part of a sentence that stops at an abbreviation, not at a full stop:
+"... depend on U.S." before "Government ..."."""
+
 
 @dataclass(frozen=True)
 class CoverageGapCheck:
@@ -546,7 +553,7 @@ def claims(answer: str) -> list[Claim]:
     for unit in units(answer):
         if unit.exempt and not unit.lead_in:
             continue
-        for sentence in _sentences(unit.text):
+        for sentence in _sentences(unit.text, abbreviations=True):
             if _COVERAGE.match(sentence):
                 break  # the Coverage note, which says what the Sources could not answer
             text, tags = strip_tags(sentence), tags_in(sentence) or unit.tags
@@ -658,14 +665,23 @@ def _words(answer: str) -> int:
     return len([w for w in re.split(r"[\s|]+", text) if re.search(r"\w", w)])
 
 
-def _sentences(text: str) -> list[str]:
+def _sentences(text: str, abbreviations: bool = False) -> list[str]:
     """The unit's sentences, a tag written after a full stop kept with the sentence
-    before it. A table row is one sentence."""
+    before it. A table row is one sentence.
+
+    With `abbreviations` (the claim split), a common abbreviation such as "U.S.",
+    "Inc." or "Corp." ends no sentence, even before a capital, unless a tag follows
+    it: "Apple relies on the U.S. Government [S1]." is one sentence. The other checks
+    split without it, as they always have."""
     if text.startswith("|"):
         return [text]
     parts = _SENTENCE_END.split(text)
     merged: list[str] = []
     for part in parts:
+        if abbreviations and merged and _ABBREVIATION_END.search(merged[-1]):
+            if not part.startswith("["):
+                merged[-1] += " " + part
+                continue
         if merged and (run := _TAG_RUN.match(part)):
             merged[-1] += " " + run.group().strip()
             part = part[run.end() :].strip()

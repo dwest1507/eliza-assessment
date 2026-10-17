@@ -427,6 +427,45 @@ def test_a_run_of_tags_after_the_full_stop_belongs_to_the_sentence_before_it():
     ]
 
 
+def test_a_sentence_with_u_s_before_a_capital_is_one_claim():
+    answer = "Apple relies on the U.S. Government for X [S1]. Tesla sells cars [S2]."
+
+    assert [(c.text, c.tags) for c in claims(answer)] == [
+        ("Apple relies on the U.S. Government for X.", ("S1",)),
+        ("Tesla sells cars.", ("S2",)),
+    ]
+
+
+@pytest.mark.parametrize(
+    "sentence",
+    [
+        pytest.param("Lockheed depends on U.S. Government contracts [S1].", id="U.S."),
+        pytest.param("Sales to the U.K. National Health Service grew [S1].", id="U.K."),
+        pytest.param("Apple Inc. Services revenue grew [S1].", id="Inc."),
+        pytest.param("Lockheed Martin Corp. Aeronautics leads its sales [S1].", id="Corp."),
+        pytest.param("JPMorgan Chase & Co. Consumer banking grew [S1].", id="Co."),
+        pytest.param("Arm Holdings Ltd. Licensing revenue rose [S1].", id="Ltd."),
+        pytest.param("**U.S. Government** contracts drive sales [S1].", id="bold U.S."),
+    ],
+)
+def test_common_abbreviations_before_a_capital_do_not_end_a_sentence(sentence):
+    answer = f"{sentence} Tesla sells cars [S2]."
+
+    assert [c.text for c in claims(answer)] == [
+        sentence.replace(" [S1]", ""),
+        "Tesla sells cars.",
+    ]
+
+
+def test_a_tag_after_an_abbreviation_still_ends_the_sentence():
+    answer = "Apple sells in the U.S. [S1] Tesla sells cars [S2]."
+
+    assert [(c.text, c.tags) for c in claims(answer)] == [
+        ("Apple sells in the U.S.", ("S1",)),
+        ("Tesla sells cars.", ("S2",)),
+    ]
+
+
 def test_a_coverage_note_that_starts_mid_paragraph_makes_no_claim():
     answer = (
         "Apple and Tesla differ [S1] [S2]. **Coverage:** The Sources do not include "
