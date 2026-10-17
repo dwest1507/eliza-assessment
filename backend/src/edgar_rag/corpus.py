@@ -35,6 +35,7 @@ from typing import Literal
 
 from edgar_rag._body import Span, clean_body
 from edgar_rag._sections import UNSECTIONED, Section, split_sections
+from edgar_rag.paths import DATA_DIR
 
 __all__ = [
     "DEFAULT_CORPUS_DIR",
@@ -56,9 +57,8 @@ __all__ = [
     "report_quarter",
 ]
 
-_DATA_DIR = Path(__file__).resolve().parents[3] / "data"
-DEFAULT_CORPUS_DIR = _DATA_DIR / "edgar_corpus"
-DEFAULT_SECTOR_TABLE = _DATA_DIR / "reference" / "sectors.csv"
+DEFAULT_CORPUS_DIR = DATA_DIR / "edgar_corpus"
+DEFAULT_SECTOR_TABLE = DATA_DIR / "reference" / "sectors.csv"
 
 _HEADER_END = "=" * 60
 

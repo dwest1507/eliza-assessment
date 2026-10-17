@@ -92,3 +92,18 @@ def test_the_product_loads_none_of_the_challenger_arms_packages():
     ).stdout.split()
 
     assert not set(loaded) & DEV_ONLY
+
+
+def test_the_data_directory_is_defined_once_for_every_backend_package():
+    """Every backend module finds the data directory through `edgar_rag.paths`; none
+    rebuilds it from its own file location."""
+    from edgar_rag.paths import DATA_DIR
+
+    rebuilt = sorted(
+        str(path.relative_to(CORE.parent))
+        for path in CORE.parent.glob("*/*.py")
+        if path != CORE / "paths.py" and "__file__" in path.read_text(encoding="utf-8")
+    )
+
+    assert rebuilt == []
+    assert (DATA_DIR / "edgar_corpus").is_dir()

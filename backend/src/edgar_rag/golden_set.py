@@ -23,6 +23,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Literal
 
+from edgar_rag.paths import DATA_DIR
+
 __all__ = [
     "COVERAGE_GAP_KINDS",
     "DEFAULT_GOLDEN_SET",
@@ -40,7 +42,7 @@ __all__ = [
     "assign_splits",
 ]
 
-DEFAULT_GOLDEN_SET = Path(__file__).resolve().parents[3] / "data" / "eval" / "golden_set.json"
+DEFAULT_GOLDEN_SET = DATA_DIR / "eval" / "golden_set.json"
 
 QUESTION_TYPES = (
     "risk",

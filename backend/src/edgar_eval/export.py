@@ -29,12 +29,12 @@ from typing import Any, TextIO
 
 from edgar_rag.corpus import Filing, load_corpus, report_quarter
 from edgar_rag.golden_set import DEFAULT_GOLDEN_SET, load_golden_set
+from edgar_rag.paths import DERIVED_DIR, REPO_ROOT
 
 __all__ = ["DEFAULT_EVAL_DIR", "DEFAULT_EXPORT", "coverage_grid", "export", "main"]
 
-_ROOT = Path(__file__).resolve().parents[3]
-DEFAULT_EVAL_DIR = _ROOT / "data" / "derived" / "eval"
-DEFAULT_EXPORT = _ROOT / "frontend" / "data" / "eval-export.json"
+DEFAULT_EVAL_DIR = DERIVED_DIR / "eval"
+DEFAULT_EXPORT = REPO_ROOT / "frontend" / "data" / "eval-export.json"
 
 _COVERAGE_ORDER = ("tracked", "snapshot")
 

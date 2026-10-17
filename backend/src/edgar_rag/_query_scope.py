@@ -21,6 +21,15 @@ Rule-based, with no LLM (ADR 0003). It recognises:
   "net income", "earnings" and "profit" are net income; a segment name of a Company in
   scope ("Compute & Networking", "AWS") is that segment's revenue, and "segment" alone
   is every segment's.
+- Companies missing from the Corpus, by name, alias or listed ticker, from the curated
+  list `_coverage.load_missing_companies` reads (assumption 9).
+
+Follow-ups (ADR 0003): `inherit_scope` reads what each user message of a conversation
+names of each Query Scope part (`ScopeNamedInMessage`), and takes each part the latest
+message does not name from the most recent earlier message that named it: the Companies
+(with Sector phrases and missing Companies), the time window and named periods, the
+Section hints, the topic words and the metric. A part the latest message names replaces
+the inherited one.
 
 Tickers match only when written in capitals, so "cost" never means Costco. Names match
 in any case, except names that are also everyday words ("Target", "Meta", "Visa"),
@@ -30,7 +39,7 @@ which must be capitalised.
 from __future__ import annotations
 
 import re
-from collections.abc import Iterable, Sequence
+from collections.abc import Callable, Iterable, Sequence
 from dataclasses import dataclass
 from datetime import date, timedelta
 from typing import Literal
@@ -513,3 +522,193 @@ def _segment_pattern(name: str) -> re.Pattern[str]:
     body = r"\s+".join(r"(?:&|and)" if word in ("&", "and") else re.escape(word) for word in words)
     flags = 0 if len(words) == 1 else re.I
     return re.compile(rf"(?<![\w&]){body}(?![\w&])", flags)
+
+
+# --- Companies missing from the Corpus ----------------------------------------------------
+
+
+@dataclass(frozen=True)
+class MissingCompany:
+    """A notable Company that is not in the Corpus, from the curated list."""
+
+    name: str
+    ticker: str
+    aliases: tuple[str, ...]
+    """Other names and the tickers to recognise. A ticker is matched only when written
+    in capitals, and only if it is listed here."""
+    sector: str
+    industry: str
+
+
+def find_missing(
+    question: str, missing: Iterable[MissingCompany], taken: Sequence[tuple[int, int]]
+) -> tuple[tuple[str, ...], list[tuple[int, int]]]:
+    """The missing Companies a question names, by name, in the order it names them, and
+    the spans that name them. Text inside `taken` (a Company in the Corpus or a Sector
+    phrase) is not read again."""
+    candidates = [
+        (company.name, pattern)
+        for company in missing
+        for pattern in company_patterns(company.name, company.aliases)
+    ]
+    candidates.sort(key=lambda c: -len(c[1].pattern))
+    used = list(taken)
+    found: dict[str, int] = {}
+    spans: list[tuple[int, int]] = []
+    for name, pattern in candidates:
+        for m in pattern.finditer(question):
+            if any(m.start() < end and start < m.end() for start, end in used):
+                continue
+            used.append((m.start(), m.end()))
+            spans.append((m.start(), m.end()))
+            found[name] = min(found.get(name, m.start()), m.start())
+    return tuple(sorted(found, key=found.__getitem__)), sorted(spans)
+
+
+# --- Follow-ups --------------------------------------------------------------------------
+
+# Words that carry no topic. Company names are taken out separately.
+_STOPWORDS = frozenset(
+    """a about above across after against all also among an and any are as at be been
+    before being between both but by can could did do does doing during each either for
+    from had has have having how i if in into is it its itself me more most my no nor
+    not of off on once only or other our out over own same she should so some such than
+    that the their them then there these they this those through to too under until up
+    very was we were what when where which while who whom why will with would you your
+    compare compared comparison describe explain tell give show list summarize summarise
+    please facing face faced""".split()
+)
+
+# Words that name no topic of their own: a follow-up made only of these ("How did that
+# change over the last two years?") asks about the topic of an earlier message.
+_NOT_TOPIC = frozenset(
+    """last past previous prior preceding latest recent newest year years quarter quarters
+    month months fiscal one two three four five six seven eight nine ten twelve change
+    changed changes changing evolve evolved evolving shift shifted differ differs
+    difference new now instead too either same one ones else again further more""".split()
+)
+
+
+@dataclass(frozen=True)
+class ScopeNamedInMessage:
+    """What one user message names of each part of the Query Scope: its Companies (by
+    name, ticker or Sector phrase, and those missing from the Corpus), its time window
+    and named periods, its Section hints and its topic words. A part it does not name is
+    empty (or None)."""
+
+    text: str
+    companies: tuple[ScopeCompany, ...]
+    sector_phrases: tuple[SectorPhrase, ...]
+    missing: tuple[str, ...]
+    sections: tuple[str, ...]
+    window: TimeWindow | None
+    periods: tuple[str, ...]
+    words: tuple[str, ...]
+    """The message's search terms: its words without Company names, Sector phrases or
+    stopwords."""
+
+    @property
+    def names_companies(self) -> bool:
+        return bool(self.companies or self.sector_phrases or self.missing)
+
+    @property
+    def names_period(self) -> bool:
+        return bool(self.window or self.periods)
+
+    @property
+    def has_topic(self) -> bool:
+        """Whether it names something to search for beyond Companies and periods."""
+        return any(w not in _NOT_TOPIC and not w.isdigit() for w in self.words)
+
+
+def scope_named_in(
+    text: str, known: Sequence[ScopeCompany], missing: Sequence[MissingCompany]
+) -> ScopeNamedInMessage:
+    """What a user message names of each part of the Query Scope. `known` are the
+    Companies in the Corpus and `missing` the curated Companies that are not."""
+    companies, sector_phrases, spans = resolve_companies(text, known)
+    missing_names, missing_spans = find_missing(text, missing, spans)
+    return ScopeNamedInMessage(
+        text=text,
+        companies=companies,
+        sector_phrases=sector_phrases,
+        missing=missing_names,
+        sections=find_section_hints(text),
+        window=find_time_window(text),
+        periods=find_periods(text),
+        words=_words(_without_spans(text, spans + missing_spans)),
+    )
+
+
+@dataclass(frozen=True)
+class InheritedScope:
+    """Which user message of a conversation each part of the latest message's Query
+    Scope comes from (ADR 0003): the most recent one that named that part, or the latest
+    message when none did. A part the latest message names is its own."""
+
+    named: tuple[ScopeNamedInMessage, ...]
+    """What each user message names, oldest first; the last is the latest message."""
+    companies_from: ScopeNamedInMessage
+    """The message the Companies, Sector phrases and missing Companies come from."""
+    period_from: ScopeNamedInMessage
+    """The message the time window and named periods come from."""
+    sections_from: ScopeNamedInMessage
+    """The message the Section hints come from."""
+    topic_from: ScopeNamedInMessage
+    """The message the topic words come from ("And what about Microsoft?" has none)."""
+
+    @property
+    def latest(self) -> ScopeNamedInMessage:
+        return self.named[-1]
+
+    @property
+    def asked(self) -> tuple[ScopeNamedInMessage, ...]:
+        """The messages retrieval reads: the latest, after the message whose topic it
+        inherits when it has none of its own."""
+        if self.topic_from is self.latest:
+            return (self.latest,)
+        return (self.topic_from, self.latest)
+
+    def metrics(self, segment_names: Iterable[str]) -> tuple[tuple[str, ...], tuple[str, ...]]:
+        """The metrics and segments of the most recent message naming a metric (see
+        `find_metrics`), or none. `segment_names` are those of the Companies in scope."""
+        names = list(segment_names)
+        return next(
+            (found for n in reversed(self.named) if (found := find_metrics(n.text, names))[0]),
+            ((), ()),
+        )
+
+
+def inherit_scope(
+    user_messages: Sequence[str],
+    known: Sequence[ScopeCompany],
+    missing: Sequence[MissingCompany],
+) -> InheritedScope:
+    """Where each part of the latest user message's Query Scope comes from. Each part it
+    does not name is inherited from the most recent earlier user message that named it,
+    and a part it names replaces the inherited one (ADR 0003)."""
+    if not user_messages:
+        raise ValueError("a conversation has at least one user message")
+    named = tuple(scope_named_in(text, known, missing) for text in user_messages)
+
+    def most_recent(names: Callable[[ScopeNamedInMessage], bool]) -> ScopeNamedInMessage:
+        return next((n for n in reversed(named) if names(n)), named[-1])
+
+    return InheritedScope(
+        named=named,
+        companies_from=most_recent(lambda n: n.names_companies),
+        period_from=most_recent(lambda n: n.names_period),
+        sections_from=most_recent(lambda n: bool(n.sections)),
+        topic_from=most_recent(lambda n: n.has_topic),
+    )
+
+
+def _without_spans(text: str, spans: list[tuple[int, int]]) -> str:
+    for start, end in sorted(spans, reverse=True):
+        text = text[:start] + " " + text[end:]
+    return text
+
+
+def _words(text: str) -> tuple[str, ...]:
+    words = re.findall(r"[^\W_]+", text.lower())
+    return tuple(dict.fromkeys(w for w in words if w not in _STOPWORDS and len(w) > 1))

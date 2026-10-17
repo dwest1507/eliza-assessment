@@ -24,6 +24,8 @@ from collections.abc import Iterable
 from datetime import date
 from pathlib import Path
 
+from edgar_rag.paths import DERIVED_DIR
+
 __all__ = [
     "COMPANY_FACTS_URL",
     "DEFAULT_CACHE_DIR",
@@ -34,7 +36,7 @@ __all__ = [
 ]
 
 COMPANY_FACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
-DEFAULT_CACHE_DIR = Path(__file__).resolve().parents[3] / "data" / "derived" / "sec_companyfacts"
+DEFAULT_CACHE_DIR = DERIVED_DIR / "sec_companyfacts"
 USER_AGENT_ENV = "SEC_USER_AGENT"
 INDEX_FILE = "index.json"
 

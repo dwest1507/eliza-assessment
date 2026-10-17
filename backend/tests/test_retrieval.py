@@ -1027,6 +1027,58 @@ def test_ge_capitals_2014_report_asked_for_by_name_is_cited_and_still_flagged(ga
 
 
 @pytest.mark.parametrize(
+    ("question", "left_out"),
+    [
+        ("How has General Electric performed recently?", True),
+        ("What are GE's main risk factors?", True),
+        ("What did GE say about its balance sheet?", True),
+        ("What did GE Capital say about its balance sheet?", False),
+        ("What did General Electric Capital say about its balance sheet?", False),
+        ("What did General Electric say about its balance sheet in FY2014?", False),
+        ("What did General Electric say about its balance sheet in 2014?", False),
+    ],
+)
+def test_the_ge_capital_filing_is_left_out_unless_asked_for_by_name_or_period(
+    gap_index, question, left_out
+):
+    """Assumption 3: the stale Filing is left out of answers about General Electric,
+    except when the question asks for GE Capital by name or names the period it covers.
+    Left out, it is neither in the Query Scope nor cited; asked for, it is both."""
+    context = _ask(gap_index, question)
+
+    [ge] = context.coverage
+    assert [f.filing_id for f in ge.left_out] == ([GE_FILING] if left_out else [])
+    in_scope = {f.filing_id for f in context.query_scope.filings}
+    cited = {s.filing_id for s in context.sources}
+    assert (GE_FILING in in_scope, GE_FILING in cited) == (not left_out, not left_out)
+    [gap] = _gaps(context, "stale_filing")
+    assert gap.text.endswith("left out of this answer.") == left_out
+
+
+@pytest.mark.parametrize(
+    ("question", "left_out"),
+    [
+        ("Which companies are reducing the size of their balance sheet?", True),
+        ("Which companies were reducing the size of their balance sheet in 2014?", False),
+    ],
+)
+def test_a_question_naming_no_company_is_held_away_from_a_left_out_stale_filing(
+    gap_index, question, left_out
+):
+    """A question naming no Company searches every Filing. When the stale Filing is left
+    out, retrieval is held to the remaining Filings, so it cannot be cited. When the
+    question names the period it covers, nothing is left out, retrieval is not held and
+    the stale Filing may be cited. Holding retrieval only when a Filing is left out is
+    the intent (assumption 3): with nothing left out, holding it to every Filing would
+    change nothing."""
+    context = _ask(gap_index, question)
+
+    assert context.query_scope.companies == ()
+    assert "BAC" in {s.ticker for s in context.sources}
+    assert (GE_FILING in {s.filing_id for s in context.sources}) is not left_out
+
+
+@pytest.mark.parametrize(
     "question",
     [
         "What is Tesla's outlook for 2026?",

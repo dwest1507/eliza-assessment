@@ -35,19 +35,18 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from edgar_rag._query_scope import (
+    MissingCompany,
     ScopeFiling,
     TimeWindow,
-    company_patterns,
     names_period,
     short_name,
 )
+from edgar_rag.paths import DATA_DIR
 
 if TYPE_CHECKING:
     from edgar_rag.retrieval import QueryScope
 
-DEFAULT_MISSING_COMPANIES = (
-    Path(__file__).resolve().parents[3] / "data" / "reference" / "missing_companies.csv"
-)
+DEFAULT_MISSING_COMPANIES = DATA_DIR / "reference" / "missing_companies.csv"
 
 SNAPSHOT_TREND = "snapshot_trend"
 MISSING_COMPANY = "missing_company"
@@ -101,19 +100,6 @@ class CompanyCoverage:
 # --- Companies missing from the Corpus ----------------------------------------------------
 
 
-@dataclass(frozen=True)
-class MissingCompany:
-    """A notable Company that is not in the Corpus, from the curated list."""
-
-    name: str
-    ticker: str
-    aliases: tuple[str, ...]
-    """Other names and the tickers to recognise. A ticker is matched only when written
-    in capitals, and only if it is listed here."""
-    sector: str
-    industry: str
-
-
 def load_missing_companies(
     path: str | Path = DEFAULT_MISSING_COMPANIES,
 ) -> tuple[MissingCompany, ...]:
@@ -134,31 +120,6 @@ def _load_missing_companies(path: Path) -> tuple[MissingCompany, ...]:
             )
             for row in csv.DictReader(f)
         )
-
-
-def find_missing(
-    question: str, missing: Iterable[MissingCompany], taken: Sequence[tuple[int, int]]
-) -> tuple[tuple[str, ...], list[tuple[int, int]]]:
-    """The missing Companies a question names, by name, in the order it names them, and
-    the spans that name them. Text inside `taken` (a Company in the Corpus or a Sector
-    phrase) is not read again."""
-    candidates = [
-        (company.name, pattern)
-        for company in missing
-        for pattern in company_patterns(company.name, company.aliases)
-    ]
-    candidates.sort(key=lambda c: -len(c[1].pattern))
-    used = list(taken)
-    found: dict[str, int] = {}
-    spans: list[tuple[int, int]] = []
-    for name, pattern in candidates:
-        for m in pattern.finditer(question):
-            if any(m.start() < end and start < m.end() for start, end in used):
-                continue
-            used.append((m.start(), m.end()))
-            spans.append((m.start(), m.end()))
-            found[name] = min(found.get(name, m.start()), m.start())
-    return tuple(sorted(found, key=found.__getitem__)), sorted(spans)
 
 
 # --- Stale Filings -----------------------------------------------------------------------

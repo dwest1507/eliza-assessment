@@ -261,7 +261,8 @@ context.messages  # the rendered prompt for the Answer Call
 │   │   ├── retrieval.py       the retrieval seam: build the index, prepare an Answer Context
 │   │   ├── answer_model.py    the answer model protocol and the logged Answer Call
 │   │   ├── sec_reference.py   fetches and reads the SEC company-facts evaluation reference
-│   │   └── golden_set.py      loads and validates the Golden Set and its dev/holdout split
+│   │   ├── golden_set.py      loads and validates the Golden Set and its dev/holdout split
+│   │   └── paths.py           the data directory, defined once for every backend package
 │   ├── src/edgar_answer/      provider implementations (OpenAI, Anthropic) and the `make ask` CLI
 │   ├── src/edgar_api/         the FastAPI chat API (`make api`)
 │   ├── src/edgar_eval/        evaluation harnesses: retrieval Arms, their rankers and embeddings, metrics, the selection rule, answer checks, the Jev judge, the export

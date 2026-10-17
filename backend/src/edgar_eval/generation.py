@@ -56,6 +56,7 @@ from edgar_eval.generators import answer_cost, answer_model
 from edgar_eval.judge import Evidence, Judgments
 from edgar_eval.retrieval import Arm, Prepare, conversation
 from edgar_rag.answer_model import DEFAULT_ANSWER_LOG, AnswerCall, AnswerModel
+from edgar_rag.corpus import DEFAULT_SECTOR_TABLE
 from edgar_rag.golden_set import DEFAULT_GOLDEN_SET, GoldenCase, load_golden_set
 from edgar_rag.retrieval import DEFAULT_INDEX, prepare_answer_context
 
@@ -68,8 +69,6 @@ __all__ = [
     "evaluate",
     "main",
 ]
-
-DEFAULT_SECTORS = Path(__file__).resolve().parents[3] / "data" / "reference" / "sectors.csv"
 
 
 class Judge(Protocol):
@@ -304,7 +303,7 @@ _EXTRA_NAMES = {
 }
 
 
-def company_names(path: str | Path = DEFAULT_SECTORS) -> dict[str, tuple[str, ...]]:
+def company_names(path: str | Path = DEFAULT_SECTOR_TABLE) -> dict[str, tuple[str, ...]]:
     """Each Company's ticker, its name from the Sector table with and without its legal
     suffix, and the aliases an answer commonly uses, for the Coverage Gap check."""
     names: dict[str, tuple[str, ...]] = {}

@@ -22,6 +22,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Protocol
 
+from edgar_rag.paths import DERIVED_DIR
 from edgar_rag.retrieval import AnswerContext, PromptMessage
 
 __all__ = [
@@ -32,9 +33,7 @@ __all__ = [
     "Usage",
 ]
 
-DEFAULT_ANSWER_LOG = (
-    Path(__file__).resolve().parents[3] / "data" / "derived" / "logs" / "answer_calls.jsonl"
-)
+DEFAULT_ANSWER_LOG = DERIVED_DIR / "logs" / "answer_calls.jsonl"
 
 logger = logging.getLogger(__name__)
 

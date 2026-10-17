@@ -45,6 +45,7 @@ from statistics import fmean
 from typing import Any, Literal, TextIO
 
 from edgar_eval.metrics import McNemarResult, sign_test
+from edgar_rag.paths import DERIVED_DIR
 
 __all__ = [
     "RULES",
@@ -58,7 +59,7 @@ __all__ = [
     "sign_test",
 ]
 
-_EVAL_DIR = Path(__file__).resolve().parents[3] / "data" / "derived" / "eval"
+_EVAL_DIR = DERIVED_DIR / "eval"
 
 RuleName = Literal["arms", "generators"]
 Score = Literal["fact_recall", "faithfulness", "coverage_gaps"]
