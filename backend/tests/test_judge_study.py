@@ -548,11 +548,15 @@ CLAIMS = [
 ]
 
 
-def test_the_score_reports_agreement_with_the_labels_against_hand_computed_values():
+def test_the_score_reports_agreement_with_the_labels_against_hand_computed_values(monkeypatch):
     from pytest import approx
 
+    from edgar_eval import judge_study
     from edgar_eval.judge_study import score
 
+    # The values below are computed by hand at a fact cut-off of 0.5, whatever the
+    # study has set `FACT_CUTOFF` to.
+    monkeypatch.setattr(judge_study, "FACT_CUTOFF", 0.5)
     sample, labels, runs = _study(FACTS, CLAIMS)
     report = score(sample, labels, runs)
     first = report.judges[0]
@@ -592,7 +596,7 @@ def test_the_score_reports_agreement_with_the_labels_against_hand_computed_value
 def test_the_cut_off_sweep_and_averaged_probabilities_against_hand_computed_values():
     from pytest import approx
 
-    from edgar_eval.judge_study import CUTOFFS, score
+    from edgar_eval.judge_study import CUTOFFS, FACT_CUTOFF, score
 
     sample, labels, runs = _study(FACTS, CLAIMS)
     first = score(sample, labels, runs).judges[0]
@@ -603,7 +607,8 @@ def test_the_cut_off_sweep_and_averaged_probabilities_against_hand_computed_valu
     assert (sweep[0.1].accuracy, sweep[0.1].kappa) == (0.6, approx(0.2))
     # At 0.3 (F3's 0.3 counts as stated) 8 of 10 agree, Jev states 7: kappa 0.6.
     assert (sweep[0.3].accuracy, sweep[0.3].kappa) == (0.8, approx(0.6))
-    assert sweep[0.5].accuracy == first.facts.accuracy
+    # The score's own fact agreement is the sweep's at the fact cut-off.
+    assert sweep[FACT_CUTOFF].accuracy == first.facts.accuracy
     # At 0.9 only F1 and F7 count: 7 of 10 agree, kappa 0.4.
     assert (sweep[0.9].accuracy, sweep[0.9].kappa) == (0.7, approx(0.4))
     # Averaged, each fact counts as its probability of a stated fact: agreement is p for

@@ -40,3 +40,20 @@ The study decides three things:
 - Judging stays at about $0.25 per 150-case run. The study's cost is the developer's time, about 5 to 7 hours of labelling, or about 4 to 5 hours if the claim items stop at 100.
 - A Jev failure is recorded against the judgment it affects, not against the whole case, so the code checks still count.
 - An LLM claim split, if adopted, is its own follow-up, with its output cached per answer so every judge and every rescore sees the same claims.
+
+## Outcome (2026-10-17)
+
+The study was run (issue #65); its numbers are in [`docs/evaluation.md`](../evaluation.md#the-judge-studys-results).
+
+**The labels are Claude's, not the developer's.** The developer delegated the labelling, so step 2's labels were made by Claude (`claude-opus-5-5`), blind, by the same rules: no verdict, probability or draw reason was seen, and the labelled sheet was committed before Jev ran. The study therefore measures how far Jev agrees with Claude's labels. It does not validate Jev against human judgement, and the cut-off below is set from agreement with Claude.
+
+- **Jev is kept.** The revisit trigger did not fire:
+  - Jev's first run called 1 of 43 bad claims supported (2%; 95% interval 0.4% to 12%), well below one in five;
+  - its error does not differ by generator (lowest Fisher p = 0.145).
+  
+  The stopping rule was met as well, though all 200 claim items were labelled. One caveat for version 2: Jev's claim errors are false alarms. Of the 17 claims it called contradicted, Claude labelled only 7 contradicted. The rule that any Contradicted Claim fails an answer will therefore fail some answers Claude would pass.
+- **The fact cut-off is 0.6** (`FACT_CUTOFF`), up from 0.5. It is the cut-off with the highest agreement on Jev's first run: accuracy 93% and kappa 0.83, against 91% and 0.81 at 0.5. At 0.6 the errors are balanced, 5 facts wrongly stated and 6 missed, against 10 and 3 at 0.5. Averaged probabilities agreed on only 86%, so Fact Recall keeps a cut-off. The margin is small (3 items of 150), and the rule for choosing was set after the sweep was seen.
+- **The LLM claim split is not adopted.** It agreed with the labels on 115 of 141 answers, against 111 for the sentence split (McNemar p = 0.388). All of that gain is fewer false alarms, and it catches no bad answer the sentence split misses. It would add a paid Claude call to every run, and the labeller is also Claude, which may favour a Claude split. Part of the sentence split's false alarms comes from a fault that costs nothing to fix: it breaks after "U.S." before a capital. That fix is a follow-up issue (#83), so no follow-up spec is opened.
+
+A check of Jev against a human's labels has still not been made. The committed sheet can be relabelled by a person to make one.
+

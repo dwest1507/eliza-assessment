@@ -298,9 +298,9 @@ def test_every_generation_report_records_the_fact_cut_off(index, tmp_path):
         log_path=None,
     )
 
-    assert FACT_CUTOFF == 0.5  # until the judge study sets it
+    assert FACT_CUTOFF == 0.6  # set by the judge study (ADR 0013)
     assert report.fact_cutoff == FACT_CUTOFF
-    assert json.loads(json.dumps(report.to_dict()))["fact_cutoff"] == 0.5
+    assert json.loads(json.dumps(report.to_dict()))["fact_cutoff"] == 0.6
 
 
 def test_fact_recall_scores_must_state_facts_and_detail_recall_the_details(index, tmp_path):

@@ -71,10 +71,15 @@ JEV_KEY_ENV = "JEV_API_KEY"
 JEV_USD_PER_MILLION_INPUT_TOKENS = 0.042
 """Jev's price (docs.typesafe.ai/models, 2026-10-16). Output tokens are free."""
 
-FACT_CUTOFF = 0.5
-"""The fact cut-off: the probability from which a Required Fact counts as stated. It
-stays 0.5 until the judge study (ADR 0013) sets it, and every generation report records
-it (`GenerationReport.fact_cutoff`)."""
+FACT_CUTOFF = 0.6
+"""The fact cut-off: the probability from which a Required Fact counts as stated, set by
+the judge study (ADR 0013, 2026-10-17) from 0.5. On its 150 fact items, Jev's first run
+agreed best with the labels at 0.6 (accuracy 93%, kappa 0.83, against 91% and 0.81 at
+0.5), and better than averaged probabilities (86%). The labels are Claude's
+(`claude-opus-5-5`), made on the developer's delegation, so the cut-off is set from
+agreement with Claude, not with a human (`docs/evaluation.md`, "The judge study's
+results"). Every generation report records the cut-off it was scored at
+(`GenerationReport.fact_cutoff`); one saved before it was recorded was scored at 0.5."""
 
 VERDICTS = ("supported", "unsupported", "contradicted")
 
