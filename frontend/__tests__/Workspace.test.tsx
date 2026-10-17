@@ -263,6 +263,17 @@ describe('Workspace', () => {
 
     const panel = await screen.findByRole('complementary', { name: 'Sources' })
     const source = within(panel).getByRole('region', { name: /^S2/ })
+    expect(within(source).getByRole('heading', { level: 3 })).toHaveTextContent(
+      'S2Tesla 10-K, FY2025 · Risk Factors'
+    )
+
+    // The Filing metadata waits under a collapsed toggle.
+    const details = within(source).getByRole('button', { name: 'Filing details' })
+    expect(details).toHaveAttribute('aria-expanded', 'false')
+    expect(within(source).queryByText('Filing ID')).not.toBeInTheDocument()
+    await user.click(details)
+    expect(details).toHaveAttribute('aria-expanded', 'true')
+
     const field = (name: string) => within(source).getByText(name).nextElementSibling?.textContent
     expect(field('Filing ID')).toBe('TSLA_10-K_2025-12-31')
     expect(field('Form Type')).toBe('10-K')
@@ -289,7 +300,7 @@ describe('Workspace', () => {
 
     const panel = screen.getByRole('complementary', { name: 'Sources' })
     expect(within(panel).getByRole('region', { name: /^S1/ })).toHaveTextContent(
-      'AAPL_10-K_2025-09-27'
+      'A significant majority of the Company’s manufacturing'
     )
     expect(within(panel).queryByRole('region', { name: /^S2/ })).not.toBeInTheDocument()
 
@@ -388,7 +399,7 @@ describe('Workspace', () => {
     await user.click(within(answer).getByRole('link', { name: 'Source S1' }))
     const panel = await screen.findByRole('complementary', { name: 'Sources' })
     expect(within(panel).getByRole('region', { name: /^S1/ })).toHaveTextContent(
-      'AAPL_10-K_2025-09-27'
+      'Apple 10-K, FY2025 · Risk Factors'
     )
 
     release()
@@ -427,7 +438,7 @@ describe('Workspace', () => {
     await user.click(within(list).getByRole('button', { name: /^S2/ }))
     const panel = await screen.findByRole('complementary', { name: 'Sources' })
     expect(within(panel).getByRole('region', { name: /^S2/ })).toHaveTextContent(
-      'TSLA_10-K_2025-12-31'
+      'Tesla 10-K, FY2025 · Risk Factors'
     )
   })
 
@@ -483,7 +494,7 @@ describe('Workspace', () => {
     await user.click(within(retrieved).getByRole('button', { name: /^S3/ }))
     const panel = await screen.findByRole('complementary', { name: 'Sources' })
     expect(within(panel).getByRole('region', { name: /^S3/ })).toHaveTextContent(
-      'MSFT_10-K_2025-06-30'
+      'Microsoft 10-K, FY2025 · Risk Factors'
     )
     const switcher = () =>
       within(within(panel).getByRole('navigation', { name: "This answer's Sources" }))
@@ -535,7 +546,7 @@ describe('Workspace', () => {
 
     const panel = await screen.findByRole('complementary', { name: 'Sources' })
     expect(within(panel).getByRole('region', { name: /^S1/ })).toHaveTextContent(
-      'AAPL_10-K_2025-09-27'
+      'Apple 10-K, FY2025 · Risk Factors'
     )
   })
 
@@ -789,6 +800,10 @@ describe('Workspace', () => {
 
     const panel = await screen.findByRole('complementary', { name: 'Sources' })
     const source = within(panel).getByRole('region', { name: /^S1/ })
+    expect(within(source).getByRole('heading', { level: 3 })).toHaveTextContent(
+      'S1NVIDIA 10-Q, Q3 FY2026 · Financial Facts'
+    )
+    await user.click(within(source).getByRole('button', { name: 'Filing details' }))
     expect(within(source).getByText('Filing ID').nextElementSibling?.textContent).toBe(
       'NVDA_10-Q_2025-10-26'
     )
@@ -810,6 +825,61 @@ describe('Workspace', () => {
         'Compute & Networking',
       ],
     ])
+  })
+
+  it("shows a passage's flattened tables as tables and its gaps as breaks", async () => {
+    const mdna = {
+      ...SOURCES[0],
+      tag: 'S1',
+      filingId: 'NVDA_10-Q_2024-07-28',
+      company: 'NVIDIA Corporation',
+      ticker: 'NVDA',
+      formType: '10-Q',
+      reportPeriod: '2024-07-28',
+      fiscalPeriod: 'Q2 FY2025',
+      section: 'MD&A',
+      item: 'Item 2',
+      label: 'NVDA 10-Q Q2 FY2025, MD&A (Item 2).',
+      text: [
+        'Second Quarter of Fiscal Year 2025 Summary',
+        '| Three Months Ended |  |',
+        'Revenue | $ | 30,040 |  |  |',
+        'Gross margin | 75.1 | % |  |',
+        '[…]',
+        'Data Center revenue was a record.',
+      ].join('\n'),
+    }
+    fetchMock.mockImplementation(async () =>
+      uiMessageStream(['NVIDIA reported **revenue** of $30,040 million [S1].'], QUERY_SCOPE, [mdna])
+    )
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByText('revenue')
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    await user.click(within(answer).getByRole('link', { name: 'Source S1' }))
+
+    const panel = await screen.findByRole('complementary', { name: 'Sources' })
+    const source = within(panel).getByRole('region', { name: /^S1/ })
+    expect(within(source).getByRole('heading', { level: 3 })).toHaveTextContent(
+      'S1NVIDIA 10-Q, Q2 FY2025 · MD&A'
+    )
+    const table = within(source).getByRole('table', { name: 'Table from the passage' })
+    const rows = within(table)
+      .getAllByRole('row')
+      .map((row) =>
+        within(row)
+          .getAllByRole('cell')
+          .map((cell) => cell.textContent)
+      )
+    expect(rows).toEqual([
+      ['Three Months Ended'],
+      ['Revenue', '$', '30,040'],
+      ['Gross margin', '75.1', '%'],
+    ])
+    expect(within(source).queryByText(/\|/)).not.toBeInTheDocument()
+    expect(within(source).getByRole('separator', { name: 'Text left out' })).toBeInTheDocument()
+    expect(within(source).getByText('Data Center revenue was a record.')).toBeInTheDocument()
   })
 
   it("shows the API's reason when it rejects the question", async () => {

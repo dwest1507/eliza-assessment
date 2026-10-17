@@ -1,5 +1,7 @@
 import { useEffect, useRef } from 'react'
+import Disclosure from '@/components/Disclosure'
 import type { FactRow, Source } from '@/lib/chat'
+import { passageBlocks, sourceHeading } from '@/lib/source'
 
 interface SourcesPanelProps {
   /** The Sources of one answer. */
@@ -17,8 +19,10 @@ export function shortLabel(source: Source): string {
 }
 
 /**
- * The side panel that shows one Source of an answer: where it comes from (Filing ID,
- * Form Type, Report Period, Fiscal Period, Section, Item) and its passage text.
+ * The side panel that shows one Source of an answer: a readable line naming it, its
+ * Filing metadata (Filing ID, Form Type, Report Period, Fiscal Period, Section, Item)
+ * under a collapsed "Filing details" toggle, and its passage, with the passage's
+ * flattened tables shown as tables, or a Facts Source's table of figures.
  */
 export default function SourcesPanel({ sources, selected, onSelect, onClose }: SourcesPanelProps) {
   const source = sources.find((s) => s.tag === selected) ?? sources[0]
@@ -87,18 +91,26 @@ export default function SourcesPanel({ sources, selected, onSelect, onClose }: S
         className="flex min-h-0 flex-1 flex-col"
       >
         <div className="shrink-0 px-4 pt-4">
-          <h3 id={`source-heading-${source.tag}`} className="text-[14px] font-semibold text-white">
-            <span className="mr-2 font-mono text-accent-strong">{source.tag}</span>
-            {shortLabel(source)}
+          <h3
+            id={`source-heading-${source.tag}`}
+            title={shortLabel(source)}
+            className="text-[15px] leading-snug font-semibold text-white"
+          >
+            <span className="mr-2 font-mono text-[13px] text-accent-strong">{source.tag}</span>
+            {sourceHeading(source)}
           </h3>
-          <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[13px]">
-            {fields.map(([name, value]) => (
-              <div key={name} className="contents">
-                <dt className="font-mono text-[11px] tracking-wide text-muted/80">{name}</dt>
-                <dd className="font-mono text-[12.5px] break-all text-ink">{value}</dd>
-              </div>
-            ))}
-          </dl>
+          <div className="mt-1">
+            <Disclosure summary="Filing details">
+              <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[13px]">
+                {fields.map(([name, value]) => (
+                  <div key={name} className="contents">
+                    <dt className="font-mono text-[12px] tracking-wide text-muted">{name}</dt>
+                    <dd className="font-mono text-[12.5px] break-all text-ink">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </Disclosure>
+          </div>
         </div>
         <div
           ref={passageRef}
@@ -107,13 +119,68 @@ export default function SourcesPanel({ sources, selected, onSelect, onClose }: S
           {source.kind === 'facts' && source.rows ? (
             <FactsTable rows={source.rows} />
           ) : (
-            <p className="text-[13px] leading-relaxed break-words whitespace-pre-wrap text-ink">
-              {source.text}
-            </p>
+            <Passage text={source.text} />
           )}
         </div>
       </section>
     </aside>
+  )
+}
+
+/**
+ * A passage's text: its paragraphs, its flattened tables as tables (no header row, since
+ * the Corpus marks none) and a visible break where the excerpt skips text.
+ */
+function Passage({ text }: { text: string }) {
+  return (
+    <div className="space-y-3 text-[13.5px] leading-relaxed text-ink">
+      {passageBlocks(text).map((block, i) => {
+        if (block.kind === 'elision') {
+          return (
+            <div
+              key={i}
+              role="separator"
+              aria-label="Text left out"
+              className="flex items-center gap-3 text-[12px] text-muted"
+            >
+              <span className="h-px flex-1 border-t border-dashed border-line" />
+              <span aria-hidden="true">text left out</span>
+              <span className="h-px flex-1 border-t border-dashed border-line" />
+            </div>
+          )
+        }
+        if (block.kind === 'table') {
+          return (
+            <div key={i} className="overflow-x-auto">
+              <table
+                aria-label="Table from the passage"
+                className="border-collapse text-[12.5px] whitespace-nowrap"
+              >
+                <tbody>
+                  {block.rows.map((row, r) => (
+                    <tr key={r} className="border-b border-line last:border-b-0">
+                      {row.map((cell, c) => (
+                        <td
+                          key={c}
+                          className={`py-1 pr-3 empty:pr-0 ${c === 0 ? 'text-ink' : 'text-right font-mono text-ink'}`}
+                        >
+                          {cell}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )
+        }
+        return (
+          <p key={i} className="break-words whitespace-pre-wrap">
+            {block.text}
+          </p>
+        )
+      })}
+    </div>
   )
 }
 
