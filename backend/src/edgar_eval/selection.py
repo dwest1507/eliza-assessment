@@ -12,7 +12,8 @@ side could not score, or that only one side answered, are left out of each test.
   Fact Recall, Faithfulness and Coverage Gaps**.
 
 Under either rule, when several challengers qualify, the **cheapest** wins: the lowest
-mean answer cost, then the earliest listed.
+mean answer cost, then the earliest listed. `RULES` states both rules, and is the only
+place they differ.
 
     python -m edgar_eval.selection arms [--split dev] [--reuse]
     python -m edgar_eval.selection generators [--split dev] [--reuse]
@@ -22,7 +23,7 @@ mean answer cost, then the earliest listed.
 `arms` runs the generation harness once per Arm in `edgar_eval.arms.ARMS`, writing
 `data/derived/eval/generation-arms-<split>-<arm>.json`, and compares the Shipped Arm
 with each challenger. `generators` runs it once per model in
-`edgar_eval.generation.GENERATORS` on the Shipped Arm, writing the default generator's
+`edgar_eval.generators.GENERATORS` on the Shipped Arm, writing the default generator's
 report to `generation-<split>.json` and each other's to `generation-<split>-<model>.json`
 (the names `make eval-generation` uses), and compares the default with each other model.
 With `--reuse`, a report already written is read instead of rerun. Both call the
@@ -37,7 +38,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from collections.abc import Mapping, Sequence
+from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from statistics import fmean
@@ -45,11 +46,88 @@ from typing import Any, Literal, TextIO
 
 from edgar_eval.metrics import McNemarResult, sign_test
 
-__all__ = ["Candidate", "Choice", "Comparison", "Rule", "choose", "main", "sign_test"]
+__all__ = [
+    "RULES",
+    "Candidate",
+    "Choice",
+    "Comparison",
+    "Rule",
+    "RuleName",
+    "choose",
+    "main",
+    "sign_test",
+]
 
 _EVAL_DIR = Path(__file__).resolve().parents[3] / "data" / "derived" / "eval"
 
-Rule = Literal["arms", "generators"]
+RuleName = Literal["arms", "generators"]
+Score = Literal["fact_recall", "faithfulness", "coverage_gaps"]
+
+
+def _run_arms(split: str, reuse: bool, out: TextIO) -> list[Path]:
+    from edgar_eval import generation
+    from edgar_eval.arms import ARMS
+
+    paths = []
+    for arm in sorted(ARMS, key=lambda a: not a.shipped):
+        path = _EVAL_DIR / f"generation-arms-{split}-{arm.name}.json"
+        if not (reuse and path.exists()):
+            print(f"\n== Arm {arm.name} ==", file=out, flush=True)
+            generation.main(["--split", split, "--arm", arm.name, "--json", str(path)], out=out)
+        paths.append(path)
+    return paths
+
+
+def _run_generators(split: str, reuse: bool, out: TextIO) -> list[Path]:
+    from edgar_eval import generation
+    from edgar_eval.generators import GENERATORS
+
+    paths = []
+    for n, model in enumerate(g.model for g in GENERATORS):
+        path = _EVAL_DIR / (
+            f"generation-{split}.json" if n == 0 else f"generation-{split}-{model}.json"
+        )
+        if not (reuse and path.exists()):
+            print(f"\n== Generator {model} ==", file=out, flush=True)
+            generation.main(["--split", split, "--model", model, "--json", str(path)], out=out)
+        paths.append(path)
+    return paths
+
+
+@dataclass(frozen=True)
+class Rule:
+    """What one selection rule decides by. A challenger qualifies when the sign test
+    puts it `ahead` on at least one of `ahead_on_any` and `behind` on none of
+    `behind_on_none`."""
+
+    ahead_on_any: tuple[Score, ...]
+    behind_on_none: tuple[Score, ...]
+    named_by: str
+    """The generation report field that names a candidate (falling back to its model)."""
+    run: Callable[[str, bool, TextIO], list[Path]]
+    """Runs the generation harness once per candidate on a split (reusing reports already
+    written when asked) and returns the reports, the shipped choice's first."""
+    choice_file: str
+    """The default file the choice is written to, before `-<split>.json`."""
+
+
+RULES: dict[RuleName, Rule] = {
+    "arms": Rule(
+        ahead_on_any=("fact_recall",),
+        behind_on_none=("faithfulness", "coverage_gaps"),
+        named_by="arm",
+        run=_run_arms,
+        choice_file="arm-choice",
+    ),
+    "generators": Rule(
+        ahead_on_any=("fact_recall", "coverage_gaps"),
+        behind_on_none=("fact_recall", "faithfulness", "coverage_gaps"),
+        named_by="model",
+        run=_run_generators,
+        choice_file="generator-choice",
+    ),
+}
+"""The only place the Arm rule and the generator rule differ."""
 
 
 @dataclass(frozen=True)
@@ -65,12 +143,12 @@ class Candidate:
     """Mean answer cost; None when a case had no price."""
 
     @classmethod
-    def from_report(cls, report: Mapping[str, Any], rule: Rule = "arms") -> Candidate:
-        """A candidate from a generation harness report (its JSON), named by its Arm or,
-        under the generator rule, its model."""
+    def from_report(cls, report: Mapping[str, Any], rule: RuleName = "arms") -> Candidate:
+        """A candidate from a generation harness report (its JSON), named as the rule
+        names candidates: by its Arm or by its model."""
         cases = report["cases"]
         costs = [c.get("cost_usd") for c in cases]
-        name = report["model"] if rule == "generators" else report.get("arm") or report["model"]
+        name = report.get(RULES[rule].named_by) or report["model"]
         return cls(
             name=name,
             fact_recall={c["case_id"]: c.get("fact_recall") for c in cases},
@@ -100,36 +178,33 @@ class Comparison:
 
 @dataclass(frozen=True)
 class Choice:
-    rule: Rule
+    rule: RuleName
     shipped: str
     chosen: str
     comparisons: dict[str, Comparison]
     costs: dict[str, float | None]
 
 
-def compare(challenger: Candidate, shipped: Candidate, rule: Rule = "arms") -> Comparison:
+def compare(challenger: Candidate, shipped: Candidate, rule: RuleName = "arms") -> Comparison:
     cases = sorted(set(challenger.fact_recall) & set(shipped.fact_recall))
 
-    def test(field: str) -> McNemarResult:
+    def test(field: Score) -> McNemarResult:
         a, b = getattr(challenger, field), getattr(shipped, field)
         return sign_test([a[c] for c in cases], [b[c] for c in cases])
 
-    recall, faithful, gaps = test("fact_recall"), test("faithfulness"), test("coverage_gaps")
-    if rule == "generators":
-        verdicts = (recall.verdict, faithful.verdict, gaps.verdict)
-        qualifies = "ahead" in (recall.verdict, gaps.verdict) and "behind" not in verdicts
-    else:
-        qualifies = recall.verdict == "ahead" and "behind" not in (faithful.verdict, gaps.verdict)
+    tests: dict[Score, McNemarResult] = {
+        field: test(field) for field in ("fact_recall", "faithfulness", "coverage_gaps")
+    }
+    spec = RULES[rule]
     return Comparison(
         cases=len(cases),
-        fact_recall=recall,
-        faithfulness=faithful,
-        coverage_gaps=gaps,
-        qualifies=qualifies,
+        **tests,
+        qualifies=any(tests[f].verdict == "ahead" for f in spec.ahead_on_any)
+        and all(tests[f].verdict != "behind" for f in spec.behind_on_none),
     )
 
 
-def choose(shipped: Candidate, challengers: Sequence[Candidate], rule: Rule = "arms") -> Choice:
+def choose(shipped: Candidate, challengers: Sequence[Candidate], rule: RuleName = "arms") -> Choice:
     """Apply the selection rule for Arms or for generators."""
     comparisons = {c.name: compare(c, shipped, rule) for c in challengers}
     qualifying = [
@@ -149,35 +224,6 @@ def choose(shipped: Candidate, challengers: Sequence[Candidate], rule: Rule = "a
 # --- Command line -------------------------------------------------------------------------
 
 
-def _run_arms(split: str, reuse: bool, out: TextIO) -> list[Path]:
-    from edgar_eval import generation
-    from edgar_eval.arms import ARMS
-
-    paths = []
-    for arm in sorted(ARMS, key=lambda a: not a.shipped):
-        path = _EVAL_DIR / f"generation-arms-{split}-{arm.name}.json"
-        if not (reuse and path.exists()):
-            print(f"\n== Arm {arm.name} ==", file=out, flush=True)
-            generation.main(["--split", split, "--arm", arm.name, "--json", str(path)], out=out)
-        paths.append(path)
-    return paths
-
-
-def _run_generators(split: str, reuse: bool, out: TextIO) -> list[Path]:
-    from edgar_eval import generation
-
-    paths = []
-    for n, model in enumerate(generation.GENERATORS):
-        path = _EVAL_DIR / (
-            f"generation-{split}.json" if n == 0 else f"generation-{split}-{model}.json"
-        )
-        if not (reuse and path.exists()):
-            print(f"\n== Generator {model} ==", file=out, flush=True)
-            generation.main(["--split", split, "--model", model, "--json", str(path)], out=out)
-        paths.append(path)
-    return paths
-
-
 def main(argv: list[str] | None = None, *, out: TextIO | None = None) -> int:
     out = out or sys.stdout
     parser = argparse.ArgumentParser(description="Choose between Arms by the selection rule.")
@@ -192,21 +238,17 @@ def main(argv: list[str] | None = None, *, out: TextIO | None = None) -> int:
     generators.add_argument("--json", type=Path)
     reports = commands.add_parser("compare", help="compare generation reports")
     reports.add_argument("reports", type=Path, nargs="+", help="the shipped choice's first")
-    reports.add_argument("--rule", choices=("arms", "generators"), default="arms")
+    reports.add_argument("--rule", choices=tuple(RULES), default="arms")
     reports.add_argument("--json", type=Path)
     args = parser.parse_args(argv)
 
-    rule: Rule
-    if args.command == "arms":
-        rule = "arms"
-        paths = _run_arms(args.split, args.reuse, out)
-        target = args.json or _EVAL_DIR / f"arm-choice-{args.split}.json"
-    elif args.command == "generators":
-        rule = "generators"
-        paths = _run_generators(args.split, args.reuse, out)
-        target = args.json or _EVAL_DIR / f"generator-choice-{args.split}.json"
-    else:
+    rule: RuleName
+    if args.command == "compare":
         rule, paths, target = args.rule, args.reports, args.json
+    else:
+        rule = args.command
+        paths = RULES[rule].run(args.split, args.reuse, out)
+        target = args.json or _EVAL_DIR / f"{RULES[rule].choice_file}-{args.split}.json"
     data = [json.loads(Path(p).read_text(encoding="utf-8")) for p in paths]
     candidates = [Candidate.from_report(d, rule) for d in data]
     choice = choose(candidates[0], candidates[1:], rule)

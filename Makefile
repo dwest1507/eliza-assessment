@@ -20,6 +20,22 @@ ENV_FILE := $(BACKEND)/.env
 -include $(ENV_FILE)
 export $(shell sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' $(ENV_FILE) 2>/dev/null)
 
+# The API key variables a generator's provider needs, read from the table of compared
+# generators (edgar_eval.generators.GENERATORS): `$(GENERATOR_KEYS) MODEL` for one model
+# (none for the default generator), `$(GENERATOR_KEYS) --all` for every one.
+GENERATOR_KEYS = $(UV) python -m edgar_eval.generators keys
+
+# Stops a recipe unless every variable named in $(1), a shell word list, is set.
+define require_keys
+for key in $(1); do \
+		if [ -z "$${!key}" ]; then \
+			echo "error: $$key must be set. Copy backend/.env.example to backend/.env" >&2; \
+			echo 'and fill it in.' >&2; \
+			exit 1; \
+		fi; \
+	done
+endef
+
 .PHONY: help install test lint format eda sec-facts index embeddings ask api eval-retrieval eval-generation eval-arms eval-generators eval-export deck dev frontend-deps
 
 help: ## List targets
@@ -86,30 +102,20 @@ eval-retrieval: $(INDEX) $(if $(filter dense hybrid,$(or $(ARMS),dense)),$(EMBED
 		--json ../data/derived/eval/retrieval-$(SPLIT).json
 
 eval-generation: $(INDEX) $(if $(filter dense hybrid,$(ARM)),$(EMBEDDINGS)) ## Score answers on the Golden Set: make eval-generation [SPLIT=...] [MODEL=...] [ARM=...] (costs money)
-	@key=$(if $(filter claude-%,$(MODEL)),ANTHROPIC_API_KEY,OPENAI_API_KEY); \
-	if [ -z "$${!key}" ] || [ -z "$$JEV_API_KEY" ]; then \
-		echo "error: $$key and JEV_API_KEY must be set. Copy backend/.env.example" >&2; \
-		echo 'to backend/.env and fill them in.' >&2; \
-		exit 1; \
-	fi
+	@keys=$$($(GENERATOR_KEYS) $(MODEL)) || exit 1; \
+	$(call require_keys,$$keys JEV_API_KEY)
 	$(UV) python -m edgar_eval.generation --split $(SPLIT) $(if $(MODEL),--model $(MODEL)) \
 		$(if $(ARM),--arm $(ARM)) \
 		--json ../data/derived/eval/generation-$(if $(ARM),arms-$(SPLIT)-$(ARM),$(SPLIT)$(if $(MODEL),-$(MODEL))).json
 
 eval-arms: $(INDEX) $(EMBEDDINGS) ## Answer the split through every Arm and choose one by the selection rule (costs money)
-	@if [ -z "$$OPENAI_API_KEY" ] || [ -z "$$JEV_API_KEY" ]; then \
-		echo 'error: OPENAI_API_KEY and JEV_API_KEY must be set. Copy backend/.env.example' >&2; \
-		echo 'to backend/.env and fill them in.' >&2; \
-		exit 1; \
-	fi
+	@keys=$$($(GENERATOR_KEYS)) || exit 1; \
+	$(call require_keys,$$keys JEV_API_KEY)
 	$(UV) python -m edgar_eval.selection arms --split $(SPLIT)
 
 eval-generators: $(INDEX) ## Answer the split with each of the four generators and choose one by the selection rule (costs money)
-	@if [ -z "$$OPENAI_API_KEY" ] || [ -z "$$ANTHROPIC_API_KEY" ] || [ -z "$$JEV_API_KEY" ]; then \
-		echo 'error: OPENAI_API_KEY, ANTHROPIC_API_KEY and JEV_API_KEY must be set. Copy' >&2; \
-		echo 'backend/.env.example to backend/.env and fill them in.' >&2; \
-		exit 1; \
-	fi
+	@keys=$$($(GENERATOR_KEYS) --all) || exit 1; \
+	$(call require_keys,$$keys JEV_API_KEY)
 	$(UV) python -m edgar_eval.selection generators --split $(SPLIT)
 
 SPLIT ?= dev

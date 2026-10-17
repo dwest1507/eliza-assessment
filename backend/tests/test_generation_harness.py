@@ -1,5 +1,5 @@
-"""The generation harness: answer cost, the pinned Jev judge, and how it scores Golden
-Set cases end to end with a fake answer model and a fake judge."""
+"""The generation harness: the pinned Jev judge, and how it scores Golden Set cases end
+to end with a fake answer model and a fake judge. Answer cost is in test_generators.py."""
 
 import re
 from types import SimpleNamespace
@@ -7,55 +7,7 @@ from types import SimpleNamespace
 import pytest
 
 from edgar_eval.answer_checks import Claim
-from edgar_eval.generation import answer_cost
 from edgar_eval.judge import JEV_MODEL, Evidence, JevJudge
-
-# --- Cost ---------------------------------------------------------------------------------
-
-
-def test_answer_cost_prices_input_and_output_tokens_per_million():
-    # gpt-6-luna: $0.10 per million input tokens, $0.50 per million output tokens.
-    assert answer_cost("gpt-6-luna", input_tokens=1_000_000, output_tokens=100_000) == (
-        pytest.approx(0.15)
-    )
-    assert answer_cost("gpt-6-luna", input_tokens=26_000, output_tokens=900) == (
-        pytest.approx(0.00305)
-    )
-
-
-def test_every_compared_generator_has_a_price():
-    from edgar_eval.generation import GENERATORS
-
-    assert GENERATORS == ("gpt-6-luna", "gpt-6.1-sol", "claude-sonnet-5-5", "claude-opus-5-5")
-    # claude-sonnet-5-5: $2 in, $10 out; claude-opus-5-5: $4 in, $20 out, per million.
-    assert answer_cost("claude-sonnet-5-5", 1_000_000, 100_000) == pytest.approx(3.0)
-    assert answer_cost("claude-opus-5-5", 1_000_000, 100_000) == pytest.approx(6.0)
-    assert all(answer_cost(m, 1, 1) is not None for m in GENERATORS)
-
-
-def test_a_generator_is_built_by_its_providers_implementation(monkeypatch):
-    from edgar_answer.anthropic_model import AnthropicAnswerModel
-    from edgar_answer.openai_model import OpenAIAnswerModel
-    from edgar_eval.generation import answer_model
-
-    monkeypatch.setenv("OPENAI_API_KEY", "test")
-    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
-    monkeypatch.delenv("OPENAI_MODEL", raising=False)
-
-    claude = answer_model("claude-opus-5-5")
-    gpt = answer_model("gpt-6.1-sol")
-
-    assert isinstance(claude, AnthropicAnswerModel) and claude.model == "claude-opus-5-5"
-    assert isinstance(gpt, OpenAIAnswerModel) and gpt.model == "gpt-6.1-sol"
-    assert answer_model(None).model == "gpt-6-luna"
-    with pytest.raises(SystemExit):
-        answer_model("gemini-9")
-
-
-def test_answer_cost_is_unknown_for_a_model_without_a_price():
-    assert answer_cost("some-new-model", input_tokens=1_000, output_tokens=1_000) is None
-    assert answer_cost("gpt-6-luna", input_tokens=None, output_tokens=None) is None
-
 
 # --- The Jev judge --------------------------------------------------------------------------
 
