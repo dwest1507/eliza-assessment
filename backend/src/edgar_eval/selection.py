@@ -1,8 +1,10 @@
 """The selection rules: which retrieval Arm, and which generator, ships, decided by the
 generation harness's scores on paired cases.
 
-Each score is compared case by case with the exact sign test (p < 0.05). Cases either
-side could not score, or that only one side answered, are left out of each test.
+Each score is compared case by case with the exact sign test (p < 0.05). Each score
+pairs only the cases both sides scored: a case one side could not score (its judgment
+failed, or it was not answered) is left out of that score's test, never counted as a
+zero, and each comparison reports how many cases each score paired and left out.
 
 - **Arms** (user story 54): the Shipped Arm stays unless a challenger is
   **distinguishably better on Fact Recall** and **not worse on Faithfulness or Coverage
@@ -196,6 +198,11 @@ class Comparison:
     coverage_gaps: McNemarResult
     qualifies: bool
     """Whether the challenger qualifies under the rule it was compared by."""
+    paired: dict[Score, int]
+    """Per score, the cases both sides scored, which its test pairs."""
+    left_out: dict[Score, int]
+    """Per score, the cases only one side scored, left out of its test. Cases neither
+    side scored (nothing to score, such as no expected Coverage Gap) are in neither."""
 
 
 @dataclass(frozen=True)
@@ -207,22 +214,29 @@ class Choice:
     costs: dict[str, float | None]
 
 
+_SCORES: tuple[Score, ...] = ("fact_recall", "faithfulness", "coverage_gaps")
+
+
 def compare(challenger: Candidate, shipped: Candidate, rule: RuleName = "arms") -> Comparison:
-    cases = sorted(set(challenger.fact_recall) & set(shipped.fact_recall))
-
-    def test(field: Score) -> McNemarResult:
+    answered = set(challenger.fact_recall) & set(shipped.fact_recall)
+    tests: dict[Score, McNemarResult] = {}
+    paired: dict[Score, int] = {}
+    left_out: dict[Score, int] = {}
+    for field in _SCORES:
         a, b = getattr(challenger, field), getattr(shipped, field)
-        return sign_test([a[c] for c in cases], [b[c] for c in cases])
-
-    tests: dict[Score, McNemarResult] = {
-        field: test(field) for field in ("fact_recall", "faithfulness", "coverage_gaps")
-    }
+        scored_a = {c for c, v in a.items() if v is not None}
+        scored_b = {c for c, v in b.items() if v is not None}
+        both = sorted(scored_a & scored_b)
+        tests[field] = sign_test([a[c] for c in both], [b[c] for c in both])
+        paired[field], left_out[field] = len(both), len(scored_a ^ scored_b)
     spec = RULES[rule]
     return Comparison(
-        cases=len(cases),
+        cases=len(answered),
         **tests,
         qualifies=any(tests[f].verdict == "ahead" for f in spec.ahead_on_any)
         and all(tests[f].verdict != "behind" for f in spec.behind_on_none),
+        paired=paired,
+        left_out=left_out,
     )
 
 
@@ -294,14 +308,16 @@ def _print(choice: Choice, out: TextIO) -> None:
     for name, c in choice.comparisons.items():
         cost = choice.costs[name]
         print(f"\n{name} ({c.cases} cases, ${cost or 0:.4f} per answer)", file=out)
-        for label, r in (
-            ("Fact Recall", c.fact_recall),
-            ("Faithfulness", c.faithfulness),
-            ("Coverage Gaps", c.coverage_gaps),
+        for label, field in (
+            ("Fact Recall", "fact_recall"),
+            ("Faithfulness", "faithfulness"),
+            ("Coverage Gaps", "coverage_gaps"),
         ):
+            r = getattr(c, field)
             print(
                 f"  {label}: {r.verdict} ({r.challenger_only} cases higher, "
-                f"{r.shipped_only} lower, exact p = {r.p_value:.3f})",
+                f"{r.shipped_only} lower, exact p = {r.p_value:.3f}; "
+                f"{c.paired[field]} cases paired, {c.left_out[field]} left out)",
                 file=out,
             )
         print(f"  Qualifies: {'yes' if c.qualifies else 'no'}", file=out)

@@ -13,6 +13,9 @@ Call to the generator under test. The answer is then scored three ways:
   judges contradicted by its Sources, a Contradicted Claim, fails the answer
   (`ContradictionCheck`), beside the citation and Coverage Gap checks in code, whatever
   its Faithfulness.
+  A judgment Jev fails to make is recorded in its case, which keeps its code checks
+  and other judgments; the score that depends on it is missing for that case, and the
+  report counts and lists every failed judgment.
 - **Cost and latency**, from the Answer Call's logged record: its token usage priced
   at the model's price in `edgar_eval.generators.GENERATORS`, and its latency to the
   first text and to the end.
@@ -98,7 +101,9 @@ __all__ = [
 
 
 class Judge(Protocol):
-    """What the harness needs from a judge: `edgar_eval.judge.JevJudge`, or a fake."""
+    """What the harness needs from a judge: `edgar_eval.judge.JevJudge`, or a fake. A
+    judgment it cannot make goes in `Judgments.failures`; it raises only when no score
+    from it could stand, such as a response from another Jev version."""
 
     def judge(
         self,
@@ -166,17 +171,21 @@ class CaseResult:
 
     @property
     def fact_recall(self) -> float | None:
-        """The share of must-state Required Facts stated, or None if the case has none.
-        A truncated answer's is 0: a cut-off answer can't score as complete."""
+        """The share of must-state Required Facts stated, or None if the case has none
+        or their judgment failed. A truncated answer's is 0: a cut-off answer can't
+        score as complete."""
         recall = self._recall("must_state")
         return 0.0 if self.truncated and recall is not None else recall
 
     @property
     def detail_recall(self) -> float | None:
-        """The share of detail Required Facts stated, or None if the case has none."""
+        """The share of detail Required Facts stated, or None if the case has none or
+        their judgment failed."""
         return self._recall("detail")
 
     def _recall(self, tier: Tier) -> float | None:
+        if self.judgments.fact_recall is None:  # no fact, or their judgment failed
+            return None
         tiers = self.fact_tiers or ("must_state",) * len(self.judgments.facts)
         stated = [f.stated for f, t in zip(self.judgments.facts, tiers, strict=True) if t == tier]
         return sum(stated) / len(stated) if stated else None
@@ -227,6 +236,8 @@ class Summary:
     judge_cost_usd: float
     truncated: int = 0
     """Answers cut off at the Answer Call's token cap."""
+    judgments_failed: int = 0
+    """Jev judgments that failed, each leaving its case's score missing (`JudgmentFailure`)."""
 
 
 @dataclass(frozen=True)
@@ -238,7 +249,8 @@ class GenerationReport:
     by_type: dict[str, Summary]
     cases: tuple[CaseResult, ...]
     errors: dict[str, str]
-    """Cases that could not be answered or judged, with the error."""
+    """Cases that could not be answered, with the error. A judgment that failed is
+    recorded in its case's judgments instead, and the case is kept."""
     arm: str | None = None
     """The retrieval Arm the Answer Contexts came from."""
     context_budget: int = CONTEXT_BUDGET_TOKENS
@@ -419,6 +431,7 @@ def _summarise(results: Sequence[CaseResult]) -> Summary:
         mean_output_tokens=mean(r.output_tokens for r in results),
         judge_cost_usd=sum(r.judgments.cost_usd for r in results),
         truncated=sum(r.truncated for r in results),
+        judgments_failed=sum(len(r.judgments.failures) for r in results),
     )
 
 
@@ -683,6 +696,17 @@ def _print_report(report: GenerationReport, split: str, out: TextIO) -> None:
         f"Jev judging cost ${o.judge_cost_usd:.4f}.",
         file=out,
     )
+    print(f"Judgments failed: {o.judgments_failed}", file=out)
+    for r in report.cases:
+        for failure in r.judgments.failures:
+            what = "Fact Recall" if failure.judgment == "fact_recall" else "Faithfulness"
+            noun = "Required Fact" if failure.judgment == "fact_recall" else "claim"
+            count = len(failure.items)
+            print(
+                f"  {r.case_id}: {what} of {count} {noun}{'' if count == 1 else 's'}, "
+                f"left missing: {failure.error}",
+                file=out,
+            )
     for label, failing in (
         ("Truncated at the token cap", [r.case_id for r in report.cases if r.truncated]),
         ("Citations invalid", [r.case_id for r in report.cases if not r.citations.passed]),

@@ -19,26 +19,34 @@ def test_jev_is_pinned_to_an_exact_version_never_an_alias():
 class FakeJev:
     """Records every request and answers from fixed tables."""
 
-    def __init__(self, nouls=None, choices=None, model=JEV_MODEL):
+    def __init__(self, nouls=None, choices=None, model=JEV_MODEL, fail_on=()):
         self.requests = []
         self.nouls = nouls or {}
         self.choices = choices or {}
         self.model = model
+        self.fail_on = set(fail_on)
+        """Required Facts or claims whose request fails, as a long input fails."""
 
     def system_one(self, state, questions, *, model=None, extra_headers=None):
         self.requests.append(SimpleNamespace(state=state, questions=questions, model=model))
+        asked = {
+            q.instructions.get("required_fact") or q.instructions.get("claim")
+            for q in questions.values()
+        }
+        if asked & self.fail_on:
+            raise RuntimeError("max_tokens_exceeded: the state is too long")
         return SimpleNamespace(
             model=self.model,
             usage=SimpleNamespace(input_tokens=1_000, output_tokens=10),
             nouls={
-                qid: SimpleNamespace(noul=self.nouls[q.instructions["required_fact"]])
+                qid: SimpleNamespace(noul=self.nouls.get(q.instructions["required_fact"], 0.0))
                 for qid, q in questions.items()
                 if "required_fact" in q.instructions
             },
             choices={
                 qid: SimpleNamespace(
-                    choice=self.choices[q.instructions["claim"]],
-                    probabilities={self.choices[q.instructions["claim"]]: 1.0},
+                    choice=self.choices.get(q.instructions["claim"], "supported"),
+                    probabilities={self.choices.get(q.instructions["claim"], "supported"): 1.0},
                 )
                 for qid, q in questions.items()
                 if "claim" in q.instructions
@@ -103,6 +111,25 @@ def test_no_facts_or_claims_means_no_score_rather_than_zero():
     judgments = JevJudge(client=FakeJev()).judge("answer", [], [], SOURCES)
 
     assert judgments.fact_recall is None
+    assert judgments.faithfulness is None
+
+
+def test_a_failed_request_is_recorded_against_its_judgment_and_the_rest_are_kept():
+    claims = [
+        Claim("Apple outsources manufacturing.", ("S1",)),
+        Claim("Tesla depends on Elon Musk.", ("S2",)),
+    ]
+    jev = FakeJev(fail_on={"Tesla depends on Elon Musk."})
+
+    judgments = JevJudge(client=jev).judge("answer", ["Apple outsources."], claims, SOURCES)
+
+    [failure] = judgments.failures
+    assert failure.judgment == "faithfulness"
+    assert failure.items == ("Tesla depends on Elon Musk.",)
+    assert "max_tokens_exceeded" in failure.error
+    # The other judgments stand; the score that depends on the failed one is missing.
+    assert [c.claim for c in judgments.claims] == ["Apple outsources manufacturing."]
+    assert judgments.fact_recall == 0.0
     assert judgments.faithfulness is None
 
 
@@ -346,6 +373,88 @@ def test_an_answer_cut_off_at_the_token_cap_fails_with_no_fact_recall(index):
     [done] = finished.cases
     assert (done.truncated, done.passed, done.fact_recall) == (False, True, 1.0)
     assert finished.overall.truncated == 0
+
+
+def test_a_jev_failure_on_one_fact_keeps_the_cases_checks_and_other_judgments(index):
+    from edgar_eval.generation import evaluate
+
+    case = _case(
+        "apple-tesla",
+        "What are the primary risk factors facing Apple and Tesla?",
+        facts=["Apple uses outsourcing partners.", "Tesla depends on Elon Musk."],
+        gaps=[("periods_differ", ("AAPL", "TSLA"))],
+        details=["Apple sells the iPhone."],
+    )
+    judge = JevJudge(client=FakeJev(fail_on={"Tesla depends on Elon Musk."}))
+
+    report = evaluate(
+        [case],
+        FakeModel(ANSWER),
+        judge,
+        index,
+        names={"AAPL": ("AAPL", "Apple"), "TSLA": ("TSLA", "Tesla")},
+        fact_values=lambda filing_id: [416_161_000_000] if filing_id == APPLE_10K else [],
+        log_path=None,
+    )
+
+    assert report.errors == {}
+    [result] = report.cases
+    # The code checks are kept.
+    assert result.citations.unknown_tags == ("S99",)
+    assert result.figures.passed
+    assert result.coverage_gaps.stated == ("periods_differ",)
+    assert result.structure.words > 0
+    # So are the other judgments: Faithfulness, one claim judged, one citing no Source
+    # of the turn and one uncited.
+    assert [c.verdict for c in result.judgments.claims] == [
+        "supported",
+        "unsupported",
+        "unsupported",
+    ]
+    assert result.faithfulness == pytest.approx(1 / 3)
+    # The failure is listed, and the Fact Recall that depends on it is missing, not 0.
+    [failure] = result.judgments.failures
+    assert failure.judgment == "fact_recall"
+    assert "max_tokens_exceeded" in failure.error
+    assert result.fact_recall is None
+    assert result.detail_recall is None
+    assert report.overall.fact_recall is None
+    assert report.overall.faithfulness == pytest.approx(1 / 3)
+    assert report.overall.judgments_failed == 1
+    assert report.by_type["risk"].judgments_failed == 1
+    [saved] = report.to_dict()["cases"]
+    assert saved["fact_recall"] is None
+    assert saved["judgments"]["failures"][0]["judgment"] == "fact_recall"
+
+
+def test_the_command_line_lists_every_failed_judgment(index, tmp_path):
+    import io
+    import json
+
+    from edgar_eval.generation import main
+
+    out = io.StringIO()
+    path = tmp_path / "generation-dev.json"
+    jev = FakeJev(fail_on={"Apple relies on outsourcing partners in Asia."})
+    code = main(
+        ["--case", "risk-aapl-tsla-jpm", "--index", str(index), "--log", str(tmp_path / "l")]
+        + ["--json", str(path)],
+        model=FakeModel(ANSWER),
+        judge=JevJudge(client=jev),
+        fact_values=lambda filing_id: [],
+        out=out,
+    )
+
+    assert code == 0  # the case was answered and checked; only one judgment is missing
+    printed = out.getvalue()
+    assert "Judgments failed: 1" in printed
+    assert "risk-aapl-tsla-jpm: Faithfulness of 1 claim" in printed
+    assert "max_tokens_exceeded" in printed
+    data = json.loads(path.read_text())
+    assert data["errors"] == {}
+    assert data["overall"]["judgments_failed"] == 1
+    [case] = data["cases"]
+    assert case["faithfulness"] is None and case["fact_recall"] is not None
 
 
 def test_a_figure_matching_only_an_uncited_filings_financial_fact_fails(index, tmp_path):
@@ -828,6 +937,31 @@ def test_a_report_saved_before_contradicted_claims_were_counted_still_loads(inde
         assert rescored == report  # nothing to change: its figures were already checked
         candidate = Candidate.from_report(rescored)
         assert candidate.faithfulness == {"risk-aapl-tsla-jpm": 1.0}
+
+
+def test_a_report_saved_before_judgment_failures_were_recorded_still_loads(index, tmp_path):
+    """Version 1's saved reports have no `failures` in their judgments and no
+    `judgments_failed` in their summaries: they still rescore and still compare."""
+    import io
+    import json
+
+    from edgar_eval import selection
+    from edgar_eval.generation import main
+
+    path, saved = _saved_report(index, tmp_path, ANSWER, lambda filing_id: [])
+    for case in saved["cases"]:
+        del case["judgments"]["failures"]
+    for summary in (saved["overall"], *saved["by_type"].values()):
+        del summary["judgments_failed"]
+    path.write_text(json.dumps(saved))
+
+    rescore = ["--rescore", str(path), "--index", str(index)]
+    assert main(rescore, fact_values=lambda filing_id: [], out=io.StringIO()) == 0
+    candidate = selection.Candidate.from_report(json.loads(path.read_text()))
+    assert candidate.fact_recall == {"risk-aapl-tsla-jpm": saved["cases"][0]["fact_recall"]}
+    choice = path.with_name("arm-choice-dev.json")
+    compare = ["compare", str(path), str(path), "--json", str(choice)]
+    assert selection.main(compare, out=io.StringIO()) == 0
 
 
 def test_the_jev_keys_placeholder_is_in_the_backends_env_example():

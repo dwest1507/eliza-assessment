@@ -71,6 +71,42 @@ def test_the_cheapest_of_several_qualifying_challengers_wins():
     assert choose(SHIPPED, [dear, cheap]).chosen == "hybrid"
 
 
+def test_a_case_missing_a_score_on_one_side_is_left_out_of_that_scores_pairs():
+    # c0's Fact Recall judgment failed for the challenger; c7 was answered by the shipped
+    # choice only. Neither counts as a zero: both are left out of Fact Recall's pairs.
+    challenger = _candidate("dense", [None] + [1.0] * 6)
+    shipped = _candidate("fts5", [1.0] + [0.0] * 7)
+
+    comparison = choose(shipped, [challenger]).comparisons["dense"]
+
+    assert comparison.fact_recall.shipped_only == 0  # c0 is not a loss
+    assert comparison.paired == {"fact_recall": 6, "faithfulness": 7, "coverage_gaps": 0}
+    assert comparison.left_out == {"fact_recall": 2, "faithfulness": 1, "coverage_gaps": 0}
+
+
+def test_the_command_reports_the_cases_each_score_left_out(tmp_path, capsys):
+    from edgar_eval.selection import main
+
+    def report(arm, recall):
+        cases = [
+            {"case_id": f"c{i}", "fact_recall": r, "faithfulness": 1.0, "coverage_gaps": None}
+            for i, r in enumerate(recall)
+        ]
+        path = tmp_path / f"generation-arms-dev-{arm}.json"
+        path.write_text(json.dumps({"arm": arm, "split": "dev", "cases": cases}))
+        return str(path)
+
+    out = tmp_path / "arm-choice-dev.json"
+    shipped, challenger = report("fts5", [0.0] * 8), report("dense", [None] + [0.5] * 7)
+    main(["compare", shipped, challenger, "--json", str(out)])
+
+    printed = capsys.readouterr().out
+    assert "Fact Recall: ahead (7 cases higher, 0 lower" in printed
+    assert "7 cases paired, 1 left out" in printed
+    saved = json.loads(out.read_text())["comparisons"]["dense"]
+    assert (saved["paired"]["fact_recall"], saved["left_out"]["fact_recall"]) == (7, 1)
+
+
 def test_the_command_compares_generation_reports_and_writes_the_choice(tmp_path, capsys):
     from edgar_eval.selection import main
 

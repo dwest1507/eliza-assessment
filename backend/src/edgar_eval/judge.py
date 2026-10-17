@@ -24,6 +24,12 @@ Two judgments, each a narrow question over the state it needs:
   is unsupported and never sent.
   Faithfulness is the share of claims supported by the Sources they cite.
 
+Each request is one judgment: the Fact Recall of the answer, or the Faithfulness of one
+group of claims. A request that fails, such as Jev's `max_tokens_exceeded` on a long
+state, is recorded against its judgment (`JudgmentFailure`) and the other judgments
+stand. The score that depends on a failed judgment is missing (None), never 0. A
+response from another Jev version still raises, since no score from it is comparable.
+
 The key is read from `JEV_API_KEY` (`backend/.env`). The SDK is a dev dependency and is
 imported only when the judge runs; tests pass a fake client.
 """
@@ -33,7 +39,7 @@ from __future__ import annotations
 import os
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
 from edgar_eval.answer_checks import Claim
 from edgar_rag.retrieval import count_tokens
@@ -48,6 +54,7 @@ __all__ = [
     "Evidence",
     "FactJudgment",
     "JevJudge",
+    "JudgmentFailure",
     "Judgments",
 ]
 
@@ -130,25 +137,42 @@ class ClaimJudgment:
 
 
 @dataclass(frozen=True)
+class JudgmentFailure:
+    """A judgment Jev could not make, with the error."""
+
+    judgment: Literal["fact_recall", "faithfulness"]
+    items: tuple[str, ...]
+    """The Required Facts, or the claims, it was to judge."""
+    error: str
+
+
+@dataclass(frozen=True)
 class Judgments:
     facts: tuple[FactJudgment, ...]
     claims: tuple[ClaimJudgment, ...]
+    """The claims judged: every claim of the answer but those of a failed judgment."""
     model: str
     requests: int
     input_tokens: int
+    failures: tuple[JudgmentFailure, ...] = ()
+
+    def _failed(self, judgment: str) -> bool:
+        return any(f.judgment == judgment for f in self.failures)
 
     @property
     def fact_recall(self) -> float | None:
-        """The share of the facts judged that are stated, or None if none was. Tier-blind:
-        the harness's `CaseResult.fact_recall` counts the must-state facts only."""
-        if not self.facts:
+        """The share of the facts judged that are stated, or None if none was or their
+        judgment failed. Tier-blind: the harness's `CaseResult.fact_recall` counts the
+        must-state facts only."""
+        if not self.facts or self._failed("fact_recall"):
             return None
         return sum(f.stated for f in self.facts) / len(self.facts)
 
     @property
     def faithfulness(self) -> float | None:
-        """The share of claims their cited Sources support, or None if there is no claim."""
-        if not self.claims:
+        """The share of claims their cited Sources support, or None if there is no claim
+        or any claim's judgment failed."""
+        if not self.claims or self._failed("faithfulness"):
             return None
         return sum(c.verdict == "supported" for c in self.claims) / len(self.claims)
 
@@ -185,18 +209,24 @@ class JevJudge:
         Sources each claim cites support it. `sources` maps this turn's tags to their
         Sources."""
         responses: list[Any] = []
-        facts = self._fact_recall(answer, required_facts, responses)
-        verdicts = self._faithfulness(claims, sources, responses)
+        failures: list[JudgmentFailure] = []
+        facts = self._fact_recall(answer, required_facts, responses, failures)
+        verdicts = self._faithfulness(claims, sources, responses, failures)
         return Judgments(
             facts=facts,
             claims=verdicts,
             model=self.model,
             requests=len(responses),
             input_tokens=sum(r.usage.input_tokens for r in responses),
+            failures=tuple(failures),
         )
 
     def _fact_recall(
-        self, answer: str, facts: Sequence[str], responses: list[Any]
+        self,
+        answer: str,
+        facts: Sequence[str],
+        responses: list[Any],
+        failures: list[JudgmentFailure],
     ) -> tuple[FactJudgment, ...]:
         if not facts:
             return ()
@@ -209,14 +239,22 @@ class JevJudge:
             )
             for i, fact in enumerate(facts)
         }
-        response = self._ask({"answer": answer}, questions, responses)
+        try:
+            response = self._ask({"answer": answer}, questions, responses)
+        except _RequestFailed as failed:
+            failures.append(JudgmentFailure("fact_recall", tuple(facts), str(failed)))
+            return ()
         return tuple(
             FactJudgment(fact=fact, probability=response.nouls[f"fact_{i}"].noul)
             for i, fact in enumerate(facts)
         )
 
     def _faithfulness(
-        self, claims: Sequence[Claim], sources: Mapping[str, Evidence], responses: list[Any]
+        self,
+        claims: Sequence[Claim],
+        sources: Mapping[str, Evidence],
+        responses: list[Any],
+        failures: list[JudgmentFailure],
     ) -> tuple[ClaimJudgment, ...]:
         verdicts: dict[int, ClaimJudgment] = {}
         groups: dict[tuple[str, ...], list[int]] = {}
@@ -241,19 +279,28 @@ class JevJudge:
                 )
                 for i in members
             }
-            response = self._ask(state, questions, responses)
+            try:
+                response = self._ask(state, questions, responses)
+            except _RequestFailed as failed:
+                texts = tuple(claims[i].text for i in members)
+                failures.append(JudgmentFailure("faithfulness", texts, str(failed)))
+                continue
             for i in members:
                 answer = response.choices[f"claim_{i}"]
                 verdicts[i] = _verdict(claims[i], answer.choice, dict(answer.probabilities))
-        return tuple(verdicts[i] for i in range(len(claims)))
+        return tuple(verdicts[i] for i in range(len(claims)) if i in verdicts)
 
     def _ask(self, state: dict, questions: dict, responses: list[Any]) -> Any:
-        """One Jev request. Its response is appended to `responses`, for the usage."""
+        """One Jev request. Its response is appended to `responses`, for the usage; a
+        request that fails raises `_RequestFailed`, with the error."""
         text = " ".join(str(v) for v in _strings(state))
         headers = _LONG_CONTEXT_HEADER if count_tokens(text) > LONG_CONTEXT_TOKENS else None
-        response = self._client.system_one(
-            state, questions, model=self.model, extra_headers=headers
-        )
+        try:
+            response = self._client.system_one(
+                state, questions, model=self.model, extra_headers=headers
+            )
+        except Exception as error:  # noqa: BLE001 - recorded against its judgment
+            raise _RequestFailed(f"{type(error).__name__}: {error}") from error
         if response.model != self.model:
             raise RuntimeError(
                 f"Jev answered as {response.model}, not the pinned {self.model}: "
@@ -281,6 +328,10 @@ def _verdict(claim: Claim, verdict: str, probabilities: dict[str, float]) -> Cla
     return ClaimJudgment(
         claim.text, claim.tags, verdict, probabilities, claim.heading, claim.table_header
     )
+
+
+class _RequestFailed(Exception):
+    """A Jev request that failed: the judgment it was for is recorded as failed."""
 
 
 def _strings(value: object):
