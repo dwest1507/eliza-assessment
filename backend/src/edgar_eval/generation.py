@@ -349,15 +349,23 @@ def rescore_figures(
     stored answers, and its figures-exact scores recomputed. Nothing else changes.
 
     A report stores each answer but not its Sources, so each case's Answer Context is
-    prepared again through `prepare`, the Arm the report was answered through. That is
-    deterministic and makes no Answer Call and no Jev call; it raises ValueError when
-    a case's Sources no longer number what they did, since its answer then cites
-    Sources it was never given.
+    prepared again through `prepare`, the Arm the report was answered through, at the
+    context budget the report records (ADR 0010). That is deterministic and makes no
+    Answer Call and no Jev call; it raises ValueError when the report was answered from
+    an index of another chunk size, or when a case's Sources no longer number what they
+    did, since its answer then cites Sources it was never given.
     """
+    chunk_tokens = report.get("chunk_tokens")
+    if chunk_tokens is not None and chunk_tokens != index_chunk_tokens(index):
+        raise ValueError(
+            f"the report was answered from {chunk_tokens}-token chunks, and {index} holds "
+            f"{index_chunk_tokens(index)}-token chunks"
+        )
+    budget = report.get("context_budget", CONTEXT_BUDGET_TOKENS)
     by_id = {c.id: c for c in cases}
     rescored = json.loads(json.dumps(report))
     for case in rescored["cases"]:
-        context = prepare(conversation(by_id[case["case_id"]]), Path(index))
+        context = prepare(conversation(by_id[case["case_id"]]), Path(index), context_budget=budget)
         if len(context.sources) != case["sources"]:
             raise ValueError(
                 f"{case['case_id']}: the Answer Context now has {len(context.sources)} "

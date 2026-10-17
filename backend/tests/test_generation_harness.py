@@ -436,6 +436,34 @@ def test_rescoring_refuses_a_report_whose_sources_cannot_be_rebuilt(index, tmp_p
     assert json.loads(path.read_text()) == saved
 
 
+def test_rescoring_rebuilds_each_answer_context_at_the_reports_own_setting(index, tmp_path):
+    """A report answered at another context budget is rescored at that budget, and one
+    answered from an index of another chunk size is refused (ADR 0010)."""
+    import io
+    import json
+
+    from edgar_eval.generation import main
+
+    path = tmp_path / "generation-dev-budget3000.json"
+    argv = ["--case", "trend-tsla-net-income-three-years", "--index", str(index)]
+    main(
+        [*argv, "--context-budget", "3000", "--log", str(tmp_path / "l"), "--json", str(path)],
+        model=FakeModel(ANSWER),
+        judge=FakeJudge(),
+        fact_values=lambda filing_id: [],
+        out=io.StringIO(),
+    )
+    saved = json.loads(path.read_text())
+
+    rescore = ["--rescore", str(path), "--index", str(index)]
+    assert main(rescore, fact_values=lambda filing_id: [], out=io.StringIO()) == 0
+    assert json.loads(path.read_text())["cases"][0]["sources"] == saved["cases"][0]["sources"]
+
+    path.write_text(json.dumps(saved | {"chunk_tokens": 300}))
+    with pytest.raises(ValueError, match="300-token chunks"):
+        main(rescore, fact_values=lambda filing_id: [], out=io.StringIO())
+
+
 def test_the_jev_keys_placeholder_is_in_the_backends_env_example():
     from pathlib import Path
 
