@@ -276,7 +276,7 @@ context.messages  # the rendered prompt for the Answer Call
 │   ├── reference/sectors.csv  the curated Sector table, one row per Company
 │   ├── reference/missing_companies.csv  notable Companies not in the Corpus
 │   ├── eval/golden_set.json   the Golden Set: labelled evaluation questions and starter prompts
-│   ├── eval/brief_suite.json  the Brief Suite: the brief's questions, a must-pass check
+│   ├── eval/brief_suite.json  the Brief Suite: the brief's questions and variants, a must-pass check
 │   └── derived/               anything built from the Corpus (gitignored)
 ├── docs/
 │   ├── AI-RAG Assessment.md   the assessment brief

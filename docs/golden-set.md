@@ -96,24 +96,38 @@ The brief's example questions, kept outside the dev/holdout split in their own f
 | `brief-outlook-nvda-revenue-two-years` | `outlook-nvda-revenue-two-years` | 7 / 12 | MD&A of NVIDIA's eight Filings from the FY2024 10-K to the Q3 FY2026 10-Q |
 | `brief-sector-pharma-regulatory` | `sector-pharma-regulatory` | 9 / 34 | Risk Factors of each latest 10-K, and its Business and MD&A regulation and pricing passages |
 
-Four variants of each follow, in later slices.
+**The variants.** Each of the first two questions has four variants, one per angle ADR 0012 names, so a pass reflects the kind of question rather than one wording. Each records the brief question it varies (`variant_of`) and its angle as a tag (`rephrasing`, `other_companies`, `other_angle`, `follow_up`). The third question's four follow in a later slice.
+
+| Case | Angle | Required Facts (must-state / detail) | Sections drafted from |
+|---|---|---|---|
+| `brief-risk-aapl-tsla-jpm-rephrased` | Rephrasing: "How do the biggest risks that Apple, Tesla and JPMorgan disclose stack up against each other?" | 9 / 19 | The brief case's Sources, with its facts and Coverage Gap |
+| `brief-risk-msft-xom-unh` | Other Companies: Microsoft, Exxon Mobil and UnitedHealth, one per Sector | 9 / 17 | Risk Factors of each latest 10-K and the 10-Qs after it |
+| `brief-risk-aapl-tsla-jpm-fy2025-quarterly-updates` | Another window and Section angle: the risk factors updated in their fiscal 2025 10-Qs | 5 / 10 | Risk Factors of the nine fiscal 2025 10-Qs |
+| `brief-followup-aapl-tsla-jpm-cybersecurity` | Follow-up: "How do their cybersecurity risks compare?" after the brief question | 6 / 8 | The cyber passages of the three latest 10-Ks' Risk Factors |
+| `brief-outlook-nvda-revenue-rephrased` | Rephrasing: "Over the past two years, what has happened to NVIDIA's revenue, and how has its view of future growth shifted?" | 7 / 12 | The brief case's Sources, with its facts and Coverage Gap |
+| `brief-outlook-unh-revenue-two-years` | Other Companies: UnitedHealth, another Tracked Company | 5 / 11 | MD&A of UnitedHealth's Filings from the FY2023 10-K to the Q3 2025 10-Q |
+| `brief-outlook-nvda-revenue-fy2024` | Another window: NVIDIA's fiscal 2024, the year before the brief's | 5 / 12 | MD&A of the FY2023 10-K, the three FY2024 10-Qs and the FY2024 10-K |
+| `brief-followup-nvda-net-income` | Follow-up: "How did its net income change over the same period?" after the brief question | 3 / 7 | MD&A of the FY2024 and FY2025 10-Ks and the Q1 and Q3 FY2026 10-Qs |
+
+A rephrasing keeps its brief case's Query Scope, so it keeps that case's labels: only the wording changes. Each follow-up's scripted answer cites Filing IDs, and the follow-up names no Company, so it measures inheritance by ADR 0003's rules; the net income follow-up inherits the time window too ("the same period").
 
 - **Every half of a question has facts.** The risk comparison's must-state facts are each Company's defining risks, and the comparison rests on the themes all three name (tariffs and trade policy, regulation, cyber attacks, competition). NVIDIA's outlook facts trace how it changed: next-generation products expected to be supply-constrained at the end of FY2024, Blackwell demand ahead of supply through FY2025, then Blackwell as the majority of Data Center revenue and H20 export licensing hurting future revenue. The pharmaceutical facts cover "how are they addressing them" from the Business and MD&A Sections: Janssen's and Merck's lawsuits over the IRA's price negotiation, Lilly's preliminary agreements with the U.S. government, Pfizer's engagement with payors and the government, and each Company's 340B and compliance responses. AbbVie's 10-K names no specific response beyond evaluating the IRA and the cost of compliance, so its responses are details.
-- **Figures from the reference.** NVIDIA's revenue figures and growth rates match the SEC company-facts reference (Revenues: $60,922 million for FY2024, $130,497 million for FY2025, $57,006 million for Q3 FY2026). The $4.5 billion H20 charge has no company-facts value, so its fact states the charge without the amount; the amount is still in its evidence quote.
+- **Figures from the reference.** NVIDIA's revenue figures and growth rates match the SEC company-facts reference (Revenues: $60,922 million for FY2024, $130,497 million for FY2025, $57,006 million for Q3 FY2026). The $4.5 billion H20 charge has no company-facts value, so its fact states the charge without the amount; the amount is still in its evidence quote. The variants' figures match the same reference, which the figure check confirms: UnitedHealth's Revenues ($371,622 million for 2023, $400,278 million for 2024, $113,161 million for Q3 2025), NVIDIA's fiscal 2024 Revenues ($26,974 million for FY2023, $7,192, $13,507 and $18,120 million for Q1 to Q3 FY2024) and NVIDIA's NetIncomeLoss ($29,760 million for FY2024, $72,880 million for FY2025, $18,775 million for Q1 FY2026 against $22,091 million the quarter before, $31,910 million for Q3 FY2026 against $19,309 million a year earlier), with every growth rate recomputed from them. Facts that rest on figures without a company-facts value (earnings from operations, inventory charges) state no amount.
 
-**Fields.** The same case schema as the Golden Set's, with three differences:
+**Fields.** The same case schema as the Golden Set's, with four differences:
 
 - no `split`: the loader rejects one, and the Golden Set's loader rejects a Brief Suite case, which has none;
 - every Required Fact names its `tier`;
 - `replaces`, on a case rewritten from a version 1 case, names that case, so saved version 1 answers can be matched to the rewritten facts. It must name a Golden Set case.
+- `variant_of`, on a variant, names the brief question's case it varies. It must name a Brief Suite case that replaces one, and the Golden Set's loader rejects the field.
 
 No id is in both files: the loader rejects one that is.
 
-**Checks.** The Golden Set's label tests run over the Brief Suite too (every expected Filing and Section exists, every evidence quote is verbatim in its Section, every fact names its Company and cites one of its case's expected Sources), and the Brief Suite's own tests check that its cases replace the version 1 brief cases with the same questions, that every case has facts of both tiers, and the loader's refusals.
+**Checks.** The Golden Set's label tests run over the Brief Suite too (every expected Filing and Section exists, every evidence quote is verbatim in its Section, every fact names its Company and cites one of its case's expected Sources), and the Brief Suite's own tests check that its cases replace the version 1 brief cases with the same questions, that every case has facts of both tiers, that each of the first two brief questions has four variants, one per angle, with a history only on the follow-up, and the loader's refusals. Version 2's checks for a repeated question and for figures against the SEC company-facts reference ([Checks](#the-file)) cover the Brief Suite too. The repeated-question check catches a repeated wording only; a repeat in other words (the same Companies and topic) is caught in review.
 
 ## Version 2
 
-Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions, and version 2's file, still empty, are built so far.
+Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions and the variants of the first two, and version 2's file, still empty, are built so far.
 
 ### The file
 
@@ -129,14 +143,14 @@ Version 2 lives in [`data/eval/golden_set_v2.json`](../data/eval/golden_set_v2.j
 
 - **No repeated question.** No question is asked twice across Golden Set version 1, Golden Set version 2 and the Brief Suite, once case and whitespace are normalised. A version 1 case may share its question with the version 2 case that rewrites it under the same id, and with the Brief Suite case that replaces it.
 - **No shared id** between version 2 and the Brief Suite; the Brief Suite's loader checks both versions.
-- **Figures from the reference.** Every dollar amount a version 2 Required Fact states must match a USD value that the SEC company-facts reference records for the fact's own Filing (matched on the accession number in its source URL), at the amount's printed precision: "$60.9 billion" matches 60.85 to 60.95 billion. A figure about a Company the reference does not cache fails. The test is skipped when the cache is absent (`make sec-facts`). Percentages are not checked against it.
+- **Figures from the reference.** Every dollar amount a version 2 or Brief Suite Required Fact states must match a USD value that the SEC company-facts reference records for the fact's own Filing (matched on the accession number in its source URL), at the amount's printed precision: "$60.9 billion" matches 60.85 to 60.95 billion. A figure about a Company the reference does not cache fails. The test is skipped when the cache is absent (`make sec-facts`). Percentages are not checked against it.
 - **The mix by kind of question**, counted per split against ADR 0012's table below and printed with the test run, not yet enforced. A follow-up counts as one whatever it asks; a Coverage Gap case asks about a missing Company or a stale Filing, or for a trend or outlook the Filings cannot give (a `snapshot_trend` or `no_guidance` gap); the rest count by question type (`risk`; `figure_trend` and `outlook` as trends; `sector`).
 
 ### What is decided
 
 Version 1 has too few cases for a comparison to see a real difference, and some of its labels make the judge misread answers ([Evaluation version 2](evaluation.md#evaluation-version-2)).
 
-- **The Brief Suite.** The brief's three example questions move out of the dev/holdout split, each with four variants: about 15 cases in all. Each case runs 5 times on every change that could alter an answer. It passes when every must-state Required Fact is stated in at least 4 of the 5 runs and no run has a Contradicted Claim. Its cases are reported one by one and may be tuned on, since it is a must-pass check, not an estimate. The starter prompts keep the brief's three questions, now from the Brief Suite. Built with the three questions ([The Brief Suite](#the-brief-suite)); the variants follow.
+- **The Brief Suite.** The brief's three example questions move out of the dev/holdout split, each with four variants: about 15 cases in all. Each case runs 5 times on every change that could alter an answer. It passes when every must-state Required Fact is stated in at least 4 of the 5 runs and no run has a Contradicted Claim. Its cases are reported one by one and may be tuned on, since it is a must-pass check, not an estimate. The starter prompts keep the brief's three questions, now from the Brief Suite. Built with the three questions and the variants of the first two ([The Brief Suite](#the-brief-suite)); the third's variants follow.
 - **60 dev cases and 20 holdout cases:**
 
   | Kind of question | Dev | Holdout |
