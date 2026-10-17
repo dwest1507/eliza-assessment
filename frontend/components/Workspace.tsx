@@ -156,7 +156,7 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
   // Progress, errors and the end-of-thread marker follow the latest turn.
   const tail = (
     <>
-      {status === 'submitted' && <Progress text="Retrieving Sources…" />}
+      {status === 'submitted' && <Progress text="Finding the relevant filings…" />}
       {writing && <Progress text="Writing the answer…" />}
 
       {status === 'error' && (
@@ -189,8 +189,8 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
         <h1 className="text-[15px] font-semibold tracking-tight whitespace-nowrap text-ink">
           SEC Filings Research<span className="text-accent">.</span>
         </h1>
-        <p className="hidden font-mono text-[11px] tracking-widest text-muted lg:block">
-          Answers from 10-K and 10-Q Filings, every claim cited to its passage
+        <p className="hidden font-mono text-[12px] tracking-widest text-muted lg:block">
+          Answers from companies’ 10-K and 10-Q filings, with every claim linked to its passage
         </p>
         <button
           type="button"
@@ -264,8 +264,8 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
                 aria-label="Question"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about a Company's risks, results or outlook…"
-                className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-white/[0.04] px-4 text-[14px] text-ink transition-all duration-150 outline-none placeholder:text-muted/60 focus:border-accent/50 focus:bg-white/[0.06] focus:shadow-[0_0_0_3px_rgba(14,165,233,0.15)]"
+                placeholder="Ask about a company’s risks, results or outlook…"
+                className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-white/[0.04] px-4 text-[14px] text-ink transition-all duration-150 outline-none placeholder:text-muted focus:border-accent/50 focus:bg-white/[0.06] focus:shadow-[0_0_0_3px_rgba(14,165,233,0.15)]"
               />
               {busy ? (
                 <button
@@ -346,16 +346,16 @@ function EmptyState({
       <div>
         <div className="mb-4 flex items-center gap-3">
           <span className="h-px w-10 bg-accent/50" aria-hidden="true" />
-          <span className="font-mono text-[11px] tracking-widest text-accent">
+          <span className="font-mono text-[12px] tracking-widest text-accent">
             10-K and 10-Q research
           </span>
         </div>
         <h2 className="headline text-3xl font-semibold tracking-[-0.03em] md:text-4xl">
-          Ask a question about a Company
+          Ask a question about a public company
         </h2>
         <p className="mt-3 max-w-xl text-[14.5px] leading-relaxed text-muted">
-          Name Companies by name or ticker. Each answer cites the Filing Sections it rests on and
-          says what the Filings cannot answer.
+          Name a company or its ticker. Each answer links every claim to the filing passage it comes
+          from, and says what the filings can’t answer.
         </p>
       </div>
       <ul aria-label="Starter prompts" className="grid gap-2 sm:grid-cols-2">

@@ -108,7 +108,7 @@ export function TechnicalSection({
       <div>
         <div className="mb-3 flex items-center gap-3">
           <span className="h-px w-10 bg-accent/50" aria-hidden="true" />
-          <span className="font-mono text-[11px] tracking-widest text-accent">{id}</span>
+          <span className="font-mono text-[12px] tracking-widest text-accent">{id}</span>
         </div>
         <h2
           id={id}

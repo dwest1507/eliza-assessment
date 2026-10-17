@@ -213,6 +213,27 @@ describe('Workspace', () => {
     expect(buttons).toHaveLength(6)
   })
 
+  it('explains itself in plain words, without capitalised domain terms', () => {
+    render(<Workspace />)
+
+    const domainTerms =
+      /\b(Company|Companies|Filings?|Sections?|Sources?|Corpus|Query Scope|Coverage Gaps?)\b/
+    const subtitle = within(screen.getByRole('banner')).getByText(
+      'Answers from companies’ 10-K and 10-Q filings, with every claim linked to its passage'
+    )
+    const heading = screen.getByRole('heading', { name: 'Ask a question about a public company' })
+    const intro = screen.getByText(
+      'Name a company or its ticker. Each answer links every claim to the filing passage it comes from, and says what the filings can’t answer.'
+    )
+    for (const copy of [subtitle, heading, intro]) {
+      expect(copy.textContent).not.toMatch(domainTerms)
+    }
+    expect(screen.getByRole('textbox', { name: 'Question' })).toHaveAttribute(
+      'placeholder',
+      expect.not.stringMatching(domainTerms)
+    )
+  })
+
   it('sends a starter as soon as it is clicked and streams the answer as Markdown', async () => {
     const user = userEvent.setup()
     render(<Workspace />)
@@ -568,9 +589,9 @@ describe('Workspace', () => {
     const answer = screen.getByRole('article', { name: 'Answer' })
     const toggle = await within(answer).findByRole('button', { name: 'Show full analysis' })
 
-    expect(answer.textContent?.match(/Wells Fargo is not in the Filings/g)).toHaveLength(1)
+    expect(answer.textContent?.match(/Wells Fargo is not in the Filings/gi)).toHaveLength(1)
     await user.click(toggle)
-    expect(answer.textContent?.match(/Wells Fargo is not in the Filings/g)).toHaveLength(2)
+    expect(answer.textContent?.match(/Wells Fargo is not in the Filings/gi)).toHaveLength(2)
   })
 
   it('shows the whole answer, with no control, when it has one paragraph', async () => {
@@ -758,18 +779,28 @@ describe('Workspace', () => {
     const callout = within(answer).getByRole('note', { name: 'Coverage Gaps' })
     // Headed in plain words, keeping the domain term as its accessible name and hover text.
     const heading = within(callout).getByRole('heading', {
-      name: 'What these Filings can’t answer',
+      name: 'What these filings can’t answer',
     })
     expect(heading).toHaveAttribute('title', 'Coverage Gaps')
     const items = within(callout).getAllByRole('listitem')
     expect(items).toHaveLength(2)
-    expect(within(items[0]).getByText('Not in the Corpus')).toBeInTheDocument()
+    // Each gap's label in plain words, with the label the answer states on hover.
+    expect(within(items[0]).getByText('Not covered')).toHaveAttribute('title', 'Not in the Corpus')
     expect(items[0]).toHaveTextContent(
-      'Wells Fargo is not in the Filings provided, so this answer does not cover it.'
+      'Wells Fargo is not in the filings provided, so this answer does not cover it.'
     )
     // The label is shown once, as the gap's heading, not repeated from its wording.
-    expect(items[0].textContent?.match(/Not in the Corpus/g)).toHaveLength(1)
+    expect(items[0].textContent).not.toMatch(/Not in the Corpus/)
     expect(within(items[1]).getByText('Trend unavailable')).toBeInTheDocument()
+    // Domain terms in the wording read plainly, with the term on hover.
+    expect(items[1]).toHaveTextContent(
+      'JPMorgan Chase is a company with only a few filings. The collection holds 4 JPMorgan Chase filings.'
+    )
+    expect(within(items[1]).getByTitle('Snapshot Company')).toHaveTextContent(
+      'company with only a few filings'
+    )
+    expect(within(items[1]).getByTitle('Corpus')).toHaveTextContent('collection')
+    expect(within(items[0]).getByTitle('Filings')).toHaveTextContent('filings')
     // The callout comes before the answer text, so it cannot be missed.
     const text = within(answer).getByText('trade policy')
     expect(callout.compareDocumentPosition(text) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()

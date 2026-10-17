@@ -8,7 +8,7 @@
   --color-surface: rgb(255 255 255 / 0.03);
   --color-raised: rgb(255 255 255 / 0.06);
   --color-ink: #ededef;
-  --color-muted: #8a8f98;
+  --color-muted: #9ba1aa;
   --color-line: rgb(255 255 255 / 0.08);
   --color-accent: #0ea5e9;
   --color-accent-strong: #38bdf8;
@@ -105,7 +105,7 @@ body::before {
 
 /* A small monospaced, widely tracked label, as on the portfolio. */
 .eyebrow {
-  @apply font-mono text-[10.5px] tracking-widest text-muted uppercase;
+  @apply font-mono text-[12px] tracking-widest text-muted uppercase;
 }
 
 /* A headline in the portfolio's white-to-translucent gradient. */
@@ -123,7 +123,7 @@ body::before {
 
 /* A citation in an answer: [S3] as a small, clickable tag. */
 .citation {
-  @apply mx-0.5 inline-block rounded border border-accent/30 bg-accent/10 px-1 align-baseline font-mono text-[11.5px] leading-[1.4] font-medium text-accent-strong no-underline transition-colors hover:bg-accent hover:text-on-accent;
+  @apply mx-0.5 inline-block rounded border border-accent/30 bg-accent/10 px-1 align-baseline font-mono text-[12px] leading-[1.4] font-medium text-accent-strong no-underline transition-colors hover:bg-accent hover:text-on-accent;
 }
 .citation[aria-current='true'] {
   @apply bg-accent text-on-accent;
@@ -146,14 +146,14 @@ body::before {
   @apply mt-5 mb-2 font-semibold text-white;
 }
 .answer h1 {
-  @apply text-[17px];
+  @apply text-[19px];
 }
 .answer h2 {
-  @apply text-[16px];
+  @apply text-[17.5px];
 }
 .answer h3,
 .answer h4 {
-  @apply text-[14.5px];
+  @apply text-[16px];
 }
 .answer ul {
   @apply my-2 ml-5 list-disc space-y-1;
@@ -165,7 +165,7 @@ body::before {
   @apply font-semibold text-white;
 }
 .answer table {
-  @apply min-w-full border-collapse text-left text-[13px];
+  @apply min-w-full border-collapse text-left text-[14px];
 }
 .answer th {
   @apply border-b border-line bg-raised px-3 py-1.5 font-medium text-white;
@@ -177,5 +177,5 @@ body::before {
   @apply my-3 rounded-r border-l-2 border-accent/60 bg-surface py-1 pl-3 text-ink/90 italic;
 }
 .answer code {
-  @apply rounded bg-white/10 px-1 font-mono text-[13px] text-accent-strong;
+  @apply rounded bg-white/10 px-1 font-mono text-[14px] text-accent-strong;
 }

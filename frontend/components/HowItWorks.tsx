@@ -45,7 +45,7 @@ export default function HowItWorks({ data }: { data: EvalExport }) {
         <h1 className="text-[15px] font-semibold tracking-tight">
           How it works<span className="text-accent">.</span>
         </h1>
-        <p className="hidden font-mono text-[11px] tracking-widest text-muted lg:block">
+        <p className="hidden font-mono text-[12px] tracking-widest text-muted lg:block">
           How answers are made, what’s covered and how far to trust them
         </p>
         <Link
@@ -227,15 +227,15 @@ function Lane({
 
 /** A header cell without its background, for the coverage grid's fixed header, which sets an opaque one. */
 const thBare =
-  'border-b border-line px-3 py-1.5 text-left font-mono text-[11px] font-medium tracking-wide whitespace-nowrap text-muted'
+  'border-b border-line px-3 py-1.5 text-left font-mono text-[12px] font-medium tracking-wide whitespace-nowrap text-muted'
 const th = `${thBare} bg-raised`
 const td = 'border-b border-line px-3 py-1.5 whitespace-nowrap tabular-nums'
 const caption = 'mb-3 text-left text-[14px] font-semibold text-white'
 const note = 'mt-2 text-[12.5px] leading-relaxed text-muted'
 const badge =
-  'ml-2 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 font-mono text-[10px] tracking-widest text-accent-strong'
+  'ml-2 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 font-mono text-[12px] tracking-widest text-accent-strong'
 const quietBadge =
-  'ml-2 rounded-full border border-line px-2 py-0.5 font-mono text-[10px] tracking-widest text-muted'
+  'ml-2 rounded-full border border-line px-2 py-0.5 font-mono text-[12px] tracking-widest text-muted'
 
 /** How a version's verdicts are worded: directional under version 2, as the docs word them. */
 function verdictRule(thresholds: Thresholds): string {
@@ -690,9 +690,9 @@ function GenerationTable({
                   ) : (
                     run.model === shipped && <span className={badge}>shipped</span>
                   )}
-                  <span className="ml-2 text-[11.5px] text-muted">prompt {run.promptVersion}</span>
+                  <span className="ml-2 text-[12px] text-muted">prompt {run.promptVersion}</span>
                   {repeated(run) && (
-                    <span className="ml-2 font-mono text-[11.5px] text-muted">{run.report}</span>
+                    <span className="ml-2 font-mono text-[12px] text-muted">{run.report}</span>
                   )}
                 </th>
                 {GENERATION_COLUMNS.map(([name, value]) => (
@@ -782,7 +782,7 @@ function signTest(test: SignTest | null): ReactNode {
       {test.verdict} ({test.challengerOnly} higher, {test.shippedOnly} lower, p ahead ={' '}
       {pValue(test.pAhead)}, p behind = {pValue(test.pBehind)})
       {test.difference && (
-        <span className="block text-[11.5px] text-muted">{difference(test.difference)}</span>
+        <span className="block text-[12px] text-muted">{difference(test.difference)}</span>
       )}
     </>
   )
@@ -829,7 +829,7 @@ function GeneratorChoiceTable({
             <tr>
               <th scope="row" className={`${td} text-left font-medium`}>
                 Control Run
-                <span className="ml-2 text-[11.5px] text-muted">{choice.shipped} again</span>
+                <span className="ml-2 text-[12px] text-muted">{choice.shipped} again</span>
               </th>
               <GeneratorChoiceRow c={choice.control} />
               <td className={td}>–</td>
@@ -931,7 +931,7 @@ function CoverageGrid({ data }: { data: EvalExport }) {
                     key={period}
                     className={`${fixedHeader} z-20 px-1 text-center font-medium ${skipped[i] ? 'border-l-2 border-l-muted/40' : ''}`}
                   >
-                    <span className="block text-[10.5px] text-muted">{period.slice(0, 4)}</span>
+                    <span className="block text-[12px] text-muted">{period.slice(0, 4)}</span>
                     {`Q${period.slice(5)}`}
                     <span className="sr-only"> {quarterLabel(period)}</span>
                   </th>

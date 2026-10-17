@@ -106,7 +106,7 @@ export default function AnswerMessage({
     <article aria-label="Answer" className="flex flex-col gap-3">
       {gaps.length > 0 && <CoverageGaps gaps={gaps} />}
       {text && (
-        <div className="answer text-[14.5px] leading-relaxed text-ink">
+        <div className="answer text-[16px] leading-relaxed text-ink">
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
             {linkCitations(shown)}
           </ReactMarkdown>
