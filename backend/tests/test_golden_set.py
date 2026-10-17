@@ -628,6 +628,70 @@ def test_new_slice_1_holds_nine_multi_company_risk_comparisons(golden_set_v2, fi
     assert {"Risk Factors", "Legal Proceedings", "Market Risk"} <= sections
 
 
+NEW_SLICE_2_RISK = {
+    "risk-v-ma-cybersecurity",
+    "risk-wmt-tgt-legal-proceedings",
+    "risk-ups-market-risk",
+    "risk-cvx-xom-commodity-prices",
+    "risk-abbv-jnj-loss-of-exclusivity",
+    "risk-ba-commercial-production",
+    "risk-pg-pep-input-costs",
+}
+NEW_SLICE_2_FOLLOW_UPS = {"followup-cat-de-dealers", "followup-lmt-to-rtx-market-risk"}
+"""Version 2's second slice of new cases: seven risk questions on financials, industrials,
+energy, health care and consumer staples Companies, and two follow-ups (issue #67)."""
+
+_SLICE_2_SECTORS = {"Financials", "Industrials", "Energy", "Health Care", "Consumer Staples"}
+
+
+def test_new_slice_2_holds_seven_risk_questions_on_its_sectors(golden_set_v2, filings_by_id):
+    cases = {case.id: case for case in golden_set_v2.cases if case.id in NEW_SLICE_2_RISK}
+    sectors = {row.ticker: row.sector for row in load_sector_table()}
+
+    assert set(cases) == NEW_SLICE_2_RISK
+    sizes, covered = set(), set()
+    for case in cases.values():
+        tickers = {filings_by_id[s.filing_id].ticker for s in case.expected_sources}
+        assert case.question_type == "risk", case.id
+        assert not case.history and case.starter is None, case.id
+        assert {sectors[t] for t in tickers} <= _SLICE_2_SECTORS, case.id
+        assert {filings_by_id[f.filing_id].ticker for f in case.required_facts} == tickers, case.id
+        sizes.add(1 if len(tickers) == 1 else 2)
+        covered |= {sectors[t] for t in tickers}
+    assert sizes == {1, 2}  # single-Company and multi-Company questions
+    assert covered == _SLICE_2_SECTORS
+    sections = {s.section for case in cases.values() for s in case.expected_sources}
+    assert {"Legal Proceedings", "Market Risk", "Cybersecurity"} <= sections
+
+
+def test_new_slice_2_holds_one_inheriting_and_one_switching_follow_up(golden_set_v2, company_names):
+    cases = {c.id: c for c in golden_set_v2.cases if c.id in NEW_SLICE_2_FOLLOW_UPS}
+
+    assert set(cases) == NEW_SLICE_2_FOLLOW_UPS
+    for case in cases.values():
+        assert case.history and case.history[-1].role == "assistant", case.id
+        assert re.search(r"\b[A-Z]+_10-[KQ]_\d{4}-\d{2}-\d{2}\b", case.history[-1].content)
+    [inherits] = [c for c in cases.values() if "inherits_companies" in c.tags]
+    [switches] = [c for c in cases.values() if "switches_company" in c.tags]
+    named = {
+        ticker
+        for ticker, names in company_names.items()
+        if any(re.search(rf"\b{re.escape(n)}\b", inherits.question) for n in names)
+    }
+    assert named == set()  # it names no Company, so it inherits them
+    earlier = {
+        ticker
+        for ticker, names in company_names.items()
+        if any(re.search(rf"\b{re.escape(n)}\b", switches.history[0].content) for n in names)
+    }
+    asked = {
+        ticker
+        for ticker, names in company_names.items()
+        if any(re.search(rf"\b{re.escape(n)}\b", switches.question) for n in names)
+    }
+    assert asked and not asked & earlier  # it names another Company
+
+
 def test_a_missing_evidence_quote_or_section_fails_the_label_checks(tmp_path, filings_by_id):
     case = _v2_case("risk-unh-cybersecurity")
     case["required_facts"][0]["evidence"] = "UnitedHealth sells ice cream on the moon."

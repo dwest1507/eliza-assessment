@@ -2,7 +2,7 @@
 
 The Golden Set is the evaluation's ground truth: 30 labelled questions that the retrieval and generation harnesses score the system against. It lives in [`data/eval/golden_set.json`](../data/eval/golden_set.json) and is read by `edgar_rag.golden_set.load_golden_set()`, which checks the schema. It was written before any retrieval Arm or prompt ran, so no label was written with results in view.
 
-This page describes version 1, the set every result so far was measured on, the Required Fact tiers that version 2 adds, and the [Brief Suite](#the-brief-suite), the brief's questions in a file of their own. Version 2's [file](#the-file) is built and holds all 27 of version 1's cases other than the brief's, [rewritten](#the-rewritten-version-1-cases), and the first slice of its [new cases](#the-new-cases); the rest of version 2 is decided but not built yet: see [Version 2](#version-2). Version 1's file stays unchanged as a record, and a test pins its digest.
+This page describes version 1, the set every result so far was measured on, the Required Fact tiers that version 2 adds, and the [Brief Suite](#the-brief-suite), the brief's questions in a file of their own. Version 2's [file](#the-file) is built and holds all 27 of version 1's cases other than the brief's, [rewritten](#the-rewritten-version-1-cases), and the first two slices of its [new cases](#the-new-cases); the rest of version 2 is decided but not built yet: see [Version 2](#version-2). Version 1's file stays unchanged as a record, and a test pins its digest.
 
 ## What it covers
 
@@ -131,7 +131,7 @@ No id is in both files: the loader rejects one that is.
 
 ## Version 2
 
-Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions and four variants of each, and version 2's file, with all three batches of version 1's 27 other cases rewritten and the first of six slices of new cases, are built so far.
+Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions and four variants of each, and version 2's file, with all three batches of version 1's 27 other cases rewritten and the first two of six slices of new cases, are built so far.
 
 ### The file
 
@@ -236,6 +236,27 @@ The first slice is nine multi-Company risk comparisons among information technol
 - **No amount.** No fact states a dollar amount. The settlement, damages, sensitivity and value-at-risk amounts in these Sections have no SEC company-facts value, and the fines are in euros; the amounts stay in the evidence quotes.
 - **Fact wording.** The judge study measured Jev on one-claim facts and set the fact cut-off at 0.6 ([The judge study's results](evaluation.md#the-judge-studys-results)). Each fact here states one claim in the Filing's own terms and names its Company. None renames the Filing's period (a fiscal quarter given as a calendar date) or states a cause or change the Filing does not, the wordings of several study items on which Jev and the labels disagreed.
 - **Names.** The Sector table names Disney "The Walt Disney Company", so its facts name it Walt Disney, which the label test that a fact names its Company recognises.
+
+The second slice is seven risk questions on financials, industrials, energy, health care and consumer staples Companies, two of them about a single Company, and two follow-ups, all on Companies the first slice does not ask about. A test checks the slice's ids, kinds and Sectors, that it has single-Company and multi-Company questions and covers the Legal Proceedings, Market Risk and Cybersecurity Sections, and that one follow-up names no Company and the other names a new one.
+
+| Case | Companies | Topic | Required Facts (must-state / detail) | Sections drafted from |
+|---|---|---|---|---|
+| `risk-v-ma-cybersecurity` | Visa, Mastercard | Cybersecurity risks and how they manage them | 10 / 26 | Risk Factors and Cybersecurity (Item 1C) of Visa's FY2025 and Mastercard's FY2025 10-Ks |
+| `risk-wmt-tgt-legal-proceedings` | Walmart, Target | Legal proceedings: opioids, regulators' suits, securities class actions | 7 / 15 | Legal Proceedings of Walmart's fiscal 2025 and Target's fiscal 2024 10-Ks (years to January 31 and February 1, 2025) |
+| `risk-ups-market-risk` | UPS | Fuel, foreign currency and interest rate risk and how it manages them | 6 / 12 | Market Risk of UPS's FY2025 10-K |
+| `risk-cvx-xom-commodity-prices` | Chevron, ExxonMobil | Exposure to oil and gas prices | 6 / 20 | Risk Factors of Chevron's FY2024 and ExxonMobil's FY2025 10-Ks |
+| `risk-abbv-jnj-loss-of-exclusivity` | AbbVie, Johnson & Johnson | Patent loss and generic and biosimilar competition | 7 / 16 | Risk Factors of AbbVie's FY2024 and Johnson & Johnson's FY2025 10-Ks |
+| `risk-ba-commercial-production` | Boeing | Producing, certifying and delivering commercial airplanes | 6 / 14 | Risk Factors of Boeing's FY2025 10-K |
+| `risk-pg-pep-input-costs` | Procter & Gamble, PepsiCo | Input costs and supply chain disruption | 7 / 14 | Risk Factors of Procter & Gamble's FY2025 and PepsiCo's FY2025 10-Ks |
+| `followup-cat-de-dealers` | Caterpillar, Deere, inherited | "How much do they depend on their dealers, and what risks does that create?" after a question on their main risks | 6 / 13 | Risk Factors of Caterpillar's FY2025 and Deere's FY2025 10-Ks |
+| `followup-lmt-to-rtx-market-risk` | RTX, switched from Lockheed Martin | "And what about RTX?" after a question on Lockheed Martin's market risks | 5 / 10 | Market Risk of RTX's FY2025 10-K |
+
+- **Not a repeat.** The oil majors follow-up already asks Chevron and ExxonMobil about greenhouse gas and other regulation, the pharmaceutical questions ask AbbVie and Johnson & Johnson about regulation and pricing, the aerospace and defense question asks Boeing and RTX about U.S. government contracts, and UnitedHealth's and the brief follow-up's cybersecurity cases and Coca-Cola's, Apple's and Microsoft's market risk cases name other Companies. This slice asks those Companies about other topics: commodity prices, patents, commercial production and market risk.
+- **Follow-ups.** Each scripted history ends with a fixed answer that cites Filing IDs. The dealer follow-up names no Company, so it inherits Caterpillar and Deere, and its scripted answer does not mention dealers. The RTX follow-up names a new Company and inherits the topic, market risk, and its Section, as "And what about Microsoft?" does.
+- **Must-state or detail.** The must-state facts are each Company's headline risk on the question's topic and, where the question asks it, how the Company manages it: Visa's Key Controls and three lines of defense and Mastercard's layers of protection, UPS's fuel surcharges, forwards, options and swaps, Procter & Gamble's pricing actions, cost saving projects and sourcing decisions. For a comparison, they include what each side says about the theme they share: a commodities business for Chevron and ExxonMobil, a quick fall in a product's sales after a loss of exclusivity for AbbVie and Johnson & Johnson, sales through independent dealers whose inventories move them for Caterpillar and Deere. Lists of causes, regulation, board oversight, staffing, insurance and further consequences are details.
+- **Coverage Gaps.** Five cases compare Companies whose latest 10-Ks end more than 20 days apart, so they expect the periods differ gap; Walmart's and Target's fiscal years end a day apart, so their case expects none.
+- **No amount.** No fact states a dollar amount. The amounts in these Sections (Walmart's opioid accrual, Boeing's 777X reach-forward losses, UPS's and RTX's sensitivity results) have no SEC company-facts value, and the reference does not cache Boeing or RTX; the amounts stay in the evidence quotes. The figure check runs on the slice and finds nothing to check.
+- **Fact wording.** As in the first slice, each fact states one claim in the Filing's own terms and names its Company, and none renames a period or states a cause or change the Filing does not.
 
 ### What is decided
 

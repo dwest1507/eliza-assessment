@@ -4957,6 +4957,1671 @@
           ]
         }
       ]
+    },
+    {
+      "id": "risk-v-ma-cybersecurity",
+      "question": "How do Visa and Mastercard describe their cybersecurity risks, and how do they manage them?",
+      "history": [],
+      "question_type": "risk",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "Visa's latest 10-K is FY2025 (year to September 2025); Mastercard's is FY2025 (year to December 2025), so the periods differ. Drafted from every cyber and information security passage in both whole Risk Factors Sections and from both whole Cybersecurity Sections (Item 1C), which answer the question's second half. Must-state: each Company's prominence as a target, the rise of AI-enabled threats both name, and that neither has had a material cyber incident; for how they manage it, Visa's Key Controls and three lines of defense, and Mastercard's multiple layers of protection and its Chief Security Officer's direction of the program. Regulation and reporting deadlines, third parties, insurance, staffing, testing, fusion centres and board oversight are details. No fact states an amount.",
+      "expected_sources": [
+        {
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Cybersecurity"
+        },
+        {
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Cybersecurity"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Visa says its visibility and role in the global payments industry put it at a greater risk of being targeted by hackers.",
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Risk Factors",
+          "evidence": "Our visibility and role in the global payments industry also puts our company at a greater risk of being targeted by hackers.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Visa says it has been the target of malicious cyber activity.",
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Risk Factors",
+          "evidence": "In the normal course of our business, we have been the target of malicious cyber activity.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Visa says threat actors are using GenAI to create sophisticated attacks that are increasingly automated, targeted and more difficult to defend against.",
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Risk Factors",
+          "evidence": "rapid integration of new technology such as GenAI are being used by threat actors to create sophisticated attacks that are increasingly automated, targeted and more difficult to defend against",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Visa says its own use and deployment of GenAI technologies could expand its cybersecurity attack surface.",
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Risk Factors",
+          "evidence": "Our own use and deployment of GenAI technologies could expand our cybersecurity attack surface",
+          "tier": "detail"
+        },
+        {
+          "fact": "Visa says it is aware of instances where governments directed or sponsored attacks against some of its financial institution clients.",
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Risk Factors",
+          "evidence": "We are also aware of instances where governments have directed or sponsored attacks against some of our financial institution clients",
+          "tier": "detail"
+        },
+        {
+          "fact": "Visa says the security measures that it and other participants in the payments ecosystem have in place may not be implemented effectively.",
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Risk Factors",
+          "evidence": "The security measures and procedures we, our financial institution and seller clients, other sellers and third-party service providers in the payments ecosystem have in place to protect sensitive consumer data and other information may not be implemented effectively",
+          "tier": "detail"
+        },
+        {
+          "fact": "Visa says it is increasingly subject to complex and rapidly evolving cybersecurity regulations and cyber incident reporting requirements across numerous jurisdictions.",
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Risk Factors",
+          "evidence": "Visa is increasingly subject to complex, varied, and rapidly evolving cybersecurity regulations and cyber incident reporting requirements across numerous jurisdictions",
+          "tier": "detail"
+        },
+        {
+          "fact": "Visa says there is a risk that it or its third-party service providers will fail to meet cyber incident reporting deadlines.",
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Risk Factors",
+          "evidence": "there is a risk that Visa or its third-party service providers will fail to meet the reporting deadlines for any given incident",
+          "tier": "detail"
+        },
+        {
+          "fact": "Visa says its insurance coverage may not sufficiently cover all types of losses or claims that may arise.",
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Risk Factors",
+          "evidence": "while we maintain insurance, our coverage may not sufficiently cover all types of losses or claims that may arise",
+          "tier": "detail"
+        },
+        {
+          "fact": "Visa considers cybersecurity risk one of its key enterprise risks.",
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Cybersecurity",
+          "evidence": "we consider cybersecurity risk one of our key enterprise risks",
+          "tier": "detail"
+        },
+        {
+          "fact": "Visa implements its cybersecurity program primarily through its Key Controls.",
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Cybersecurity",
+          "evidence": "We implement our cybersecurity program primarily through our Key Controls, which define the requirements for the protection of Visa information and technology assets.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Visa's cybersecurity program was designed around standards such as ISO 27002 and the Payment Card Industry Data Security Standards.",
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Cybersecurity",
+          "evidence": "was designed around widely accepted international standards, such as ISO 27002 and the Payment Card Industry Data Security Standards",
+          "tier": "detail"
+        },
+        {
+          "fact": "Visa monitors its systems and digital assets from three cyber fusion centers, in the U.S., the United Kingdom and Singapore.",
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Cybersecurity",
+          "evidence": "Visa’s global cybersecurity incident response team provides monitoring of Visa systems and digital assets from three cyber fusion centers in the U.S., United Kingdom, and Singapore.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Visa employs three lines of defense to address the risk that its cybersecurity policies and controls are not implemented or followed appropriately.",
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Cybersecurity",
+          "evidence": "our cybersecurity policies and controls may not be implemented or followed appropriately to mitigate all of our risks. We employ three lines of defense designed to address this risk.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Visa's policies require due diligence on its service providers, vendors and suppliers before it engages them.",
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Cybersecurity",
+          "evidence": "Our policies require due diligence on our service providers, vendors and suppliers prior to engagement",
+          "tier": "detail"
+        },
+        {
+          "fact": "Visa says that as of September 30, 2025 it was not aware of any cybersecurity incidents in the past three fiscal years that materially affected its business strategy, results of operations or financial condition.",
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Cybersecurity",
+          "evidence": "as of September 30, 2025, we were not aware of any direct or third-party cybersecurity incidents in the past three fiscal years that have materially affected our business strategy, results of operations, or financial condition",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Visa's cybersecurity organization comprises approximately 1,000 professionals.",
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Cybersecurity",
+          "evidence": "which comprises approximately 1,000 professionals globally as of September 30, 2025",
+          "tier": "detail"
+        },
+        {
+          "fact": "Visa's board of directors delegates oversight of its cybersecurity program to its audit and risk committee.",
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Cybersecurity",
+          "evidence": "delegates oversight and control of Visa’s cybersecurity program to our audit and risk committee (ARC)",
+          "tier": "detail"
+        },
+        {
+          "fact": "Mastercard says information security risks for payments and technology companies such as it have significantly increased in recent years.",
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Information security risks for payments and technology companies such as ours have significantly increased in recent years",
+          "tier": "detail"
+        },
+        {
+          "fact": "Mastercard believes that, because of its position in the payments value chain, it is likely to continue to be a target of cyber threats and attacks.",
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Because of our position in the payments value chain, we believe that we are likely to continue to be a target of such threats and attacks.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Mastercard says the widespread use of AI is enhancing the frequency and effectiveness of threat actors.",
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "The widespread use of AI, and its increasing capabilities, is enhancing the frequency and effectiveness of threat actors.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Mastercard says it has not experienced any material impact relating to cyber-attacks or other information security breaches to date.",
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "To date, we have not experienced any material impact relating to cyber-attacks or other information security breaches.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Mastercard says these threats have risen significantly due to a significant portion of its workforce working in a hybrid environment.",
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "These types of threats have risen significantly due to a significant portion of our workforce working in a hybrid environment.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Mastercard routinely encounters account data compromise events involving merchants and third-party payment processors.",
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "we also routinely encounter account data compromise events involving merchants and third-party payment processors that process, store or transmit payment transaction data",
+          "tier": "detail"
+        },
+        {
+          "fact": "Mastercard says the listing of Recorded Future as an undesirable or unreliable entity by certain jurisdictions could further increase its information security risks.",
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "the current or future listing of Recorded Future as an “undesirable” or “unreliable” entity by certain jurisdictions could further increase our risks in this area",
+          "tier": "detail"
+        },
+        {
+          "fact": "Mastercard says any single breach could require parallel notifications to data protection authorities, cyber authorities and law enforcement.",
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "any single breach could require parallel notifications to data protection authorities, cyber authorities and/or law-enforcement",
+          "tier": "detail"
+        },
+        {
+          "fact": "Mastercard says its insurance coverage may not be adequate to protect it from losses from breaches.",
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "While we maintain insurance coverage, such coverage may not be adequate to protect us from such losses",
+          "tier": "detail"
+        },
+        {
+          "fact": "Mastercard says cybersecurity risk management is an integral part of its overall enterprise risk management program.",
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Cybersecurity",
+          "evidence": "cybersecurity risk management is an integral part of our overall enterprise risk management program",
+          "tier": "detail"
+        },
+        {
+          "fact": "Mastercard's network and platforms incorporate multiple layers of protection.",
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Cybersecurity",
+          "evidence": "Our network and platforms incorporate multiple layers of protection, providing greater resiliency and security protection.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Mastercard's cybersecurity programs are assessed by third parties.",
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Cybersecurity",
+          "evidence": "Our programs are assessed by third parties and incorporate benchmarking and other data from peer companies and consultants.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Mastercard continually tests its systems to discover and address potential vulnerabilities.",
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Cybersecurity",
+          "evidence": "We continually test our systems to discover and address any potential vulnerabilities",
+          "tier": "detail"
+        },
+        {
+          "fact": "Mastercard maintains cyber insurance coverage.",
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Cybersecurity",
+          "evidence": "We maintain a business continuity program and cyber insurance coverage",
+          "tier": "detail"
+        },
+        {
+          "fact": "Mastercard's cybersecurity programs are under the direction of its Chief Security Officer.",
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Cybersecurity",
+          "evidence": "Our cybersecurity programs are under the direction of our CSO",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Mastercard's Risk Committee oversees risks relating to its approach to information security, including cybersecurity.",
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Cybersecurity",
+          "evidence": "Risk Committee: Overseeing risks relating to our policies, procedures and strategic approach to information security (inclusive of cybersecurity), privacy and data protection",
+          "tier": "detail"
+        },
+        {
+          "fact": "Mastercard engages its directors in cybersecurity and data breach incident simulations.",
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Cybersecurity",
+          "evidence": "we engage directors as part of cybersecurity and data breach incident simulations",
+          "tier": "detail"
+        },
+        {
+          "fact": "Mastercard says it cannot eliminate all risks from cybersecurity threats.",
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Cybersecurity",
+          "evidence": "we cannot eliminate all risks from cybersecurity threats",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "V",
+            "MA"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "risk-wmt-tgt-legal-proceedings",
+      "question": "What legal proceedings do Walmart and Target disclose in their latest annual reports, and how do they compare?",
+      "history": [],
+      "question_type": "risk",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "Walmart's latest 10-K is fiscal 2025 (year to January 31, 2025) and Target's is the year to February 1, 2025, a day apart, so no periods differ gap. Drafted from both whole Legal Proceedings Sections. Walmart's Item 3 names each matter itself (the Financial Statements' Contingencies note gives more on some), so its facts cite Item 3. The comparison: Walmart's proceedings centre on opioids, with the MDL, the DOJ suit and the settlements, beside regulators' suits; Target's are federal securities class actions. Must-state: Walmart's opioid MDL, DOJ suit and opioid settlement accrual, and the FTC's money transfer suit; Target's dismissed class action and the two 2025 class actions over its ESG disclosures. The other suits, the derivative and securities cases, the EPA matter and the plaintiffs' allegations are details. The $3.3 billion opioid accrual has no SEC company-facts value, so its fact states no amount.",
+      "expected_sources": [
+        {
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Legal Proceedings"
+        },
+        {
+          "filing_id": "TGT_10-K_2025-02-01",
+          "section": "Legal Proceedings"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Walmart says approximately 250 cases with claims against it are pending in the National Prescription Opiate Litigation in the Northern District of Ohio.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Legal Proceedings",
+          "evidence": "In re National Prescription Opiate Litigation (MDL No. 2804) (the \"MDL\") is pending in the U.S. District Court for the Northern District of Ohio and includes approximately 250 cases with claims against the Company as of March 10, 2025.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Walmart says more than 25 other opioid-related cases are pending against it and its subsidiaries in U.S. state and federal courts and Canadian courts.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Legal Proceedings",
+          "evidence": "there are more than 25 other opioid-related cases against the Company and its subsidiaries pending in U.S. state and federal courts and Canadian courts as of March 10, 2025",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walmart is a defendant in opioid civil litigation brought by the United States in the District of Delaware.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Legal Proceedings",
+          "evidence": "DOJ Opioid Civil Litigation: United States of America v. Walmart Inc., et al., USDC, Dist. of DE, 12/22/20.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Walmart accrued a liability in fiscal year 2023 for certain opioid-related settlements.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Legal Proceedings",
+          "evidence": "the Company accrued a liability of approximately $3.3 billion in fiscal year 2023 for certain opioid-related settlements",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Walmart says all of its accrued liability for those opioid-related settlements had been paid as of January 31, 2025.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Legal Proceedings",
+          "evidence": "As of January 31, 2025, all of the accrued liability has been paid.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walmart faces opioid-related derivative lawsuits.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Legal Proceedings",
+          "evidence": "Opioid-Related Derivative Lawsuits: Abt v. Alvarez et al., USDC, Dist. of DE, 2/9/21",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walmart faces opioid-related securities class actions, consolidated into In re Walmart Inc. Securities Litigation.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Legal Proceedings",
+          "evidence": "consolidated into In re Walmart Inc. Securities Litigation, USDC, Dist. of DE, 5/11/21",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walmart faces False Claims Act litigation.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Legal Proceedings",
+          "evidence": "False Claims Act Litigation: United States of America ex rel. James Marcilla and Isela Chavez",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walmart lists the ASDA equal value claims among its legal proceedings.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Legal Proceedings",
+          "evidence": "ASDA Equal Value Claims: Ms S Brierley & Others v. ASDA Stores Ltd",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walmart faces litigation brought by the Federal Trade Commission over its money transfer agent services.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Legal Proceedings",
+          "evidence": "Money Transfer Agent Services Litigation: Federal Trade Commission v. Walmart Inc., USDC, N. Dist. Of Ill, 6/28/22",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Walmart faces a Consumer Financial Protection Bureau lawsuit over its driver platform.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Legal Proceedings",
+          "evidence": "Driver Platform Matter: Consumer Financial Protection Bureau v. Walmart Inc., et al., USDC D. of Minn., 12/23/24.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walmart lists a Mexico antitrust matter brought by Mexico's federal competition authority against Nueva Wal-Mart de México.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Legal Proceedings",
+          "evidence": "Mexico Antitrust Matter: Comisión Federal de Competencia Económica of México, Investigative Authority v. Nueva Wal-Mart de México",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walmart faces an antitrust investigation by the Competition Commission of India.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Legal Proceedings",
+          "evidence": "India Antitrust Matter: Competition Commission of India, Case No. 40 of 2019, order initiating investigation 1/13/20.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walmart received a Finding of Violation from the EPA alleging Clean Air Act violations in connection with its refrigeration leak detection and repair program.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Legal Proceedings",
+          "evidence": "In October 2023, the Company received a Finding of Violation from the U.S. Environmental Protection Agency (the \"EPA\") alleging violations of the Clean Air Act in connection with the Company's refrigeration leak detection and repair program at certain of its facilities.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walmart says it does not believe the EPA matter will have a material adverse effect on its business.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Legal Proceedings",
+          "evidence": "Although the Company does not believe this matter will have a material adverse effect on its business, financial position, results of operations, or cash flows",
+          "tier": "detail"
+        },
+        {
+          "fact": "A federal court in Minnesota dismissed the securities class action against Target relating to its prior disclosures about its business model, strategy and inventory.",
+          "filing_id": "TGT_10-K_2025-02-01",
+          "section": "Legal Proceedings",
+          "evidence": "the United States District Court for the District of Minnesota dismissed the purported federal securities law class action against Target Corporation and certain of its officers relating to certain prior disclosures of Target about its business model, strategy, and inventory",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Target and members of its Board of Directors were named as defendants in two federal securities class actions filed in the Middle District of Florida.",
+          "filing_id": "TGT_10-K_2025-02-01",
+          "section": "Legal Proceedings",
+          "evidence": "Target Corporation and members of its Board of Directors were named as defendants in two purported federal securities law class actions filed in the United States District Court for the Middle District of Florida",
+          "tier": "must_state"
+        },
+        {
+          "fact": "The Florida securities class actions against Target relate to its prior disclosures about risks related to its environmental, social and governance initiatives, including diversity, equity and inclusion.",
+          "filing_id": "TGT_10-K_2025-02-01",
+          "section": "Legal Proceedings",
+          "evidence": "relating to certain prior disclosures of Target about risks related to its environmental, social, and governance initiatives (including with respect to diversity, equity, and inclusion) and oversight of those risks",
+          "tier": "must_state"
+        },
+        {
+          "fact": "The plaintiffs allege that Target misled investors about the risks associated with its 2023 Pride Month merchandise collection.",
+          "filing_id": "TGT_10-K_2025-02-01",
+          "section": "Legal Proceedings",
+          "evidence": "the defendants misled investors, including about the risks associated with Target’s environmental, social, and governance initiatives (including with respect to diversity, equity, and inclusion) and its 2023 Pride Month merchandise collection",
+          "tier": "detail"
+        },
+        {
+          "fact": "The plaintiffs in the Florida class actions against Target seek damages and other relief, including attorneys' fees.",
+          "filing_id": "TGT_10-K_2025-02-01",
+          "section": "Legal Proceedings",
+          "evidence": "The plaintiffs seek damages and other relief, including attorneys’ fees",
+          "tier": "detail"
+        },
+        {
+          "fact": "The plaintiffs marked the Florida class actions against Target as related to an earlier individual federal securities action in which the court denied a motion to dismiss.",
+          "filing_id": "TGT_10-K_2025-02-01",
+          "section": "Legal Proceedings",
+          "evidence": "Both plaintiffs have marked the class actions as related to a previously filed individual federal securities action in which the court denied a motion to dismiss.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Target intends to vigorously defend the Florida securities lawsuits.",
+          "filing_id": "TGT_10-K_2025-02-01",
+          "section": "Legal Proceedings",
+          "evidence": "Target intends to vigorously defend these lawsuits.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "risk-ups-market-risk",
+      "question": "What market risks does UPS disclose in its latest annual report, and how does it manage them?",
+      "history": [],
+      "question_type": "risk",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "UPS's only Filing is its FY2025 10-K. Drafted from the whole Market Risk Section (Item 7A), which covers commodity (fuel), foreign currency and interest rate risk and the sensitivity analysis. Must-state: the fuel price exposure and the fuel surcharges that are its main mitigation, the foreign currency exposure and the forwards and options that hedge it, and the fixed and floating rate debt and the swaps that manage its mix. The currencies, hedge periods, pension rate risk, freight brokerage rates, the absence of commodity contracts and the shock tests are details. The shock-test amounts (currency derivatives and variable-rate interest expense) have no SEC company-facts value, so their facts state the direction only.",
+      "expected_sources": [
+        {
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "Market Risk"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "UPS says it does not engage in speculative trading activities.",
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "All of these market risks arise in the normal course of business, as we do not engage in speculative trading activities.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UPS is exposed to changes in the prices of refined fuels, principally jet-A, diesel and unleaded gasoline.",
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "We are exposed to changes in the prices of refined fuels, principally jet-A, diesel and unleaded gasoline",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UPS says the fuel surcharges it applies to its domestic and international package services are currently its primary means of reducing the risk of adverse fuel price changes.",
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "Currently, the fuel surcharges that we apply to our domestic and international package services are the primary means of reducing the risk of adverse fuel price changes.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UPS regularly adjusts the rates it charges for its freight brokerage services to mitigate the impact of fuel surcharges imposed on it by outside carriers.",
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "In order to mitigate the impact of fuel surcharges imposed on us by outside carriers, we regularly adjust the rates we charge for our freight brokerage services.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UPS says a sudden significant change in the market price of fuel can significantly affect its results in the short term.",
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "our operating results may be affected should the market price of fuel suddenly change by a significant amount or change by amounts that do not result in an adjustment in our fuel surcharges, which can significantly affect our results either positively or negatively in the short-term",
+          "tier": "detail"
+        },
+        {
+          "fact": "UPS had no commodity contracts outstanding as of December 31, 2025.",
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "As of December 31, 2025 and 2024, we had no commodity contracts outstanding.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UPS has foreign currency exchange risks related to its revenue, operating expenses and financing transactions in currencies other than the local currencies in which it operates.",
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "We have foreign currency exchange risks related to our revenue, operating expenses and financing transactions in currencies other than the local currencies in which we operate.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UPS says its most significant foreign currency exchange exposures relate to the Euro, British Pound Sterling, Canadian Dollar, Chinese Renminbi and Hong Kong Dollar.",
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "Our most significant foreign currency exchange exposures relate to the Euro, British Pound Sterling, Canadian Dollar, Chinese Renminbi and Hong Kong Dollar.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UPS may use forward contracts and purchased and written options to hedge forecasted cash flow currency exposures.",
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "We may use forward contracts as well as a combination of purchased and written options to hedge forecasted cash flow currency exposures.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UPS's currency derivative instruments generally cover forecasted exposures for periods of 3 to 36 months.",
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "These derivative instruments generally cover forecasted foreign currency exchange exposures for periods of 3 to 36 months.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UPS has debt instruments and finance lease debt that accrue expense at fixed and floating rates of interest.",
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "We have issued debt instruments and have debt associated with finance leases that accrue expense at fixed and floating rates of interest.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UPS may use interest rate swaps to manage the fixed and floating interest rate mix of its total debt portfolio.",
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "We may use interest rate swaps as part of our program to manage the fixed and floating interest rate mix of our total debt portfolio and related overall cost of borrowing.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UPS may use forward starting swaps to lock in the borrowing cost of anticipated debt issuances.",
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "We may also utilize forward starting swaps and similar instruments to lock in all or a portion of the borrowing cost of anticipated debt issuances.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UPS is subject to interest rate risk with respect to its defined benefit pension and postretirement medical benefit plans.",
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "We are also subject to interest rate risk with respect to our defined benefit pension and postretirement medical benefit plans",
+          "tier": "detail"
+        },
+        {
+          "fact": "UPS says changes in interest rates may result in it being required to make contributions to its pension and postretirement plans.",
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "may also result in us being required to make contributions to the plans",
+          "tier": "detail"
+        },
+        {
+          "fact": "UPS's shock test shows a decrease in the fair value of its currency derivatives from a hypothetical 10% weakening of the U.S. Dollar.",
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "Currency Derivatives(1) | $ | (647) | | | $ | (749) | Change in Annual Interest Expense: | | | Variable-Rate Debt(2) | $ | 22 | | | $ | 21 | (1)The potential change in fair value from a hypothetical 10% weakening of the U.S. Dollar against foreign currency exchange rates across all maturities.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UPS's shock test shows an increase in annual interest expense on its variable-rate debt from a hypothetical 100 basis point increase in short-term interest rates.",
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "Change in Annual Interest Expense: | | | Variable-Rate Debt(2) | $ | 22 | | | $ | 21 | (1)The potential change in fair value from a hypothetical 10% weakening of the U.S. Dollar against foreign currency exchange rates across all maturities.(2)The potential change in annual interest expense resulting from a hypothetical 100 basis point increase in short-term interest rates, applied to our variable-rate debt.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UPS says its sensitivity estimates should not be viewed as forecasts.",
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "these estimates should not be viewed as forecasts",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "risk-cvx-xom-commodity-prices",
+      "question": "How exposed are Chevron and ExxonMobil to changes in oil and gas prices?",
+      "history": [],
+      "question_type": "risk",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "Chevron's latest 10-K is FY2024 and ExxonMobil's is FY2025, so the periods differ. Not a repeat of the oil majors follow-up, which asks about greenhouse gas and other regulation: this asks about commodity prices. Drafted from every price passage in both whole Risk Factors Sections; Chevron's commodity price risk factor and ExxonMobil's Supply and Demand risk factors answer it. Both call theirs a commodities business, which the comparison rests on. Must-state: that, each Company's statement of how prices affect it (Chevron: the most significant factor in its results, and extended low prices; ExxonMobil: a decline hurts most in Upstream, an increase in its Energy, Chemical and Specialty Products segments). The factors that move prices, the knock-on effects (impairments, credit ratings, suppliers, cost savings, derivatives losses) and the policy effects are details.",
+      "expected_sources": [
+        {
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Chevron says it is primarily in a commodities business that has a history of price volatility.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Chevron is primarily in a commodities business that has a history of price volatility.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Chevron says the most significant factor affecting its results of operations is the prices of crude oil, natural gas and natural gas liquids.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "The most significant factor that affects the company’s results of operations are the prices of crude oil, natural gas, and natural gas liquids",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Chevron says extended periods of low prices for crude oil, natural gas and natural gas liquids can have a material adverse impact on its results of operations, financial condition and liquidity.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Extended periods of low prices for crude oil, natural gas, and natural gas liquids can have a material adverse impact on the company’s results of operations, financial condition and liquidity.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Chevron says an investment in the company carries significant exposure to fluctuations in global prices of crude oil, natural gas and natural gas liquids.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "An investment in the company carries significant exposure to fluctuations in global prices of crude oil, natural gas, and natural gas liquids.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron lists production quotas imposed by OPEC or other producers among the influences on oil and gas prices.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "production quotas or other actions that might be imposed by the Organization of Petroleum Exporting Countries or other producers",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron lists the pace of energy transition among the influences on oil and gas prices.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "geopolitical risks; the pace of energy transition; customer and consumer preferences and the use of substitutes",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron evaluates the risk of changing commodity prices as a core part of its business planning process.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Chevron evaluates the risk of changing commodity prices as a core part of its business planning process.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron says low prices could negatively affect its upstream earnings, cash flows and capital expenditure programs.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "the company’s upstream earnings, cash flows, and capital expenditure programs could be negatively affected, as could its production and proved reserves",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron says its upstream assets may become impaired in extended periods of low prices.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Upstream assets may also become impaired.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron says its downstream earnings depend upon the supply and demand for refined products and the associated margins on refined product sales.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Downstream earnings could be negatively affected because they depend upon the supply and demand for refined products and the associated margins on refined product sales.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron says a significant or sustained decline in liquidity could adversely affect its credit ratings.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "A significant or sustained decline in liquidity could adversely affect the company’s credit ratings, potentially increase financing costs and reduce access to capital markets.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron says it may be unable to realize the cost savings, expenditure reductions and asset sales intended to compensate for price downturns.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "The company may be unable to realize anticipated cost savings, expenditure reductions and asset sales that are intended to compensate for such downturns",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron says price downturns may slow the pace and scale at which it invests in its business, including its Chevron New Energies organization.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "such downturns may also slow the pace and scale at which we are able to invest in our business, including our Chevron New Energies organization",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron says extended periods of low commodity prices can hurt the suppliers, vendors, partners and equity affiliates its own results depend on.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "extended periods of low commodity prices can have a material adverse impact on the results of operations, financial condition and liquidity of the company’s suppliers, vendors, partners and equity affiliates upon which the company’s own results of operations and financial condition depend",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says the oil, gas and petrochemical businesses are fundamentally commodity businesses.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "The oil, gas, and petrochemical businesses are fundamentally commodity businesses.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "ExxonMobil says its operations and earnings may be significantly affected by changes in oil, gas and petrochemical prices.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "This means ExxonMobil’s operations and earnings may be significantly affected by changes in oil, gas, and petrochemical prices and by changes in margins on refined products.",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says a material decline in oil or natural gas prices could have a material adverse effect on it, especially in the Upstream segment.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Any material decline in oil or natural gas prices could have a material adverse effect on the Company’s operations, results, financial condition, and proved reserves, especially in the Upstream segment.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "ExxonMobil says a material increase in oil or natural gas prices could have a material adverse effect on it, especially in the Energy Products, Chemical Products and Specialty Products segments.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "a material increase in oil or natural gas prices could have a material adverse effect on the Company’s operations and results, especially in the Energy Products, Chemical Products, and Specialty Products segments",
+          "tier": "must_state"
+        },
+        {
+          "fact": "ExxonMobil says economic downturns, recessions or other periods of low or negative economic growth will typically have a direct adverse impact on its results.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "The occurrence of economic downturns, recessions or other periods of low or negative economic growth will typically have a direct adverse impact on our results.",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil lists increased demand for AI, including AI data centers, among the factors that may affect demand for its products.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "increased demand for artificial intelligence (AI), including the construction and expansion of AI data centers",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says increased supply from new oil and gas sources tends to reduce commodity prices when it is not offset by growth in demand.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "increased supply from the development of new or previously inaccessible oil and gas supply sources and technologies to enhance recovery from existing sources tends to reduce commodity prices to the extent such supply increases are not offset by commensurate growth in demand",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says production quotas established by OPEC or OPEC+ can affect world oil, gas and petrochemical supply levels.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "World oil, gas, and petrochemical supply levels can also be affected by factors that reduce available supplies, such as the level of, and adherence by, participating countries to production quotas established by OPEC or OPEC+",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says market factors may result in losses from the commodity derivatives it uses to hedge price exposures.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Market factors may also result in losses from commodity derivatives and other instruments we use to hedge price exposures or for commodity and treasury trading activities.",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says restricting the availability of hydrocarbon products without a commensurate reduction in demand may increase commodity price volatility.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Policy and other actions that result in restricting the availability of hydrocarbon products without a commensurate reduction in demand may have unpredictable adverse effects, including increased commodity price volatility",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says restrictions on foreign investment in the oil and gas sector tend to increase in times of high commodity prices.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Restrictions on foreign investment in the oil and gas sector tend to increase in times of high commodity prices",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil lists price controls among the government actions that could adversely affect its results.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "or global minimum taxes;•price controls;",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "CVX",
+            "XOM"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "risk-abbv-jnj-loss-of-exclusivity",
+      "question": "How do AbbVie and Johnson & Johnson describe the risk of losing patent protection to generic and biosimilar competition?",
+      "history": [],
+      "question_type": "risk",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "AbbVie's latest 10-K is FY2024 and Johnson & Johnson's is FY2025, so the periods differ. Not a repeat of the pharmaceutical regulatory questions, which ask about regulation and pricing: this asks about patents and exclusivity. Drafted from every patent, exclusivity, generic and biosimilar passage in both whole Risk Factors Sections. Both say a loss of exclusivity is followed quickly by a steep fall in a product's sales, which is what the comparison rests on. Must-state: that for each; AbbVie's Humira, which has faced U.S. biosimilars since 2023 and whose revenue it expects to keep declining significantly; Johnson & Johnson's increasing patent challenges and the risk of an at-risk launch. Product concentration, patent challenge routes, compulsory licensing, public policy and the need for new products are details.",
+      "expected_sources": [
+        {
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "AbbVie says the expiration or loss of patent protection, including the loss of exclusivity for its products and increased competition from generics and biosimilars, may adversely affect its revenues and operating earnings.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "The expiration or loss of patent protection and licenses, including the loss of exclusivity for any of our products and increased competition from generics and biosimilars, may adversely affect AbbVie's revenues and operating earnings.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AbbVie says patents covering its products normally provide market exclusivity, which is important for the profitability of many of its products.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Patents covering AbbVie products normally provide market exclusivity, which is important for the profitability of many of AbbVie's products.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AbbVie says the expiration or loss of patent protection for a product typically is followed promptly by substitutes that may significantly reduce sales for that product in a short amount of time.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "The expiration or loss of patent protection for a product typically is followed promptly by substitutes that may significantly reduce sales for that product in a short amount of time.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AbbVie says legislative proposals to encourage the early and rapid approval of generic drugs or biosimilars could increase the impact of that competition if enacted.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Any such proposals that are enacted into law could increase the impact of generic or biosimilar competition.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AbbVie says companies have developed and are developing biosimilars that compete with its biologic products.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Companies have developed and are developing biosimilars that compete with AbbVie’s biologic products.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AbbVie says Skyrizi, Humira and Rinvoq together accounted for approximately 47% of its total net revenues in 2024.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Skyrizi, Humira and Rinvoq each represented greater than 10% of AbbVie's total net revenues and, in aggregate, these products accounted for approximately 47% of total net revenues in 2024.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AbbVie says Humira has faced competition from biosimilar products in the United States following its loss of exclusivity in 2023.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Humira has faced competition from biosimilar products in the United States following the loss of exclusivity in 2023.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AbbVie anticipates that Humira's loss of exclusivity will continue to cause a significant decline in Humira's revenue.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "AbbVie anticipates such loss will continue to cause a significant decline in Humira's revenue and could adversely affect AbbVie’s revenues and operating earnings.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AbbVie says its major products could lose patent protection earlier than expected.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "AbbVie's major products could lose patent protection earlier than expected, which could adversely affect AbbVie's revenues and operating earnings.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AbbVie says generic manufacturers file Abbreviated New Drug Applications seeking to market generic forms of its products before its relevant patents expire.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "manufacturers of generic pharmaceutical products file, and may continue to file, Abbreviated New Drug Applications with the FDA seeking to market generic forms of AbbVie's products prior to the expiration of relevant patents",
+          "tier": "detail"
+        },
+        {
+          "fact": "AbbVie says petitioners have filed challenges to the validity of its patents under the Leahy-Smith America Invents Act.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "petitioners have filed, and may continue to file, challenges to the validity of AbbVie's patents under the 2011 Leahy-Smith America Invents Act",
+          "tier": "detail"
+        },
+        {
+          "fact": "AbbVie says certain governments outside the United States have indicated that compulsory licenses to patents may be sought.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "certain governments outside the United States have indicated that compulsory licenses to patents may be sought to further their domestic policies or on the basis of national emergencies",
+          "tier": "detail"
+        },
+        {
+          "fact": "AbbVie normally responds to patent challenges by vigorously defending its patents, including by filing patent infringement lawsuits.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "AbbVie normally responds to challenges by vigorously defending its patents, including by filing patent infringement lawsuits.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AbbVie says its new product launches must generate enough revenue to replace revenues of profitable products lost to competing products.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Such launches must generate revenue sufficient both to cover its substantial research and development costs and to replace revenues of profitable products that are lost to or displaced by competing products or therapies.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says loss of patent exclusivity for an Innovative Medicine product often is followed by a substantial reduction in sales as generic, biosimilar and other competing products enter the market.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "For the Company’s Innovative Medicine businesses, loss of patent exclusivity for a product often is followed by a substantial reduction in sales as competitors gain regulatory approval for generic, biosimilar and other competing products and enter the market.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Johnson & Johnson says public policy, both within and outside the U.S., has become increasingly unfavorable toward intellectual property rights.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "Public policy, both within and outside the U.S., has become increasingly unfavorable toward intellectual property rights.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says it cannot be certain that it will secure and maintain adequate patent protection for new products and technologies.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "The Company cannot be certain that it will secure and maintain adequate patent protection for new products and technologies in the United States and other important markets.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says competitors routinely challenge its patents through proceedings such as inter partes review before the U.S. Patent and Trademark Office.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "Competitors routinely challenge the validity or extent of the Company’s owned or licensed patents and proprietary rights through litigation, interferences, oppositions and other proceedings, such as inter partes review (IPR) proceedings before the United States Patent & Trademark Office (USPTO).",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says it has faced increasing patent challenges from third parties seeking to market generic and biosimilar versions of its key pharmaceutical products before its patents expire.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "The Company has faced increasing patent challenges from third parties seeking to manufacture and market generic and biosimilar versions of the Company’s key pharmaceutical products prior to expiration of the applicable patents covering those products.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Johnson & Johnson says that if it fails to defend its patents, or a generic or biosimilar firm launches at risk, it can lose a major portion of revenues for the product in a very short period of time.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "In the event the Company is not successful in defending its patents against such challenges, or upon the “at-risk” launch by the generic or biosimilar firm of its product, the Company can lose a major portion of revenues for the referenced product in a very short period of time.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Johnson & Johnson says developing successful products is necessary to offset revenue losses when its existing products lose market share, including through loss of patent exclusivity.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "Development of successful products and technologies is also necessary to offset revenue losses when the Company’s existing products lose market share due to various factors such as competition and loss of patent exclusivity.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says new products introduced within the past five years accounted for approximately 25% of its 2025 sales.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "New products introduced within the past five years accounted for approximately 25% of 2025 sales.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says some countries may allow companies to exploit inventions of U.S. patent holders without consent or compensation.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "in some countries, action may be taken that allows companies and individuals to exploit inventions owned by patent holders from the United States and many other countries without consent or compensation",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "ABBV",
+            "JNJ"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "risk-ba-commercial-production",
+      "question": "What risks does Boeing describe in producing, certifying and delivering its commercial airplanes?",
+      "history": [],
+      "question_type": "risk",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "Boeing's only Filing is its FY2025 10-K. Not a repeat of the aerospace and defense question, which asks about U.S. government contracts: this asks about the commercial airplane production system. Drafted from every production, certification, quality, supplier and labor passage in the whole Risk Factors Section. Must-state: its dependence on a healthy production system, the delays on the 777X, 737-7 and 737-10 programs, the 777X reach-forward losses, the 737 rate plan of 47 a month in 2026, the slowdown after the 737-9 door plug accident and its supply chain and labor constraints. The FAA's role, customer remedies, rate risks, out-of-sequence work, single sources, unions, Spirit and reliability are details. The reach-forward loss amounts have no SEC company-facts value (the reference does not cache Boeing), so their fact states none.",
+      "expected_sources": [
+        {
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Boeing says its Commercial Airplanes business depends on its ability to maintain a healthy production system.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our Commercial Airplanes business depends on our ability to maintain a healthy production system, ensure every airplane in our production system conforms to exacting specifications, achieve planned production rate targets",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Boeing says there have been significant delays on its 777X, 737-7 and 737-10 development programs.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "The introduction of new aircraft programs and/or derivatives, such as the 777X, 737-7 and 737-10, takes years and involves significant risks associated with meeting development, testing, certification, and production schedules. We follow the lead of the FAA as we work through the certification process, and the FAA ultimately determines the timing of certification and entry into service. There have been significant delays on each of these development programs",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Boeing says the FAA ultimately determines the timing of certification and entry into service of its new aircraft.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "the FAA ultimately determines the timing of certification and entry into service",
+          "tier": "detail"
+        },
+        {
+          "fact": "Boeing's 777X program is currently expecting first delivery in 2027.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "the 777X program, which launched in 2013 and is currently expecting first delivery in 2027",
+          "tier": "detail"
+        },
+        {
+          "fact": "Boeing's 777X program recognized additional reach-forward losses in 2025, primarily due to production challenges, certification and delivery delays, and higher estimated labor and supplier costs.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "recognized additional reach-forward losses of $4.9 billion and $3.5 billion in 2025 and 2024, primarily due to production challenges, certification and delivery delays, and higher estimated labor and supplier costs",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Boeing says delays on its 737, 777X and 787 programs have resulted in customers having the right to terminate orders or be compensated for late deliveries.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Delays on the 737, 777X and 787 programs have resulted in, and may continue to result in, customers having the right to terminate orders, be compensated for late deliveries and/or substitute orders for other Boeing aircraft.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Boeing plans to increase the 737 production rate to 47 per month in 2026.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "These plans include increasing the 737 production rate to 47 per month in 2026",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Boeing says further 737 production rate increases will require a new production line.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "as well as further production rate increases that will require a new production line",
+          "tier": "detail"
+        },
+        {
+          "fact": "Boeing says planned 737 production rate increases may be delayed if its production health indicators and Safety Management System do not support them or it cannot obtain FAA concurrence.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "There is risk that planned production rate increases may be delayed or not occur at all if our production health key performance indicators and rate readiness process guided by our Safety Management System do not support increasing production rates or we are unable to obtain FAA concurrence.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Boeing says planned 787 production rate increases may be delayed or not occur at all.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "there is risk that planned 787 production rate increases may be delayed or not occur at all",
+          "tier": "detail"
+        },
+        {
+          "fact": "Boeing says operational issues such as quality issues, labor instability and supply chain constraints result in additional out-of-sequence work and increased production costs.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Operational issues, including certification and/or delivery delays, quality issues, labor instability, supply chain constraints, defects in supplier components, failure to meet internal performance plans, or delays or failures to achieve required regulatory approval, result in additional out-of-sequence work and increased production costs",
+          "tier": "detail"
+        },
+        {
+          "fact": "Boeing slowed 737 production rates, as part of its plan to improve safety and quality following the 737-9 door plug accident in January 2024.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "as part of our plan to improve safety and quality and to address the issues identified by the FAA following the 737-9 door plug accident in January 2024, we slowed 737 production rates and delayed planned production rate increases",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Boeing says the 737 production actions and its acquisition of Spirit significantly impacted its financial position, results of operations and cash flows.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "These actions, as well as our recent acquisition of Spirit (Spirit Acquisition), significantly impacted our financial position, results of operations and cash flows.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Boeing says it and its suppliers have experienced supply chain disruptions and constraints, labor instability and inflationary pressures.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We and our suppliers have experienced supply chain disruptions and constraints, labor instability and inflationary pressures.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Boeing says any failure of its aircraft to satisfy performance or reliability requirements could result in disruption to its operations, higher costs or lower revenues.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Any failure of any Boeing aircraft to satisfy performance or reliability requirements could result in disruption to our operations, higher costs and/or lower revenues.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Boeing says many of its suppliers are experiencing disruptions due to production quality issues, global supply chain constraints and labor instability.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Many of our suppliers are experiencing inflationary pressures, as well as resource constraints and disruptions due to production quality issues, global supply chain constraints, and labor instability.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Boeing says that in some instances it depends upon a single source of supply.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In some instances, we depend upon a single source of supply.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Boeing says work stoppages by its employees have adversely affected its business.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Work stoppages by our employees have adversely affected and could continue to adversely affect our business, financial condition, results of operations and/or cash flows.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Boeing says approximately 40% of its workforce was union represented as of December 31, 2025.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Approximately 72,000 employees, or 40% of our total workforce, were union represented as of December 31, 2025",
+          "tier": "detail"
+        },
+        {
+          "fact": "Boeing says difficulties integrating Spirit may result in a failure to realize the acquisition's anticipated safety and quality improvements.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "difficulties in integrating Spirit may result in the failure to realize anticipated benefits of the acquisition (including anticipated synergies and safety and quality improvements)",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "risk-pg-pep-input-costs",
+      "question": "How do Procter & Gamble and PepsiCo describe the risks from rising input costs and supply chain disruption?",
+      "history": [],
+      "question_type": "risk",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "Procter & Gamble's latest 10-K is FY2025 (year to June 2025); PepsiCo's is FY2025 (year to December 2025), so the periods differ. Drafted from every cost, commodity, supplier and supply chain passage in both whole Risk Factors Sections. Both name commodity, packaging and transportation costs and depend on some sole suppliers. Must-state: Procter & Gamble's cost fluctuations, how it manages them (pricing actions, cost saving projects and sourcing decisions) and its dependence on key supply arrangements; PepsiCo's price volatility of raw materials, tariffs raising its input costs, the volatility it saw in 2025 and the limits on passing increases on or hedging them. The commodities named, inflation, causes of disruption, sole and limited suppliers, sourcing countries and contingency plans are details.",
+      "expected_sources": [
+        {
+          "filing_id": "PG_10-K_2025-06-30",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "PEP_10-K_2025-12-27",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Procter & Gamble says its costs are subject to fluctuations, particularly due to changes in the prices of commodities and raw and packaging materials.",
+          "filing_id": "PG_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "Our costs are subject to fluctuations, particularly due to changes in the prices of commodities (including certain petroleum-derived materials like resins and paper-based materials like pulp), raw and packaging materials and the costs of labor, tariffs, transportation (including trucks and containers), energy, pensions and healthcare.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Procter & Gamble names petroleum-derived materials like resins and paper-based materials like pulp among the commodities whose prices affect its costs.",
+          "filing_id": "PG_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "changes in the prices of commodities (including certain petroleum-derived materials like resins and paper-based materials like pulp)",
+          "tier": "detail"
+        },
+        {
+          "fact": "Procter & Gamble says inflation pressures sometimes result in increases in its input costs.",
+          "filing_id": "PG_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "Inflation pressures sometimes result in increases in these input costs.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Procter & Gamble says it manages cost fluctuations through pricing actions, cost saving projects and sourcing decisions.",
+          "filing_id": "PG_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "our business results depend, in part, on our continued ability to manage these fluctuations through pricing actions, cost saving projects and sourcing decisions, while maintaining and improving margins and market share",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Procter & Gamble says failing to manage cost fluctuations and to anticipate consumer reaction to how it manages them could adversely impact its results.",
+          "filing_id": "PG_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "Failure to manage these fluctuations and to anticipate consumer reaction to our management of these fluctuations could adversely impact our results of operations or cash flows.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Procter & Gamble says its ability to meet customers' needs and achieve cost targets depends on maintaining key manufacturing and supply arrangements, including certain sole supplier or sole manufacturing plant arrangements.",
+          "filing_id": "PG_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "Our ability to meet our customers’ needs and achieve cost targets depends on our ability to maintain key manufacturing and supply arrangements, including execution of supply chain optimizations and certain sole supplier or sole manufacturing plant arrangements.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Procter & Gamble says disruptions to its manufacturing and supply arrangements have at times interrupted product supply.",
+          "filing_id": "PG_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "have at times interrupted and could, in the future, interrupt product supply",
+          "tier": "detail"
+        },
+        {
+          "fact": "Procter & Gamble lists an inability to procure sufficient raw or input materials among the causes of supply disruption.",
+          "filing_id": "PG_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "inability to procure sufficient raw or input materials (including water, recycled materials and materials that meet our labor standards)",
+          "tier": "detail"
+        },
+        {
+          "fact": "Procter & Gamble lists cybersecurity incidents, including ransomware attacks, among the causes of supply disruption.",
+          "filing_id": "PG_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "cybersecurity incidents including but not limited to ransomware attacks",
+          "tier": "detail"
+        },
+        {
+          "fact": "Procter & Gamble says new or increased tariffs could adversely affect its results of operations and cash flows.",
+          "filing_id": "PG_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "new or increased tariffs, trade barriers and market contraction, could adversely affect the Company’s results of operations and cash flows",
+          "tier": "detail"
+        },
+        {
+          "fact": "PepsiCo has experienced disruption in its manufacturing operations and supply chain.",
+          "filing_id": "PEP_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "We have experienced and could continue to experience disruption in our manufacturing operations and supply chain.",
+          "tier": "detail"
+        },
+        {
+          "fact": "PepsiCo says many of its raw materials and supplies are sourced from countries experiencing war, civil unrest, political instability or unfavorable economic conditions.",
+          "filing_id": "PEP_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "Many of the raw materials and supplies used in the production of our products are sourced from countries experiencing war or other military conflict, acts of terrorism, civil unrest, political instability or unfavorable economic conditions.",
+          "tier": "detail"
+        },
+        {
+          "fact": "PepsiCo says natural disasters and extreme weather conditions pose physical risks to its facilities and those of its suppliers.",
+          "filing_id": "PEP_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "Natural disasters and extreme weather conditions also pose physical risks to our facilities and those of our suppliers",
+          "tier": "detail"
+        },
+        {
+          "fact": "PepsiCo says some raw materials and supplies, including packaging materials, are available only from a limited number of suppliers or from a sole supplier.",
+          "filing_id": "PEP_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "Some raw materials and supplies, including packaging materials, are available only from a limited number of suppliers or from a sole supplier",
+          "tier": "detail"
+        },
+        {
+          "fact": "PepsiCo says there can be no assurance that its contingency plans will be effective to mitigate disruptions from shortages of raw materials and supplies.",
+          "filing_id": "PEP_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "There can be no assurance that we will be able to maintain favorable arrangements and relationships with suppliers or that our contingency plans will be effective to mitigate disruptions",
+          "tier": "detail"
+        },
+        {
+          "fact": "PepsiCo says its raw materials and supplies, including agricultural commodities, fuel and packaging materials, are subject to price volatility and fluctuations in availability.",
+          "filing_id": "PEP_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "The raw materials and other supplies, including agricultural commodities, fuel and packaging materials, such as recycled PET, transportation, labor and other supply chain inputs that we use for the manufacturing, production and distribution of our products are subject to price volatility and fluctuations in availability",
+          "tier": "must_state"
+        },
+        {
+          "fact": "PepsiCo lists the impact of greening disease on the citrus industry among the causes of price volatility in its inputs.",
+          "filing_id": "PEP_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "disease or pests (including the impact of greening disease on the citrus industry)",
+          "tier": "detail"
+        },
+        {
+          "fact": "PepsiCo says tariffs have impacted its supply chain, resulting in increased input costs, including the cost of certain raw materials and packaging.",
+          "filing_id": "PEP_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "have impacted and could continue to impact our supply chain resulting in increased input costs, including the cost of certain raw materials and packaging",
+          "tier": "must_state"
+        },
+        {
+          "fact": "PepsiCo says many of its raw materials and supplies are purchased in the open market, where the prices it pays are subject to fluctuation.",
+          "filing_id": "PEP_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "Many of our raw materials and supplies are purchased in the open market and the prices we pay for such items are subject to fluctuation.",
+          "tier": "detail"
+        },
+        {
+          "fact": "PepsiCo continued to experience volatility in its commodity, packaging and transportation costs during 2025.",
+          "filing_id": "PEP_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "We continued to experience volatility in our commodity, packaging and transportation costs during 2025, which may continue.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "PepsiCo says that when input prices increase unexpectedly or significantly, it may be unwilling or unable to raise its product prices or to hedge effectively to offset the increased costs without reduced volume, revenue and margins.",
+          "filing_id": "PEP_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "When input prices increase unexpectedly or significantly, we may be unwilling or unable to increase our product prices or unable to effectively hedge against price increases to offset these increased costs without suffering reduced volume, revenue, margins and operating results.",
+          "tier": "must_state"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "PG",
+            "PEP"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "followup-cat-de-dealers",
+      "question": "How much do they depend on their dealers, and what risks does that create?",
+      "history": [
+        {
+          "role": "user",
+          "content": "What are the main risks facing Caterpillar and Deere?"
+        },
+        {
+          "role": "assistant",
+          "content": "Caterpillar says commodity price changes, material price increases, supply chain disruptions and shortages of labor and material may adversely impact its financial results (CAT_10-K_2025-12-31, Risk Factors). It also operates in a highly competitive environment and faces increasing information technology security threats (CAT_10-K_2025-12-31, Risk Factors). Deere's results largely depend on the agricultural market business cycle and general economic conditions, and changes in interest rates or market liquidity could adversely affect its earnings and cash flows (DE_10-K_2025-11-02, Risk Factors). Deere also says the introduction of new products and technologies, such as its precision technology, involves risk (DE_10-K_2025-11-02, Risk Factors)."
+        }
+      ],
+      "question_type": "risk",
+      "split": "pending",
+      "starter": null,
+      "tags": [
+        "inherits_companies"
+      ],
+      "notes": "A follow-up that names no Company, so it inherits Caterpillar and Deere from the earlier question (ADR 0003), and searches with its own words, since it has a topic of its own. The scripted answer cites both latest 10-Ks and does not mention dealers. Caterpillar's latest 10-K is FY2025 (year to December 2025) and Deere's is FY2025 (year to November 2, 2025), so the periods differ. Drafted from every dealer passage in both whole Risk Factors Sections. Both sell mainly through independent dealers whose inventory decisions move their sales, which is what the comparison rests on. Must-state: that dependence and the risk of dealers postponing purchases when their inventories are high, for each, and Deere's statement that unsuccessful dealers would hurt its sales. Lost time-sensitive sales, dealer finances and credit risk, interest rates, rental fleets, technology support, technicians and dealer exits are details.",
+      "expected_sources": [
+        {
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "DE_10-K_2025-11-02",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Caterpillar sells finished products primarily through an independent dealer network and directly to OEMs.",
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We sell finished products primarily through an independent dealer network and directly to OEMs",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Caterpillar says its business is subject to the inventory management decisions and sourcing practices of its dealers and OEM customers.",
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our business is subject to the inventory management decisions and sourcing practices of our dealers and our OEM customers.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Caterpillar says its dealers and OEM customers adjust their inventories based on market conditions, including levels of used equipment inventory and machine rental usage rates.",
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Both carry inventories of finished products as part of ongoing operations and adjust those inventories based on their assessments of future needs and market conditions, including levels of used equipment inventory and machine rental usage rates.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Caterpillar says that if its dealers' and OEM customers' inventory levels are higher than they desire, they may postpone purchases, which could cause its sales to be lower than end-user demand for its products.",
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "If the inventory levels of our dealers and OEM customers are higher than they desire, they may postpone product purchases from us, which could cause our sales to be lower than the end-user demand for our products and negatively impact our results.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Caterpillar says its results could be hurt by lost time-sensitive sales if its dealers and OEM customers do not maintain enough inventory to meet customer demand.",
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "our results could be negatively impacted through the loss of time-sensitive sales if our dealers and OEM customers do not maintain inventory levels sufficient to meet customer demand",
+          "tier": "detail"
+        },
+        {
+          "fact": "Caterpillar says its business goals depend in part on its ability to maintain key dealer relationships.",
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "This is dependent on a number of factors, including our ability to maintain key dealer relationships",
+          "tier": "detail"
+        },
+        {
+          "fact": "Caterpillar says economic uncertainties could affect the financial condition and credit risk of its dealers.",
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Economic uncertainties could affect customer demand for the Company’s products and services, the value of the equipment financed or leased, the demand for financing and the financial condition and credit risk of our dealers and customers.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Caterpillar says an unexpected buildup in dealer-owned rental fleets could put downward pressure on machine rental rates and used equipment prices.",
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "an unexpected buildup in competitors’ new machine or dealer-owned rental fleets, which could lead to downward pressure on machine rental rates and/or used equipment prices",
+          "tier": "detail"
+        },
+        {
+          "fact": "Caterpillar says disruptions or volatility in global financial markets could limit the liquidity of its dealers.",
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Disruptions or volatility in global financial markets could limit our sources of liquidity, or the liquidity of our customers, dealers and suppliers.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Deere relies on a network of independent dealers to manage the distribution of its products and services.",
+          "filing_id": "DE_10-K_2025-11-02",
+          "section": "Risk Factors",
+          "evidence": "We rely on a network of independent dealers to manage the distribution of our products and services.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Deere says that if its dealers are unsuccessful with their sales and business operations, it could have an adverse effect on its overall sales and revenue.",
+          "filing_id": "DE_10-K_2025-11-02",
+          "section": "Risk Factors",
+          "evidence": "If our dealers are unsuccessful with their sales and business operations, it could have an adverse effect on our overall sales and revenue.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Deere says that when its dealers' total inventory levels are higher than they desire, dealers have postponed equipment purchases from it.",
+          "filing_id": "DE_10-K_2025-11-02",
+          "section": "Risk Factors",
+          "evidence": "When the total inventory levels of our dealers are higher than they desire, dealers have postponed equipment purchases from us, and could continue to postpone purchases in the future",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Deere says its results could be hurt by lost time-sensitive sales if its dealers do not maintain enough inventory to meet customer demand.",
+          "filing_id": "DE_10-K_2025-11-02",
+          "section": "Risk Factors",
+          "evidence": "our results could be negatively impacted through the loss of time-sensitive sales if our dealers do not maintain inventory levels sufficient to meet customer demand",
+          "tier": "detail"
+        },
+        {
+          "fact": "Deere says the dealer channel's ability to support and service new technologies may affect customers' acceptance and adoption of those products.",
+          "filing_id": "DE_10-K_2025-11-02",
+          "section": "Risk Factors",
+          "evidence": "the dealer channel’s ability to support and service new technologies may affect customers’ acceptance and adoption rates of these products",
+          "tier": "detail"
+        },
+        {
+          "fact": "Deere says the unavailability of specialized technicians may overburden its dealers' servicing capacity.",
+          "filing_id": "DE_10-K_2025-11-02",
+          "section": "Risk Factors",
+          "evidence": "The unavailability of specialized technicians to service our equipment may result in overburdening dealers’ servicing capacity.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Deere says the unplanned loss of any of its dealers could lead to inadequate market coverage.",
+          "filing_id": "DE_10-K_2025-11-02",
+          "section": "Risk Factors",
+          "evidence": "The unplanned loss of any of our dealers could lead to inadequate market coverage or negative customer impressions",
+          "tier": "detail"
+        },
+        {
+          "fact": "Deere says its dealers could have trouble funding their day-to-day cash flow needs and paying their obligations.",
+          "filing_id": "DE_10-K_2025-11-02",
+          "section": "Risk Factors",
+          "evidence": "Dealers could also have trouble funding their day-to-day cash flow needs and paying their obligations due to adverse business conditions",
+          "tier": "detail"
+        },
+        {
+          "fact": "Deere says high interest rates increase the cost of carrying inventory for its dealers.",
+          "filing_id": "DE_10-K_2025-11-02",
+          "section": "Risk Factors",
+          "evidence": "High interest rates also increase the cost of carrying inventory for our dealers and the cost of financing for end customers.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Deere says its dealers may not be able to provide SaaS solutions and support to its customers.",
+          "filing_id": "DE_10-K_2025-11-02",
+          "section": "Risk Factors",
+          "evidence": "dealers may not be able to effectively establish relationships with customers, maintain those customer relationships, and provide SaaS solutions and support to our customers",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "CAT",
+            "DE"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "followup-lmt-to-rtx-market-risk",
+      "question": "And what about RTX?",
+      "history": [
+        {
+          "role": "user",
+          "content": "What market risks does Lockheed Martin disclose in its latest annual report?"
+        },
+        {
+          "role": "assistant",
+          "content": "Lockheed Martin says its main exposures to market risk relate to interest rates, foreign currency exchange rates and market prices on certain equity securities (LMT_10-K_2025-12-31, Market Risk). It uses derivative instruments, such as foreign currency forward and option contracts and interest rate swaps, principally to reduce its exposure to changes in foreign currency exchange rates and interest rates, and it does not hold derivatives for speculative trading purposes (LMT_10-K_2025-12-31, Market Risk). It says a 10% change in the level of interest rates would not have a material impact on the fair value of its outstanding debt at December 31, 2025 (LMT_10-K_2025-12-31, Market Risk)."
+        }
+      ],
+      "question_type": "risk",
+      "split": "pending",
+      "starter": null,
+      "tags": [
+        "switches_company"
+      ],
+      "notes": "A follow-up that names a new Company, so RTX replaces Lockheed Martin while the topic, market risk, and its Section are inherited (ADR 0003). The scripted answer cites Lockheed Martin's FY2025 10-K. RTX's only Filing is its FY2025 10-K. Drafted from its whole Market Risk Section (Item 7A). Must-state: its primary exposures (foreign currency exchange rates and interest rates), the forward contracts that hedge its currency payments and receipts, the local-currency costs of its non-U.S. entities such as Pratt & Whitney Canada, and its fixed-rate debt, whose rate risk it believes is not material. Net investment and intercompany hedges, sales hedging, the sensitivity results, variable-rate debt and the absence of interest rate hedges are details. The sensitivity and notional amounts have no SEC company-facts value (the reference does not cache RTX), so their facts state none.",
+      "expected_sources": [
+        {
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Market Risk"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "RTX says its primary market exposures are to fluctuations in foreign currency exchange rates and interest rates.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "Our primary market exposures are to fluctuations in foreign currency exchange rates and interest rates as it relates to our market risk sensitive instruments, which are primarily cash, debt, and derivative instruments.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "RTX uses foreign currency forward contracts to hedge the price risk associated with firmly committed and forecasted foreign denominated payments and receipts.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "We use foreign currency forward contracts to hedge the price risk associated with firmly committed and forecasted foreign denominated payments and receipts related to our ongoing business and financing.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "RTX hedges with foreign currency derivatives the more than insignificant exposures that cannot be naturally offset within or among its operating units.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "More than insignificant exposures that cannot be naturally offset within or among operating units are hedged with foreign currency derivatives.",
+          "tier": "detail"
+        },
+        {
+          "fact": "RTX uses net investment hedging to hedge the foreign currency risk of its net investment in foreign operations.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "The Company also uses net investment hedging to hedge the foreign currency risk of our net investment in foreign operations against adverse movements in exchange rates against the U.S. Dollar.",
+          "tier": "detail"
+        },
+        {
+          "fact": "RTX regularly hedges foreign exchange exposures arising from intercompany loan and deposit transactions.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "Foreign exchange exposures arising from intercompany loan and deposit transactions are also hedged regularly.",
+          "tier": "detail"
+        },
+        {
+          "fact": "RTX says a 10% unfavorable exchange rate movement in its portfolio of foreign currency contracts would have resulted in an increase in unrealized losses at December 31, 2025.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "A 10% unfavorable exchange rate movement in our portfolio of foreign currency contracts would have resulted in an increase in unrealized losses of $0.9 billion and $1.0 billion at December 31, 2025 and 2024, respectively.",
+          "tier": "detail"
+        },
+        {
+          "fact": "RTX believes its foreign currency forward exchange contracts and the offsetting underlying commitments, taken together, do not create material market risk.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "We believe these foreign currency forward exchange contracts and the offsetting underlying commitments, when taken together, do not create material market risk.",
+          "tier": "detail"
+        },
+        {
+          "fact": "RTX says its sales are typically denominated in U.S. Dollars.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "Our sales are typically denominated in U.S. Dollars.",
+          "tier": "detail"
+        },
+        {
+          "fact": "RTX says a substantial portion of the costs of its non-U.S. based entities, including Pratt & Whitney Canada, are incurred in local currencies.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "for our non-U.S. based entities, including Pratt & Whitney Canada, a substantial portion of their costs are incurred in local currencies",
+          "tier": "must_state"
+        },
+        {
+          "fact": "RTX hedges a certain portion of sales to secure the rates at which U.S. Dollars will be converted.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "we hedge a certain portion of sales to secure the rates at which U.S. Dollars will be converted",
+          "tier": "detail"
+        },
+        {
+          "fact": "RTX says its financial instruments subject to interest rate risk are principally fixed-rate debt obligations.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "We have financial instruments that are subject to interest rate risk, principally fixed-rate debt obligations.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "RTX says investors in its fixed-rate debt obligations generally do not have the right to demand it pay them off before maturity.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "The investors in our fixed-rate debt obligations generally do not have the right to demand we pay off these obligations prior to maturity.",
+          "tier": "detail"
+        },
+        {
+          "fact": "RTX believes its exposure to interest rate risk on its fixed-rate debt is not material.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "Therefore, we believe our exposure to interest rate risk on our fixed-rate debt is not material.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "RTX says a 100 basis point unfavorable interest rate movement on its variable debt would not be expected to have a material effect on its operations or cash flows.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "A 100 basis point unfavorable interest rate movement on variable debt would not be expected to have a material effect on our operations or cash flows.",
+          "tier": "detail"
+        },
+        {
+          "fact": "RTX does not currently hold any derivative contracts that hedge its interest exposures.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "Currently, we do not hold any derivative contracts that hedge our interest exposures, but may consider such strategies in the future.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
     }
   ]
 }
