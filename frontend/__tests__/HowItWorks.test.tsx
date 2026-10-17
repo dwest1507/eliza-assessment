@@ -302,6 +302,18 @@ describe('the "How it works" page', () => {
     expect(within(covered).getAllByRole('listitem')).toHaveLength(EXPORT.coverage.companies.length)
   })
 
+  it('scrolls the coverage grid in its own area, which the keyboard can reach', async () => {
+    render(<HowItWorks data={EXPORT} />)
+    await openSection('Corpus coverage')
+
+    const area = within(section('Corpus coverage')).getByRole('region', {
+      name: 'Filings by Company and Report Period',
+    })
+    expect(within(area).getByRole('table')).toBeInTheDocument()
+    area.focus()
+    expect(area).toHaveFocus()
+  })
+
   it('links back to the workspace', () => {
     render(<HowItWorks data={EXPORT} />)
 

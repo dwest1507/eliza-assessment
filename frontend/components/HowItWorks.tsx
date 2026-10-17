@@ -225,8 +225,10 @@ function Lane({
 
 // --- Evaluation scoreboard ----------------------------------------------------------------
 
-const th =
-  'border-b border-line bg-raised px-3 py-1.5 text-left font-mono text-[11px] font-medium tracking-wide whitespace-nowrap text-muted'
+/** A header cell without its background, for the coverage grid's fixed header, which sets an opaque one. */
+const thBare =
+  'border-b border-line px-3 py-1.5 text-left font-mono text-[11px] font-medium tracking-wide whitespace-nowrap text-muted'
+const th = `${thBare} bg-raised`
 const td = 'border-b border-line px-3 py-1.5 whitespace-nowrap tabular-nums'
 const caption = 'mb-3 text-left text-[14px] font-semibold text-white'
 const note = 'mt-2 text-[12.5px] leading-relaxed text-muted'
@@ -883,6 +885,13 @@ function follows(previous: string, period: string): boolean {
   return index(period) === index(previous) + 1
 }
 
+/** The grid's fixed header cells: the other headers' raised shade made opaque, so the cells
+    scrolling beneath them stay readable. */
+const fixedHeader = `${thBare} sticky top-0 bg-[color-mix(in_srgb,white_6%,var(--color-elevated))]`
+/** The Company column, fixed at a set width (padding included) so the coverage column can sit beside it. */
+const companyColumn = 'sticky left-0 w-20 min-w-20 lg:w-64 lg:min-w-64'
+const coverageColumn = 'sticky left-20 lg:left-64'
+
 function CoverageGrid({ data }: { data: EvalExport }) {
   const { periods, companies } = data.coverage
   const tracked = companies.filter((c) => c.coverage === 'tracked').length
@@ -900,36 +909,47 @@ function CoverageGrid({ data }: { data: EvalExport }) {
         </>
       }
     >
-      <div className="card overflow-x-auto p-3">
-        <table className="border-collapse text-[12px]">
-          <caption className={caption}>Filings by Company and Report Period</caption>
-          <thead>
-            <tr>
-              <th className={`${th} sticky left-0 z-10`}>Company</th>
-              <th className={th}>Coverage</th>
-              {periods.map((period, i) => (
-                <th
-                  key={period}
-                  className={`${th} px-1 text-center font-medium ${skipped[i] ? 'border-l-2 border-l-muted/40' : ''}`}
-                >
-                  <span className="block text-[10.5px] text-muted">{period.slice(0, 4)}</span>
-                  {`Q${period.slice(5)}`}
-                  <span className="sr-only"> {quarterLabel(period)}</span>
-                </th>
+      <div className="card p-3">
+        {/* Its own scroll area, no taller than the screen, so both scrollbars stay in reach;
+            the header row and the Company and coverage columns stay fixed while it scrolls. */}
+        <div
+          role="region"
+          aria-labelledby="coverage-grid"
+          tabIndex={0}
+          className="max-h-[70dvh] overflow-auto rounded-lg focus-visible:outline-2 focus-visible:outline-accent"
+        >
+          <table className="border-separate border-spacing-0 text-[12px]">
+            <caption id="coverage-grid" className={caption}>
+              Filings by Company and Report Period
+            </caption>
+            <thead>
+              <tr>
+                <th className={`${fixedHeader} ${companyColumn} z-30`}>Company</th>
+                <th className={`${fixedHeader} ${coverageColumn} z-30`}>Coverage</th>
+                {periods.map((period, i) => (
+                  <th
+                    key={period}
+                    className={`${fixedHeader} z-20 px-1 text-center font-medium ${skipped[i] ? 'border-l-2 border-l-muted/40' : ''}`}
+                  >
+                    <span className="block text-[10.5px] text-muted">{period.slice(0, 4)}</span>
+                    {`Q${period.slice(5)}`}
+                    <span className="sr-only"> {quarterLabel(period)}</span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {companies.map((company) => (
+                <CoverageRow
+                  key={company.ticker}
+                  company={company}
+                  periods={periods}
+                  skipped={skipped}
+                />
               ))}
-            </tr>
-          </thead>
-          <tbody>
-            {companies.map((company) => (
-              <CoverageRow
-                key={company.ticker}
-                company={company}
-                periods={periods}
-                skipped={skipped}
-              />
-            ))}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
         <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
           <span className="font-mono font-semibold text-accent">K</span> a 10-K,{' '}
           <span className="font-mono text-accent">Q</span> a 10-Q; hover a cell for its Filing ID
@@ -955,13 +975,17 @@ function CoverageRow({
     <tr className={snapshot ? 'bg-white/[0.015]' : undefined}>
       <th
         scope="row"
-        className="sticky left-0 z-10 border-b border-line bg-elevated px-3 py-1 text-left font-medium whitespace-nowrap"
+        className={`${companyColumn} z-10 border-b border-line bg-elevated px-3 py-1 text-left font-medium whitespace-nowrap`}
         title={`${company.company}${company.sector ? `, ${company.sector}` : ''}`}
       >
-        <span className="font-mono">{company.ticker}</span>
-        <span className="ml-2 hidden font-normal text-muted lg:inline">{company.company}</span>
+        <div className="w-14 truncate lg:w-58">
+          <span className="font-mono">{company.ticker}</span>
+          <span className="ml-2 hidden font-normal text-muted lg:inline">{company.company}</span>
+        </div>
       </th>
-      <td className="border-b border-line px-3 py-1 whitespace-nowrap text-muted">
+      <td
+        className={`${coverageColumn} z-10 border-b border-line bg-elevated px-3 py-1 whitespace-nowrap text-muted`}
+      >
         {snapshot ? 'Snapshot' : 'Tracked'}
       </td>
       {periods.map((period, i) => {
