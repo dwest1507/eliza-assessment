@@ -1,30 +1,135 @@
 @import 'tailwindcss';
 
-/* A neutral, light analyst-tool palette. */
+/* The portfolio's dark palette: near-black canvas, glass surfaces, a sky-blue accent. */
 @theme {
-  --color-canvas: #f7f8fa;
-  --color-ink: #1c2330;
-  --color-muted: #5f6b7a;
-  --color-line: #e2e6ec;
-  --color-accent: #1f5fbf;
-  --color-accent-strong: #184c99;
-  --font-sans:
-    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --color-canvas: #050506;
+  --color-canvas-deep: #020203;
+  --color-elevated: #0a0a0c;
+  --color-surface: rgb(255 255 255 / 0.03);
+  --color-raised: rgb(255 255 255 / 0.06);
+  --color-ink: #ededef;
+  --color-muted: #8a8f98;
+  --color-line: rgb(255 255 255 / 0.08);
+  --color-accent: #0ea5e9;
+  --color-accent-strong: #38bdf8;
+  --color-on-accent: #082f49;
+  --font-sans: var(--font-inter), system-ui, sans-serif;
 }
 
 body {
   @apply bg-canvas font-sans text-ink antialiased;
 }
 
+/* Subtle grid overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.025) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.025) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-20px) rotate(1deg);
+  }
+}
+
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-12px) rotate(-0.5deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid #0ea5e9;
+  outline-offset: 2px;
+}
+
+::selection {
+  background-color: rgba(14, 165, 233, 0.25);
+  color: #ededef;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(14, 165, 233, 0.5);
+}
+
+/* A glass card, as on the portfolio. */
+.card {
+  @apply relative rounded-xl border border-line bg-gradient-to-b from-white/[0.06] to-white/[0.02] shadow-[0_2px_20px_rgba(0,0,0,0.4)];
+}
+
+/* The portfolio's primary button: accent fill with a soft glow. */
+.btn-primary {
+  @apply rounded-lg bg-accent font-medium text-on-accent shadow-[0_0_0_1px_rgba(14,165,233,0.5),0_4px_12px_rgba(14,165,233,0.25),inset_0_1px_0_0_rgba(255,255,255,0.15)] transition-all duration-200 hover:bg-accent-strong hover:shadow-[0_0_0_1px_rgba(14,165,233,0.6),0_4px_20px_rgba(14,165,233,0.4),inset_0_1px_0_0_rgba(255,255,255,0.15)] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40;
+}
+
+/* The portfolio's secondary button: a faint fill and an inset hairline. */
+.btn-secondary {
+  @apply rounded-lg bg-white/[0.05] font-medium text-ink shadow-[inset_0_0_0_1px_rgba(255,255,255,0.10)] transition-all duration-200 hover:bg-white/[0.08] hover:shadow-[inset_0_0_0_1px_rgba(255,255,255,0.14)] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-40;
+}
+
+/* A small monospaced, widely tracked label, as on the portfolio. */
+.eyebrow {
+  @apply font-mono text-[10.5px] tracking-widest text-muted uppercase;
+}
+
+/* A headline in the portfolio's white-to-translucent gradient. */
+.headline {
+  background: linear-gradient(
+    to bottom,
+    #ffffff 0%,
+    rgba(255, 255, 255, 0.95) 40%,
+    rgba(255, 255, 255, 0.7) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
 /* A citation in an answer: [S3] as a small, clickable tag. */
 .citation {
-  @apply mx-0.5 inline-block rounded border border-accent/30 bg-accent/5 px-1 align-baseline font-mono text-[11.5px] leading-[1.4] font-medium text-accent no-underline hover:bg-accent hover:text-white;
+  @apply mx-0.5 inline-block rounded border border-accent/30 bg-accent/10 px-1 align-baseline font-mono text-[11.5px] leading-[1.4] font-medium text-accent-strong no-underline transition-colors hover:bg-accent hover:text-on-accent;
 }
 .citation[aria-current='true'] {
-  @apply bg-accent text-white;
+  @apply bg-accent text-on-accent;
 }
 .citation-missing {
-  @apply border-line bg-canvas text-muted hover:bg-canvas hover:text-muted;
+  @apply border-line bg-surface text-muted hover:bg-surface hover:text-muted;
 }
 
 /* The answer's Markdown. */
@@ -38,7 +143,7 @@ body {
 .answer h2,
 .answer h3,
 .answer h4 {
-  @apply mt-5 mb-2 font-semibold text-ink;
+  @apply mt-5 mb-2 font-semibold text-white;
 }
 .answer h1 {
   @apply text-[17px];
@@ -57,20 +162,20 @@ body {
   @apply my-2 ml-5 list-decimal space-y-1;
 }
 .answer strong {
-  @apply font-semibold;
+  @apply font-semibold text-white;
 }
 .answer table {
   @apply min-w-full border-collapse text-left text-[13px];
 }
 .answer th {
-  @apply border-b border-line bg-canvas px-3 py-1.5 font-semibold;
+  @apply border-b border-line bg-raised px-3 py-1.5 font-medium text-white;
 }
 .answer td {
   @apply border-b border-line px-3 py-1.5 align-top;
 }
 .answer blockquote {
-  @apply my-3 border-l-2 border-line pl-3 text-muted;
+  @apply my-3 rounded-r border-l-2 border-accent/60 bg-surface py-1 pl-3 text-ink/90 italic;
 }
 .answer code {
-  @apply rounded bg-canvas px-1 font-mono text-[13px];
+  @apply rounded bg-white/10 px-1 font-mono text-[13px] text-accent-strong;
 }

@@ -85,23 +85,26 @@ export default function Workspace() {
   const writing = status === 'streaming' && last?.role === 'assistant' && !messageText(last)
 
   return (
-    <div className="flex h-dvh flex-col bg-canvas text-ink">
-      <header className="flex shrink-0 items-baseline gap-3 border-b border-line bg-white px-5 py-3">
-        <h1 className="text-[15px] font-semibold tracking-tight">SEC Filings Research</h1>
-        <p className="hidden text-[13px] text-muted sm:block">
+    <div className="flex h-dvh flex-col text-ink">
+      <header className="flex shrink-0 items-center gap-3 border-b border-line bg-canvas/80 px-4 py-2.5 backdrop-blur-xl sm:gap-4 sm:px-5">
+        <h1 className="text-[15px] font-semibold tracking-tight whitespace-nowrap text-ink">
+          SEC Filings Research<span className="text-accent">.</span>
+        </h1>
+        <p className="hidden font-mono text-[11px] tracking-widest text-muted lg:block">
           Answers from 10-K and 10-Q Filings, every claim cited to its passage
         </p>
         <button
           type="button"
           onClick={newConversation}
           disabled={messages.length === 0}
-          className="ml-auto rounded-md border border-line px-3 py-1 text-[13px] font-medium text-ink hover:bg-canvas disabled:opacity-40"
+          aria-label="New conversation"
+          className="btn-secondary ml-auto px-3 py-1.5 text-[13px] whitespace-nowrap"
         >
-          New conversation
+          New<span className="hidden sm:inline"> conversation</span>
         </button>
         <Link
           href="/how-it-works"
-          className="text-[13px] font-medium text-accent hover:text-accent-strong"
+          className="text-[13px] whitespace-nowrap text-muted transition-colors duration-200 hover:text-ink"
         >
           How it works
         </Link>
@@ -137,7 +140,7 @@ export default function Workspace() {
               {status === 'error' && (
                 <div
                   role="alert"
-                  className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-[14px] text-red-800"
+                  className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-[14px] text-red-200"
                 >
                   {rejectionReason(error) ?? (
                     <>
@@ -153,7 +156,7 @@ export default function Workspace() {
 
           <form
             onSubmit={handleSubmit}
-            className="shrink-0 border-t border-line bg-white px-5 py-3"
+            className="shrink-0 border-t border-line bg-canvas/80 px-5 py-3 backdrop-blur-xl"
           >
             <div className="mx-auto flex max-w-3xl gap-2">
               <input
@@ -162,13 +165,13 @@ export default function Workspace() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Ask about a Company's risks, results or outlook…"
-                className="min-w-0 flex-1 rounded-md border border-line bg-white px-3 py-2 text-[14px] outline-none placeholder:text-muted focus:border-accent focus:ring-2 focus:ring-accent/20"
+                className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-white/[0.04] px-4 text-[14px] text-ink transition-all duration-150 outline-none placeholder:text-muted/60 focus:border-accent/50 focus:bg-white/[0.06] focus:shadow-[0_0_0_3px_rgba(14,165,233,0.15)]"
               />
               {busy ? (
                 <button
                   type="button"
                   onClick={stop}
-                  className="rounded-md border border-line px-4 py-2 text-[14px] font-medium text-ink hover:bg-canvas"
+                  className="btn-secondary h-10 px-5 text-[14px]"
                 >
                   Stop
                 </button>
@@ -176,7 +179,7 @@ export default function Workspace() {
                 <button
                   type="submit"
                   disabled={!input.trim()}
-                  className="rounded-md bg-accent px-4 py-2 text-[14px] font-medium text-white hover:bg-accent-strong disabled:opacity-40"
+                  className="btn-primary h-10 px-5 text-[14px]"
                 >
                   Ask
                 </button>
@@ -200,10 +203,18 @@ export default function Workspace() {
 
 function EmptyState({ disabled, onPick }: { disabled: boolean; onPick: (q: string) => void }) {
   return (
-    <section className="flex flex-col gap-5 pt-6">
+    <section className="flex flex-col gap-6 pt-10">
       <div>
-        <h2 className="text-xl font-semibold tracking-tight">Ask a question about a Company</h2>
-        <p className="mt-1 text-[14px] text-muted">
+        <div className="mb-4 flex items-center gap-3">
+          <span className="h-px w-10 bg-accent/50" aria-hidden="true" />
+          <span className="font-mono text-[11px] tracking-widest text-accent">
+            10-K and 10-Q research
+          </span>
+        </div>
+        <h2 className="headline text-3xl font-semibold tracking-[-0.03em] md:text-4xl">
+          Ask a question about a Company
+        </h2>
+        <p className="mt-3 max-w-xl text-[14.5px] leading-relaxed text-muted">
           Name Companies by name or ticker. Each answer cites the Filing Sections it rests on and
           says what the Filings cannot answer.
         </p>
@@ -216,7 +227,7 @@ function EmptyState({ disabled, onPick }: { disabled: boolean; onPick: (q: strin
               disabled={disabled}
               onClick={() => onPick(starter.question)}
               title={starter.question}
-              className="h-full w-full rounded-md border border-line bg-white px-4 py-3 text-left text-[14px] text-ink shadow-xs transition-colors hover:border-accent hover:bg-accent/5 disabled:opacity-50"
+              className="card h-full w-full px-4 py-3.5 text-left text-[14px] text-ink transition-all duration-200 hover:border-accent/40 hover:shadow-[0_0_0_1px_rgba(14,165,233,0.15),0_4px_24px_rgba(14,165,233,0.12)] disabled:opacity-50"
             >
               {starter.label}
             </button>
@@ -230,7 +241,7 @@ function EmptyState({ disabled, onPick }: { disabled: boolean; onPick: (q: strin
 function UserMessage({ text }: { text: string }) {
   return (
     <div className="flex justify-end">
-      <p className="max-w-[85%] rounded-lg bg-accent/8 px-4 py-2.5 text-[14px] break-words whitespace-pre-wrap text-ink">
+      <p className="max-w-[85%] rounded-xl bg-accent/15 px-4 py-2.5 text-[14px] break-words whitespace-pre-wrap text-ink shadow-[inset_0_0_0_1px_rgba(14,165,233,0.25)]">
         {text}
       </p>
     </div>
@@ -239,8 +250,14 @@ function UserMessage({ text }: { text: string }) {
 
 function Progress({ text }: { text: string }) {
   return (
-    <p role="status" className="flex items-center gap-2 text-[13px] text-muted">
-      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent" aria-hidden="true" />
+    <p
+      role="status"
+      className="flex items-center gap-2.5 font-mono text-[12px] tracking-wide text-muted"
+    >
+      <span className="relative flex h-2 w-2" aria-hidden="true">
+        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-accent opacity-75" />
+        <span className="relative inline-flex h-2 w-2 rounded-full bg-accent" />
+      </span>
       {text}
     </p>
   )

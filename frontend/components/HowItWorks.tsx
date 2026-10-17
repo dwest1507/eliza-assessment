@@ -24,21 +24,23 @@ import {
  */
 export default function HowItWorks({ data }: { data: EvalExport }) {
   return (
-    <div className="min-h-dvh bg-canvas text-ink">
-      <header className="flex items-baseline gap-3 border-b border-line bg-white px-5 py-3">
-        <h1 className="text-[15px] font-semibold tracking-tight">How it works</h1>
-        <p className="hidden text-[13px] text-muted sm:block">
+    <div className="min-h-dvh text-ink">
+      <header className="sticky top-0 z-30 flex items-center gap-4 border-b border-line bg-canvas/80 px-5 py-3 backdrop-blur-xl">
+        <h1 className="text-[15px] font-semibold tracking-tight">
+          How it works<span className="text-accent">.</span>
+        </h1>
+        <p className="hidden font-mono text-[11px] tracking-widest text-muted lg:block">
           The architecture, the evaluation scores and the Filings behind every answer
         </p>
         <Link
           href="/"
-          className="ml-auto text-[13px] font-medium text-accent hover:text-accent-strong"
+          className="ml-auto text-[13px] text-muted transition-colors duration-200 hover:text-ink"
         >
           ← Back to the workspace
         </Link>
       </header>
 
-      <main className="mx-auto flex max-w-5xl flex-col gap-12 px-5 py-10">
+      <main className="mx-auto flex max-w-5xl flex-col gap-20 px-5 py-14">
         <Architecture data={data} />
         <Scoreboard data={data} />
         {data.holdout && <Holdout holdout={data.holdout} />}
@@ -62,10 +64,14 @@ function Section({
   return (
     <section aria-labelledby={id} className="flex flex-col gap-4">
       <div>
-        <h2 id={id} className="text-xl font-semibold tracking-tight">
+        <div className="mb-3 flex items-center gap-3">
+          <span className="h-px w-10 bg-accent/50" aria-hidden="true" />
+          <span className="font-mono text-[11px] tracking-widest text-accent">{id}</span>
+        </div>
+        <h2 id={id} className="headline text-2xl font-semibold tracking-[-0.02em] md:text-3xl">
           {title}
         </h2>
-        <p className="mt-1 max-w-3xl text-[14px] leading-relaxed text-muted">{intro}</p>
+        <p className="mt-2 max-w-3xl text-[14px] leading-relaxed text-muted">{intro}</p>
       </div>
       {children}
     </section>
@@ -169,7 +175,7 @@ function Lane({
 }) {
   return (
     <div>
-      <h3 className="mb-2 text-[12px] font-semibold tracking-wide text-muted uppercase">{label}</h3>
+      <h3 className="eyebrow mb-2">{label}</h3>
       <ol className="flex flex-col gap-2 md:flex-row md:items-stretch">
         {stages.map((stage, i) => (
           <li key={stage.name} className="flex flex-1 flex-col gap-2 md:flex-row md:items-center">
@@ -180,11 +186,13 @@ function Lane({
               </span>
             )}
             <div
-              className={`h-full flex-1 rounded-md border bg-white px-3.5 py-3 ${
-                emphasis ? 'border-accent/40' : 'border-line'
+              className={`card h-full flex-1 px-3.5 py-3 ${
+                emphasis
+                  ? 'border-accent/30 shadow-[0_0_0_1px_rgba(14,165,233,0.12),0_8px_40px_rgba(0,0,0,0.4),0_0_60px_rgba(14,165,233,0.08)]'
+                  : ''
               }`}
             >
-              <h4 className="text-[14px] font-semibold">{stage.name}</h4>
+              <h4 className="text-[14px] font-semibold text-white">{stage.name}</h4>
               <p className="mt-1 text-[13px] leading-relaxed text-muted">{stage.text}</p>
             </div>
           </li>
@@ -196,9 +204,10 @@ function Lane({
 
 // --- Evaluation scoreboard ----------------------------------------------------------------
 
-const th = 'border-b border-line bg-canvas px-3 py-1.5 text-left font-semibold whitespace-nowrap'
+const th =
+  'border-b border-line bg-raised px-3 py-1.5 text-left font-mono text-[11px] font-medium tracking-wide whitespace-nowrap text-muted'
 const td = 'border-b border-line px-3 py-1.5 whitespace-nowrap tabular-nums'
-const caption = 'mb-2 text-left text-[14px] font-semibold'
+const caption = 'mb-3 text-left text-[14px] font-semibold text-white'
 
 function Scoreboard({ data }: { data: EvalExport }) {
   const { retrieval, split, goldenSet } = data
@@ -223,7 +232,7 @@ function Scoreboard({ data }: { data: EvalExport }) {
           shipped={data.generatorChoice?.chosen}
         />
       ) : (
-        <p className="rounded-md border border-line bg-white px-4 py-3 text-[14px] text-muted">
+        <p className="card px-4 py-3 text-[14px] text-muted">
           No answers have been scored on this split yet. Run{' '}
           <code className="font-mono text-[13px]">make eval-generation</code> (it calls the
           generator and the judge, so it costs money), then{' '}
@@ -274,7 +283,7 @@ function RetrievalTable({
   const shipped = retrieval.arms.find((arm) => arm.shipped)
   return (
     <div className="flex flex-col gap-3">
-      <div className="overflow-x-auto rounded-md border border-line bg-white p-3">
+      <div className="card overflow-x-auto p-3">
         <table className="min-w-full border-collapse text-[13px]">
           <caption className={caption}>
             Retrieval: do the right Sections reach the Answer Call?
@@ -290,7 +299,7 @@ function RetrievalTable({
                   <th scope="row" className={`${td} text-left font-medium`}>
                     <code className="font-mono">{arm.name}</code>
                     {arm.shipped && (
-                      <span className="ml-2 rounded bg-accent/10 px-1.5 py-0.5 text-[11px] font-medium text-accent">
+                      <span className="ml-2 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 font-mono text-[10px] tracking-widest text-accent-strong">
                         shipped
                       </span>
                     )}
@@ -323,7 +332,7 @@ function RetrievalTable({
         </p>
       </div>
       {shipped && shipped.byType.length > 0 && (
-        <details className="rounded-md border border-line bg-white p-3">
+        <details className="card p-3">
           <summary className="cursor-pointer text-[13px] font-medium">
             {shipped.name} by question type
           </summary>
@@ -429,7 +438,7 @@ function GenerationTable({
   const repeated = (run: GenerationRun) => runs.filter((r) => r.model === run.model).length > 1
   return (
     <div className="flex flex-col gap-3">
-      <div className="overflow-x-auto rounded-md border border-line bg-white p-3">
+      <div className="card overflow-x-auto p-3">
         <table className="min-w-full border-collapse text-[13px]">
           <caption className={caption}>Answers: are they right, and what do they cost?</caption>
           <thead>
@@ -448,7 +457,7 @@ function GenerationTable({
                 <th scope="row" className={`${td} text-left font-medium`}>
                   <code className="font-mono">{run.model}</code>
                   {run.model === shipped && (
-                    <span className="ml-2 rounded bg-accent/10 px-1.5 py-0.5 text-[11px] font-medium text-accent">
+                    <span className="ml-2 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 font-mono text-[10px] tracking-widest text-accent-strong">
                       shipped
                     </span>
                   )}
@@ -476,7 +485,7 @@ function GenerationTable({
       {runs.map(
         (run) =>
           run.byType.length > 0 && (
-            <details key={run.report} className="rounded-md border border-line bg-white p-3">
+            <details key={run.report} className="card p-3">
               <summary className="cursor-pointer text-[13px] font-medium">
                 {run.model} by question type{repeated(run) && ` (${run.report})`}
               </summary>
@@ -522,7 +531,7 @@ function signTest(test: SignTest): string {
 
 function GeneratorChoiceTable({ choice }: { choice: GeneratorChoice }) {
   return (
-    <div className="overflow-x-auto rounded-md border border-line bg-white p-3">
+    <div className="card overflow-x-auto p-3">
       <table className="min-w-full border-collapse text-[13px]">
         <caption className={caption}>
           Choosing the generator: is a challenger distinguishably better?
@@ -557,7 +566,7 @@ function GeneratorChoiceTable({ choice }: { choice: GeneratorChoice }) {
         sign test on each case’s score. It qualifies only if ahead on Fact Recall or Coverage Gaps
         and behind on none of Fact Recall, Faithfulness and Coverage Gaps, each at p &lt; 0.05; the
         cheapest qualifier wins.{' '}
-        <span className="font-medium text-ink">Chosen: {choice.chosen}.</span>
+        <span className="font-medium text-accent-strong">Chosen: {choice.chosen}.</span>
       </p>
     </div>
   )
@@ -591,7 +600,7 @@ function CoverageGrid({ data }: { data: EvalExport }) {
         </>
       }
     >
-      <div className="overflow-x-auto rounded-md border border-line bg-white p-3">
+      <div className="card overflow-x-auto p-3">
         <table className="border-collapse text-[12px]">
           <caption className={caption}>Filings by Company and Report Period</caption>
           <thead>
@@ -643,10 +652,10 @@ function CoverageRow({
 }) {
   const snapshot = company.coverage !== 'tracked'
   return (
-    <tr className={snapshot ? 'bg-canvas/60' : undefined}>
+    <tr className={snapshot ? 'bg-white/[0.015]' : undefined}>
       <th
         scope="row"
-        className="sticky left-0 z-10 border-b border-line bg-white px-3 py-1 text-left font-medium whitespace-nowrap"
+        className="sticky left-0 z-10 border-b border-line bg-elevated px-3 py-1 text-left font-medium whitespace-nowrap"
         title={`${company.company}${company.sector ? `, ${company.sector}` : ''}`}
       >
         <span className="font-mono">{company.ticker}</span>
@@ -668,8 +677,8 @@ function CoverageRow({
                 title={`${f.filingId}${f.fiscalPeriod ? `, ${f.fiscalPeriod}` : ''}`}
                 className={`inline-block w-5 rounded font-mono no-underline ${
                   f.formType === '10-K'
-                    ? 'bg-accent font-semibold text-white'
-                    : 'bg-accent/10 text-accent'
+                    ? 'bg-accent font-semibold text-on-accent'
+                    : 'bg-accent/15 text-accent-strong'
                 }`}
               >
                 {f.formType === '10-K' ? 'K' : 'Q'}

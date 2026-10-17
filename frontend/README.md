@@ -1,6 +1,6 @@
 # Research workspace (front-end)
 
-The Next.js research workspace: an analyst asks a question, or clicks a starter prompt, watches the answer stream in, and clicks any `[Sn]` citation to open that Source's passage in a side panel. It sits on the stack of the developer's portfolio: Next.js (App Router), Tailwind CSS and the AI SDK's `useChat`.
+The Next.js research workspace: an analyst asks a question, or clicks a starter prompt, watches the answer stream in, and clicks any `[Sn]` citation to open that Source's passage in a side panel. It sits on the stack of the developer's portfolio: Next.js (App Router), Tailwind CSS and the AI SDK's `useChat`. It shares the portfolio's look as well: a dark canvas with a faint grid and an ambient glow, glass cards, Inter with monospaced labels and a sky-blue accent, all defined as theme tokens and a few component classes in [`app/globals.css`](app/globals.css).
 
 Run it from the repo root with `make dev`, which starts the chat API and this app together (see the root [README](../README.md#running-the-full-stack)).
 
@@ -14,22 +14,23 @@ The conversation is kept in the browser's session storage ([`lib/conversation.ts
 
 ## Layout
 
-| Path                             | What it is                                                                                            |
-| -------------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `app/page.tsx`                   | The workspace page                                                                                    |
-| `app/api/chat/route.ts`          | The server-side proxy to the chat API                                                                 |
-| `app/how-it-works/page.tsx`      | The "How it works" page, rendered from the evaluation export                                          |
-| `components/Workspace.tsx`       | The conversation thread, starter prompts and question box                                             |
-| `components/AnswerMessage.tsx`   | One answer: Markdown with `[Sn]` citations as links, and its Sources                                  |
-| `components/QueryScopeChips.tsx` | The Query Scope chips above an answer                                                                 |
-| `components/SourcesPanel.tsx`    | The side panel showing one Source's Filing metadata and passage, or a Facts Source's table of figures |
-| `lib/chat.ts`                    | The stream's data part types, the shared message readers, the turn limit and the citation helpers     |
-| `lib/starters.ts`                | The six starter prompts, copied from the Golden Set                                                   |
-| `lib/conversation.ts`            | Keeps the conversation in session storage                                                             |
-| `components/HowItWorks.tsx`      | The architecture, the evaluation scoreboard and the coverage grid                                     |
-| `lib/evalExport.ts`              | The evaluation export's types and number formats                                                      |
-| `data/eval-export.json`          | The evaluation export, written by `make eval-export` (committed)                                      |
-| `__tests__/`                     | Vitest and React Testing Library tests                                                                |
+| Path                               | What it is                                                                                            |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `app/page.tsx`                     | The workspace page                                                                                    |
+| `app/api/chat/route.ts`            | The server-side proxy to the chat API                                                                 |
+| `app/how-it-works/page.tsx`        | The "How it works" page, rendered from the evaluation export                                          |
+| `components/Workspace.tsx`         | The conversation thread, starter prompts and question box                                             |
+| `components/AnswerMessage.tsx`     | One answer: Markdown with `[Sn]` citations as links, and its Sources                                  |
+| `components/QueryScopeChips.tsx`   | The Query Scope chips above an answer                                                                 |
+| `components/SourcesPanel.tsx`      | The side panel showing one Source's Filing metadata and passage, or a Facts Source's table of figures |
+| `components/AmbientBackground.tsx` | The portfolio's fixed, blurred background glow                                                        |
+| `lib/chat.ts`                      | The stream's data part types, the shared message readers, the turn limit and the citation helpers     |
+| `lib/starters.ts`                  | The six starter prompts, copied from the Golden Set                                                   |
+| `lib/conversation.ts`              | Keeps the conversation in session storage                                                             |
+| `components/HowItWorks.tsx`        | The architecture, the evaluation scoreboard and the coverage grid                                     |
+| `lib/evalExport.ts`                | The evaluation export's types and number formats                                                      |
+| `data/eval-export.json`            | The evaluation export, written by `make eval-export` (committed)                                      |
+| `__tests__/`                       | Vitest and React Testing Library tests                                                                |
 
 The starter prompts are the Golden Set cases that carry a `starter` object (`data/eval/golden_set.json`), so every demo prompt is measured. `__tests__/starters.test.ts` fails if the copy in `lib/starters.ts` drifts from the Golden Set.
 
