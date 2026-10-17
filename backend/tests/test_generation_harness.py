@@ -134,11 +134,12 @@ class FakeModel:
 
 
 class FakeJudge:
-    """Says every Required Fact is stated and every claim supported, and records what
-    it was asked."""
+    """Says every Required Fact about Apple is stated and every claim supported, unless
+    `verdicts` gives a claim another verdict, and records what it was asked."""
 
-    def __init__(self):
+    def __init__(self, verdicts=None):
         self.asked = []
+        self.verdicts = verdicts or {}
 
     def judge(self, answer, required_facts, claims, sources):
         from edgar_eval.judge import ClaimJudgment, FactJudgment, Judgments
@@ -146,7 +147,10 @@ class FakeJudge:
         self.asked.append((answer, list(required_facts), list(claims), dict(sources)))
         return Judgments(
             facts=tuple(FactJudgment(f, 1.0 if "Apple" in f else 0.0) for f in required_facts),
-            claims=tuple(ClaimJudgment(c.text, c.tags, "supported", {}) for c in claims),
+            claims=tuple(
+                ClaimJudgment(c.text, c.tags, self.verdicts.get(c.text, "supported"), {})
+                for c in claims
+            ),
             model=JEV_MODEL,
             requests=2,
             input_tokens=5_000,
@@ -326,6 +330,94 @@ def test_a_score_with_nothing_to_score_is_none_not_zero(index, tmp_path):
     assert report.overall.coverage_gaps_stated is None
     assert report.overall.fact_recall is None
     assert report.overall.faithfulness == 1.0
+
+
+CONTRADICTING_JEV = {"Tesla depends on its CEO.": "contradicted"}
+"""A fake Jev's verdicts: one of `ANSWER`'s two claims contradicted by its Sources."""
+
+
+def test_a_contradicted_claim_fails_the_answer_while_its_faithfulness_is_still_reported(
+    index, tmp_path
+):
+    from edgar_eval.generation import evaluate
+
+    cases = [
+        _case("apple-tesla", "What are the primary risk factors facing Apple and Tesla?"),
+        _case("apple", "What are the primary risk factors facing Apple?"),
+    ]
+    report = evaluate(
+        cases,
+        FakeModel(ANSWER),
+        FakeJudge(verdicts=CONTRADICTING_JEV),
+        index,
+        names={},
+        fact_values=lambda filing_id: [],
+        log_path=None,
+        workers=1,
+    )
+
+    for result in report.cases:
+        assert result.contradictions.claims == ("Tesla depends on its CEO.",)
+        assert result.contradictions.count == 1
+        assert not result.contradictions.passed
+        assert result.faithfulness == 0.5  # one of two claims supported: still a score
+    assert report.overall.answers_contradicted == 2
+    assert report.overall.faithfulness == 0.5
+    assert report.by_type["risk"].answers_contradicted == 2
+
+
+def test_an_answer_with_no_contradicted_claim_passes_the_check(index, tmp_path):
+    from edgar_eval.generation import evaluate
+
+    report = evaluate(
+        [_case("apple", "What are the primary risk factors facing Apple?")],
+        FakeModel(ANSWER),
+        FakeJudge(verdicts={"Tesla depends on its CEO.": "unsupported"}),
+        index,
+        names={},
+        fact_values=lambda filing_id: [],
+        log_path=None,
+    )
+
+    [result] = report.cases
+    assert result.contradictions.count == 0
+    assert result.contradictions.passed  # unsupported lowers Faithfulness, but is no contradiction
+    assert result.faithfulness == 0.5
+    assert report.overall.answers_contradicted == 0
+
+
+def test_the_report_and_its_summary_show_each_cases_contradicted_claims(index, tmp_path):
+    import io
+    import json
+
+    from edgar_eval.generation import main
+
+    out = io.StringIO()
+    path = tmp_path / "generation-dev.json"
+    code = main(
+        [
+            *("--case", "risk-aapl-tsla-jpm", "--index", str(index)),
+            *("--log", str(tmp_path / "log.jsonl"), "--json", str(path)),
+        ],
+        model=FakeModel(ANSWER),
+        judge=FakeJudge(verdicts=CONTRADICTING_JEV),
+        fact_values=lambda filing_id: [],
+        out=out,
+    )
+
+    assert code == 0
+    data = json.loads(path.read_text())
+    [case] = data["cases"]
+    assert case["contradictions"] == {
+        "claims": ["Tesla depends on its CEO."],
+        "count": 1,
+        "passed": False,
+    }
+    assert case["faithfulness"] == 0.5
+    assert data["overall"]["answers_contradicted"] == 1
+    printed = out.getvalue()
+    assert "Answers with a Contradicted Claim: 1 of 1" in printed
+    assert "Contradicted Claims in risk-aapl-tsla-jpm: Tesla depends on its CEO." in printed
 
 
 def test_the_command_line_prints_scores_with_cost_and_latency_and_writes_json(index, tmp_path):
@@ -538,6 +630,33 @@ def test_rescoring_rebuilds_each_answer_context_at_the_reports_own_setting(index
     path.write_text(json.dumps(saved | {"chunk_tokens": 300}))
     with pytest.raises(ValueError, match="300-token chunks"):
         main(rescore, fact_values=lambda filing_id: [], out=io.StringIO())
+
+
+def test_a_report_saved_before_contradicted_claims_were_counted_still_loads(index, tmp_path):
+    """A version 1 report has no Contradicted Claim fields: the rescore command and the
+    selection rule still read it, as they read a report that has them."""
+    import io
+    import json
+
+    from edgar_eval.generation import main
+    from edgar_eval.selection import Candidate
+
+    path, saved = _saved_report(index, tmp_path, ANSWER, lambda filing_id: [])
+    assert "contradictions" in saved["cases"][0]
+    old = json.loads(json.dumps(saved))
+    for case in old["cases"]:
+        del case["contradictions"]
+    for summary in (old["overall"], *old["by_type"].values()):
+        del summary["answers_contradicted"]
+
+    for report in (saved, old):
+        path.write_text(json.dumps(report))
+        rescore = ["--rescore", str(path), "--index", str(index)]
+        assert main(rescore, fact_values=lambda filing_id: [], out=io.StringIO()) == 0
+        rescored = json.loads(path.read_text())
+        assert rescored == report  # nothing to change: its figures were already checked
+        candidate = Candidate.from_report(rescored)
+        assert candidate.faithfulness == {"risk-aapl-tsla-jpm": 1.0}
 
 
 def test_the_jev_keys_placeholder_is_in_the_backends_env_example():

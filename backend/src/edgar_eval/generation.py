@@ -9,7 +9,10 @@ Call to the generator under test. The answer is then scored three ways:
 - **By Jev** (`edgar_eval.judge`), pinned to an exact version: whether the answer
   states each of the case's Required Facts, and Faithfulness of each claim to the
   Sources it cites. Fact Recall is scored on the must-state facts only; detail recall,
-  on the details, is reported beside it and decides nothing.
+  on the details, is reported beside it and decides nothing. Any claim Jev
+  judges contradicted by its Sources, a Contradicted Claim, fails the answer
+  (`ContradictionCheck`), beside the citation and Coverage Gap checks in code, whatever
+  its Faithfulness.
 - **Cost and latency**, from the Answer Call's logged record: its token usage priced
   at the model's price in `edgar_eval.generators.GENERATORS`, and its latency to the
   first text and to the end.
@@ -79,6 +82,7 @@ from edgar_rag.retrieval import (
 
 __all__ = [
     "CaseResult",
+    "ContradictionCheck",
     "GenerationReport",
     "Judge",
     "Summary",
@@ -99,6 +103,23 @@ class Judge(Protocol):
         claims: Sequence[Claim],
         sources: dict[str, Evidence],
     ) -> Judgments: ...
+
+
+@dataclass(frozen=True)
+class ContradictionCheck:
+    """The answer's Contradicted Claims: claims Jev judged contradicted by the Sources
+    they cite. Any one fails the answer, whatever its Faithfulness, so a wrong figure is
+    not averaged away."""
+
+    claims: tuple[str, ...]
+
+    @property
+    def count(self) -> int:
+        return len(self.claims)
+
+    @property
+    def passed(self) -> bool:
+        return not self.claims
 
 
 @dataclass(frozen=True)
@@ -143,6 +164,12 @@ class CaseResult:
     def faithfulness(self) -> float | None:
         return self.judgments.faithfulness
 
+    @property
+    def contradictions(self) -> ContradictionCheck:
+        return ContradictionCheck(
+            tuple(c.claim for c in self.judgments.claims if c.verdict == "contradicted")
+        )
+
 
 @dataclass(frozen=True)
 class Summary:
@@ -167,6 +194,8 @@ class Summary:
     decided on."""
     faithfulness: float | None
     """Mean share of claims supported by their cited Sources, over answers with claims."""
+    answers_contradicted: int
+    """Answers with at least one Contradicted Claim, each of which fails."""
     mean_cost_usd: float | None
     total_cost_usd: float | None
     mean_latency_s: float
@@ -206,6 +235,11 @@ class GenerationReport:
             case["fact_recall"] = result.fact_recall
             case["detail_recall"] = result.detail_recall
             case["faithfulness"] = result.faithfulness
+            contradictions = result.contradictions
+            case["contradictions"] = asdict(contradictions) | {
+                "count": contradictions.count,
+                "passed": contradictions.passed,
+            }
             case["judgments"]["judge_cost_usd"] = result.judgments.cost_usd
         return data
 
@@ -348,6 +382,7 @@ def _summarise(results: Sequence[CaseResult]) -> Summary:
         fact_recall=mean(r.fact_recall for r in results),
         detail_recall=mean(r.detail_recall for r in results),
         faithfulness=mean(r.faithfulness for r in results),
+        answers_contradicted=sum(not r.contradictions.passed for r in results),
         mean_cost_usd=fmean(priced) if priced else None,
         total_cost_usd=sum(priced) if priced else None,
         mean_latency_s=mean(r.latency_s for r in results) or 0.0,
@@ -588,6 +623,7 @@ _COLUMNS = (
     ("recall", lambda s: _share(s.fact_recall)),
     ("detail", lambda s: _share(s.detail_recall)),
     ("faithful", lambda s: _share(s.faithfulness)),
+    ("contradicted", lambda s: str(s.answers_contradicted)),
     ("$/answer", lambda s: "–" if s.mean_cost_usd is None else f"{s.mean_cost_usd:.4f}"),
     ("latency s", lambda s: f"{s.mean_latency_s:.1f}"),
     ("first s", lambda s: "–" if s.mean_first_token_s is None else f"{s.mean_first_token_s:.1f}"),
@@ -628,6 +664,13 @@ def _print_report(report: GenerationReport, split: str, out: TextIO) -> None:
         ),
     ):
         print(f"{label}: {', '.join(failing) or 'none'}", file=out)
+    print(f"Answers with a Contradicted Claim: {o.answers_contradicted} of {o.cases}", file=out)
+    for r in report.cases:
+        if not r.contradictions.passed:
+            print(
+                f"Contradicted Claims in {r.case_id}: {' | '.join(r.contradictions.claims)}",
+                file=out,
+            )
     for r in report.cases:
         if not r.structure.passed:
             print(
