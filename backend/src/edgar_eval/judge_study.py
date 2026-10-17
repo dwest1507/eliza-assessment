@@ -7,15 +7,19 @@ Three commands:
   Answer Call and no Jev call, and calls no provider.
 - `judge` has Jev judge every sampled item `JUDGE_RUNS` (2) times and, with
   `--reference`, Claude Haiku 5.5 (`REFERENCE_MODEL`, pinned) once as a reference judge.
-  It prints its estimated cost before the first request, and stores the verdicts in
-  their own file, apart from the sheet. A judgment that fails is recorded against each
-  item it was for; no item is dropped.
+  With `--llm-split` it also runs the trial LLM claim split (`SPLIT_MODEL`, pinned) over
+  the answers of the claim items, its output cached per answer, and Jev judges its
+  statements once. It prints its estimated cost before the first request, and stores
+  the verdicts in their own file, apart from the sheet. A judgment that fails is
+  recorded against each item it was for; no item is dropped.
 - `score` reads the developer's labels and the stored verdicts and reports, per judge:
   accuracy and Cohen's kappa for facts and for claims; the share of bad claims
   (unsupported or contradicted) the judge calls supported, with its 95% Wilson interval;
   the error by generator; for Jev, agreement at each candidate fact cut-off (`CUTOFFS`)
   and with averaged probabilities; how often Jev's two runs agree; whether ADR 0013's
-  revisit trigger fired; and whether the early-stopping rule is met. It refuses while
+  revisit trigger fired; whether the early-stopping rule is met; and, when the LLM split
+  was run, which split's claims judged by Jev agree better with the labels, answer by
+  answer. It refuses while
   any item is unlabelled, unless the stopping rule is met or `--partial` is given.
 
 **Fact items** (`FACT_ITEMS`, about 150) pair a saved answer with one Required Fact in the
@@ -64,6 +68,15 @@ facts in one request, its claims in one per set of cited Sources. The reference 
 asked Jev's own questions and criteria (`edgar_eval.judge`), one item a request, its
 answer held to a verdict by a JSON schema; it gives no probability.
 
+**The trial LLM claim split** lives in the study only: the generation harness still
+splits claims by sentence, and adopting the LLM split there is a follow-up (ADR 0013).
+Claude Haiku 5.5 is given the answer and its cited sentences, numbered by their place in
+the sentence split, and splits each into one-claim, self-contained statements. A
+statement keeps its sentence's citations (the tags it names that the sentence cites, or
+all of them when it names none) and its heading and table header, so each claim item's
+sentence has its own statements, judged against that item's cited Sources. That keeps
+the two splits comparable on the developer's labels, which are of the sentences.
+
 **Scoring.** Jev's first run is the study's measure, since a harness run judges once: it
 decides the revisit trigger and the stopping rule, and the second run measures how often
 Jev agrees with itself. A fact counts as stated at `FACT_CUTOFF`; the sweep scores each of
@@ -81,10 +94,18 @@ and counted.
   claim items are labelled and the 95% Wilson interval of that false-supported share lies
   wholly below or wholly above one in five. The claim items left unlabelled are then
   left out, and the report is not partial.
+- **The splits compared**, answer by answer over the answers with a labelled claim item:
+  an answer is bad when the developer labels any of its claim items unsupported or
+  contradicted, and each split finds it bad when Jev calls any of those sentences (Jev's
+  first run), or any of their LLM statements, unsupported or contradicted. The report
+  says which split agrees with the labels on more answers and which catches more of the
+  bad ones, with McNemar's exact test shown but not decided on. An answer whose split or
+  any judgment failed is left out and counted.
 
     python -m edgar_eval.judge_study sample [--reports PATH...] [--seed N]
         [--sheet PATH] [--sample PATH] [--index PATH]
     python -m edgar_eval.judge_study judge [--sample PATH] [--verdicts PATH] [--reference]
+        [--llm-split] [--split-cache PATH]
     python -m edgar_eval.judge_study score [--sheet PATH] [--sample PATH]
         [--verdicts PATH] [--json PATH] [--partial]
 """
@@ -123,7 +144,7 @@ from edgar_eval.judge import (
     Evidence,
     Judgments,
 )
-from edgar_eval.metrics import cohen_kappa, fisher_exact, wilson_interval
+from edgar_eval.metrics import cohen_kappa, fisher_exact, mcnemar_exact, wilson_interval
 from edgar_rag.golden_set import (
     DEFAULT_BRIEF_SUITE,
     DEFAULT_GOLDEN_SET,
@@ -145,6 +166,7 @@ __all__ = [
     "DEFAULT_SAMPLE",
     "DEFAULT_SCORE",
     "DEFAULT_SHEET",
+    "DEFAULT_SPLIT_CACHE",
     "DEFAULT_VERDICTS",
     "FACT_ITEMS",
     "FACT_LABELS",
@@ -154,16 +176,21 @@ __all__ = [
     "REFERENCE_MODEL",
     "REVISIT_SHARE",
     "SEED",
+    "SPLIT_MODEL",
+    "SPLIT_OUTPUT_TOKENS",
     "STOP_AFTER_CLAIMS",
     "UNCERTAIN",
     "UNCERTAIN_SHARE",
     "UNSUPPORTED_SHARE",
     "Agreement",
+    "AnswerComparison",
+    "AnswerSplit",
     "CutoffAgreement",
     "GeneratorError",
     "JudgeCost",
     "JudgeRun",
     "JudgeScore",
+    "LLMSplitter",
     "Matches",
     "ReferenceJudge",
     "ReferenceVerdict",
@@ -172,6 +199,11 @@ __all__ = [
     "Sample",
     "Share",
     "SourcesFor",
+    "SplitAgreement",
+    "SplitClaim",
+    "SplitComparison",
+    "SplitItem",
+    "SplitRun",
     "Stopping",
     "StudyItem",
     "StudyJudge",
@@ -182,6 +214,7 @@ __all__ = [
     "draw_sample",
     "estimate_judge_cost",
     "judge_sample",
+    "load_split",
     "load_verdicts",
     "main",
     "print_score",
@@ -189,6 +222,7 @@ __all__ = [
     "rewritten_facts",
     "save_verdicts",
     "score",
+    "split_sample",
     "write_sheet",
 ]
 
@@ -838,26 +872,45 @@ class JudgeCost:
     """Every run."""
     runs: int
     reference_usd: float | None
+    split_usd: float | None = None
+    """The LLM claim split of the answers not cached, and Jev once on its statements."""
+    split_answers: int = 0
+    split_cached: int = 0
 
     def line(self) -> str:
-        total = self.jev_usd + (self.reference_usd or 0.0)
+        total = self.jev_usd + (self.reference_usd or 0.0) + (self.split_usd or 0.0)
         text = (
             f"Estimated cost: about ${total:.2f}: {JEV_MODEL} {self.runs} times "
             f"({self.jev_requests} requests a run), ${self.jev_usd:.3f}"
         )
         if self.reference_usd is not None:
             text += f"; {REFERENCE_MODEL} once, ${self.reference_usd:.3f}"
+        if self.split_usd is not None:
+            text += (
+                f"; the {SPLIT_MODEL} claim split of {self.split_answers} answers "
+                f"({self.split_cached} cached) and {JEV_MODEL} once on its statements, "
+                f"${self.split_usd:.3f}"
+            )
         return text + "."
 
 
-def estimate_judge_cost(sample: Sample, *, runs: int = JUDGE_RUNS, reference: bool) -> JudgeCost:
+def estimate_judge_cost(
+    sample: Sample,
+    *,
+    runs: int = JUDGE_RUNS,
+    reference: bool,
+    splitter: LLMSplitter | None = None,
+) -> JudgeCost:
     """Jev's cost from the tokens of each request's state and questions, at its price;
     the reference's from each prompt's tokens and `REFERENCE_OUTPUT_TOKENS` of output, at
-    its list price in `edgar_eval.generators.GENERATORS`."""
+    its list price in `edgar_eval.generators.GENERATORS`; and, with a splitter, the LLM
+    split's from each uncached answer's prompt tokens and `SPLIT_OUTPUT_TOKENS` of output
+    at its list price, plus one Jev pass over the claim items' Sources and statements
+    (taken as twice the claims' tokens)."""
     from edgar_eval.generators import generator
     from edgar_rag.retrieval import count_tokens
 
-    requests, tokens = 0, 0
+    requests, tokens, claim_tokens = 0, 0, 0
     for group in _answer_groups(sample):
         facts = [i.fact for i in group if i.kind == "fact"]
         if facts:
@@ -870,6 +923,7 @@ def estimate_judge_cost(sample: Sample, *, runs: int = JUDGE_RUNS, reference: bo
             requests += 1
             texts = [f"{s.label}\n{s.text}" for s in members[0].sources]
             tokens += count_tokens("\n".join([*texts, *(i.claim for i in members)]))
+            claim_tokens += count_tokens("\n".join([*texts, *(i.claim for i in members * 2)]))
     jev_usd = runs * tokens * JEV_USD_PER_MILLION_INPUT_TOKENS / 1_000_000
     reference_usd = None
     if reference:
@@ -877,11 +931,31 @@ def estimate_judge_cost(sample: Sample, *, runs: int = JUDGE_RUNS, reference: bo
         prompt_tokens = sum(count_tokens(_reference_request(i)[0]) for i in sample.items)
         output_tokens = REFERENCE_OUTPUT_TOKENS * len(sample.items)
         reference_usd = (prompt_tokens * price.input + output_tokens * price.output) / 1_000_000
-    return JudgeCost(requests, jev_usd, runs, reference_usd)
+    if splitter is None:
+        return JudgeCost(requests, jev_usd, runs, reference_usd)
+    answers = {i.answer for i in sample.items if i.kind == "claim"}
+    uncached = [a for a in sorted(answers) if not splitter.cached(a)]
+    price = generator(splitter.model).price
+    prompt_tokens = sum(count_tokens(_split_prompt(a)) for a in uncached)
+    output_tokens = SPLIT_OUTPUT_TOKENS * len(uncached)
+    split_usd = (prompt_tokens * price.input + output_tokens * price.output) / 1_000_000
+    split_usd += claim_tokens * JEV_USD_PER_MILLION_INPUT_TOKENS / 1_000_000
+    return JudgeCost(
+        requests,
+        jev_usd,
+        runs,
+        reference_usd,
+        split_usd,
+        len(answers),
+        len(answers) - len(uncached),
+    )
 
 
-def save_verdicts(runs: Sequence[JudgeRun], sample: Sample, path: str | Path) -> None:
-    """Write the judges' verdicts, apart from the sheet."""
+def save_verdicts(
+    runs: Sequence[JudgeRun], sample: Sample, path: str | Path, split: SplitRun | None = None
+) -> None:
+    """Write the judges' verdicts, and the LLM split's when it was run, apart from the
+    sheet."""
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
     data = {
@@ -890,6 +964,8 @@ def save_verdicts(runs: Sequence[JudgeRun], sample: Sample, path: str | Path) ->
         "fact_cutoff": FACT_CUTOFF,
         "runs": [asdict(r) for r in runs],
     }
+    if split is not None:
+        data["llm_split"] = split.to_dict()
     partial = path.with_name(path.name + ".partial")
     partial.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     partial.replace(path)
@@ -898,6 +974,302 @@ def save_verdicts(runs: Sequence[JudgeRun], sample: Sample, path: str | Path) ->
 def load_verdicts(path: str | Path) -> tuple[JudgeRun, ...]:
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     return tuple(JudgeRun.from_dict(r) for r in data["runs"])
+
+
+def load_split(path: str | Path) -> SplitRun | None:
+    """The LLM split stored with the verdicts, or None when it was not run."""
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    return SplitRun.from_dict(data["llm_split"]) if "llm_split" in data else None
+
+
+# --- The trial LLM claim split ------------------------------------------------------------
+
+SPLIT_MODEL = "claude-haiku-5-5"
+"""The trial LLM claim split's model (ADR 0013): an exact model id, never an alias. The
+split lives in the study only; the generation harness splits claims by sentence."""
+
+SPLIT_MAX_TOKENS = 8_000
+"""The split's token cap, its thinking included."""
+SPLIT_OUTPUT_TOKENS = 1_500
+"""The output tokens, thinking included, the cost estimate allows each split request."""
+
+DEFAULT_SPLIT_CACHE = STUDY_DIR / "llm_split"
+
+SPLIT_INSTRUCTIONS = (
+    "Split each numbered sentence of the answer above into one-claim, self-contained "
+    "statements. A statement makes one claim that can be checked on its own: name what "
+    'it is about instead of writing "it", "they" or "this", and keep the figures, '
+    "periods and qualifiers the sentence gives it. Add nothing the sentence does not say, "
+    "and leave nothing it claims out. A sentence that makes one claim gives one "
+    "statement. Give each statement the number of the sentence it comes from, and the "
+    "Source tags of that sentence that it rests on."
+)
+
+_SPLIT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "statements": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "sentence": {"type": "integer"},
+                    "claim": {"type": "string"},
+                    "tags": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": ["sentence", "claim", "tags"],
+                "additionalProperties": False,
+            },
+        }
+    },
+    "required": ["statements"],
+    "additionalProperties": False,
+}
+
+
+@dataclass(frozen=True)
+class AnswerSplit:
+    """An answer's LLM split: each statement with the index of the sentence it comes from
+    in the sentence split (`edgar_eval.answer_checks.claims`), or the split's failure."""
+
+    statements: tuple[tuple[int, Claim], ...] = ()
+    error: str | None = None
+    cached: bool = False
+    input_tokens: int = 0
+    output_tokens: int = 0
+
+
+class LLMSplitter:
+    """The trial LLM claim split: Claude Haiku 5.5, pinned to `SPLIT_MODEL`, splits each
+    cited sentence of an answer into one-claim, self-contained statements, one request an
+    answer, its answer held to a list of statements by a JSON schema.
+
+    A statement keeps its sentence's citations: the tags it gives that its sentence cites,
+    or all of the sentence's when it gives none of them; and its sentence's heading and
+    table header, the context the judge reads it by. The output is cached per answer in
+    `cache_dir`, so a rerun makes no request; a split that fails is not cached."""
+
+    def __init__(
+        self,
+        client: Any = None,
+        model: str = SPLIT_MODEL,
+        cache_dir: str | Path = DEFAULT_SPLIT_CACHE,
+    ):
+        self.model = model
+        self.cache_dir = Path(cache_dir)
+        self._client = client
+
+    def _cache_path(self, answer: str) -> Path:
+        key = "\x1f".join((self.model, _split_prompt(answer)))
+        return self.cache_dir / f"{hashlib.sha256(key.encode('utf-8')).hexdigest()[:20]}.json"
+
+    def cached(self, answer: str) -> bool:
+        return self._cache_path(answer).exists()
+
+    def split(self, answer: str) -> AnswerSplit:
+        sentences = split_claims(answer)
+        path = self._cache_path(answer)
+        if path.exists():
+            raw = json.loads(path.read_text(encoding="utf-8"))["statements"]
+            return AnswerSplit(_statements(raw, sentences), cached=True)
+        if self._client is None:
+            from anthropic import Anthropic
+
+            self._client = Anthropic()
+        try:
+            response = self._client.messages.create(
+                model=self.model,
+                max_tokens=SPLIT_MAX_TOKENS,
+                thinking={"type": "adaptive"},
+                output_config={
+                    "effort": "low",
+                    "format": {"type": "json_schema", "schema": _SPLIT_SCHEMA},
+                },
+                messages=[{"role": "user", "content": _split_prompt(answer)}],
+            )
+        except Exception as error:  # noqa: BLE001 - recorded against the answer's items
+            return AnswerSplit(error=f"{type(error).__name__}: {error}")
+        usage = getattr(response, "usage", None)
+        tokens = {
+            "input_tokens": getattr(usage, "input_tokens", 0) or 0,
+            "output_tokens": getattr(usage, "output_tokens", 0) or 0,
+        }
+        if response.stop_reason != "end_turn":
+            return AnswerSplit(error=f"stop_reason {response.stop_reason}", **tokens)
+        try:
+            text = next(b.text for b in response.content if b.type == "text")
+            raw = json.loads(text)["statements"]
+            statements = _statements(raw, sentences)
+        except (StopIteration, ValueError, KeyError, TypeError) as error:
+            return AnswerSplit(error=f"no statements: {error!r}", **tokens)
+        path.parent.mkdir(parents=True, exist_ok=True)
+        payload = {"model": self.model, "statements": raw}
+        path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        return AnswerSplit(statements, **tokens)
+
+
+def _split_prompt(answer: str) -> str:
+    """The split's prompt: the answer, then its cited sentences, numbered by their index
+    in the sentence split (uncited ones are unsupported whatever their split)."""
+    numbered = "\n".join(
+        f'<sentence n="{n}" tags="{", ".join(c.tags)}">{c.text}</sentence>'
+        for n, c in enumerate(split_claims(answer))
+        if c.tags
+    )
+    return (
+        f"<answer>\n{answer}\n</answer>\n\n<sentences>\n{numbered}\n</sentences>\n\n"
+        f"{SPLIT_INSTRUCTIONS}"
+    )
+
+
+def _statements(
+    raw: Sequence[Mapping], sentences: Sequence[Claim]
+) -> tuple[tuple[int, Claim], ...]:
+    """The split's statements as claims, each keeping its sentence's citations and
+    context; one naming no cited sentence of the answer is dropped."""
+    found = []
+    for statement in raw:
+        n = statement["sentence"]
+        if not isinstance(n, int) or not 0 <= n < len(sentences) or not sentences[n].tags:
+            continue
+        sentence = sentences[n]
+        text = " ".join(str(statement["claim"]).split())
+        if not text:
+            continue
+        given = [t for t in sentence.tags if t in set(statement.get("tags") or ())]
+        tags = tuple(given) or sentence.tags
+        found.append((n, Claim(text, tags, sentence.heading, sentence.table_header)))
+    return tuple(found)
+
+
+@dataclass(frozen=True)
+class SplitClaim:
+    """One statement of the LLM split, and Jev's verdict on it, or its failure."""
+
+    claim: str
+    tags: tuple[str, ...]
+    verdict: str | None
+    error: str | None = None
+
+
+@dataclass(frozen=True)
+class SplitItem:
+    """The LLM split's statements of one claim item's sentence, each judged by Jev; or
+    why there are none to judge."""
+
+    item_id: str
+    claims: tuple[SplitClaim, ...]
+    error: str | None = None
+    """The split of the item's answer failed."""
+
+
+@dataclass(frozen=True)
+class SplitRun:
+    """The LLM split of every sampled answer with a claim item, its statements judged once
+    by Jev with each claim item's cited Sources."""
+
+    model: str
+    judge: str
+    items: dict[str, SplitItem]
+    """By claim item id."""
+    requests: int = 0
+    input_tokens: int = 0
+    output_tokens: int = 0
+    cached: int = 0
+    """Answers whose split was read from the cache."""
+    judge_requests: int = 0
+    judge_input_tokens: int = 0
+
+    def to_dict(self) -> dict:
+        data = asdict(self)
+        data["items"] = list(data["items"].values())
+        return data
+
+    @classmethod
+    def from_dict(cls, data: Mapping) -> SplitRun:
+        items = {
+            i["item_id"]: SplitItem(
+                i["item_id"],
+                tuple(SplitClaim(**{**c, "tags": tuple(c["tags"])}) for c in i["claims"]),
+                i.get("error"),
+            )
+            for i in data["items"]
+        }
+        return cls(**{**data, "items": items})
+
+
+def _sentence_of(item: StudyItem, sentences: Sequence[Claim]) -> int | None:
+    """The index of a claim item's sentence in its answer's sentence split."""
+    cited = {s.tag for s in item.sources}
+    return next(
+        (
+            n
+            for n, c in enumerate(sentences)
+            if (c.text, c.heading, c.table_header) == (item.claim, item.heading, item.table_header)
+            and cited <= set(c.tags)
+        ),
+        None,
+    )
+
+
+def split_sample(
+    sample: Sample, splitter: LLMSplitter, jev: StudyJudge, *, workers: int = 4
+) -> SplitRun:
+    """Split every sampled answer with a claim item, then have Jev judge, once, the
+    statements of each claim item's sentence against that item's cited Sources: each
+    answer's statements together, as a harness run judges its claims."""
+    groups: dict[str, list[StudyItem]] = {}
+    for item in (i for i in sample.items if i.kind == "claim"):
+        groups.setdefault(item.answer, []).append(item)
+
+    def one(answer: str) -> tuple[AnswerSplit, list[SplitItem], Judgments | None]:
+        items = groups[answer]
+        split = splitter.split(answer)
+        if split.error is not None:
+            return split, [SplitItem(i.id, (), split.error) for i in items], None
+        sentences = split_claims(answer)
+        of_item = {}
+        for item in items:
+            n = _sentence_of(item, sentences)
+            of_item[item.id] = [c for m, c in split.statements if m == n]
+        claims = [c for i in items for c in of_item[i.id]]
+        sources = {s.tag: s for i in items for s in i.sources}
+        judged = jev.judge(answer, [], claims, sources) if claims else None
+        verdicts = {(c.claim, c.tags): c.verdict for c in judged.claims} if judged else {}
+
+        def failure(text: str) -> str:
+            failures = judged.failures if judged else ()
+            return next(
+                (f.error for f in failures if f.judgment == "faithfulness" and text in f.items),
+                "no verdict returned",
+            )
+
+        judged_items = []
+        for item in items:
+            rows = []
+            for c in of_item[item.id]:
+                verdict = verdicts.get((c.text, c.tags))
+                rows.append(
+                    SplitClaim(c.text, c.tags, verdict, None if verdict else failure(c.text))
+                )
+            judged_items.append(SplitItem(item.id, tuple(rows)))
+        return split, judged_items, judged
+
+    with ThreadPoolExecutor(max_workers=max(workers, 1)) as pool:
+        results = list(pool.map(one, groups))
+    splits = [s for s, _, _ in results]
+    judged = [j for _, _, j in results if j is not None]
+    return SplitRun(
+        model=splitter.model,
+        judge=jev.model,
+        items={i.item_id: i for _, items, _ in results for i in items},
+        requests=sum(not s.cached for s in splits),
+        input_tokens=sum(s.input_tokens for s in splits),
+        output_tokens=sum(s.output_tokens for s in splits),
+        cached=sum(s.cached for s in splits),
+        judge_requests=sum(j.requests for j in judged),
+        judge_input_tokens=sum(j.input_tokens for j in judged),
+    )
 
 
 # --- Scoring ------------------------------------------------------------------------------
@@ -1029,6 +1401,56 @@ class Stopping:
     """Which side of one in five the interval lies wholly on, if either."""
 
 
+Better = Literal["sentence", "llm", "both", "neither"]
+
+
+@dataclass(frozen=True)
+class AnswerComparison:
+    """One answer's labelled claim items: whether the developer labelled any of them
+    unsupported or contradicted, and whether Jev's first run on the sentences, and Jev on
+    the LLM split's statements of those sentences, finds any."""
+
+    case_id: str
+    model: str
+    items: int
+    labelled_bad: bool
+    sentence_bad: bool
+    llm_bad: bool
+    better: Better
+    """Which split's verdict on the answer agrees with the labels."""
+
+
+@dataclass(frozen=True)
+class SplitAgreement:
+    """One split's per-answer verdicts against the labels."""
+
+    agree: int
+    of: int
+    caught: int
+    """Answers labelled with a bad claim in which this split's verdicts find one."""
+    bad: int
+    false_alarms: int
+    """Answers labelled with no bad claim in which this split's verdicts find one."""
+    clean: int
+
+
+@dataclass(frozen=True)
+class SplitComparison:
+    """The trial LLM claim split against the sentence split, answer by answer, over the
+    answers with a labelled claim item."""
+
+    answers: tuple[AnswerComparison, ...]
+    left_out: int
+    """Answers left out: their split failed, or a judgment of either split did."""
+    sentence: SplitAgreement
+    llm: SplitAgreement
+    agrees_better: Literal["sentence", "llm", "tie"]
+    catches_more: Literal["sentence", "llm", "tie"]
+    p_value: float
+    """McNemar's exact test, two-sided, of the answers only one split agrees on: shown,
+    not decided on."""
+
+
 @dataclass(frozen=True)
 class StudyScore:
     fact_cutoff: float
@@ -1039,6 +1461,8 @@ class StudyScore:
     """Jev's runs, then the reference judge's, when run."""
     run_agreement: RunAgreement | None
     revisit: Revisit
+    split: SplitComparison | None = None
+    """The LLM claim split against the sentence split, when it was run."""
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -1054,6 +1478,7 @@ def score(
     labels: Mapping[str, str | None],
     runs: Sequence[JudgeRun],
     *,
+    split: SplitRun | None = None,
     partial: bool = False,
 ) -> StudyScore:
     """Score the judges' verdicts against the developer's labels (`read_labels`). Jev's
@@ -1061,7 +1486,8 @@ def score(
     revisit trigger and the stopping rule; its second run measures how often Jev agrees
     with itself. Raises `Unlabelled` while any item is unlabelled, unless the stopping
     rule is met or `partial` is set; raises ValueError on labels or verdicts of items not
-    in the sample, or verdicts missing one."""
+    in the sample, or verdicts missing one. With the LLM split's run, it also compares
+    that split with the sentence split (`SplitComparison`)."""
     ids = {item.id for item in sample.items}
     unknown = sorted(set(labels) - ids)
     if unknown:
@@ -1101,6 +1527,72 @@ def score(
             false_supported_above=above,
             generator_differs=first.generator_differs,
         ),
+        split=_compare_splits(labelled, labels, jev[0], split) if split is not None else None,
+    )
+
+
+def _compare_splits(
+    labelled: Sequence[StudyItem],
+    labels: Mapping[str, str | None],
+    sentences: JudgeRun,
+    split: SplitRun,
+) -> SplitComparison:
+    groups: dict[tuple[str, str, str], list[StudyItem]] = {}
+    for item in (i for i in labelled if i.kind == "claim"):
+        groups.setdefault((item.case_id, item.model, item.answer), []).append(item)
+    rows, left_out = [], 0
+    for (case_id, model, _), items in groups.items():
+        llm = [split.items.get(i.id) for i in items]
+        if (
+            any(sentences.verdicts[i.id].verdict is None for i in items)
+            or any(s is None or s.error is not None for s in llm)
+            or any(c.verdict is None for s in llm for c in s.claims)
+        ):
+            left_out += 1
+            continue
+        labelled_bad = any(labels[i.id] in BAD_CLAIMS for i in items)
+        sentence_bad = any(sentences.verdicts[i.id].verdict in BAD_CLAIMS for i in items)
+        llm_bad = any(c.verdict in BAD_CLAIMS for s in llm for c in s.claims)
+        right = (sentence_bad == labelled_bad, llm_bad == labelled_bad)
+        better: Better = {
+            (True, True): "both",
+            (True, False): "sentence",
+            (False, True): "llm",
+            (False, False): "neither",
+        }[right]
+        rows.append(
+            AnswerComparison(
+                case_id, model, len(items), labelled_bad, sentence_bad, llm_bad, better
+            )
+        )
+
+    def agreement(flagged: Callable[[AnswerComparison], bool]) -> SplitAgreement:
+        return SplitAgreement(
+            agree=sum(flagged(r) == r.labelled_bad for r in rows),
+            of=len(rows),
+            caught=sum(flagged(r) and r.labelled_bad for r in rows),
+            bad=sum(r.labelled_bad for r in rows),
+            false_alarms=sum(flagged(r) and not r.labelled_bad for r in rows),
+            clean=sum(not r.labelled_bad for r in rows),
+        )
+
+    def ahead(sentence: int, llm: int) -> Literal["sentence", "llm", "tie"]:
+        return "llm" if llm > sentence else "sentence" if sentence > llm else "tie"
+
+    by_sentence = agreement(lambda r: r.sentence_bad)
+    by_llm = agreement(lambda r: r.llm_bad)
+    test = mcnemar_exact(
+        [r.llm_bad == r.labelled_bad for r in rows],
+        [r.sentence_bad == r.labelled_bad for r in rows],
+    )
+    return SplitComparison(
+        answers=tuple(rows),
+        left_out=left_out,
+        sentence=by_sentence,
+        llm=by_llm,
+        agrees_better=ahead(by_sentence.agree, by_llm.agree),
+        catches_more=ahead(by_sentence.caught, by_llm.caught),
+        p_value=test.p_value,
     )
 
 
@@ -1351,6 +1843,8 @@ def print_score(report: StudyScore, out: TextIO) -> None:
             f"{g.items} wrong ({_pct(g.error_rate)}){p}",
             file=out,
         )
+    if report.split is not None:
+        _print_split(report.split, out)
     r = report.revisit
     reasons = [
         *(["more than one in five bad claims called supported"] if r.false_supported_above else []),
@@ -1373,6 +1867,41 @@ def print_score(report: StudyScore, out: TextIO) -> None:
     )
 
 
+def _print_split(split: SplitComparison, out: TextIO) -> None:
+    def side(name: str, a: SplitAgreement) -> str:
+        return (
+            f"{name} agrees with the labels on {a.agree} of {a.of} answers, catches "
+            f"{a.caught} of {a.bad} answers labelled with a bad claim and raises "
+            f"{a.false_alarms} false alarm(s) on {a.clean} clean ones"
+        )
+
+    verdict = {
+        "tie": "agrees with the labels as often as the sentence split",
+        "llm": "agrees with the labels better than the sentence split",
+        "sentence": "agrees with the labels less well than the sentence split",
+    }[split.agrees_better]
+    catches = {
+        "tie": "catches as many bad answers",
+        "llm": "catches more bad answers",
+        "sentence": "catches fewer bad answers",
+    }[split.catches_more]
+    print(
+        f"LLM claim split, answer by answer ({split.left_out} answer(s) left out): "
+        f"{side('the sentence split', split.sentence)}; {side('the LLM split', split.llm)}. "
+        f"The LLM split {verdict} and {catches} (McNemar p = {split.p_value:.3f}, shown, "
+        "not decided on).",
+        file=out,
+    )
+    for a in split.answers:
+        print(
+            f"  {a.case_id} ({a.model}, {a.items} items): labelled "
+            f"{'bad' if a.labelled_bad else 'clean'}, sentence split "
+            f"{'bad' if a.sentence_bad else 'clean'}, LLM split "
+            f"{'bad' if a.llm_bad else 'clean'}: {a.better} right",
+            file=out,
+        )
+
+
 # --- Command line -------------------------------------------------------------------------
 
 
@@ -1382,6 +1911,7 @@ def main(
     sources: SourcesFor | None = None,
     jev: StudyJudge | None = None,
     reference: ReferenceJudge | None = None,
+    splitter: LLMSplitter | None = None,
     out: TextIO | None = None,
     err: TextIO | None = None,
 ) -> int:
@@ -1409,6 +1939,12 @@ def main(
     judge.add_argument(
         "--reference", action="store_true", help=f"also run {REFERENCE_MODEL} once, as a reference"
     )
+    judge.add_argument(
+        "--llm-split",
+        action="store_true",
+        help=f"also split the answers with {SPLIT_MODEL} and judge the statements once",
+    )
+    judge.add_argument("--split-cache", type=Path, default=DEFAULT_SPLIT_CACHE)
     scoring = commands.add_parser("score", help="score the stored verdicts against the labels")
     scoring.add_argument("--sheet", type=Path, default=DEFAULT_SHEET)
     scoring.add_argument("--sample", type=Path, default=DEFAULT_SAMPLE)
@@ -1420,7 +1956,7 @@ def main(
     args = parser.parse_args(argv)
 
     if args.command == "judge":
-        return _judge(args, jev, reference, out)
+        return _judge(args, jev, reference, splitter, out)
     if args.command == "score":
         return _score(args, out, err)
     return _sample(args, parser, sources, out, err)
@@ -1461,9 +1997,20 @@ def _sample(args, parser, sources: SourcesFor | None, out: TextIO, err: TextIO) 
     return 0
 
 
-def _judge(args, jev: StudyJudge | None, reference: ReferenceJudge | None, out: TextIO) -> int:
+def _judge(
+    args,
+    jev: StudyJudge | None,
+    reference: ReferenceJudge | None,
+    splitter: LLMSplitter | None,
+    out: TextIO,
+) -> int:
     drawn = Sample.from_dict(json.loads(args.sample.read_text(encoding="utf-8")))
-    print(estimate_judge_cost(drawn, reference=args.reference).line(), file=out, flush=True)
+    if args.llm_split and splitter is None:
+        splitter = LLMSplitter(cache_dir=args.split_cache)
+    if not args.llm_split:
+        splitter = None
+    cost = estimate_judge_cost(drawn, reference=args.reference, splitter=splitter)
+    print(cost.line(), file=out, flush=True)
     if jev is None:
         from edgar_eval.judge import JevJudge
 
@@ -1471,12 +2018,22 @@ def _judge(args, jev: StudyJudge | None, reference: ReferenceJudge | None, out: 
     if args.reference and reference is None:
         reference = ReferenceJudge()
     runs = judge_sample(drawn, jev, reference=reference if args.reference else None)
-    save_verdicts(runs, drawn, args.verdicts)
+    split = split_sample(drawn, splitter, jev) if splitter is not None else None
+    save_verdicts(runs, drawn, args.verdicts, split)
     for run in runs:
         failed = sum(v.verdict is None for v in run.verdicts.values())
         print(
             f"{run.judge} run {run.run}: {len(run.verdicts)} items judged in {run.requests} "
             f"requests, {failed} failed.",
+            file=out,
+        )
+    if split is not None:
+        failed = sum(i.error is not None for i in split.items.values())
+        statements = sum(len(i.claims) for i in split.items.values())
+        print(
+            f"{split.model} claim split: {len(split.items)} claim items split into "
+            f"{statements} statements in {split.requests} requests ({split.cached} answers "
+            f"cached), {failed} failed; {split.judge} judged them once.",
             file=out,
         )
     print(f"Verdicts: {args.verdicts.resolve()}", file=out)
@@ -1487,7 +2044,11 @@ def _score(args, out: TextIO, err: TextIO) -> int:
     drawn = Sample.from_dict(json.loads(args.sample.read_text(encoding="utf-8")))
     try:
         report = score(
-            drawn, read_labels(args.sheet), load_verdicts(args.verdicts), partial=args.partial
+            drawn,
+            read_labels(args.sheet),
+            load_verdicts(args.verdicts),
+            split=load_split(args.verdicts),
+            partial=args.partial,
         )
     except ValueError as error:  # Unlabelled among them
         print(f"error: {error}", file=err)

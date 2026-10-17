@@ -166,9 +166,9 @@ eval-export: $(RETRIEVAL_REPORT) ## Export the latest eval results and Corpus co
 judge-study-sample: $(INDEX) ## Draw the judge study's items from the saved reports and write its blind labelling sheet (no provider call) [SEED=...]
 	$(UV) python -m edgar_eval.judge_study sample $(if $(SEED),--seed $(SEED))
 
-judge-study-judge: ## Judge every sampled item: Jev twice, and claude-haiku-5-5 once with REFERENCE=1; prints the cost first (costs money) [REFERENCE=1]
-	@$(call require_keys,JEV_API_KEY $(if $(REFERENCE),ANTHROPIC_API_KEY))
-	$(UV) python -m edgar_eval.judge_study judge $(if $(REFERENCE),--reference)
+judge-study-judge: ## Judge every sampled item: Jev twice, claude-haiku-5-5 once with REFERENCE=1, and the trial LLM claim split with LLM_SPLIT=1; prints the cost first (costs money) [REFERENCE=1] [LLM_SPLIT=1]
+	@$(call require_keys,JEV_API_KEY $(if $(or $(REFERENCE),$(LLM_SPLIT)),ANTHROPIC_API_KEY))
+	$(UV) python -m edgar_eval.judge_study judge $(if $(REFERENCE),--reference) $(if $(LLM_SPLIT),--llm-split)
 
 judge-study-score: ## Score the stored verdicts against the sheet's labels (no provider call); refuses while items are unlabelled unless PARTIAL=1 or the stopping rule is met [PARTIAL=1]
 	$(UV) python -m edgar_eval.judge_study score $(if $(PARTIAL),--partial)

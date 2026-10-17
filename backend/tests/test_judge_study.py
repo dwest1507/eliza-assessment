@@ -694,7 +694,9 @@ class FakeJevClient:
         )
 
 
-def _judge_command(tmp_path, *extra, jev=None, reference=None, sample=None, out=None):
+def _judge_command(
+    tmp_path, *extra, jev=None, reference=None, splitter=None, sample=None, out=None
+):
     """Draw a small sample, write its sheet, and run `judge` on it."""
     from edgar_eval.judge_study import main
 
@@ -705,7 +707,9 @@ def _judge_command(tmp_path, *extra, jev=None, reference=None, sample=None, out=
     (tmp_path / "sample.json").write_text(json.dumps(sample.to_dict()))
     argv = ["judge", "--sample", str(tmp_path / "sample.json")]
     argv += ["--verdicts", str(tmp_path / "verdicts.json")]
-    code = main([*argv, *extra], jev=jev, reference=reference, out=out or io.StringIO())
+    code = main(
+        [*argv, *extra], jev=jev, reference=reference, splitter=splitter, out=out or io.StringIO()
+    )
     return code, sample
 
 
@@ -863,3 +867,272 @@ def test_the_score_command_refuses_unlabelled_items_unless_a_partial_report_is_a
     saved = json.loads((tmp_path / "score.json").read_text())
     assert saved["partial"] and saved["judges"][0]["facts"]["items"] == 1
     assert "partial" in out.getvalue().lower()
+
+
+# --- The trial LLM claim split ----------------------------------------------------------------
+
+
+class FakeSplitter:
+    """Anthropic's client for the LLM claim split: it splits each numbered sentence of
+    the prompt in two, the first statement giving no tags, the second only a tag the
+    answer never cites, so the split's own citations are what the claims keep."""
+
+    def __init__(self):
+        self.requests = []
+        self.messages = self
+
+    def create(self, **request):
+        from types import SimpleNamespace
+
+        self.requests.append(request)
+        prompt = request["messages"][0]["content"]
+        statements = []
+        for n, text in re.findall(r'<sentence n="(\d+)"[^>]*>(.*?)</sentence>', prompt):
+            statements.append({"sentence": int(n), "claim": f"{text} (first)", "tags": []})
+            statements.append({"sentence": int(n), "claim": f"{text} (second)", "tags": ["S9"]})
+        return SimpleNamespace(
+            model=request["model"],
+            stop_reason="end_turn",
+            content=[SimpleNamespace(type="text", text=json.dumps({"statements": statements}))],
+            usage=SimpleNamespace(input_tokens=800, output_tokens=300),
+        )
+
+
+def _split_runs(tmp_path):
+    saved = json.loads((tmp_path / "verdicts.json").read_text())
+    return saved["llm_split"]
+
+
+def test_the_llm_split_is_cached_per_answer_reused_and_keeps_its_citations(tmp_path):
+    from edgar_eval.judge import JevJudge
+    from edgar_eval.judge_study import SPLIT_MODEL, LLMSplitter
+
+    reports, facts, _ = _synthetic_reports(cases=2, sentences=3)
+    sample = draw_sample(reports, facts, _sources, seed=4, fact_items=4, claim_items=6)
+    claim_items = [i for i in sample.items if i.kind == "claim"]
+    answers = {i.answer for i in claim_items}
+    cache = tmp_path / "split-cache"
+
+    client = FakeSplitter()
+    out = io.StringIO()
+    code, _ = _judge_command(
+        tmp_path,
+        "--llm-split",
+        "--split-cache",
+        str(cache),
+        jev=JevJudge(client=FakeJevClient()),
+        splitter=LLMSplitter(client=client, cache_dir=cache),
+        sample=sample,
+        out=out,
+    )
+    assert code == 0
+    assert SPLIT_MODEL == "claude-haiku-5-5"
+    assert {r["model"] for r in client.requests} == {SPLIT_MODEL}
+    assert len(client.requests) == len(answers)  # one request an answer
+    assert f"{SPLIT_MODEL} claim split" in out.getvalue()
+
+    split = _split_runs(tmp_path)
+    assert split["model"] == SPLIT_MODEL
+    by_item = {i["item_id"]: i for i in split["items"]}
+    assert set(by_item) == {i.id for i in claim_items}
+    for item in claim_items:
+        claims = by_item[item.id]["claims"]
+        assert [c["claim"] for c in claims] == [f"{item.claim} (first)", f"{item.claim} (second)"]
+        # Each statement keeps its sentence's citations: none given, or none the
+        # sentence cites, is not a citation dropped.
+        cited = [s.tag for s in item.sources]
+        assert all(c["tags"] == cited for c in claims)
+        assert all(c["verdict"] == "supported" and c["error"] is None for c in claims)
+
+    # A rerun reads the cache: no request, the same claims.
+    again = FakeSplitter()
+    out = io.StringIO()
+    code, _ = _judge_command(
+        tmp_path,
+        "--llm-split",
+        "--split-cache",
+        str(cache),
+        jev=JevJudge(client=FakeJevClient()),
+        splitter=LLMSplitter(client=again, cache_dir=cache),
+        sample=sample,
+        out=out,
+    )
+    assert code == 0 and again.requests == []
+    rerun = _split_runs(tmp_path)
+    assert rerun["items"] == split["items"]
+    assert (rerun["requests"], rerun["cached"]) == (0, len(answers))
+    assert f"of {len(answers)} answers ({len(answers)} cached)" in out.getvalue()
+
+
+def test_a_statement_keeps_the_citations_it_names_of_its_sentence_and_its_context(tmp_path):
+    from types import SimpleNamespace
+
+    from edgar_eval.judge_study import LLMSplitter
+
+    answer = "## Apple\n\nRevenue rose and margins fell. [S1, S2]\n\nNo tag here."
+    reply = {
+        "statements": [
+            {"sentence": 0, "claim": "Apple's revenue rose.", "tags": ["S1"]},
+            {"sentence": 0, "claim": "Apple's margins fell.", "tags": ["S2", "S7"]},
+            {"sentence": 1, "claim": "Not a cited sentence.", "tags": []},
+        ]
+    }
+
+    class Client:
+        requests = []
+
+        class messages:  # noqa: N801 - the SDK's attribute
+            @staticmethod
+            def create(**request):
+                Client.requests.append(request)
+                return SimpleNamespace(
+                    stop_reason="end_turn",
+                    content=[SimpleNamespace(type="text", text=json.dumps(reply))],
+                    usage=SimpleNamespace(input_tokens=10, output_tokens=5),
+                )
+
+    split = LLMSplitter(client=Client, cache_dir=tmp_path).split(answer)
+    assert split.error is None
+    prompt = Client.requests[0]["messages"][0]["content"]
+    assert "No tag here" not in prompt.split("<sentences>")[1]  # uncited: not split
+    assert [(n, c.text, c.tags, c.heading) for n, c in split.statements] == [
+        (0, "Apple's revenue rose.", ("S1",), "Apple"),
+        (0, "Apple's margins fell.", ("S2",), "Apple"),
+    ]
+
+
+# Six answers of two claim items each: the labels, Jev's run 1 verdicts on the sentences,
+# and its verdicts on the LLM split's statements of each sentence (None: the split of
+# that answer failed).
+S, U, X = "supported", "unsupported", "contradicted"
+SPLIT_ANSWERS = [
+    # labels        sentence split   LLM split
+    ((S, U), (S, S), ([S], [S, U])),  # bad: the LLM split catches it, the sentences miss
+    ((S, X), (S, X), ([S], [X])),  # bad: both catch it
+    ((S, S), (S, S), ([S, U], [S])),  # clean: the LLM split raises a false alarm
+    ((S, S), (U, S), ([S], [S, S])),  # clean: the sentences raise a false alarm
+    ((U, S), (U, S), None),  # the split failed: left out
+    ((S, U), (S, S), ([S], [S, U])),  # bad: the LLM split catches it
+]
+
+
+def _split_study():
+    from edgar_eval.judge import JEV_MODEL
+    from edgar_eval.judge_study import (
+        JudgeRun,
+        Sample,
+        SplitClaim,
+        SplitItem,
+        SplitRun,
+        StudyItem,
+        Verdict,
+    )
+
+    items, labels, verdicts, split = [], {}, {}, {}
+    for a, (labelled, sentence, llm) in enumerate(SPLIT_ANSWERS):
+        answer = f"Answer {a} claim 0. [S1]\n\nAnswer {a} claim 1. [S1]"
+        for n in range(2):
+            item = StudyItem(
+                id=f"C-{a * 2 + n:010x}",
+                kind="claim",
+                case_id=f"case-{a}",
+                model=GPT,
+                answer=answer,
+                claim=f"Answer {a} claim {n}.",
+                sources=(Evidence("S1", "Source 1", "Text 1."),),
+            )
+            items.append(item)
+            labels[item.id] = labelled[n]
+            verdicts[item.id] = Verdict(item.id, sentence[n], probabilities={sentence[n]: 1.0})
+            split[item.id] = (
+                SplitItem(item.id, (), "stop_reason max_tokens")
+                if llm is None
+                else SplitItem(
+                    item.id, tuple(SplitClaim(f"{item.claim} {v}", ("S1",), v) for v in llm[n])
+                )
+            )
+    sample = Sample(seed=1, reports=(), items=tuple(items), skipped={})
+    runs = (JudgeRun(judge=JEV_MODEL, run=1, verdicts=verdicts),)
+    return sample, labels, runs, SplitRun("claude-haiku-5-5", JEV_MODEL, split)
+
+
+def test_the_score_compares_the_llm_split_with_the_sentence_split_against_the_labels():
+    from edgar_eval.judge_study import print_score, score
+
+    sample, labels, runs, split = _split_study()
+    assert score(sample, labels, runs).split is None  # not run, not compared
+
+    compared = score(sample, labels, runs, split=split).split
+    # Five answers compared; the one whose split failed is left out and counted.
+    assert [a.case_id for a in compared.answers] == [f"case-{n}" for n in (0, 1, 2, 3, 5)]
+    assert compared.left_out == 1
+    assert [a.better for a in compared.answers] == ["llm", "both", "sentence", "llm", "llm"]
+    first = compared.answers[0]
+    assert (first.labelled_bad, first.sentence_bad, first.llm_bad) == (True, False, True)
+    # Of the 3 answers labelled with a bad claim, the sentence split's verdicts catch 1
+    # and the LLM split's 3; of the 2 clean answers each raises 1 false alarm.
+    s, llm = compared.sentence, compared.llm
+    assert (s.caught, s.bad, s.false_alarms, s.clean, s.agree, s.of) == (1, 3, 1, 2, 2, 5)
+    assert (llm.caught, llm.bad, llm.false_alarms, llm.clean, llm.agree, llm.of) == (
+        3,
+        3,
+        1,
+        2,
+        4,
+        5,
+    )
+    assert (compared.agrees_better, compared.catches_more) == ("llm", "llm")
+    # The LLM split alone agrees on 3 answers, the sentence split alone on 1: McNemar's
+    # exact test, two-sided, 2 * 5/16.
+    assert compared.p_value == 0.625
+
+    out = io.StringIO()
+    print_score(score(sample, labels, runs, split=split), out)
+    assert "LLM claim split" in out.getvalue() and "3 of 3" in out.getvalue()
+
+
+def test_the_score_command_reads_the_stored_split_and_ties_when_both_agree_alike(tmp_path):
+    from dataclasses import replace
+
+    from edgar_eval.judge_study import load_split, main, save_verdicts
+
+    sample, labels, runs, split = _split_study()
+    # Only case-1, whose bad claim both splits catch.
+    keep = {i.id for i in sample.items if i.case_id == "case-1"}
+    sample = replace(sample, items=tuple(i for i in sample.items if i.id in keep))
+    runs = tuple(
+        replace(r, verdicts={k: v for k, v in r.verdicts.items() if k in keep}) for r in runs
+    )
+    split = replace(split, items={k: v for k, v in split.items.items() if k in keep})
+    save_verdicts(runs, sample, tmp_path / "verdicts.json", split)
+    assert load_split(tmp_path / "verdicts.json") == split
+    write_sheet(sample, tmp_path / "sheet.md")
+    _label_some(tmp_path / "sheet.md", {k: labels[k] for k in keep})
+    (tmp_path / "sample.json").write_text(json.dumps(sample.to_dict()))
+    argv = ["score", "--sheet", str(tmp_path / "sheet.md"), "--sample"]
+    argv += [str(tmp_path / "sample.json"), "--verdicts", str(tmp_path / "verdicts.json")]
+    argv += ["--json", str(tmp_path / "score.json")]
+
+    assert main(argv, out=io.StringIO()) == 0
+    saved = json.loads((tmp_path / "score.json").read_text())["split"]
+    assert (saved["agrees_better"], saved["catches_more"]) == ("tie", "tie")
+    assert saved["answers"][0]["better"] == "both"
+
+
+def test_the_llm_split_lives_in_the_study_only_and_the_harness_still_splits_by_sentence():
+    import inspect
+
+    import edgar_eval.answer_checks as answer_checks
+    import edgar_eval.brief_suite as brief_suite
+    import edgar_eval.generation as generation
+    from edgar_eval.answer_checks import claims
+
+    for module in (generation, brief_suite, answer_checks):
+        source = inspect.getsource(module)
+        assert "judge_study" not in source and "LLMSplitter" not in source
+    # The harness's claims are still the answer's sentences.
+    answer = "## Apple\n\nRevenue rose and margins fell. [S1, S2] Costs grew. [S1]"
+    assert [(c.text, c.tags) for c in claims(answer)] == [
+        ("Revenue rose and margins fell.", ("S1", "S2")),
+        ("Costs grew.", ("S1",)),
+    ]
