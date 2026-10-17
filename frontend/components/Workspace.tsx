@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import AnswerMessage from '@/components/AnswerMessage'
+import FollowUps from '@/components/FollowUps'
 import SourcesPanel from '@/components/SourcesPanel'
 import {
   answerComplete,
@@ -18,6 +19,7 @@ import {
 } from '@/lib/chat'
 import { loadConversation, saveConversation } from '@/lib/conversation'
 import { WHATS_COVERED_ID, type CoverageSummary } from '@/lib/coverage'
+import { followUps } from '@/lib/followUps'
 import { STARTERS } from '@/lib/starters'
 
 /** Which answer's Sources the panel shows, and which of them is open. */
@@ -31,7 +33,8 @@ interface OpenSource {
  * conversation, and a Sources panel that opens on a citation click. The conversation is
  * kept in session storage, so it survives a page refresh, and "New conversation" clears
  * it, so an old Query Scope can't leak into a new topic. With a Corpus coverage summary,
- * the empty conversation also says how many Companies are covered.
+ * the empty conversation also says how many Companies are covered. The latest answer,
+ * once complete, is followed by suggested follow-up questions.
  */
 export default function Workspace({ coverage }: { coverage?: CoverageSummary }) {
   const [transport] = useState(
@@ -121,6 +124,14 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
   const last = messages.at(-1)
   const writing = status === 'streaming' && last?.role === 'assistant' && !messageText(last)
   const turns = groupTurns(messages)
+  // Follow-ups suggested under the latest answer once it is complete, built from its
+  // Query Scope by fixed templates, so no model is asked.
+  const lastScope = last?.role === 'assistant' ? messageDataPart(last, 'query-scope') : null
+  const lastQuestion = messages.findLast((m) => m.role === 'user')
+  const suggestions =
+    status === 'ready' && lastScope
+      ? followUps(lastScope, lastQuestion ? messageText(lastQuestion) : '')
+      : []
 
   const renderMessage = (message: ResearchMessage) =>
     message.role === 'user' ? (
@@ -167,6 +178,7 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
           )}
         </div>
       )}
+      {suggestions.length > 0 && <FollowUps questions={suggestions} onPick={ask} />}
       <div ref={setEnd} />
     </>
   )

@@ -864,3 +864,115 @@ describe('Workspace', () => {
     expect(screen.getAllByText(starter.question)).toHaveLength(1)
   })
 })
+
+describe('Follow-up suggestions', () => {
+  /** The API's stream for one answer, under its own message id, so two answers differ. */
+  function answerStream(messageId: string, ...args: Parameters<typeof uiMessageParts>) {
+    const parts = uiMessageParts(...args).map((part) =>
+      part.type === 'start' ? { ...part, messageId } : part
+    )
+    return streamResponse(
+      new ReadableStream({
+        start(controller) {
+          controller.enqueue(encode(parts))
+          controller.enqueue(encoder.encode('data: [DONE]\n\n'))
+          controller.close()
+        },
+      })
+    )
+  }
+
+  const suggestionsOf = (list: HTMLElement) =>
+    within(list)
+      .getAllByRole('button')
+      .map((button) => button.textContent)
+
+  it('suggests follow-ups once the answer is complete, never while it streams', async () => {
+    const { response, release } = heldUiMessageStream((part) => part.type === 'text-delta')
+    fetchMock.mockImplementation(async () => response)
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+
+    await screen.findByText(/trade policy/)
+    expect(screen.queryByRole('list', { name: 'Suggested follow-ups' })).not.toBeInTheDocument()
+
+    release()
+    const list = await screen.findByRole('list', { name: 'Suggested follow-ups' })
+    expect(suggestionsOf(list)).toEqual([
+      'How do the main risk factors of Apple and Tesla compare?',
+      'How does revenue compare between Apple and Tesla in their latest filings?',
+      'How do Apple and Tesla describe their outlook in their latest filings?',
+    ])
+  })
+
+  it('suggests no trend for a Snapshot Company', async () => {
+    const scope = {
+      ...QUERY_SCOPE,
+      companies: [{ ticker: 'JPM', name: 'JPMorgan Chase & Co', coverage: 'snapshot' }],
+    }
+    fetchMock.mockImplementation(async () => uiMessageStream(ANSWER, scope))
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+
+    const list = await screen.findByRole('list', { name: 'Suggested follow-ups' })
+    const suggestions = suggestionsOf(list)
+    expect(suggestions).toContain("What was JPMorgan Chase's revenue in its latest filing?")
+    expect(suggestions.filter((s) => /changed|last two years/.test(s ?? ''))).toEqual([])
+  })
+
+  it('sends a suggestion on click, and shows suggestions only under the latest answer', async () => {
+    const second = {
+      ...QUERY_SCOPE,
+      companies: [{ ticker: 'AAPL', name: 'Apple Inc', coverage: 'tracked' }],
+    }
+    const held = heldUiMessageStream((part) => part.type === 'text-delta', ANSWER, second)
+    fetchMock
+      .mockImplementationOnce(async () => answerStream('msg-0'))
+      .mockImplementationOnce(async () => held.response)
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+
+    const first = await screen.findByRole('list', { name: 'Suggested follow-ups' })
+    const suggestion = 'How do the main risk factors of Apple and Tesla compare?'
+    await user.click(within(first).getByRole('button', { name: suggestion }))
+
+    await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
+    expect(sentMessages(1).at(-1)).toMatchObject({
+      role: 'user',
+      parts: [{ type: 'text', text: suggestion }],
+    })
+    // The question is in the thread, and no suggestion shows while its answer streams.
+    expect(await screen.findByText(suggestion)).toBeInTheDocument()
+    await waitFor(() => expect(screen.getAllByRole('article', { name: 'Answer' })).toHaveLength(2))
+    expect(screen.queryByRole('list', { name: 'Suggested follow-ups' })).not.toBeInTheDocument()
+
+    held.release()
+    const lists = await screen.findAllByRole('list', { name: 'Suggested follow-ups' })
+    expect(lists).toHaveLength(1)
+    expect(suggestionsOf(lists[0])).toEqual([
+      "What are Apple's main risk factors?",
+      "How has Apple's revenue changed over the last two years?",
+      "What does Apple's latest filing say about its outlook?",
+    ])
+    // Under the latest answer, not the first one.
+    const answers = screen.getAllByRole('article', { name: 'Answer' })
+    expect(answers[1].compareDocumentPosition(lists[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING
+    )
+  })
+
+  it('shows no suggestions once a later question fails', async () => {
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    expect(await screen.findByRole('list', { name: 'Suggested follow-ups' })).toBeInTheDocument()
+
+    fetchMock.mockImplementation(async () => new Response('backend exploded', { status: 502 }))
+    await user.type(screen.getByRole('textbox', { name: 'Question' }), 'And Microsoft?{Enter}')
+    await screen.findByRole('alert')
+    expect(screen.queryByRole('list', { name: 'Suggested follow-ups' })).not.toBeInTheDocument()
+  })
+})
