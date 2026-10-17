@@ -2,7 +2,7 @@
 
 The Golden Set is the evaluation's ground truth: 30 labelled questions that the retrieval and generation harnesses score the system against. It lives in [`data/eval/golden_set.json`](../data/eval/golden_set.json) and is read by `edgar_rag.golden_set.load_golden_set()`, which checks the schema. It was written before any retrieval Arm or prompt ran, so no label was written with results in view.
 
-This page describes version 1, the set every result so far was measured on, the Required Fact tiers that version 2 adds, and the [Brief Suite](#the-brief-suite), the brief's questions in a file of their own. Version 2's [file](#the-file) is built and holds all 27 of version 1's cases other than the brief's, [rewritten](#the-rewritten-version-1-cases), and the first two slices of its [new cases](#the-new-cases); the rest of version 2 is decided but not built yet: see [Version 2](#version-2). Version 1's file stays unchanged as a record, and a test pins its digest.
+This page describes version 1, the set every result so far was measured on, the Required Fact tiers that version 2 adds, and the [Brief Suite](#the-brief-suite), the brief's questions in a file of their own. Version 2's [file](#the-file) is built and holds all 27 of version 1's cases other than the brief's, [rewritten](#the-rewritten-version-1-cases), and the first three slices of its [new cases](#the-new-cases); the rest of version 2 is decided but not built yet: see [Version 2](#version-2). Version 1's file stays unchanged as a record, and a test pins its digest.
 
 ## What it covers
 
@@ -131,7 +131,7 @@ No id is in both files: the loader rejects one that is.
 
 ## Version 2
 
-Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions and four variants of each, and version 2's file, with all three batches of version 1's 27 other cases rewritten and the first two of six slices of new cases, are built so far.
+Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions and four variants of each, and version 2's file, with all three batches of version 1's 27 other cases rewritten and the first three of six slices of new cases, are built so far.
 
 ### The file
 
@@ -257,6 +257,29 @@ The second slice is seven risk questions on financials, industrials, energy, hea
 - **Coverage Gaps.** Five cases compare Companies whose latest 10-Ks end more than 20 days apart, so they expect the periods differ gap; Walmart's and Target's fiscal years end a day apart, so their case expects none.
 - **No amount.** No fact states a dollar amount. The amounts in these Sections (Walmart's opioid accrual, Boeing's 777X reach-forward losses, UPS's and RTX's sensitivity results) have no SEC company-facts value, and the reference does not cache Boeing or RTX; the amounts stay in the evidence quotes. The figure check runs on the slice and finds nothing to check.
 - **Fact wording.** As in the first slice, each fact states one claim in the Filing's own terms and names its Company, and none renames a period or states a cause or change the Filing does not.
+
+The third slice is nine figure trends on Tracked Companies: revenue, net income and segment revenue, the three Financial Facts metrics, three cases each; six ask about one Company and three compare two; five name a fiscal year and four ask about "the last two years". Snapshot Companies are left to the Coverage Gap slices. A test checks the slice's ids, that every case is a figure trend whose Sources are all Tracked Companies' Filings and that expects no Snapshot trend gap, and that it covers all three metrics, both sizes and both kinds of time window.
+
+| Case | Companies | Metric and window | Required Facts (must-state / detail) | Sections drafted from |
+|---|---|---|---|---|
+| `trend-goog-cloud-two-years` | Alphabet | Google Cloud segment revenue, the last two years | 2 / 3 | MD&A of the FY2024 and FY2025 10-Ks |
+| `trend-dis-segments-fy2025` | Disney | Each segment's revenue, fiscal 2025 against fiscal 2024 | 3 / 8 | MD&A of the FY2025 10-K |
+| `trend-tsla-energy-two-years` | Tesla | Energy generation and storage segment revenue, the last two years | 2 / 6 | MD&A of the FY2024 and FY2025 10-Ks |
+| `trend-ko-revenue-two-years` | Coca-Cola | Net operating revenues, the last two years | 4 / 7 | MD&A of the FY2023 and FY2024 10-Ks and the Q3 2025 10-Q |
+| `trend-amzn-net-sales-2025` | Amazon | Total net sales, 2025 against 2024 | 2 / 7 | MD&A of the FY2025 10-K |
+| `trend-pfe-jnj-revenue-2024` | Pfizer, Johnson & Johnson | Revenue, 2024 against 2023 | 4 / 10 | MD&A of both FY2024 10-Ks |
+| `trend-xom-net-income-2025` | ExxonMobil | Net income, 2025 against 2024 | 3 / 5 | The MD&A of the FY2025 10-K, in its Financial Section (Other) |
+| `trend-aapl-msft-net-income-fy2025` | Apple, Microsoft | Net income, fiscal 2025 | 6 / 7 | MD&A of both FY2025 10-Ks and Apple's income statement (Financial Statements) |
+| `trend-goog-meta-net-income-two-years` | Alphabet, Meta | Net income, the last two years | 8 / 9 | MD&A of each Company's FY2024 and FY2025 10-Ks |
+
+- **Not a repeat.** Version 1's figure trends already ask about Meta's and JPMorgan's revenue, Apple's net sales, Tesla's net income and AWS's revenue, the Microsoft follow-up about its revenue, and the Brief Suite about NVIDIA's revenue and net income and UnitedHealth's revenue. This slice asks other Companies, or the same Companies about another metric: Amazon's total net sales in one year, where `trend-amzn-aws-two-years` asks about one segment over two years; Meta's, Apple's and Microsoft's net income, where the other cases ask about their revenue.
+- **The window.** "The last two years" is anchored on each Company's latest Filing (assumption 6). For Alphabet, Tesla and Meta that is the FY2025 10-K, so the years are 2024 and 2025. Coca-Cola's latest Filing is the Q3 2025 10-Q, so its window runs from the FY2023 10-K's quarter-end to Q3 2025: the full year 2024 and the first nine months of 2025, with 2023 as the start, as in the Brief Suite's UnitedHealth variant.
+- **Each figure its own fact, from the reference.** A period's figure and its change are separate facts, and every dollar amount matches the SEC company-facts reference, which the figure check confirms: Coca-Cola's, Pfizer's and Disney's Revenues, Amazon's and Johnson & Johnson's RevenueFromContractWithCustomerExcludingAssessedTax, and the NetIncomeLoss of ExxonMobil, Apple, Microsoft, Alphabet and Meta, with Apple's provision for income taxes and operating income. Every growth rate agrees with those values.
+- **No amount without a reference value.** The reference has no segment values, so the facts on Google Cloud's, Disney's segments', Tesla's energy segment's, Amazon's segments' and Johnson & Johnson's segments' revenue, and on ExxonMobil's segment earnings, state the growth rate or the direction and its driver only; so do the facts on Amazon's foreign exchange effect and Apple's State Aid tax decrease. The amounts stay in the evidence quotes. Where a Filing gives no growth rate for a total (Apple's and Meta's net income), the facts give both years' figures and state no rate.
+- **Must-state or detail.** The must-state facts are each period's headline figure and its change, and where the change has one main cause in the Filing, that cause: lower Upstream realizations for ExxonMobil, the lower provision for income taxes related to the State Aid Decision for Apple, and the 30% effective tax rate that includes the effects of the One Big Beautiful Bill Act for Meta's fall in 2025. When the question asks for segments (Disney), each segment's change is must-state. Other drivers, segment breakdowns of a total, the year before the window, tax rates and operating income are details.
+- **Coverage Gaps.** Apple's fiscal 2025 ends in September and Microsoft's in June, so their case expects the periods differ gap. Pfizer's and Johnson & Johnson's 2024 years end two days apart, and Alphabet's and Meta's on the same day, so those cases expect none.
+- **Sections.** ExxonMobil's Item 7 only refers to the MD&A in its Financial Section, which the Corpus seam names Other, so its facts cite Other, as JPMorgan's 10-K financial review does. Apple's MD&A gives no net income figure, so its net income facts cite its Financial Statements.
+- **Fact wording.** As in the first two slices, each fact states one claim in the Filing's own terms and names its Company, and none renames a period or states a cause or change the Filing does not. Coca-Cola's nine-month facts keep the Filing's period ("the nine months ended September 26, 2025") rather than a calendar quarter.
 
 ### What is decided
 

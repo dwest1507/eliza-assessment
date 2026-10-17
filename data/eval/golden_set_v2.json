@@ -6622,6 +6622,897 @@
         }
       ],
       "expected_coverage_gaps": []
+    },
+    {
+      "id": "trend-goog-cloud-two-years",
+      "question": "How has Alphabet's Google Cloud revenue grown over the last two years?",
+      "history": [],
+      "question_type": "figure_trend",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "Segment revenue, a Financial Facts metric, for a Tracked Company. Alphabet's latest Filing is the FY2025 10-K, so the last two years are 2024 and 2025. Drafted from the whole MD&A of the FY2024 and FY2025 10-Ks. Not a repeat: no other case asks about Alphabet's revenue. The SEC company-facts reference has no segment values, so Google Cloud's revenues ($33,088 million for 2023, $43,229 million for 2024, $58,705 million for 2025) and their dollar increases cannot be checked against it and no fact states them; the amounts stay in the evidence. The growth rates are the Filings' own and agree with those amounts (up 31% and 36%). Must-state: each year's growth. The drivers and the factors the Filing says move Cloud revenue are details.",
+      "expected_sources": [
+        {
+          "filing_id": "GOOG_10-K_2024-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Alphabet's Google Cloud revenues increased 31% in 2024 from 2023.",
+          "filing_id": "GOOG_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "an increase in Google Cloud revenues of $10.1 billion, or 31%.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Alphabet says its Google Cloud revenue growth in 2024 was primarily driven by growth in Google Cloud Platform, largely from infrastructure services.",
+          "filing_id": "GOOG_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Google Cloud revenues increased $10.1 billion from 2023 to 2024 primarily driven by growth in Google Cloud Platform largely from infrastructure services.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Alphabet's Google Cloud revenues increased 36% in 2025 from 2024.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "an increase in Google Cloud revenues of $15.5 billion, or 36%.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Alphabet says its Google Cloud revenue growth in 2025 was primarily driven by growth in Google Cloud Platform, largely from infrastructure and platform services.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Google Cloud revenues increased $15.5 billion from 2024 to 2025, primarily driven by growth in Google Cloud Platform largely from infrastructure and platform services.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Alphabet says its Google Cloud revenues have been and may continue to be affected by supply availability.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Fluctuations in our Google Cloud revenues have been, and may continue to be, affected by factors in addition to the general factors described above, such as changes in customer usage, demand, and supply availability.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "trend-dis-segments-fy2025",
+      "question": "How did revenue in each of Disney's segments change in fiscal 2025 compared with fiscal 2024?",
+      "history": [],
+      "question_type": "figure_trend",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "Segment revenue for a named fiscal year. Disney's fiscal 2025 is the year to September 27, 2025, in its FY2025 10-K. Drafted from the whole MD&A of that 10-K, its segment table and each segment's revenue discussion. Not a repeat: the streaming competition case asks Disney about risks, not figures. Total revenues match the SEC company-facts reference (Revenues: $94,425 million for fiscal 2025, $91,361 million for fiscal 2024). The reference has no segment values, so the segment facts state the growth rate or direction only, the Filing's own (Entertainment up 3%, Sports flat, Experiences up 6%). Must-state: each segment's change, as the question asks. The total, the drivers and the Star India Transaction are details.",
+      "expected_sources": [
+        {
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Walt Disney's Entertainment segment revenues increased 3% in fiscal 2025 compared with fiscal 2024.",
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Entertainment | $ | 42,466 | | | $ | 41,186 | | | 3 %",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Walt Disney's Sports segment revenues were flat in fiscal 2025 compared with fiscal 2024.",
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Sports | 17,672 | | | 17,619 | | | — %",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Walt Disney's Experiences segment revenues increased 6% in fiscal 2025 compared with fiscal 2024.",
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Experiences | 36,156 | | | 34,151 | | | 6 %",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Walt Disney's revenues for fiscal 2025 were $94.4 billion.",
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Revenues for fiscal 2025 increased 3%, or $3.1 billion, to $94.4 billion",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walt Disney's revenues for fiscal 2025 increased 3%.",
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Revenues for fiscal 2025 increased 3%, or $3.1 billion, to $94.4 billion",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walt Disney says the increase in its Entertainment revenues was due to an increase in subscription fees and higher content sales.",
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "The increase in Entertainment revenues was due to an increase in subscription fees and higher content sales.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walt Disney says its Entertainment revenue increases were partially offset by decreases in advertising revenue and affiliate fees due to the Star India Transaction.",
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "These increases were partially offset by decreases in advertising revenue and affiliate fees due to the Star India Transaction.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walt Disney's Star India results were reported in its Entertainment and Sports segments only through November 14, 2024.",
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Star India results through November 14, 2024 were consolidated in the Company’s financial results and reported in the Entertainment and Sports segments.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walt Disney says the increase in its domestic ESPN advertising revenue was due to higher rates.",
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "The increase in domestic ESPN advertising revenue was due to an increase of 13% from higher rates.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walt Disney says the increase in its theme park admissions revenue was due to higher average per capita ticket revenue.",
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "The increase in theme park admissions revenue was due to an increase of 4% from higher average per capita ticket revenue.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walt Disney says the growth in its resorts and vacations revenue was primarily attributable to additional passenger cruise days.",
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Growth in resorts and vacations revenue was primarily attributable to increases of 5% from additional passenger cruise days",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "trend-tsla-energy-two-years",
+      "question": "How has Tesla's energy generation and storage revenue changed over the last two years?",
+      "history": [],
+      "question_type": "figure_trend",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "Segment revenue for a Tracked Company. Tesla's latest Filing is the FY2025 10-K, so the last two years are 2024 and 2025. Drafted from the whole MD&A of the FY2024 and FY2025 10-Ks. Not a repeat: Tesla's other cases ask about its net income, its 2026 outlook, its risks and tariffs, not this segment. The SEC company-facts reference has no segment values, so the segment's revenue ($6,035 million for 2023, $10,086 million for 2024, $12,771 million for 2025) and its dollar increases cannot be checked against it and no fact states them; the amounts stay in the evidence. The growth rates are the Filings' own and agree with those amounts (up 67% and 27%). Must-state: each year's growth. The drivers and the storage deployed each year are details.",
+      "expected_sources": [
+        {
+          "filing_id": "TSLA_10-K_2024-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Tesla's energy generation and storage revenue increased 67% in 2024 compared to 2023.",
+          "filing_id": "TSLA_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Energy generation and storage revenue increased $4.05 billion, or 67%, in the year ended December 31, 2024 as compared to the year ended December 31, 2023",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla says its 2024 energy generation and storage revenue increase was primarily due to a 16.7 GWh increase in Megapack and Powerwall deployments.",
+          "filing_id": "TSLA_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "primarily due to a 16.7 GWh increase in Megapack and Powerwall deployments compared to the prior year.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla deployed 31.4 GWh of energy storage products in 2024.",
+          "filing_id": "TSLA_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "In 2024, we deployed 31.4 GWh of energy storage products.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla's energy generation and storage revenue increased 27% in 2025 compared to 2024.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Energy generation and storage revenue increased $2.69 billion, or 27%, in the year ended December 31, 2025 as compared to the year ended December 31, 2024",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla says its 2025 energy generation and storage revenue increase was primarily due to increases in Megapack and Powerwall deployments.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Energy generation and storage revenue increased $2.69 billion, or 27%, in the year ended December 31, 2025 as compared to the year ended December 31, 2024 primarily due to increases in Megapack and Powerwall deployments",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says its 2025 energy generation and storage revenue increase was partially offset by a decrease in the average selling price of Megapack.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "partially offset by a decrease in average selling price of Megapack.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla deployed 46.7 GWh of energy storage products in 2025.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "In 2025, we deployed 46.7 GWh of energy storage products.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says its Megapack energy storage deployments can vary meaningfully quarter to quarter.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "For Megapack, energy storage deployments can vary meaningfully quarter to quarter",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "trend-ko-revenue-two-years",
+      "question": "How have Coca-Cola's net operating revenues changed over the last two years?",
+      "history": [],
+      "question_type": "figure_trend",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "Revenue for a Tracked Company whose latest Filing is a 10-Q. Coca-Cola's latest Filing is the Q3 2025 10-Q, so the last two years are its eight quarter-ends from Q4 2023 (the FY2023 10-K) to Q3 2025: the full year 2024 and the first nine months of 2025, with 2023 as the start. Drafted from the whole MD&A of the FY2023 and FY2024 10-Ks and the Q3 2025 10-Q. Not a repeat: Coca-Cola's other case asks about its market risks. Revenue figures match the SEC company-facts reference (Revenues: $45,754 million for 2023, $47,061 million for 2024, $36,119 million for the nine months to September 26, 2025 against $35,517 million a year earlier, $12,455 million for Q3 2025 against $11,854 million), with every growth rate agreeing with them. Must-state: 2024's revenue and growth and the nine months' revenue and growth. The quarter, 2023 and the drivers (price and mix, currency) are details.",
+      "expected_sources": [
+        {
+          "filing_id": "KO_10-K_2023-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "KO_10-Q_2025-09-26",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Coca-Cola's net operating revenues increased 6% in 2023 compared to 2022.",
+          "filing_id": "KO_10-K_2023-12-31",
+          "section": "MD&A",
+          "evidence": "Net operating revenues were $45,754 million in 2023, compared to $43,004 million in 2022, an increase of $2,750 million, or 6%.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Coca-Cola's net operating revenues were $47,061 million in 2024.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Net operating revenues were $47,061 million in 2024, compared to $45,754 million in 2023",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Coca-Cola's net operating revenues increased 3% in 2024 compared to 2023.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Net operating revenues were $47,061 million in 2024, compared to $45,754 million in 2023, an increase of $1,307 million, or 3%.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Coca-Cola's net operating revenues were $45,754 million in 2023.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Net operating revenues were $47,061 million in 2024, compared to $45,754 million in 2023",
+          "tier": "detail"
+        },
+        {
+          "fact": "Coca-Cola says price, product and geographic mix had an 11% favorable impact on its consolidated net operating revenues in 2024.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Price, product and geographic mix had an 11% favorable impact on our consolidated net operating revenues.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Coca-Cola says fluctuations in foreign currency exchange rates decreased its consolidated net operating revenues by 5% in 2024.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Fluctuations in foreign currency exchange rates decreased our consolidated net operating revenues by 5%.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Coca-Cola's net operating revenues were $36,119 million in the nine months ended September 26, 2025.",
+          "filing_id": "KO_10-Q_2025-09-26",
+          "section": "MD&A",
+          "evidence": "During the nine months ended September 26, 2025, net operating revenues were $36,119 million",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Coca-Cola's net operating revenues increased 2% in the nine months ended September 26, 2025 compared to the nine months ended September 27, 2024.",
+          "filing_id": "KO_10-Q_2025-09-26",
+          "section": "MD&A",
+          "evidence": "During the nine months ended September 26, 2025, net operating revenues were $36,119 million, compared to $35,517 million during the nine months ended September 27, 2024, an increase of $602 million, or 2%.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Coca-Cola's net operating revenues were $12,455 million in the three months ended September 26, 2025.",
+          "filing_id": "KO_10-Q_2025-09-26",
+          "section": "MD&A",
+          "evidence": "During the three months ended September 26, 2025, net operating revenues were $12,455 million",
+          "tier": "detail"
+        },
+        {
+          "fact": "Coca-Cola's net operating revenues increased 5% in the three months ended September 26, 2025 compared to the three months ended September 27, 2024.",
+          "filing_id": "KO_10-Q_2025-09-26",
+          "section": "MD&A",
+          "evidence": "During the three months ended September 26, 2025, net operating revenues were $12,455 million, compared to $11,854 million during the three months ended September 27, 2024, an increase of $601 million, or 5%.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Coca-Cola says price, product and geographic mix had a 6% favorable impact on its consolidated net operating revenues in the nine months ended September 26, 2025.",
+          "filing_id": "KO_10-Q_2025-09-26",
+          "section": "MD&A",
+          "evidence": "Price, product and geographic mix had a 6% favorable impact on our consolidated net operating revenues.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "trend-amzn-net-sales-2025",
+      "question": "How did Amazon's total net sales change in 2025 compared with 2024?",
+      "history": [],
+      "question_type": "figure_trend",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "Revenue for a named year. Drafted from the whole MD&A of Amazon's FY2025 10-K, its net sales table and segment discussion. Not a repeat: trend-amzn-aws-two-years asks about the AWS segment's growth over two years; this asks about Amazon's total net sales in one year, with AWS one of three segments, and the Amazon risk cases ask about legal proceedings and tariffs. Total net sales match the SEC company-facts reference (RevenueFromContractWithCustomerExcludingAssessedTax: $637,959 million for 2024, $716,924 million for 2025; up 12%). The reference has no segment values, so the segment facts state the growth rate only, and the foreign exchange effect ($4.4 billion) is stated without its amount. Must-state: 2025's total and its growth. The segments, 2024's total and the drivers are details.",
+      "expected_sources": [
+        {
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Amazon's consolidated net sales were $716,924 million in 2025.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Consolidated | $ | 637,959 | | | $ | 716,924 |",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Amazon's net sales increased 12% in 2025 compared to the prior year.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Sales increased 12% in 2025, compared to the prior year.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Amazon's consolidated net sales were $637,959 million in 2024.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Consolidated | $ | 637,959 | | | $ | 716,924 |",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon says changes in foreign exchange rates increased its net sales in 2025.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Changes in foreign exchange rates increased net sales by $4.4 billion in 2025.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon's North America sales increased 10% in 2025 compared to the prior year.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "North America sales increased 10% in 2025, compared to the prior year.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon says its 2025 North America sales growth primarily reflects increased unit sales, including sales by third-party sellers, advertising sales, and subscription services.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "North America sales increased 10% in 2025, compared to the prior year. The sales growth primarily reflects increased unit sales, including sales by third-party sellers, advertising sales, and subscription services.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon's International sales increased 13% in 2025 compared to the prior year.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "International sales increased 13% in 2025, compared to the prior year.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon's AWS sales increased 20% in 2025 compared to the prior year.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "AWS sales increased 20% in 2025, compared to the prior year.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon says its increased unit sales were driven largely by its continued focus on price, selection, and convenience for its customers.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Increased unit sales were driven largely by our continued focus on price, selection, and convenience for our customers",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "trend-pfe-jnj-revenue-2024",
+      "question": "How did Pfizer's and Johnson & Johnson's revenue change in 2024 compared with 2023?",
+      "history": [],
+      "question_type": "figure_trend",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "Revenue for two Tracked Companies in a named year. Pfizer's year ends December 31, 2024 and Johnson & Johnson's December 29, 2024, two days apart, so the periods do not differ. Drafted from the whole MD&A of both FY2024 10-Ks. Not a repeat: the pharmaceutical, health care, Pfizer and 340B cases ask about regulation and pricing, and the loss of exclusivity case asks Johnson & Johnson about patents; none asks about revenue. Figures match the SEC company-facts reference (Pfizer's Revenues: $59,553 million for 2023, $63,627 million for 2024; Johnson & Johnson's RevenueFromContractWithCustomerExcludingAssessedTax: $85,159 million for 2023, $88,821 million for 2024), with every growth rate agreeing with them. The reference has no segment values, so Johnson & Johnson's segment facts state the growth rate only. Must-state: each Company's 2024 revenue and its growth. The drivers, the segments, 2023 and the year before are details.",
+      "expected_sources": [
+        {
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "JNJ_10-K_2024-12-29",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Pfizer's total revenues were $63.6 billion in 2024.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Total revenues increased $4.1 billion, or 7%, to $63.6 billion in 2024 from $59.6 billion in 2023",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Pfizer's total revenues increased 7% in 2024 from 2023.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Total revenues increased $4.1 billion, or 7%, to $63.6 billion in 2024 from $59.6 billion in 2023",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Pfizer's total revenues were $59.6 billion in 2023.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Total revenues increased $4.1 billion, or 7%, to $63.6 billion in 2024 from $59.6 billion in 2023",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says its 2024 operational revenue increase was primarily driven by Paxlovid.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "The operational increase was primarily driven by Paxlovid",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says the addition of legacy Seagen revenues in full-year 2024 drove its operational revenue increase.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "The operational increase was primarily driven by Paxlovid, the addition of legacy Seagen revenues in full-year 2024 following the acquisition in December 2023",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says growth from the Vyndaqel family and Eliquis contributed to its 2024 operational revenue increase.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "The operational increase was primarily driven by Paxlovid, the addition of legacy Seagen revenues in full-year 2024 following the acquisition in December 2023, and growth from the Vyndaqel family and Eliquis",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says its 2024 operational revenue increase was partially offset by declines in Comirnaty.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "and growth from the Vyndaqel family and Eliquis, partially offset by declines in Comirnaty.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says that excluding contributions from Comirnaty and Paxlovid, its total revenues increased 12% operationally in 2024.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Excluding contributions from Comirnaty and Paxlovid, Total revenues increased 12% operationally.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson's worldwide sales were $88.8 billion in 2024.",
+          "filing_id": "JNJ_10-K_2024-12-29",
+          "section": "MD&A",
+          "evidence": "In 2024, worldwide sales increased 4.3% to $88.8 billion as compared to an increase of 6.5% in 2023.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Johnson & Johnson's worldwide sales increased 4.3% in 2024.",
+          "filing_id": "JNJ_10-K_2024-12-29",
+          "section": "MD&A",
+          "evidence": "In 2024, worldwide sales increased 4.3% to $88.8 billion as compared to an increase of 6.5% in 2023.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Johnson & Johnson's worldwide sales increased 6.5% in 2023.",
+          "filing_id": "JNJ_10-K_2024-12-29",
+          "section": "MD&A",
+          "evidence": "In 2024, worldwide sales increased 4.3% to $88.8 billion as compared to an increase of 6.5% in 2023.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson's 2024 sales change included a negative currency impact of 1.6%.",
+          "filing_id": "JNJ_10-K_2024-12-29",
+          "section": "MD&A",
+          "evidence": "Sales increase/(decrease) due to: | | 2024 | | 2023 | | Volume | | 5.9 | % | | 6.8 | % | | Price | | 0.0 | | | 0.6 | | | Currency | | (1.6) | | | (0.9) |",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson's Innovative Medicine segment sales increased 4.0% in 2024 from 2023.",
+          "filing_id": "JNJ_10-K_2024-12-29",
+          "section": "MD&A",
+          "evidence": "Innovative Medicine segment sales in 2024 were $57.0 billion, an increase of 4.0% from 2023",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson's MedTech segment sales increased 4.8% in 2024 from 2023.",
+          "filing_id": "JNJ_10-K_2024-12-29",
+          "section": "MD&A",
+          "evidence": "The MedTech segment sales in 2024 were $31.9 billion, an increase of 4.8% from 2023",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "trend-xom-net-income-2025",
+      "question": "How did ExxonMobil's net income change in 2025 compared with 2024?",
+      "history": [],
+      "question_type": "figure_trend",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "Net income for a named year. ExxonMobil's FY2025 10-K puts its MD&A in the Financial Section after the Items, which the Corpus seam names Other (Item 7 only refers to it), so the facts cite Other, as JPMorgan's 10-K financial review does. Drafted from that whole MD&A: the corporate earnings table and each segment's earnings driver analysis. Not a repeat: ExxonMobil's other cases ask about its risks (the brief variant, the oil majors follow-up, commodity prices), not its earnings. Net income matches the SEC company-facts reference (NetIncomeLoss: $36,010 million for 2023, $33,680 million for 2024, $28,844 million for 2025). The reference has no segment values, so the segment facts state the direction and the Filing's driver only, without the amounts. Must-state: each year's net income and the main driver of the fall, lower realizations in Upstream. The other segments' drivers, 2023 and impairments are details.",
+      "expected_sources": [
+        {
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Other"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "ExxonMobil's net income attributable to ExxonMobil was $28,844 million in 2025.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Other",
+          "evidence": "Net income (loss) attributable to ExxonMobil (U.S. GAAP) | 28,844 | | 33,680 | | 36,010 |",
+          "tier": "must_state"
+        },
+        {
+          "fact": "ExxonMobil's net income attributable to ExxonMobil was $33,680 million in 2024.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Other",
+          "evidence": "Net income (loss) attributable to ExxonMobil (U.S. GAAP) | 28,844 | | 33,680 | | 36,010 |",
+          "tier": "must_state"
+        },
+        {
+          "fact": "ExxonMobil's net income attributable to ExxonMobil was $36,010 million in 2023.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Other",
+          "evidence": "Net income (loss) attributable to ExxonMobil (U.S. GAAP) | 28,844 | | 33,680 | | 36,010 |",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says lower realizations, primarily driven by lower crude prices, decreased its 2025 Upstream earnings.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Other",
+          "evidence": "2025 Upstream Earnings Driver Analysis(1) | | | | (millions of dollars) | | | | Price – Lower realizations decreased earnings by $6.1 billion, primarily driven by lower crude prices as record demand was more than offset by increased industry supply.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "ExxonMobil says record production in Permian and Guyana increased its 2025 Upstream earnings.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Other",
+          "evidence": "Advantaged Volume Growth – Increased earnings by $1.9 billion, mainly driven by record production in Permian and Guyana.",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says its 2025 Upstream identified items were a loss mainly due to asset impairments.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Other",
+          "evidence": "2025 $(0.9) billion loss mainly due to asset impairments.",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says margins increased its 2025 Energy Products earnings, mainly driven by robust demand and supply disruptions.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Other",
+          "evidence": "2025 Energy Products Earnings Driver Analysis(1) | | | | (millions of dollars) | | | | Margin – Increased earnings by $1.8 billion, mainly driven by robust demand and supply disruptions.",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says margins decreased its 2025 Chemical Products earnings, as oversupply resulted in margins at bottom-of-cycle market conditions.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Other",
+          "evidence": "2025 Chemical Products Earnings Driver Analysis(1) | | | | (millions of dollars) | | | | Margin – Decreased earnings by $1.8 billion, as oversupply resulted in margins at bottom-of-cycle market conditions.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "trend-aapl-msft-net-income-fy2025",
+      "question": "Compare how Apple's and Microsoft's net income changed in fiscal 2025.",
+      "history": [],
+      "question_type": "figure_trend",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "Net income for two Tracked Companies in a named fiscal year. Apple's fiscal 2025 is the year to September 27, 2025 and Microsoft's the year to June 30, 2025, so the periods differ. Drafted from the whole MD&A of both FY2025 10-Ks and, since Apple's MD&A gives no net income figure, Apple's income statement in its Financial Statements. Not a repeat: trend-aapl-revenue-fy2025 asks about Apple's net sales, followup-switch-to-msft and outlook-msft-cloud about Microsoft's revenue and cloud, and the market risk case about both Companies' interest rate and currency risk; none asks about net income. Figures match the SEC company-facts reference (Apple's NetIncomeLoss: $93,736 million for fiscal 2024, $112,010 million for fiscal 2025, with IncomeTaxExpenseBenefit $20,719 million and OperatingIncomeLoss $133,050 million for fiscal 2025; Microsoft's NetIncomeLoss: $88,136 million for fiscal 2024, $101,832 million for fiscal 2025; up 16%). Apple's Filing gives no net income growth rate, so its facts state the two figures. Must-state: each Company's net income for both years (Microsoft's change as its own fact) and Apple's driver, the lower provision for income taxes related to the State Aid Decision. Tax rates, operating income and other income are details.",
+      "expected_sources": [
+        {
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Financial Statements"
+        },
+        {
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Apple's net income for 2025 was $112,010 million.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Financial Statements",
+          "evidence": "Net income | $ | 112,010 | | | $ | 93,736 | | | $ | 96,995 |",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple's net income for 2024 was $93,736 million.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Financial Statements",
+          "evidence": "Net income | $ | 112,010 | | | $ | 93,736 | | | $ | 96,995 |",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple says its effective tax rate for 2025 was lower compared to 2024 due to a year-over-year decrease in the provision for income taxes related to the State Aid Decision.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "The Company’s effective tax rate for 2025 was lower compared to 2024 due to a $10.7 billion year-over-year decrease in the provision for income taxes related to the State Aid Decision",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple's effective tax rate was 15.6% for 2025.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Effective tax rate | 15.6 | % | | 24.1 | % | | 14.7 | %",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's effective tax rate was 24.1% for 2024.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Effective tax rate | 15.6 | % | | 24.1 | % | | 14.7 | %",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's provision for income taxes for 2025 was $20,719 million.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Provision for income taxes | $ | 20,719 | | | $ | 29,749 |",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's operating income for 2025 was $133,050 million.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Financial Statements",
+          "evidence": "Operating income | 133,050 | | | 123,216 | | | 114,301 |",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft's net income for fiscal year 2025 was $101,832 million.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "MD&A",
+          "evidence": "Net income | | | 101,832 | | | | 88,136 | | | | 16% |",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft's net income for fiscal year 2024 was $88,136 million.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "MD&A",
+          "evidence": "Net income | | | 101,832 | | | | 88,136 | | | | 16% |",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft's net income increased 16% in fiscal year 2025 compared with fiscal year 2024.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "MD&A",
+          "evidence": "Net income | | | 101,832 | | | | 88,136 | | | | 16% |",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft's operating income increased 17% in fiscal year 2025, with growth across each of its segments.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "MD&A",
+          "evidence": "Operating income increased $19.1 billion or 17% with growth across each of our segments.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft's effective tax rate was 18% for both fiscal years 2025 and 2024.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "MD&A",
+          "evidence": "Our effective tax rate for both fiscal years 2025 and 2024 was 18%.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says its other income (expense), net primarily reflects net recognized losses on equity method investments, including OpenAI.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "MD&A",
+          "evidence": "Other, net primarily reflects net recognized losses on equity method investments, including OpenAI.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "AAPL",
+            "MSFT"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "trend-goog-meta-net-income-two-years",
+      "question": "How has net income changed at Alphabet and Meta over the last two years?",
+      "history": [],
+      "question_type": "figure_trend",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "Net income for two Tracked Companies. Both latest Filings are FY2025 10-Ks, years to December 31, 2025, so the last two years are 2024 and 2025 for both and the periods do not differ. Drafted from the whole MD&A of each Company's FY2024 and FY2025 10-Ks. Not a repeat: trend-meta-revenue-two-years asks about Meta's revenue, outlook-meta-capex-2026 about its capital expenditures, and the AI and legal proceedings cases about risks; trend-goog-cloud-two-years asks about Google Cloud's revenue. Net income matches the SEC company-facts reference (Alphabet's NetIncomeLoss: $73,795 million for 2023, $100,118 million for 2024, $132,170 million for 2025, up 36% and 32%; Meta's: $39,098 million for 2023, $62,360 million for 2024, $60,458 million for 2025). Meta's Filings give no net income growth rate, so its facts state the figures. Must-state: each year's net income for both, Alphabet's growth rates, and the reason Meta's fell in 2025: a 30% effective tax rate that includes the effects of the One Big Beautiful Bill Act. Operating income, other income, other tax rates and 2023 are details.",
+      "expected_sources": [
+        {
+          "filing_id": "GOOG_10-K_2024-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "META_10-K_2024-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Alphabet's net income was $100,118 million in 2024.",
+          "filing_id": "GOOG_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Net income | | | $ | 73,795 | | | $ | 100,118 |",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Alphabet's net income increased 36% in 2024 from 2023.",
+          "filing_id": "GOOG_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Net income | | | $ | 73,795 | | | $ | 100,118 | | | $ | 26,323 | | | 36 | %",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Alphabet's net income was $73,795 million in 2023.",
+          "filing_id": "GOOG_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Net income | | | $ | 73,795 | | | $ | 100,118 |",
+          "tier": "detail"
+        },
+        {
+          "fact": "Alphabet's operating income increased 33% in 2024 from 2023.",
+          "filing_id": "GOOG_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Operating income | | | $ | 84,293 | | | $ | 112,390 | | | $ | 28,097 | | | 33 | %",
+          "tier": "detail"
+        },
+        {
+          "fact": "Alphabet's net income was $132,170 million in 2025.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Net income | $ | 100,118 | | | $ | 132,170 |",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Alphabet's net income increased 32% in 2025 from 2024.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Net income | $ | 100,118 | | | $ | 132,170 | | | $ | 32,052 | | | 32 | %",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Alphabet's operating income increased 15% in 2025 from 2024.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Operating income | $ | 112,390 | | | $ | 129,039 | | | $ | 16,649 | | | 15 | %",
+          "tier": "detail"
+        },
+        {
+          "fact": "Alphabet's other income (expense), net increased 301% in 2025 from 2024.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Other income (expense), net | $ | 7,425 | | | $ | 29,787 | | | $ | 22,362 | | | 301 | %",
+          "tier": "detail"
+        },
+        {
+          "fact": "Alphabet's effective tax rate increased from 2024 to 2025.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "The effective tax rate increased from 2024 to 2025.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta's net income was $62.36 billion for the year ended December 31, 2024.",
+          "filing_id": "META_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Net income was $62.36 billion, with diluted earnings per share (EPS) of $23.86 for the year ended December 31, 2024.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Meta's net income was $39,098 million for 2023.",
+          "filing_id": "META_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Net income | $ | 62,360 | | | $ | 39,098 | | | $ | 23,200 |",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta's effective tax rate was 12% for the year ended December 31, 2024.",
+          "filing_id": "META_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Effective tax rate was 12% for the year ended December 31, 2024.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta's net income was $60.46 billion for the year ended December 31, 2025.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Net income was $60.46 billion, with diluted earnings per share (EPS) of $23.49 for the year ended December 31, 2025.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Meta's effective tax rate was 30% for the year ended December 31, 2025.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Effective tax rate was 30% for the year ended December 31, 2025.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Meta says its 2025 effective tax rate includes the effects of the implementation of the One Big Beautiful Bill Act.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "This includes the effects of the implementation of the One Big Beautiful Bill Act during the third quarter of 2025.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Meta says that absent the valuation allowance charge as of the enactment date, its 2025 effective tax rate would have been 13%.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Absent the valuation allowance charge as of the enactment date, our 2025 effective tax rate would have decreased by 17 percentage points to 13%.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta's income from operations increased 20% in 2025.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Income (loss) from operations | $ | 102,469 | | $ | 87,109 | | 18% | | $ | (19,193) | | $ | (17,729) | | (8)% | | $ | 83,276 | | $ | 69,380 | | 20% |",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
     }
   ]
 }

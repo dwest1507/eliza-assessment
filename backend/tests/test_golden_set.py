@@ -692,6 +692,41 @@ def test_new_slice_2_holds_one_inheriting_and_one_switching_follow_up(golden_set
     assert asked and not asked & earlier  # it names another Company
 
 
+NEW_SLICE_3 = {
+    "trend-goog-cloud-two-years": "segment revenue",
+    "trend-dis-segments-fy2025": "segment revenue",
+    "trend-tsla-energy-two-years": "segment revenue",
+    "trend-ko-revenue-two-years": "revenue",
+    "trend-amzn-net-sales-2025": "revenue",
+    "trend-pfe-jnj-revenue-2024": "revenue",
+    "trend-xom-net-income-2025": "net income",
+    "trend-aapl-msft-net-income-fy2025": "net income",
+    "trend-goog-meta-net-income-two-years": "net income",
+}
+"""Version 2's third slice of new cases: figure trends on Tracked Companies, each by the
+Financial Facts metric it asks about (issue #68)."""
+
+
+def test_new_slice_3_holds_nine_figure_trends_on_tracked_companies(golden_set_v2, filings_by_id):
+    cases = {case.id: case for case in golden_set_v2.cases if case.id in NEW_SLICE_3}
+
+    assert set(cases) == set(NEW_SLICE_3)
+    sizes, windows = set(), set()
+    for case in cases.values():
+        filings = [filings_by_id[s.filing_id] for s in case.expected_sources]
+        tickers = {f.ticker for f in filings}
+        assert case.question_type == "figure_trend", case.id
+        assert not case.history and case.starter is None, case.id
+        assert {f.coverage for f in filings} == {"tracked"}, case.id  # no Snapshot Company
+        assert {filings_by_id[f.filing_id].ticker for f in case.required_facts} == tickers, case.id
+        assert not any(g.kind == "snapshot_trend" for g in case.expected_coverage_gaps), case.id
+        sizes.add(len(tickers))
+        windows.add("two years" if "last two years" in case.question else "named")
+    assert set(NEW_SLICE_3.values()) == {"revenue", "net income", "segment revenue"}
+    assert sizes == {1, 2}  # single-Company and two-Company questions
+    assert windows == {"two years", "named"}  # "the last two years" and named fiscal years
+
+
 def test_a_missing_evidence_quote_or_section_fails_the_label_checks(tmp_path, filings_by_id):
     case = _v2_case("risk-unh-cybersecurity")
     case["required_facts"][0]["evidence"] = "UnitedHealth sells ice cream on the moon."
