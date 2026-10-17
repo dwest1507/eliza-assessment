@@ -37,9 +37,10 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
   const [transport] = useState(
     () => new DefaultChatTransport<ResearchMessage>({ api: '/api/chat' })
   )
-  const { messages, sendMessage, setMessages, status, stop, error } = useChat<ResearchMessage>({
-    transport,
-  })
+  const { messages, sendMessage, regenerate, setMessages, status, stop, error } =
+    useChat<ResearchMessage>({
+      transport,
+    })
   const [input, setInput] = useState('')
   const [open, setOpen] = useState<OpenSource | null>(null)
   const threadRef = useRef<HTMLDivElement>(null)
@@ -153,10 +154,16 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
           className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-[14px] text-red-200"
         >
           {rejectionReason(error) ?? (
-            <>
-              The answer could not be loaded. Check that the API is running (
-              <code className="font-mono text-[13px]">make dev</code>) and try again.
-            </>
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span>The answer couldn&apos;t be loaded. Please try again.</span>
+              <button
+                type="button"
+                onClick={() => regenerate()}
+                className="btn-secondary px-3 py-1.5 text-[13px] whitespace-nowrap"
+              >
+                Try again
+              </button>
+            </div>
           )}
         </div>
       )}

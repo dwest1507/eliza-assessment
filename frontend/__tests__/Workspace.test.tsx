@@ -823,16 +823,44 @@ describe('Workspace', () => {
     const alert = await screen.findByRole('alert')
     expect(alert).toHaveTextContent(reason)
     expect(alert).not.toHaveTextContent('make dev')
+    // A rejected question would be rejected again, so there is nothing to retry.
+    expect(within(alert).queryByRole('button', { name: 'Try again' })).not.toBeInTheDocument()
   })
 
-  it('says so when the answer cannot be loaded, without leaking the error', async () => {
+  it('says so plainly when the answer cannot be loaded, without leaking the error', async () => {
     fetchMock.mockImplementation(async () => new Response('backend exploded', { status: 502 }))
     const user = userEvent.setup()
     render(<Workspace />)
 
     await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('The answer could not be loaded')
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent("The answer couldn't be loaded. Please try again.")
+    expect(alert).not.toHaveTextContent('make dev')
+    expect(within(alert).getByRole('button', { name: 'Try again' })).toBeInTheDocument()
     expect(screen.queryByText(/exploded/)).not.toBeInTheDocument()
+  })
+
+  it('re-sends the last question on "Try again" and shows the new answer', async () => {
+    fetchMock.mockImplementationOnce(async () => new Response('backend exploded', { status: 502 }))
+    const user = userEvent.setup()
+    render(<Workspace />)
+    const starter = STARTERS[0]
+    await user.click(screen.getByRole('button', { name: starter.label }))
+    const alert = await screen.findByRole('alert')
+
+    await user.click(within(alert).getByRole('button', { name: 'Try again' }))
+
+    expect(await screen.findByText('trade policy')).toBeInTheDocument()
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+    // The same question, sent once: not retyped, not duplicated.
+    const resent = sentMessages(1)
+    expect(resent).toHaveLength(1)
+    expect(resent[0]).toMatchObject({
+      role: 'user',
+      parts: [{ type: 'text', text: starter.question }],
+    })
+    expect(screen.getAllByText(starter.question)).toHaveLength(1)
   })
 })
