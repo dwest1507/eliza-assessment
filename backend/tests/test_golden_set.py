@@ -787,6 +787,82 @@ def test_new_slice_4_holds_five_sector_questions_on_industrials_energy_and_finan
     assert covered == {"Industrials", "Energy", "Financials"}
 
 
+_RETAIL = ("Broadline Retail", "Specialty Retail", "Consumer Staples Distribution & Retail")
+NEW_SLICE_5_SECTOR = {
+    "sector-semiconductors-customer-concentration": (
+        "semiconductor companies",
+        ("Semiconductors & Semiconductor Equipment",),
+    ),
+    "sector-software-cybersecurity": ("software companies", ("Software",)),
+    "sector-pharma-research-and-development": (
+        "pharmaceutical companies",
+        ("Pharmaceuticals", "Biotechnology"),
+    ),
+    "sector-health-care-liability-claims": ("health care companies", ("Health Care",)),
+    "sector-consumer-staples-key-customers": ("consumer staples", ("Consumer Staples",)),
+    "sector-consumer-discretionary-climate": (
+        "consumer discretionary",
+        ("Consumer Discretionary",),
+    ),
+    "sector-retailers-workforce": ("retailers", _RETAIL),
+    "sector-communication-services-advertising": (
+        "communication services",
+        ("Communication Services",),
+    ),
+}
+NEW_SLICE_5_GAP = "gap-aapl-nvda-research-spending-periods-differ"
+"""Version 2's fifth slice of new cases (issue #70): eight sector questions on health care,
+information technology, consumer and communication services Companies, each by its Sector
+phrase and the Sector table values (sector or industry) the phrase resolves to, and one
+Coverage Gap case, a comparison whose Companies' latest fiscal years differ."""
+
+_SLICE_5_SECTORS = {
+    "Health Care",
+    "Information Technology",
+    "Consumer Discretionary",
+    "Consumer Staples",
+    "Communication Services",
+}
+
+
+def test_new_slice_5_holds_eight_sector_questions_on_its_sectors(golden_set_v2, filings_by_id):
+    cases = {c.id: c for c in golden_set_v2.cases if c.id in NEW_SLICE_5_SECTOR}
+    rows = {row.ticker: row for row in load_sector_table()}
+
+    assert set(cases) == set(NEW_SLICE_5_SECTOR)
+    covered = set()
+    for case in cases.values():
+        phrase, values = NEW_SLICE_5_SECTOR[case.id]
+        resolved = {t for t, row in rows.items() if {row.sector, row.industry} & set(values)}
+        sources = {filings_by_id[s.filing_id].ticker for s in case.expected_sources}
+        facts = {filings_by_id[f.filing_id].ticker for f in case.required_facts}
+        assert case.question_type == "sector", case.id
+        assert not case.history and case.starter is None, case.id
+        assert phrase in case.question, case.id
+        assert sources <= resolved and facts == sources, case.id
+        assert len(facts) >= 2, case.id  # facts from several of the resolved Companies
+        covered |= {rows[t].sector for t in facts}
+    assert covered == _SLICE_5_SECTORS
+
+
+def test_new_slice_5_holds_a_periods_differ_comparison_as_a_coverage_gap_case(
+    golden_set_v2, filings_by_id
+):
+    """A comparison asked to test the periods differ gap: its Companies' latest 10-Ks end
+    more than 20 days apart, the case expects that gap and no other, and the mix counts it
+    as a Coverage Gap case, not as a trend."""
+    [case] = [c for c in golden_set_v2.cases if c.id == NEW_SLICE_5_GAP]
+    filings = [filings_by_id[s.filing_id] for s in case.expected_sources]
+    ends = {f.ticker: f.report_period for f in filings if f.form_type == "10-K"}
+
+    assert len(ends) >= 2 and not case.history
+    assert (max(ends.values()) - min(ends.values())).days > 20
+    gaps = [(g.kind, set(g.companies)) for g in case.expected_coverage_gaps]
+    assert gaps == [("periods_differ", set(ends))]
+    assert "periods_differ_comparison" in case.tags
+    assert _question_kind(case) == "coverage_gap"
+
+
 def test_a_missing_evidence_quote_or_section_fails_the_label_checks(tmp_path, filings_by_id):
     case = _v2_case("risk-unh-cybersecurity")
     case["required_facts"][0]["evidence"] = "UnitedHealth sells ice cream on the moon."
@@ -981,17 +1057,23 @@ cases and follow-ups."""
 
 _GAP_QUESTION_TYPES = {"missing_company", "stale_filing"}
 _GAP_KINDS = {"snapshot_trend", "no_guidance"}
+_GAP_TAGS = {"periods_differ_comparison"}
 
 
 def _question_kind(case):
     """The case's kind in `MIX_TARGET`. A follow-up is one whatever it asks. A Coverage Gap
     case asks about a missing Company or a stale Filing, or for a trend or outlook the
-    Filings cannot give; a gap that only qualifies the answer (`periods_differ`) leaves the
-    case in its question type's kind."""
+    Filings cannot give, or is a comparison asked to test the periods differ gap (tagged
+    `periods_differ_comparison`); elsewhere that gap only qualifies the answer and leaves
+    the case in its question type's kind."""
     if case.history:
         return "follow_up"
     gap_kinds = {gap.kind for gap in case.expected_coverage_gaps}
-    if case.question_type in _GAP_QUESTION_TYPES or gap_kinds & _GAP_KINDS:
+    if (
+        case.question_type in _GAP_QUESTION_TYPES
+        or gap_kinds & _GAP_KINDS
+        or _GAP_TAGS & set(case.tags)
+    ):
         return "coverage_gap"
     return {"risk": "risk", "sector": "sector"}.get(case.question_type, "trend")
 
@@ -1011,6 +1093,9 @@ def test_the_mix_counts_each_case_once_by_its_kind_of_question(tmp_path):
             tmp_path,
             [
                 _v2_case("risk-unh-cybersecurity", "dev"),
+                _v2_case("risk-aapl-nvda-supply-chain", "holdout"),  # periods differ: a risk
+                _v2_case("sector-banks-risks", "pending")
+                | {"tags": ["periods_differ_comparison"]},  # asked to test the gap: a gap
                 _v2_case("trend-aapl-revenue-fy2025", "dev"),
                 _v2_case("outlook-meta-capex-2026", "holdout"),
                 _v2_case("outlook-msft-cloud", "holdout"),  # no guidance: a gap
@@ -1025,10 +1110,10 @@ def test_the_mix_counts_each_case_once_by_its_kind_of_question(tmp_path):
     mix = _question_mix(golden.cases)
 
     assert mix == {
-        "risk": {"dev": 1},
+        "risk": {"dev": 1, "holdout": 1},
         "trend": {"dev": 1, "holdout": 1},
         "sector": {"dev": 1},
-        "coverage_gap": {"dev": 1, "holdout": 1, "pending": 1},
+        "coverage_gap": {"dev": 1, "holdout": 1, "pending": 2},
         "follow_up": {"dev": 1},
     }
 

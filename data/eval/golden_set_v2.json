@@ -8842,6 +8842,1767 @@
           ]
         }
       ]
+    },
+    {
+      "id": "sector-semiconductors-customer-concentration",
+      "question": "How dependent are the semiconductor companies on a small number of large customers?",
+      "history": [],
+      "question_type": "sector",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "The Sector table's Semiconductors & Semiconductor Equipment industry is AMD, Intel and NVIDIA. AMD's and Intel's latest 10-Ks are FY2025 (to December 27, 2025) and NVIDIA's is FY2025 (to January 26, 2025), so the periods differ gap. Drafted from every customer concentration passage in AMD's Risk Factors and Financial Statements, Intel's one Unsectioned Section (the Corpus finds no Item headings in it), NVIDIA's FY2025 Risk Factors and MD&A, and the MD&A of NVIDIA's Q3 FY2026 10-Q, whose concentration figures are the latest. The 10-Q's Risk Factors do not repeat the concentration risk. Not a repeat: risk-nvda-amd-competition asks NVIDIA and AMD about competition, risk-amd-csco-supply-chain asks AMD about its suppliers, and followup-topic-change-export-controls about export control charges; no case asks about customer concentration. Must-state: each Company's statement that it depends on a few customers, Intel's three largest customers' 43% of 2025 net revenue, and NVIDIA's four direct customers over 10% of revenue in the third quarter of fiscal 2026. AMD's having no 10% customer in 2025 and 2024, the earlier years' percentages, each Customer's share, indirect customers, hyperscalers' purchasing power, customers developing their own solutions and the consequences of losing a customer are details. No fact states an amount; percentages are not checked against the SEC reference.",
+      "expected_sources": [
+        {
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Financial Statements"
+        },
+        {
+          "filing_id": "INTC_10-K_2025-12-27",
+          "section": "Unsectioned"
+        },
+        {
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "AMD says it depends on a small number of customers for a substantial portion of its business.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "We depend on a small number of customers for a substantial portion of our business",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AMD expects a small number of customers to continue to account for a significant part of its revenue and receivables in the future.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "we expect that a small number of customers will continue to account for a significant part of our revenue and receivables in the future",
+          "tier": "detail"
+        },
+        {
+          "fact": "AMD says its business would be materially adversely affected if one of its key customers decided to stop buying its products.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "If one of our key customers decides to stop buying our products, materially reduces its operations or its demand for our products, or has operations that are materially impaired for a significant period of time such that it is unable to receive or utilize our products, or pay its liabilities, our business would be materially adversely affected.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AMD says the risk of customers defaulting on or delaying payments is heightened because it expects a small number of customers to continue to account for a substantial part of its revenue.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "This risk is heightened as we expect that a small number of customers will continue to account for a substantial part of our revenue.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AMD says the success of its semi-custom SoC products depends on the success of game console systems and next generation consoles for Sony and Microsoft.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "The success of our semi-custom SoC products in our Client and Gaming segment is dependent on securing customers for our semi-custom design pipeline and consumer market conditions, including the success of game console systems and next generation consoles for Sony and Microsoft.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AMD says no customer accounted for at least 10% of its consolidated net revenue in fiscal years 2025 and 2024.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Financial Statements",
+          "evidence": "No customer accounted for at least 10% of the Company’s consolidated net revenue in fiscal years 2025 and 2024.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Intel says it receives a significant portion of its revenue from a limited number of customers.",
+          "filing_id": "INTC_10-K_2025-12-27",
+          "section": "Unsectioned",
+          "evidence": "We receive a significant portion of our revenue from a limited number of customers.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Intel says its three largest customers together accounted for 43% of its net revenue in 2025.",
+          "filing_id": "INTC_10-K_2025-12-27",
+          "section": "Unsectioned",
+          "evidence": "Collectively, our three largest customers accounted for 43% of our net revenue in 2025",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Intel says its three largest customers together accounted for 45% of its net revenue in 2024.",
+          "filing_id": "INTC_10-K_2025-12-27",
+          "section": "Unsectioned",
+          "evidence": "45% of our net revenue in 2024",
+          "tier": "detail"
+        },
+        {
+          "fact": "Intel expects a small number of customers to continue to account for a significant portion of its revenue in the foreseeable future.",
+          "filing_id": "INTC_10-K_2025-12-27",
+          "section": "Unsectioned",
+          "evidence": "We expect a small number of customers will continue to account for a significant portion of our revenue in the foreseeable future.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Intel says the loss of key customers or a substantial reduction in sales to them can lead to a reduction in its revenue.",
+          "filing_id": "INTC_10-K_2025-12-27",
+          "section": "Unsectioned",
+          "evidence": "The loss of key customers, a substantial reduction in sales to them, or changes in the timing of their orders can lead to a reduction in our revenue",
+          "tier": "detail"
+        },
+        {
+          "fact": "Intel says the increase in AI workloads and the shift of data center workloads to the public cloud have increased the purchasing power of certain customers, particularly hyperscalers, in some of its data center-focused businesses.",
+          "filing_id": "INTC_10-K_2025-12-27",
+          "section": "Unsectioned",
+          "evidence": "Industry trends, such as the increase in AI workloads and shift of data center workloads to the public cloud, have increased the significance and purchasing power of certain customers, particularly hyperscalers, in some of our data center-focused businesses.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says it receives a significant amount of its revenue from a limited number of partners and distributors and has a concentration of sales to customers.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Risk Factors",
+          "evidence": "We receive a significant amount of our revenue from a limited number of partners and distributors and we have a concentration of sales to customers who purchase directly or indirectly from us",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA says four direct customers each had sales greater than 10% of its total revenue in the third quarter of fiscal year 2026.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "For the third quarter of fiscal year 2026, four direct customers with sales greater than 10% of total revenue included",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA says its largest direct customer, Customer A, accounted for 22% of its total revenue in the third quarter of fiscal year 2026.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "four direct customers with sales greater than 10% of total revenue included: Customer A at 22%",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says three direct customers each represented more than 10% of its total revenue for fiscal year 2025.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Risk Factors",
+          "evidence": "Sales to direct Customers A, B and C represented 12%, 11% and 11% of total revenue, respectively, for fiscal year 2025",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA estimates that an indirect customer, buying mainly through system integrators and distributors, represented 10% or more of its total revenue for fiscal year 2025.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A",
+          "evidence": "For fiscal year 2025, an indirect customer which primarily purchases our products through system integrators and distributors, including through Direct Customer B, is estimated to represent 10% or more of total revenue",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says its partners or customers may develop their own solutions.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Risk Factors",
+          "evidence": "Our partners or customers may develop their own solutions",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says the loss of any of its large customers or a significant reduction in purchases by them would likely harm its financial condition and results of operations.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Risk Factors",
+          "evidence": "The loss of any of our large customers, a significant reduction in purchases by them, our inability to sell to a customer due to U.S. or other countries’ trade restrictions, or any difficulties in collecting accounts receivable would likely harm our financial condition and results of operations.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "AMD",
+            "INTC",
+            "NVDA"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sector-software-cybersecurity",
+      "question": "What cybersecurity risks do the software companies describe?",
+      "history": [],
+      "question_type": "sector",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "The Sector table's Software industry is Adobe, Microsoft, Oracle and Salesforce. Their latest 10-Ks end on November 28, 2025, June 30, 2025, May 31, 2025 and January 31, 2025, so the periods differ gap. Drafted from the cybersecurity risk factors in each whole Risk Factors Section, and from Microsoft's Q2 FY2026 10-Q, which restates them unchanged. Not a repeat: sector-software-ai-risks asks the same Companies about AI, and the other cybersecurity cases ask about UnitedHealth, Visa and Mastercard, and Apple, Tesla and JPMorgan. Must-state: each Company's statement that it has been attacked or breached and the headline consequence it names (Adobe's supply chain reach, Microsoft's nation-state attack on its email accounts, Oracle's sensitive data making it a target, Salesforce's customers ceasing to use services perceived as insecure). AI as a new attack method, open-source vulnerabilities, insurance, geopolitics, detection delays, acquired companies and the materiality to date are details. No fact states an amount.",
+      "expected_sources": [
+        {
+          "filing_id": "ADBE_10-K_2025-11-28",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "ORCL_10-K_2025-05-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "CRM_10-K_2025-01-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Adobe says cybersecurity incidents have in the past resulted in the unauthorized access to, or loss of, sensitive data belonging to it, its employees and its customers.",
+          "filing_id": "ADBE_10-K_2025-11-28",
+          "section": "Risk Factors",
+          "evidence": "insider threats and other cybersecurity incidents that have in the past, and may in the future, result in the unauthorized access, disclosure, acquisition, use, loss or destruction of sensitive personal or business data belonging to us, our employees and our customers",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Adobe says that because its solutions are incorporated into the supply chain of a large number of companies, a compromise could simultaneously affect a large portion or all of its customers for a given solution.",
+          "filing_id": "ADBE_10-K_2025-11-28",
+          "section": "Risk Factors",
+          "evidence": "Our solutions are incorporated into the supply chain of a large number of companies worldwide and, as a result, if our solutions experience a compromise, a large portion or, in some instances, all of our customers and their data for a given solution could be simultaneously affected.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Adobe says increasing use of AI in its internal systems and solutions may create new attack methods.",
+          "filing_id": "ADBE_10-K_2025-11-28",
+          "section": "Risk Factors",
+          "evidence": "Increasing use of AI in our internal systems and solutions may create new attack methods.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Adobe says some of its solutions include third-party open-source software that may contain security vulnerabilities.",
+          "filing_id": "ADBE_10-K_2025-11-28",
+          "section": "Risk Factors",
+          "evidence": "Some of our solutions include third-party open-source software, which may contain security vulnerabilities that may be exploited, potentially compromising our solutions.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Adobe says cybersecurity risks may be elevated by geopolitical tensions, including the Russia-Ukraine war and the conflict in the Middle East.",
+          "filing_id": "ADBE_10-K_2025-11-28",
+          "section": "Risk Factors",
+          "evidence": "Such risks may be elevated in connection with geopolitical tensions, including the Russia-Ukraine war and the conflict in the Middle East",
+          "tier": "detail"
+        },
+        {
+          "fact": "Adobe says its insurance may not be sufficient to cover all liability from cybersecurity risk.",
+          "filing_id": "ADBE_10-K_2025-11-28",
+          "section": "Risk Factors",
+          "evidence": "While we maintain insurance to cover operational risks, such as cybersecurity risk and technology outages, our insurance may not be sufficient to cover all liability described herein.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says it has experienced cybersecurity incidents in which threat actors gained unauthorized access to its systems and data, including customer systems and data.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "we have experienced cybersecurity incidents in which such actors have gained unauthorized access to our systems and data, including customer systems and data",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft says a nation-state associated threat actor used a password spray attack, beginning in late November 2023, to gain access to Microsoft email accounts.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "beginning in late November 2023, a nation-state associated threat actor used a password spray attack to compromise a legacy test account and, in turn, gain access to Microsoft email accounts",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft says the nation-state threat actor gained unauthorized access to some of its source code repositories and internal systems.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "The threat actor used information it obtained to gain unauthorized access to some of our source code repositories and internal systems",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says nation-state attacks against it, its customers or its partners may continue to intensify.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Nation-state attacks against us, our customers, or our partners have and may continue to intensify",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says increasing use of generative AI models in its internal systems may create new attack surfaces or methods for adversaries.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "Increasing use of generative AI models in our internal systems may create new attack surfaces or methods for adversaries.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says adversaries tend to focus their efforts on the most popular operating systems, programs and services, including many of Microsoft's.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "Adversaries tend to focus their efforts on the most popular operating systems, programs, and services, including many of ours, as well as customers with sensitive data, and we expect that to continue.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says cyberattacks could adversely impact its customers even if its production services are not directly compromised.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "Cyberattacks could adversely impact our customers even if our production services are not directly compromised.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Oracle believes it has been and is a target for computer hackers and cyberattacks because it stores and processes large amounts of data, including sensitive data.",
+          "filing_id": "ORCL_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "We believe that Oracle has been and is a target for computer hackers, cyberattacks and other perpetrators or threat actors because Oracle stores and processes large amounts of data, including sensitive data",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Oracle says malicious attacks have led to the compromise of personal information or confidential data of Oracle or its customers.",
+          "filing_id": "ORCL_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "Such malicious attacks can lead, and have led, to the compromise of personal information or the confidential information or data of Oracle or our customers.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Oracle says customers who lose confidence in the security and reliability of its products and services, including its cloud offerings, may reduce or terminate their spending with it.",
+          "filing_id": "ORCL_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "If our customers lose confidence in the security and reliability of our products and services, including our cloud offerings, they may reduce or terminate their spending with us.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Oracle says it may not detect or confirm a security breach and loss of information for a significant period of time after the breach.",
+          "filing_id": "ORCL_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "We may not detect or confirm any security breach and loss of information for a significant period of time after the security breach.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Oracle says it may inherit IT security risks when it integrates the companies it acquires.",
+          "filing_id": "ORCL_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "While we make significant efforts to address any IT security issues with respect to our acquired companies, we may still inherit such risks when we integrate these companies within Oracle.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Salesforce says it is and has been the target of malicious cyberattacks and has experienced other security incidents.",
+          "filing_id": "CRM_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "In the normal course of business, we are and have been the target of malicious cyberattacks and have experienced other security incidents.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Salesforce says that if its security measures are breached, its services may be perceived as not being secure and customers may curtail or stop using them.",
+          "filing_id": "CRM_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "our services may be perceived as not being secure, customers may curtail or stop using our services",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Salesforce says the security events it has identified have not, to date, had a material financial impact.",
+          "filing_id": "CRM_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "Although, to date, such identified security events have not had a material financial impact",
+          "tier": "detail"
+        },
+        {
+          "fact": "Salesforce says threat actors are using AI technologies, including generative AI models, to create new sophisticated attack methods.",
+          "filing_id": "CRM_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "as AI technologies, including generative AI models, develop rapidly, threat actors are using these technologies to create new sophisticated attack methods that are increasingly automated, targeted and coordinated and more difficult to defend against",
+          "tier": "detail"
+        },
+        {
+          "fact": "Salesforce says its services could be breached by coordinated cyberattacks from criminal organizations, state-sponsored organizations or nation-states.",
+          "filing_id": "CRM_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "efforts by hackers or sophisticated groups, such as criminal organizations, state-sponsored organizations or nation-states, to launch coordinated cyberattacks on internally built infrastructure or on third-party cloud-computing platform providers",
+          "tier": "detail"
+        },
+        {
+          "fact": "Salesforce says its insurance coverage may not be sufficient to cover the losses that may result from a cybersecurity incident.",
+          "filing_id": "CRM_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "there can be no assurance that our insurance coverage will be sufficient to cover the financial, legal, business, or reputational losses that may result from a cybersecurity incident or breach of our IT systems",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "ADBE",
+            "CRM",
+            "MSFT",
+            "ORCL"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sector-pharma-research-and-development",
+      "question": "What risks do the pharmaceutical companies describe in researching and developing new drugs?",
+      "history": [],
+      "question_type": "sector",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "\"The pharmaceutical companies\" resolves through the Sector table to AbbVie, Johnson & Johnson, Eli Lilly, Merck and Pfizer. AbbVie's, Merck's and Pfizer's latest 10-Ks are FY2024 and Johnson & Johnson's and Lilly's FY2025, so the periods differ gap. Drafted from every research and development and pipeline passage in each whole Risk Factors Section; Pfizer's 2025 10-Qs add no research and development risk. Not a repeat: the brief's pharmaceutical question and its variants ask these Companies about regulatory risks and how they address them, and risk-abbv-jnj-loss-of-exclusivity asks AbbVie and Johnson & Johnson about losing patent protection; this asks about the research and development process. Must-state: each Company's headline statement that research and development is uncertain or fails at a high rate, and, where the Filing makes it, that new products must replace revenue lost to lost exclusivity or competitors (Merck, Pfizer). Costs, timelines, collaborations, impairments, clinical trial recruitment, contract research organizations, FDA staffing and the share of sales from new products are details. No fact states an amount.",
+      "expected_sources": [
+        {
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "AbbVie says its research and development efforts may not succeed in developing products that can be successfully commercialized, which may cause its revenues and profitability to decline.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "AbbVie's research and development efforts may not succeed in developing products and technologies that can be successfully commercialized, which may cause its revenues and profitability to decline.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AbbVie says a high rate of failure is inherent in the research and development of new products in the biopharmaceutical industry.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "A high rate of failure in the biopharmaceutical industry is inherent in the research and development of new products",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AbbVie says failure can occur at any point in the research and development process, including after significant resources have been invested.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "failure can occur at any point in the research and development process, including after significant resources have been invested",
+          "tier": "detail"
+        },
+        {
+          "fact": "AbbVie says its new product launches must generate revenue sufficient to replace revenues of profitable products lost to or displaced by competing products or therapies.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Such launches must generate revenue sufficient both to cover its substantial research and development costs and to replace revenues of profitable products that are lost to or displaced by competing products or therapies.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AbbVie depends on alliances and joint ventures with pharmaceutical and biotechnology companies for a portion of the products in its near-term pharmaceutical pipeline.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "AbbVie depends on alliances and joint ventures with pharmaceutical and biotechnology companies for a portion of the products in its near-term pharmaceutical pipeline.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AbbVie says the risk of failure for its in-process research and development (IPR&D) assets is significant.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "For IPR&D assets, the risk of failure is significant",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says only a very few biopharmaceutical research and development programs result in commercially viable products.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "Only a very few biopharmaceutical research and development programs result in commercially viable products.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Johnson & Johnson says developing new pharmaceutical and biotechnology products and medical devices requires significant investment of resources over many years.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "developing new products, particularly pharmaceutical and biotechnology products and medical devices, requires significant investment of resources over many years",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says developing successful products is necessary to offset revenue losses when its existing products lose market share to competition or loss of patent exclusivity.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "Development of successful products and technologies is also necessary to offset revenue losses when the Company’s existing products lose market share due to various factors such as competition and loss of patent exclusivity.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says new products introduced within the past five years accounted for approximately 25% of its 2025 sales.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "New products introduced within the past five years accounted for approximately 25% of 2025 sales.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says the development and regulatory approval of new products may be delayed by limits on federal agency budgets or personnel, including reductions to the U.S. FDA's budget.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "the development and regulatory approval of new products may be delayed due to limits on federal agency budgets or personnel, including reductions to the U.S. FDA’s budget, employees, and operations",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly says pharmaceutical research and development is very costly and highly uncertain.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Pharmaceutical research and development is very costly and highly uncertain",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Eli Lilly says there is a high rate of failure inherent in drug discovery and development.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "There is a high rate of failure inherent in drug discovery and development.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Eli Lilly says a significant portion of the funds it invests in research and development programs will not generate direct financial returns.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "a significant portion of funds invested in research and development programs will not generate direct financial returns",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly says failure to replenish its product portfolio and pipeline in a timely manner would have a material adverse effect on its business.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Failure to replenish our product portfolio and pipeline in a timely manner would have a material adverse effect on our business, results of operations, cash flows, and financial position.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says there is a high rate of failure inherent in the research and development process for new drugs and vaccines.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "There is a high rate of failure inherent in the research and development process for new drugs and vaccines.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Merck says expected declines in sales after the loss of market exclusivity mean its future success depends on its pipeline of new products.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Expected declines in sales of products after the loss of market exclusivity mean that the Company’s future success is dependent on its pipeline of new products",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Merck says bringing a pharmaceutical compound from the discovery phase to market may take a decade or more.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "To bring a pharmaceutical compound from the discovery phase to market may take a decade or more",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says it may recognize material non-cash impairment charges if certain pipeline programs are cancelled.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "if certain pipeline programs are cancelled or if the Company believes that their commercial prospects have been reduced, the Company may recognize material non-cash impairment charges for those programs",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says its product candidates can fail at any stage of the R&D process.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "our product candidates can fail at any stage of the R&D process, and may not receive regulatory approval even after many years of R&D",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Pfizer says its product lines must be replenished over time to offset revenue losses when products lose exclusivity or market share.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our product lines must be replenished over time to offset revenue losses when products lose exclusivity or market share",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Pfizer says the costs of product development continue to be high and are growing.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "The costs of product development continue to be high and are growing",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says it may have difficulties recruiting and enrolling patients for clinical trials on a consistent basis.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "We may have difficulties recruiting and enrolling patients for clinical trials on a consistent basis.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says it may depend on contract research organizations in conducting clinical trials.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "In conducting clinical trials, we may depend on contract research organizations to handle regulatory filings, monitor site performance and raise potential quality matters relating to clinical trials.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "ABBV",
+            "JNJ",
+            "LLY",
+            "MRK",
+            "PFE"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sector-health-care-liability-claims",
+      "question": "What product liability and medical malpractice risks do the health care companies describe, and how do they insure against them?",
+      "history": [],
+      "question_type": "sector",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "\"The health care companies\" resolves to the Sector table's whole Health Care sector: AbbVie, Johnson & Johnson, Eli Lilly, Merck, Pfizer, Thermo Fisher and UnitedHealth, each with facts. Their latest 10-Ks are FY2024 or FY2025, so the periods differ gap. Drafted from every product liability, malpractice and liability insurance passage in each whole Risk Factors Section; Pfizer's and UnitedHealth's 2025 10-Qs add none. Not a repeat: the Brief Suite's health care and pharmaceutical cases ask these Companies about regulatory risks, and risk-unh-cybersecurity asks UnitedHealth about cybersecurity; no case asks about product liability, malpractice or how it is insured. Every half has facts: the claims each Company faces, and how each insures them (AbbVie's and Merck's self-insurance, Johnson & Johnson's captive insurer, Eli Lilly's predominant self-insurance, Thermo Fisher's insurance, UnitedHealth's large self-insurance) are must-state. Pfizer's Risk Factors name no insurance for these claims, so its facts are claims only. Why insurance is not bought, its sufficiency, talc settlements, particular products and claimants, and the size and length of the matters are details. No fact states an amount.",
+      "expected_sources": [
+        {
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "TMO_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "AbbVie says it is the subject of product liability claims and lawsuits alleging that its current or historical products have resulted or could result in injury to patients.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "In the ordinary course of business, AbbVie is the subject of product liability claims and lawsuits alleging that AbbVie's current or historical products or the products of other companies that it promotes have resulted or could result in an unsafe condition for or injury to patients.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AbbVie's product liability losses are self-insured.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "AbbVie's product liability losses are self-insured",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AbbVie has determined that the cost of obtaining product liability insurance outweighs the likely benefits of the coverage that is available.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "AbbVie evaluates its risks and has determined that the cost of obtaining product liability insurance outweighs the likely benefits of the coverage that is available",
+          "tier": "detail"
+        },
+        {
+          "fact": "AbbVie says some of its product liability matters involve numerous plaintiffs and parties seeking large or indeterminate financial claims.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "some of these matters involve numerous plaintiffs and parties seeking large or indeterminate financial claims",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says it is a defendant in numerous lawsuits arising out of the use of body powders containing talc, primarily JOHNSON'S Baby Powder.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "the Company is a defendant in numerous lawsuits arising out of the use of body powders containing talc, primarily JOHNSON’S Baby Powder",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Johnson & Johnson does not purchase third-party product liability insurance.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "The Company does not purchase third-party product liability insurance",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Johnson & Johnson uses a wholly owned captive insurance company, subject to certain limits.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "the Company utilizes a wholly owned captive insurance company subject to certain limits",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says it could be required to pay significant amounts in settlements or judgments in the talc matters, potentially in excess of its accruals.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "The Company has been and could in the future be required to pay significant amounts as a result of settlements or judgments in these matters, potentially in excess of accruals",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly says it is, and could increasingly become, subject to large numbers of product liability claims for its previous, current or future products.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "we are, and could increasingly become, subject to large numbers of product liability claims for our previous, current, or future products",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Eli Lilly is predominately self-insured for litigation liability losses for all its currently and previously marketed products.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "we are predominately self-insured for litigation liability losses for all our currently and previously marketed products",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Eli Lilly says its ability to insure against product liability exposures is limited by a very restrictive market for liability insurance.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "The ability to insure against such exposures is limited, and due to a very restrictive market for liability insurance",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly says safety issues have resulted in costly product liability claims.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Safety issues have resulted and could in the future result in costly product liability claims.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says it is subject to a substantial number of product liability claims.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "The Company is subject to a substantial number of product liability claims.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Merck self-insures substantially all of its product liability risk.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "With respect to product liability, the Company self-insures substantially all of its risk",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Merck says product liability insurance has become less available while its cost has increased significantly.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "product liability insurance has become less available while the cost of such insurance has increased significantly",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck has no insurance for most product liabilities.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "has no insurance for most product liabilities",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says it is and may be involved in product liability and other product-related litigation, including personal injury claims.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "We are and may be involved in various legal proceedings, including patent litigation, product liability and other product-related litigation, including personal injury",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Pfizer says excessive verdicts do occur in litigation.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Litigation is inherently unpredictable, and excessive verdicts do occur.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says concerns about the safety or efficacy of its products can lead to product liability and other litigation and claims.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "claims and concerns that may arise regarding the safety and/or efficacy of in-line products and product candidates can negatively impact current or future product sales, as applicable, and potentially lead to regulator-directed risk evaluations and assessments, asset impairments, and/or consumer fraud, product liability and other litigation and claims",
+          "tier": "detail"
+        },
+        {
+          "fact": "Thermo Fisher says it may be named as a defendant in product liability or errors and omissions lawsuits alleging that its products or services caused injury or financial loss.",
+          "filing_id": "TMO_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "We may be named as a defendant in product liability or errors and omissions lawsuits, which may allege that products or services we have provided have resulted or could result in an unsafe condition, property damage or injury to end users or financial loss for consumers.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Thermo Fisher carries product liability and errors and omissions insurance.",
+          "filing_id": "TMO_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Although we carry product liability and errors and omissions insurance",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Thermo Fisher says it cannot be certain that its current insurance will be sufficient to cover product liability claims.",
+          "filing_id": "TMO_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "we cannot be certain that our current insurance will be sufficient",
+          "tier": "detail"
+        },
+        {
+          "fact": "Thermo Fisher says a failure of its products to detect explosive or radioactive material could lead to product liability claims.",
+          "filing_id": "TMO_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "it is possible that explosive or radioactive material could fail to be detected by our product, which could lead to product liability claims",
+          "tier": "detail"
+        },
+        {
+          "fact": "Thermo Fisher says patients in clinical trials conducted by its clinical development services business may bring personal injury claims against it.",
+          "filing_id": "TMO_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "patients involved in our clinical services trials conducted by our clinical development services business or taking drugs approved on the basis of those trials may also bring personal injury claims against us",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says legal actions against it could include tort claims such as medical malpractice by personnel at its affiliates' facilities.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "tort claims (including claims related to the delivery of health care services, such as medical malpractice by personnel at our affiliates’ facilities",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UnitedHealth is largely self-insured with regard to litigation risks, including claims of medical malpractice.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "We are largely self-insured with regard to litigation risks, including claims of medical malpractice against our affiliated physicians and us.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UnitedHealth says its actual losses from self-insured matters could significantly exceed the liabilities it records.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "it is possible the level of actual losses will significantly exceed the liabilities recorded",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says physicians and other healthcare providers have become subject to an increasing number of legal actions alleging medical malpractice.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "physicians and other healthcare providers have become subject to an increasing number of legal actions alleging medical malpractice and general professional liabilities",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says that even where it engages external insurers, its coverage may be disputed or may not be sufficient to cover certain claims.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Even in situations where we engage external insurers, our coverage may be disputed or may not be sufficient to cover the entirety of certain claims.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "ABBV",
+            "JNJ",
+            "LLY",
+            "MRK",
+            "PFE",
+            "TMO",
+            "UNH"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sector-consumer-staples-key-customers",
+      "question": "How dependent are the consumer staples companies on their largest customers?",
+      "history": [],
+      "question_type": "sector",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "\"Consumer staples\" resolves to the Sector table's Consumer Staples sector: Costco, Coca-Cola, PepsiCo, Procter & Gamble, Target and Walmart. Their latest 10-Ks end between December 31, 2024 (Coca-Cola) and December 27, 2025 (PepsiCo), so the periods differ gap. Drafted from every customer passage in each whole Risk Factors Section, PepsiCo's and Procter & Gamble's Business Sections, which give their Walmart shares, and PepsiCo's MD&A. Costco, Target and Walmart sell to consumers and describe no dependence on a customer, so they have no facts; Coca-Cola's Q3 2025 10-Q adds no customer risk. Not a repeat: risk-pg-pep-input-costs asks Procter & Gamble and PepsiCo about input costs, and the Coca-Cola cases ask about its market risk and revenue; no case asks about customer concentration. Must-state: Coca-Cola's reliance on its bottling partners and its risk of losing key retail or foodservice customers, PepsiCo's and Procter & Gamble's Walmart shares (about 14% of 2025 net revenue and 16% of 2025 sales), PepsiCo's statement that losing Walmart would have a material adverse effect, and Procter & Gamble's top ten customers' 43%. Retail consolidation, trade terms, shelf space, bottlers' independence, credit risk and the earlier years are details. No fact states an amount; percentages are not checked against the SEC reference.",
+      "expected_sources": [
+        {
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "PEP_10-K_2025-12-27",
+          "section": "Business"
+        },
+        {
+          "filing_id": "PEP_10-K_2025-12-27",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "PEP_10-K_2025-12-27",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "PG_10-K_2025-06-30",
+          "section": "Business"
+        },
+        {
+          "filing_id": "PG_10-K_2025-06-30",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Coca-Cola says it relies on its bottling partners for a significant portion of its business.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "We rely on our bottling partners for a significant portion of our business.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Coca-Cola says the loss of key retail or foodservice customers could adversely affect its financial results.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Changes in the retail landscape or the loss of key retail or foodservice customers could adversely affect our financial results.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Coca-Cola generates a significant portion of its net operating revenues by selling concentrates and syrups to independent bottling partners.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "We generate a significant portion of our net operating revenues by selling concentrates and syrups to independent bottling partners.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Coca-Cola says its bottling partners, as independent companies, make their own business decisions that may not always align with its interests.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "As independent companies, our bottling partners, some of which are publicly traded companies, make their own business decisions that may not always align with our interests.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Coca-Cola says its industry is affected by the trend toward consolidation in retail channels, particularly in Europe and the United States.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our industry is being affected by the trend toward consolidation in, and the blurring of the lines between, retail channels, particularly in Europe and the United States.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Coca-Cola says retailers may seek lower prices from it and its bottling partners.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Retailers may seek lower prices from us and our bottling partners",
+          "tier": "detail"
+        },
+        {
+          "fact": "PepsiCo says sales to Walmart and its affiliates, including Sam's Club, represented approximately 14% of its consolidated net revenue in 2025.",
+          "filing_id": "PEP_10-K_2025-12-27",
+          "section": "Business",
+          "evidence": "In 2025, sales to Walmart Inc. (Walmart) and its affiliates, including Sam’s Club (Sam’s), represented approximately 14% of our consolidated net revenue",
+          "tier": "must_state"
+        },
+        {
+          "fact": "PepsiCo says the loss of Walmart as a customer would have a material adverse effect on its PFNA and PBNA segments.",
+          "filing_id": "PEP_10-K_2025-12-27",
+          "section": "Business",
+          "evidence": "The loss of this customer would have a material adverse effect on our PFNA and PBNA segments.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "PepsiCo says changes to the retail landscape, including the international expansion of hard discounters and the current economic environment, continue to increase the importance of major customers.",
+          "filing_id": "PEP_10-K_2025-12-27",
+          "section": "Business",
+          "evidence": "the international expansion of hard discounters, and the current economic environment continue to increase the importance of major customers",
+          "tier": "detail"
+        },
+        {
+          "fact": "PepsiCo says a significant reduction in sales to any key customer, or the loss of any key customer, has adversely affected and can continue to adversely affect its business.",
+          "filing_id": "PEP_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "A change in the business conditions (financial or otherwise) of any of our key customers, even if unrelated to us, a significant reduction in sales to any key customer, or the loss of any of our key customers has adversely affected and can continue to adversely affect our business.",
+          "tier": "detail"
+        },
+        {
+          "fact": "PepsiCo says it is exposed to concentration of credit risk from its major customers, including Walmart.",
+          "filing_id": "PEP_10-K_2025-12-27",
+          "section": "MD&A",
+          "evidence": "We are exposed to concentration of credit risk from our major customers, including Walmart.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Procter & Gamble says sales to Walmart and its affiliates represented approximately 16% of its total sales in 2025.",
+          "filing_id": "PG_10-K_2025-06-30",
+          "section": "Business",
+          "evidence": "Sales to Walmart Inc. and its affiliates represent approximately 16% of our total sales in 2025 and 2024",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Procter & Gamble says its top ten customers accounted for 43% of its total net sales in 2025.",
+          "filing_id": "PG_10-K_2025-06-30",
+          "section": "Business",
+          "evidence": "Our top ten customers accounted for 43% of our total net sales in 2025",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Procter & Gamble says no customer other than Walmart represents more than 10% of its total sales.",
+          "filing_id": "PG_10-K_2025-06-30",
+          "section": "Business",
+          "evidence": "No other customer represents more than 10% of our total sales.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Procter & Gamble says continued concentration among its retail customers could create significant cost and margin pressure on its business.",
+          "filing_id": "PG_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "Continued concentration among our retail customers could create significant cost and margin pressure on our business",
+          "tier": "detail"
+        },
+        {
+          "fact": "Procter & Gamble says its business performance could suffer if it cannot reach agreement with a key customer on trade terms and principles.",
+          "filing_id": "PG_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "our business performance could suffer if we cannot reach agreement with a key customer on trade terms and principles",
+          "tier": "detail"
+        },
+        {
+          "fact": "Procter & Gamble says its business could be negatively impacted if a key customer significantly reduced the inventory or shelf space allocated to its products.",
+          "filing_id": "PG_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "Our business could also be negatively impacted if a key customer were to significantly reduce the inventory level of or shelf space allocated to our products",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "COST",
+            "KO",
+            "PEP",
+            "PG",
+            "TGT",
+            "WMT"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sector-consumer-discretionary-climate",
+      "question": "What risks do the consumer discretionary companies see from climate change and extreme weather?",
+      "history": [],
+      "question_type": "sector",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "\"Consumer discretionary\" resolves to the Sector table's Consumer Discretionary sector: Amazon, Home Depot, McDonald's, Nike, Starbucks and Tesla, each with facts. Their latest 10-Ks end between December 31, 2024 (McDonald's) and December 31, 2025 (Amazon, Tesla), so the periods differ gap. Drafted from every climate and weather passage in each whole Risk Factors Section and in McDonald's FY2024 10-K, one Unsectioned Section (the Corpus finds no Item headings in it). Not a repeat: risk-nke-sbux-hd-consumer-demand asks Nike, Starbucks and Home Depot about consumer demand, risk-nke-tsla-amzn-tariffs asks Nike, Tesla and Amazon about tariffs, and the oil majors follow-up asks Chevron and ExxonMobil about greenhouse gas regulation; no case asks these Companies about climate change or weather. Must-state: each Company's headline climate or weather risk (Amazon's higher operating costs from extreme weather, Home Depot's inventory made incompatible with customer needs and its unpredictable long-term climate impacts, Nike's adverse impact and its particular vulnerability to physical risks, Starbucks' coffee supply and pricing and its vulnerable properties, Tesla's exposure to weather and the long-term effects of climate change, McDonald's effects on consumer behavior, supply and operations). Transition costs, compliance costs, logistics, particular sites and events, insurance and commodity prices are details. No fact states an amount.",
+      "expected_sources": [
+        {
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "HD_10-K_2025-02-02",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "MCD_10-K_2024-12-31",
+          "section": "Unsectioned"
+        },
+        {
+          "filing_id": "NKE_10-K_2025-05-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "SBUX_10-K_2025-09-28",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Amazon says potential negative impacts of climate change include increased operating costs due to more frequent extreme weather events or climate-related changes, such as rising temperatures and water scarcity.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "potential negative impacts of climate change, including: increased operating costs due to more frequent extreme weather events or climate-related changes, such as rising temperatures and water scarcity",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Amazon says the transition to a low-carbon economy may increase its investment requirements.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "increased investment requirements associated with the transition to a low-carbon economy",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon says climate change could decrease demand for its products and services as a result of changes in customer behavior.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "decreased demand for our products and services as a result of changes in customer behavior",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon says extreme weather, including as a result of climate change, may negatively affect its ability to receive inbound inventory and ship completed orders to customers.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "our ability to receive inbound inventory efficiently and ship completed orders to customers also may be negatively affected by natural or human-caused disasters (including public health crises) or extreme weather (including as a result of climate change)",
+          "tier": "detail"
+        },
+        {
+          "fact": "Home Depot says unseasonable, unexpected or extreme weather conditions could render a portion of its inventory incompatible with customer needs.",
+          "filing_id": "HD_10-K_2025-02-02",
+          "section": "Risk Factors",
+          "evidence": "Unseasonable, unexpected or extreme weather conditions such as excessive precipitation, warm temperatures during the winter season, or prolonged or extreme periods of warm or cold temperatures could render a portion of our inventory incompatible with customer needs and adversely impact our financial results.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Home Depot says the potential long-term impacts of climate change, whether physical or transition risks, could be widespread and unpredictable.",
+          "filing_id": "HD_10-K_2025-02-02",
+          "section": "Risk Factors",
+          "evidence": "the potential long-term impacts of climate change, whether involving physical risks (such as extreme weather conditions) or transition risks (such as regulatory or technology changes), could be widespread and unpredictable",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Home Depot says climate change could affect the availability and cost of or demand for certain products, commodities and energy.",
+          "filing_id": "HD_10-K_2025-02-02",
+          "section": "Risk Factors",
+          "evidence": "These changes over time could affect, for example, the availability and cost of or demand for certain products, commodities, and energy (including utilities)",
+          "tier": "detail"
+        },
+        {
+          "fact": "Home Depot says its business is subject to seasonal influences, and that significant weather conditions and climate change could impact its operations and financial results.",
+          "filing_id": "HD_10-K_2025-02-02",
+          "section": "Risk Factors",
+          "evidence": "Our business is subject to seasonal influences, and uncharacteristic or significant weather conditions, climate change, natural disasters, as well as other catastrophic or uncharacteristic events, could impact our operations and financial results.",
+          "tier": "detail"
+        },
+        {
+          "fact": "McDonald's says severe weather conditions or climate change can adversely affect consumer behavior, supply availability and costs, and local operations, including temporary restaurant closures.",
+          "filing_id": "MCD_10-K_2024-12-31",
+          "section": "Unsectioned",
+          "evidence": "Severe weather conditions, natural disasters, acts of war, terrorism or other hostilities, social and geopolitical unrest or climate change (or expectations about them) can adversely affect consumer behavior and confidence levels, supply availability and costs and local operations, including temporary restaurant closures and delayed new restaurant openings",
+          "tier": "must_state"
+        },
+        {
+          "fact": "McDonald's says climate change may increase the frequency and severity of weather-related events and natural disasters.",
+          "filing_id": "MCD_10-K_2024-12-31",
+          "section": "Unsectioned",
+          "evidence": "Climate change may also increase the frequency and severity of weather-related events and natural disasters.",
+          "tier": "detail"
+        },
+        {
+          "fact": "McDonald's says its insurance proceeds for some of these risks may be delayed or insufficient to cover its losses.",
+          "filing_id": "MCD_10-K_2024-12-31",
+          "section": "Unsectioned",
+          "evidence": "Our receipt of proceeds under any insurance we maintain with respect to some of these risks may be delayed or the proceeds may be insufficient to cover our losses",
+          "tier": "detail"
+        },
+        {
+          "fact": "McDonald's says it is working to manage risks and costs to its System related to climate change, greenhouse gases, and diminishing energy and water resources.",
+          "filing_id": "MCD_10-K_2024-12-31",
+          "section": "Unsectioned",
+          "evidence": "we are working to manage risks and costs to our System related to climate change, greenhouse gases, and diminishing energy and water resources",
+          "tier": "detail"
+        },
+        {
+          "fact": "McDonald's says the commodity markets for ingredients such as beef and chicken are particularly volatile, partly because of climate conditions.",
+          "filing_id": "MCD_10-K_2024-12-31",
+          "section": "Unsectioned",
+          "evidence": "The commodity markets for some of the ingredients we use, such as beef and chicken, are particularly volatile due to factors such as seasonal shifts, climate conditions",
+          "tier": "detail"
+        },
+        {
+          "fact": "Nike says climate change, extreme weather conditions and natural disasters may have an adverse impact on its business and results of operations.",
+          "filing_id": "NKE_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "Climate change, extreme weather conditions and natural disasters may have an adverse impact on our business and results of operations.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Nike says that, given the broad and global scope of its operations, it is particularly vulnerable to the physical risks of climate change, such as shifts in weather patterns.",
+          "filing_id": "NKE_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "Given the broad and global scope of our operations, we are particularly vulnerable to the physical risks of climate change, such as shifts in weather patterns.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Nike says climate change may exacerbate challenges relating to the availability and quality of water and raw materials used in the production of its products.",
+          "filing_id": "NKE_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "Climate change may also exacerbate challenges relating to the availability and quality of water and raw materials, including those used in the production of our products.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Nike says a natural disaster or severe weather event could negatively impact retail traffic to its stores or stores that carry its products.",
+          "filing_id": "NKE_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "a natural disaster or severe weather event could negatively impact retail traffic to our stores or stores that carry our products",
+          "tier": "detail"
+        },
+        {
+          "fact": "Starbucks says climate change can affect the supply and pricing of coffee and other inputs.",
+          "filing_id": "SBUX_10-K_2025-09-28",
+          "section": "Risk Factors",
+          "evidence": "Climate change can affect the supply and pricing of coffee and other non-coffee inputs due to weather volatility, water scarcity, and other environmental factors in producing regions.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Starbucks says its properties and operations are increasingly vulnerable to extreme weather events, such as wildfires and droughts, which may close stores and increase costs.",
+          "filing_id": "SBUX_10-K_2025-09-28",
+          "section": "Risk Factors",
+          "evidence": "our properties and operations are increasingly vulnerable to extreme weather events—such as wildfires and droughts—which may disrupt operations, close stores, affect customers and suppliers, and increase costs",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Starbucks says droughts or frosts in Brazil have in the past driven coffee price increases.",
+          "filing_id": "SBUX_10-K_2025-09-28",
+          "section": "Risk Factors",
+          "evidence": "Climate change may intensify these risks—for example, droughts or frosts in Brazil have in the past driven price increases.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Starbucks says evolving climate disclosure obligations, such as California's new climate change disclosure requirements, may increase its compliance costs.",
+          "filing_id": "SBUX_10-K_2025-09-28",
+          "section": "Risk Factors",
+          "evidence": "or the state of California’s new climate change disclosure requirements. The evolving obligations may increase compliance costs and the risk of noncompliance.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says it may be impacted by weather conditions and the long-term effects of climate change.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We may be impacted by natural disasters, wars and other geopolitical conflicts, health epidemics, weather conditions, the long-term effects of climate change, power outages or other events outside of our control.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla says its Gigafactory Shanghai is located in a flood-prone area.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "our Gigafactory Shanghai is located in a flood-prone area",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says the area in which its Gigafactory Texas is located experienced severe winter storms in the first quarter of 2021 that had a widespread impact on utilities and transportation.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "the area in which our Gigafactory Texas is located experienced severe winter storms in the first quarter of 2021 that had a widespread impact on utilities and transportation",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says new or changed environmental and climate change laws could increase its costs of compliance.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "New, or changes in, environmental and climate change laws, regulations or rules could also lead to increased costs of compliance",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "AMZN",
+            "HD",
+            "MCD",
+            "NKE",
+            "SBUX",
+            "TSLA"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sector-retailers-workforce",
+      "question": "What labor and workforce risks do the retailers describe?",
+      "history": [],
+      "question_type": "sector",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "\"The retailers\" resolves through the Sector table's retail industries (Broadline Retail, Specialty Retail, Consumer Staples Distribution & Retail) to Amazon, Costco, Home Depot, Target and Walmart, each with facts. Their latest 10-Ks end between January 31, 2025 (Walmart) and December 31, 2025 (Amazon), so the periods differ gap. Drafted from every workforce, wage and labor organizing passage in each whole Risk Factors Section. Not a repeat: risk-wmt-tgt-legal-proceedings asks Walmart and Target about legal proceedings, risk-nke-sbux-hd-consumer-demand asks Home Depot about consumer demand, and the Amazon cases ask about legal proceedings, tariffs, AWS, net sales and guidance; no case asks about labor or the workforce. Must-state: each Company's headline workforce risk (Amazon's strained operations and higher costs from failing to retain personnel, and union organizing; Costco's need to attract, train and retain employees and the factors in its labor costs; Home Depot's need to retain associates while controlling labor costs, and wage pressure; Target's workforce as its largest operating expense and its high-turnover positions; Walmart's attracting and retaining associates and its wage and benefit costs). Succession, competition for employees, compensation costs, labor laws, worker classification and collective bargaining are details. No fact states an amount.",
+      "expected_sources": [
+        {
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "COST_10-K_2025-08-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "HD_10-K_2025-02-02",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "TGT_10-K_2025-02-01",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Amazon says failure to hire, train, manage and retain sufficient personnel can strain its operations, increase payroll and other costs, and harm its business.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Failure to successfully hire, train, manage, and retain sufficient personnel to meet our needs can strain our operations, increase payroll and other costs, and harm our business and reputation.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Amazon says it is subject to labor union efforts to organize groups of its employees from time to time.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We are also subject to labor union efforts to organize groups of our employees from time to time.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Amazon says successful union organizing efforts would decrease its operational flexibility.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "These organizational efforts, if successful, decrease our operational flexibility, which could adversely affect our operating efficiency.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon says its response to union organizing efforts could be perceived negatively and harm its business and reputation.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "our response to any organizational efforts could be perceived negatively and harm our business and reputation",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon says changes in laws applicable to employees, independent contractors and temporary personnel could increase its payroll costs.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "changes in laws and regulations applicable to employees, independent contractors, and temporary personnel could increase our payroll costs",
+          "tier": "detail"
+        },
+        {
+          "fact": "Costco says an inability to attract, train and retain qualified employees could adversely impact its business, financial condition and results of operations.",
+          "filing_id": "COST_10-K_2025-08-31",
+          "section": "Risk Factors",
+          "evidence": "Inability to attract, train and retain qualified employees could adversely impact our business, financial condition and results of operations.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Costco says its ability to control labor and benefit costs is subject to factors including prevailing wage rates, union relations, and healthcare and other insurance costs.",
+          "filing_id": "COST_10-K_2025-08-31",
+          "section": "Risk Factors",
+          "evidence": "Our ability to control labor and benefit costs is subject to numerous internal and external factors, including regulatory changes, prevailing wage rates, union relations and healthcare and other insurance costs.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Costco says failure to identify and implement a succession plan for senior management could negatively impact its business.",
+          "filing_id": "COST_10-K_2025-08-31",
+          "section": "Risk Factors",
+          "evidence": "Failure to identify and implement a succession plan for senior management could negatively impact our business.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Costco says it competes with other retail and non-retail businesses for employees.",
+          "filing_id": "COST_10-K_2025-08-31",
+          "section": "Risk Factors",
+          "evidence": "We compete with other retail and non-retail businesses for these employees",
+          "tier": "detail"
+        },
+        {
+          "fact": "Home Depot says its success depends on its ability to attract, develop and retain highly qualified associates while also controlling its labor costs.",
+          "filing_id": "HD_10-K_2025-02-02",
+          "section": "Risk Factors",
+          "evidence": "Our success depends upon our ability to attract, develop and retain highly qualified associates to provide excellent customer service and to support our strategic initiatives while also controlling our labor costs.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Home Depot says it has faced challenges in recruiting and retaining associates due to wage pressure.",
+          "filing_id": "HD_10-K_2025-02-02",
+          "section": "Risk Factors",
+          "evidence": "We have faced and may continue to face additional challenges in recruiting and retaining associates due to wage pressure",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Home Depot says it competes with other retail businesses for many of its associates in hourly positions.",
+          "filing_id": "HD_10-K_2025-02-02",
+          "section": "Risk Factors",
+          "evidence": "We also compete with other retail businesses for many of our associates in hourly positions",
+          "tier": "detail"
+        },
+        {
+          "fact": "Home Depot says these labor market factors and competition among potential employers have resulted in increased compensation costs.",
+          "filing_id": "HD_10-K_2025-02-02",
+          "section": "Risk Factors",
+          "evidence": "These factors, together with competition among potential employers, have resulted in and may continue to result in increased compensation costs",
+          "tier": "detail"
+        },
+        {
+          "fact": "Target says its workforce costs represent its largest operating expense.",
+          "filing_id": "TGT_10-K_2025-02-01",
+          "section": "Risk Factors",
+          "evidence": "With over 400,000 team members, our workforce costs represent our largest operating expense",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Target says many of its team members are in entry-level or part-time positions with historically high turnover rates.",
+          "filing_id": "TGT_10-K_2025-02-01",
+          "section": "Risk Factors",
+          "evidence": "Many team members are in entry-level or part-time positions with high turnover rates historically.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Target says it has over 400,000 team members.",
+          "filing_id": "TGT_10-K_2025-02-01",
+          "section": "Risk Factors",
+          "evidence": "With over 400,000 team members",
+          "tier": "detail"
+        },
+        {
+          "fact": "Target says it is periodically subject to labor organizing efforts and activism.",
+          "filing_id": "TGT_10-K_2025-02-01",
+          "section": "Risk Factors",
+          "evidence": "We are periodically subject to labor organizing efforts and activism",
+          "tier": "detail"
+        },
+        {
+          "fact": "Target says becoming subject to collective bargaining agreements in the future could adversely affect its labor costs.",
+          "filing_id": "TGT_10-K_2025-02-01",
+          "section": "Risk Factors",
+          "evidence": "If we become subject to one or more collective bargaining agreements in the future, it could adversely affect our labor costs, how we operate our business, and our results of operations.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walmart says a failure to attract and retain qualified associates could materially adversely affect its financial performance.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "Our failure to attract and retain qualified associates, increases in wage and benefit costs, changes in laws and other labor issues could materially adversely affect our financial performance.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Walmart says increases in wage and benefit costs could materially adversely affect its financial performance.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "Our failure to attract and retain qualified associates, increases in wage and benefit costs, changes in laws and other labor issues could materially adversely affect our financial performance.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Walmart says it competes for talent with other retail and non-retail businesses, including technology, health and wellness and fintech businesses.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "We compete for talent with other retail and non-retail businesses, including, for example, technology, health and wellness and fintech businesses",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walmart says new interpretations of labor laws, including those related to worker classification, could further increase its labor costs.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "if new, revised or novel interpretations of existing labor laws, rules or regulations or healthcare laws, including those related to worker classification, are adopted or implemented that further increase our labor costs, our financial performance could be materially adversely affected",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walmart says the quality of service it provides to customers may decrease if it is unable to attract or retain qualified personnel.",
+          "filing_id": "WMT_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "If we are unable to locate, attract or retain qualified personnel, or manage leadership transition successfully, the quality of service we provide to our customers may decrease",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "AMZN",
+            "COST",
+            "HD",
+            "TGT",
+            "WMT"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sector-communication-services-advertising",
+      "question": "How dependent are the communication services companies on advertising, and what risks does that bring?",
+      "history": [],
+      "question_type": "sector",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "\"Communication services\" resolves to the Sector table's Communication Services sector: Comcast, Walt Disney, Alphabet, Meta, Netflix, AT&T and Verizon. Disney's latest 10-K is FY2025 to September 27, 2025 and the others' FY2025 to December 31, 2025, so the periods differ gap. Drafted from every advertising passage in each whole Risk Factors Section; Disney's Q1 FY2026 10-Q adds no advertising risk. AT&T's and Verizon's Risk Factors name advertising only as marketing or privacy rules on targeted ads, not as a source of revenue, so they have no facts. Not a repeat: risk-goog-meta-ai asks Alphabet and Meta about AI, risk-nflx-dis-streaming-competition asks Netflix and Disney about competition in streaming, and risk-t-vz-cmcsa-regulation asks the telecom and cable Companies about regulation; no case asks about advertising. Every half has facts: how much each depends on advertising (Alphabet's more than 70% of 2025 revenues, Meta's substantially all, Comcast's substantial revenue, Netflix's limited experience) and the headline risk each names (reduced advertiser spending, the loss of marketers, a decline in advertisers' expenditures, decreased linear network advertising, advertising revenue not growing as expected) are must-state. Contract terms, AI's effect on advertising, the economy, iOS and targeting changes, digital shifts, ratings and third parties are details. No fact states an amount.",
+      "expected_sources": [
+        {
+          "filing_id": "CMCSA_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Comcast says it derives substantial revenue from the sale of advertising.",
+          "filing_id": "CMCSA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Because we derive substantial revenue from the sale of advertising, a decline in expenditures by advertisers, including through traditional linear television distribution models or on Peacock, could negatively impact our results of operations.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Comcast says a decline in expenditures by advertisers could negatively impact its results of operations.",
+          "filing_id": "CMCSA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Because we derive substantial revenue from the sale of advertising, a decline in expenditures by advertisers, including through traditional linear television distribution models or on Peacock, could negatively impact our results of operations.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Comcast says advertisers have shifted a larger portion of their total expenditures to digital media.",
+          "filing_id": "CMCSA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "as advertisers have shifted, and may continue to shift, a larger portion of their total expenditures to digital media",
+          "tier": "detail"
+        },
+        {
+          "fact": "Comcast says lower audience ratings and reduced viewership at its linear television networks affect advertisers' willingness to purchase advertising from it and the rates paid.",
+          "filing_id": "CMCSA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "lower audience ratings and reduced viewership, which many of our linear television networks have experienced, and likely will continue to experience, as well as the level of popularity of Peacock, affect advertisers’ willingness to purchase advertising from us and the rates paid",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walt Disney says changes in technology and distribution have decreased advertising and affiliate revenue at some of its linear networks.",
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "These developments have decreased advertising and affiliate revenue at some of our linear networks",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Walt Disney says its results of operations could be adversely impacted by a contraction in the number or kind of advertisers purchasing advertising on its platforms.",
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "or a contraction in the number or kind of advertisers purchasing advertising on our platforms, including as a result of legal or regulatory developments",
+          "tier": "detail"
+        },
+        {
+          "fact": "Alphabet says it generated more than 70% of its total revenues from online advertising in 2025.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We generated more than 70% of total revenues from online advertising in 2025.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Alphabet says reduced spending by advertisers, a loss of partners or shifts in online advertising could harm its business.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Reduced spending by advertisers, a loss of partners, shifts in online advertising, new and evolving advertising formats, or new or existing technologies that block ads online or affect our ability to personalize ads could harm our business.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Alphabet says many of its advertisers can terminate their contracts with it at any time.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Many of our advertisers, companies that distribute our products and services, digital publishers, and content providers can terminate their contracts with us at any time.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Alphabet believes AI is quickly reshaping the advertising industry, including how ads are delivered online.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We believe AI is quickly reshaping the advertising industry, including how ads are delivered online",
+          "tier": "detail"
+        },
+        {
+          "fact": "Alphabet says expenditures by advertisers tend to correlate with overall economic conditions.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Expenditures by advertisers tend to correlate with overall economic conditions.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta says it generates substantially all of its revenue from advertising.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We generate substantially all of our revenue from advertising.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Meta says the loss of marketers, or a reduction in spending by marketers, could seriously harm its business.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "The loss of marketers, or reduction in spending by marketers, could seriously harm our business.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Meta says its marketers do not have long-term advertising commitments with it.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "our marketers do not have long-term advertising commitments with us",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta says changes to its user data practices reduce its ability to effectively target ads.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Some of these changes reduce our ability to effectively target ads",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta says its advertising revenue has been negatively impacted by marketer reaction to targeting and measurement challenges associated with iOS changes beginning in 2021.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "our advertising revenue has been negatively impacted by marketer reaction to targeting and measurement challenges associated with iOS changes beginning in 2021",
+          "tier": "detail"
+        },
+        {
+          "fact": "Netflix says it has limited experience and operating history offering advertising on its service.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We have limited experience and operating history offering advertising on our service",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Netflix says its advertising revenue may not grow as it expects.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "our advertising revenue may not grow as we expect",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Netflix says its ability to generate advertising revenue depends on its ability to attract and retain advertisers.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our ability to generate advertising revenue is subject to various risks and will depend on a number of factors, including:•our ability to attract and retain advertisers",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "CMCSA",
+            "DIS",
+            "GOOG",
+            "META",
+            "NFLX",
+            "T",
+            "VZ"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gap-aapl-nvda-research-spending-periods-differ",
+      "question": "Compare how Apple's and NVIDIA's research and development spending grew in their latest fiscal years.",
+      "history": [],
+      "question_type": "figure_trend",
+      "split": "pending",
+      "starter": null,
+      "tags": [
+        "periods_differ_comparison"
+      ],
+      "notes": "A Coverage Gap case: the comparison cannot be of the same period. Apple's latest fiscal year, FY2025, ended September 27, 2025, and NVIDIA's, FY2025, ended January 26, 2025, eight months earlier, so the answer must state the periods differ gap while comparing them. Drafted from the operating expenses passages of the MD&A of Apple's FY2025 10-K and NVIDIA's FY2025 10-K; NVIDIA's later FY2026 10-Qs are quarters, not a fiscal year. Not a repeat: no case asks about research and development spending; the Apple and NVIDIA cases ask about supply chains, legal proceedings, market risk, net sales, net income, revenue and competition. Must-state: each Company's research and development expense for its latest fiscal year and its growth from the year before. The year before, the share of revenue and the drivers are details. Every dollar amount matches the SEC company-facts reference (ResearchAndDevelopmentExpense: Apple's $34,550 million for FY2025 and $31,370 million for FY2024, NVIDIA's $12,914 million for FY2025 and $8,675 million for FY2024), and each growth rate agrees with it (10% and 49%).",
+      "expected_sources": [
+        {
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Apple's research and development expense was $34,550 million in fiscal 2025.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Research and development | $ | 34,550 | | | 10 | % | | $ | 31,370",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple's research and development expense grew 10% in fiscal 2025 compared with fiscal 2024.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Research and development | $ | 34,550 | | | 10 | % | | $ | 31,370",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple's research and development expense was $31,370 million in fiscal 2024.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Research and development | $ | 34,550 | | | 10 | % | | $ | 31,370",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's research and development expense was 8% of its total net sales in fiscal 2025.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "Percentage of total net sales | 8 | %",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says the growth in its R&D expense during 2025 was primarily driven by increases in headcount-related expenses and infrastructure-related costs.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "MD&A",
+          "evidence": "The growth in R&D expense during 2025 compared to 2024 was primarily driven by increases in headcount-related expenses and infrastructure-related costs.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA's research and development expenses were $12,914 million in fiscal year 2025.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A",
+          "evidence": "Research and development expenses | $ | 12,914 | | | $ | 8,675 | | | $ | 4,239 | | | 49 | %",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA's research and development expenses grew 49% in fiscal year 2025 compared with fiscal year 2024.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A",
+          "evidence": "Research and development expenses | $ | 12,914 | | | $ | 8,675 | | | $ | 4,239 | | | 49 | %",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA's research and development expenses were $8,675 million in fiscal year 2024.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A",
+          "evidence": "Research and development expenses | $ | 12,914 | | | $ | 8,675",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA's research and development expenses were 9.9% of its net revenue in fiscal year 2025.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A",
+          "evidence": "% of net revenue | 9.9 | % | | 14.2 | %",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says the increase in its research and development expenses for fiscal year 2025 was driven in part by a 32% increase in compensation and benefits.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A",
+          "evidence": "The increases in research and development expenses for fiscal year 2025 were driven by a 32% increase in compensation and benefits",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says the increase in its research and development expenses for fiscal year 2025 was driven in part by a 100% increase in compute and infrastructure.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A",
+          "evidence": "a 100% increase in compute and infrastructure",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "AAPL",
+            "NVDA"
+          ]
+        }
+      ]
     }
   ]
 }
