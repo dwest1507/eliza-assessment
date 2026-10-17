@@ -88,6 +88,7 @@ from edgar_rag.corpus import DEFAULT_SECTOR_TABLE
 from edgar_rag.golden_set import (
     DEFAULT_BRIEF_SUITE,
     DEFAULT_GOLDEN_SET,
+    DEFAULT_GOLDEN_SET_V2,
     GoldenCase,
     Tier,
     load_brief_suite,
@@ -664,11 +665,17 @@ def main(
             )
         return 0
     if args.brief_suite:
-        suite = load_brief_suite(args.brief_suite, (args.golden_set,))
+        # The suite's cases replace version 1 cases, whichever Golden Set file is named.
+        golden_sets = dict.fromkeys((DEFAULT_GOLDEN_SET, DEFAULT_GOLDEN_SET_V2, args.golden_set))
+        suite = load_brief_suite(args.brief_suite, golden_sets)
         cases, where, runs = suite.cases, "Brief Suite", args.runs or BRIEF_SUITE_RUNS
         if runs < 1:
             parser.error("--runs must be at least 1")
     else:
+        try:
+            golden.require_frozen()
+        except ValueError as error:
+            parser.error(str(error))
         suite = None
         cases = golden.cases if args.split == "all" else golden.split(args.split)
         where, runs = f"{args.split} split", 1

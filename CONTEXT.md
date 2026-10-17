@@ -31,7 +31,7 @@ _Avoid_: Limitation, missing data, caveat
 ### Evaluation
 
 **Golden Set**:
-The labelled questions retrieval and answers are scored against, each with its expected (Filing ID, Section) pairs, Required Facts and expected Coverage Gaps, and each assigned to dev or holdout by a hash of its id, a split it keeps for good.
+The labelled questions retrieval and answers are scored against, each with its expected (Filing ID, Section) pairs, Required Facts and expected Coverage Gaps, and each assigned to dev or holdout by a hash of its id, a split it keeps for good. From version 2 each case records its split, which is pending while new cases are drafted; a set with a pending case is not run.
 _Avoid_: Test set, benchmark, eval data
 
 **Brief Suite**:

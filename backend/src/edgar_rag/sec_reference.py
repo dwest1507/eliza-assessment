@@ -2,8 +2,9 @@
 
 The SEC's company-facts API publishes every XBRL fact a Company has filed. The EDA
 compares the Financial Facts extracted from the Corpus with it to measure extraction
-accuracy. It is an evaluation reference and nothing more: no answer is ever built from
-it, and nothing outside the EDA reads it.
+accuracy, and the Golden Set's tests check version 2's figure facts against it. It is an
+evaluation reference and nothing more: no answer is ever built from it, and nothing
+outside the EDA and those tests reads it.
 
 The data is fetched once per Company (`make sec-facts`) and cached under
 `data/derived/sec_companyfacts/`, which is gitignored. The SEC asks every automated

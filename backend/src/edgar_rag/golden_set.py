@@ -11,14 +11,18 @@ Fact Recall is scored on, or `detail`, reported as detail recall but never count
 miss. Version 1's facts name no tier and load as `must_state`; later versions must name
 one. Every case has a must-state fact unless it expects only Coverage Gaps.
 
-Cases are split dev/holdout by a hash of each case id (`assign_splits`), so prompt and
-Arm choices are tuned on dev and the holdout is scored once per final setup, never to
-choose.
+Version 1's cases are split dev/holdout by a hash of each case id (`assign_splits`), so
+prompt and Arm choices are tuned on dev and the holdout is scored once per final setup,
+never to choose. Version 2 (`data/eval/golden_set_v2.json`, `DEFAULT_GOLDEN_SET_V2`)
+records each case's split instead (`SPLIT_RULE_V2`): `dev`, `holdout`, or `pending` while
+its new cases are drafted. A harness runs version 1 unless named another file, and
+refuses a set with a pending case (`GoldenSet.require_frozen`).
 
 The Brief Suite (`data/eval/brief_suite.json`, `load_brief_suite`) holds the brief's
 example questions and variants of them, outside the split: a must-pass check that may be
 tuned on. Its cases use the same schema with no split, every fact names its tier, and a
-case rewritten from a version 1 case records which (`replaces`). No id is in both files.
+case rewritten from a version 1 case records which (`replaces`). No id is in both it and
+either Golden Set version.
 Starter prompts may come from either (`starter_cases`): a Brief Suite case's starter
 takes the place of the one on the case it replaces.
 
@@ -43,8 +47,10 @@ __all__ = [
     "COVERAGE_GAP_KINDS",
     "DEFAULT_BRIEF_SUITE",
     "DEFAULT_GOLDEN_SET",
+    "DEFAULT_GOLDEN_SET_V2",
     "QUESTION_TYPES",
     "SPLIT_RULE",
+    "SPLIT_RULE_V2",
     "TIERS",
     "BriefSuite",
     "CoverageGapLabel",
@@ -62,6 +68,9 @@ __all__ = [
 ]
 
 DEFAULT_GOLDEN_SET = DATA_DIR / "eval" / "golden_set.json"
+"""Golden Set version 1, the harnesses' default until version 2's split is frozen."""
+
+DEFAULT_GOLDEN_SET_V2 = DATA_DIR / "eval" / "golden_set_v2.json"
 
 DEFAULT_BRIEF_SUITE = DATA_DIR / "eval" / "brief_suite.json"
 
@@ -85,7 +94,8 @@ COVERAGE_GAP_KINDS = (
 )
 """The Coverage Gaps of EDA notebook section 8.6 that an answer must state in words."""
 
-Split = Literal["dev", "holdout"]
+Split = Literal["dev", "holdout", "pending"]
+"""`pending` only in version 2 and later, and only until the split is frozen."""
 
 Tier = Literal["must_state", "detail"]
 
@@ -98,7 +108,15 @@ SPLIT_RULE = (
     "rounded to the nearest whole case, are holdout; the rest are dev."
 )
 """The split rule, also written in the file. Ranking by hash rather than thresholding
-each hash keeps the holdout at exactly a third of a set this small."""
+each hash keeps the holdout at exactly a third of a set this small. Version 1 only."""
+
+SPLIT_RULE_V2 = (
+    "Each case records its split, and no case ever moves. Version 1's cases rewritten "
+    "here keep their ids and are dev. New cases are pending until all of them exist; "
+    "then the 20 whose ids have the lowest SHA-256 hex digests (UTF-8) are holdout and "
+    "the rest dev. A run refuses while any case is pending."
+)
+"""The split rule from version 2 on (ADR 0012), also written in the file."""
 
 
 @dataclass(frozen=True)
@@ -182,6 +200,16 @@ class GoldenSet:
     def split(self, split: Split) -> list[GoldenCase]:
         return [c for c in self.cases if c.split == split]
 
+    def require_frozen(self) -> None:
+        """Raise ValueError if any case's split is still pending: a harness runs a set
+        only once its split is frozen."""
+        pending = [c.id for c in self.split("pending")]
+        if pending:
+            raise ValueError(
+                f"Golden Set version {self.version} has {len(pending)} pending case(s), so "
+                f"its split is not frozen yet: {', '.join(pending)}"
+            )
+
 
 @dataclass(frozen=True)
 class BriefSuite:
@@ -228,7 +256,7 @@ def load_golden_set(path: str | Path = DEFAULT_GOLDEN_SET) -> GoldenSet:
 
 def load_brief_suite(
     path: str | Path = DEFAULT_BRIEF_SUITE,
-    golden_sets: Iterable[str | Path] = (DEFAULT_GOLDEN_SET,),
+    golden_sets: Iterable[str | Path] = (DEFAULT_GOLDEN_SET, DEFAULT_GOLDEN_SET_V2),
 ) -> BriefSuite:
     """Read and validate the Brief Suite file. Raises ValueError on a schema problem, on an
     id that is also a case's in one of `golden_sets`, or on a `replaces` naming no case
@@ -262,8 +290,9 @@ def _case(raw: dict, version: int, *, brief: bool = False) -> GoldenCase:
         split = None
     else:
         split = _field(raw, "split", str, where)
-        if split not in ("dev", "holdout"):
-            raise ValueError(f"{where}: split must be 'dev' or 'holdout', not {split!r}")
+        allowed = ("dev", "holdout") if version == 1 else ("dev", "holdout", "pending")
+        if split not in allowed:
+            raise ValueError(f"{where}: split must be one of {allowed}, not {split!r}")
     replaces = raw.get("replaces")
     if replaces is not None and (not brief or not isinstance(replaces, str)):
         raise ValueError(f"{where}: only a Brief Suite case replaces one, by its id")

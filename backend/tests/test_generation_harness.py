@@ -1007,3 +1007,85 @@ def test_the_command_answers_with_a_chosen_context_budget_and_records_the_settin
     assert (small["chunk_tokens"], small["context_budget"]) == (600, 6_000)
     assert default["settings"] == "chunks-600-budget-32000"
     assert small["settings"] == "chunks-600-budget-6000"
+
+
+# --- Golden Set version 2 ----------------------------------------------------------------
+
+
+def test_a_version_2_run_refuses_while_any_case_is_pending(
+    index, tmp_path, golden_set_v2_file, capsys
+):
+    import io
+
+    from edgar_eval.generation import main
+
+    path = golden_set_v2_file({"risk-unh-cybersecurity": "dev", "outlook-tsla-2026": "pending"})
+    model = FakeModel(ANSWER)
+
+    with pytest.raises(SystemExit):
+        main(
+            ["--golden-set", str(path), "--index", str(index), "--log", str(tmp_path / "l")],
+            model=model,
+            judge=FakeJudge(),
+            fact_values=lambda tickers: [],
+            out=io.StringIO(),
+        )
+
+    assert "outlook-tsla-2026" in capsys.readouterr().err
+    assert model.prompts == []  # refused before any Answer Call
+
+
+def test_a_version_2_run_answers_its_recorded_split_once_frozen(
+    index, tmp_path, golden_set_v2_file
+):
+    import io
+    import json
+
+    from edgar_eval.generation import main
+
+    path = golden_set_v2_file(
+        {"risk-unh-cybersecurity": "dev", "risk-aapl-legal-proceedings": "holdout"}
+    )
+    report = tmp_path / "generation-dev.json"
+
+    code = main(
+        [
+            *("--golden-set", str(path), "--index", str(index)),
+            *("--log", str(tmp_path / "l"), "--json", str(report)),
+        ],
+        model=FakeModel(ANSWER),
+        judge=FakeJudge(),
+        fact_values=lambda tickers: [],
+        out=io.StringIO(),
+    )
+
+    assert code == 0
+    data = json.loads(report.read_text())
+    assert data["golden_set_version"] == 2
+    assert [c["case_id"] for c in data["cases"]] == ["risk-unh-cybersecurity"]
+
+
+def test_a_brief_suite_run_beside_golden_set_version_2_still_loads_the_suite(
+    index, tmp_path, golden_set_v2_file
+):
+    """The Brief Suite's cases replace version 1 cases, which a version 2 file need not
+    hold, so the suite is checked against both versions whichever file is named."""
+    import io
+
+    from edgar_eval.generation import main
+
+    path = golden_set_v2_file({"risk-unh-cybersecurity": "pending"})
+
+    code = main(
+        [
+            *("--golden-set", str(path), "--brief-suite", "--runs", "1"),
+            *("--case", "brief-risk-aapl-tsla-jpm", "--index", str(index)),
+            *("--log", str(tmp_path / "l")),
+        ],
+        model=FakeModel(ANSWER),
+        judge=FakeJudge(),
+        fact_values=lambda tickers: [],
+        out=io.StringIO(),
+    )
+
+    assert code == 0

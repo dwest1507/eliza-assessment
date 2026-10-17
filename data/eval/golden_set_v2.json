@@ -1,0 +1,6 @@
+{
+  "version": 2,
+  "about": "Golden Set version 2 (ADR 0012, docs/golden-set.md): version 1's cases other than the brief's, rewritten with one-claim Required Facts in two tiers, and new cases, each recording its split. Version 1 (golden_set.json) stays unchanged as a record.",
+  "split_rule": "Each case records its split, and no case ever moves. Version 1's cases rewritten here keep their ids and are dev. New cases are pending until all of them exist; then the 20 whose ids have the lowest SHA-256 hex digests (UTF-8) are holdout and the rest dev. A run refuses while any case is pending.",
+  "cases": []
+}

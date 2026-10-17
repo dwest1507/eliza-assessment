@@ -342,6 +342,10 @@ def main(
             parser.error(f"no such Arm: {', '.join(sorted(unknown))}")
         arms = [arm for arm in arms if arm.shipped or arm.name in args.arm]
     golden = load_golden_set(args.golden_set)
+    try:
+        golden.require_frozen()
+    except ValueError as error:
+        parser.error(str(error))
     cases = golden.cases if args.split == "all" else golden.split(args.split)
     report = evaluate(
         cases,

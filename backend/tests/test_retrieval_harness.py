@@ -353,3 +353,38 @@ def test_a_seam_arm_ranks_the_sources_its_ranker_gives_the_answer_call(index):
     assert context.sources != prepare_answer_context(question, index).sources
     assert ranked == [(s.filing_id, s.section) for s in context.sources if s.kind == "text"]
     assert sum(len(s.text) for s in small.sources) < sum(len(s.text) for s in context.sources)
+
+
+def test_a_version_2_run_refuses_while_any_case_is_pending(index, golden_set_v2_file, capsys):
+    path = golden_set_v2_file({"risk-unh-cybersecurity": "dev", "outlook-tsla-2026": "pending"})
+    arms = [Arm("fts5", "shipped", lambda messages, index, **settings: [], shipped=True)]
+
+    with pytest.raises(SystemExit):
+        main(["--golden-set", str(path), "--index", str(index)], arms=arms)
+
+    assert "outlook-tsla-2026" in capsys.readouterr().err
+
+
+def test_a_version_2_run_names_its_file_and_scores_its_recorded_split(
+    index, golden_set_v2_file, tmp_path
+):
+    path = golden_set_v2_file(
+        {"risk-unh-cybersecurity": "dev", "risk-aapl-legal-proceedings": "holdout"}
+    )
+    arms = [Arm("fts5", "shipped", lambda messages, index, **settings: [], shipped=True)]
+    out = tmp_path / "retrieval-dev.json"
+
+    main(["--golden-set", str(path), "--index", str(index), "--json", str(out)], arms=arms)
+
+    report = json.loads(out.read_text())
+    assert report["golden_set_version"] == 2
+    assert report["case_ids"] + report["unscored"] == ["risk-unh-cybersecurity"]
+
+
+def test_version_1_stays_the_default(index, tmp_path):
+    arms = [Arm("fts5", "shipped", lambda messages, index, **settings: [], shipped=True)]
+    out = tmp_path / "retrieval-dev.json"
+
+    main(["--index", str(index), "--json", str(out)], arms=arms)
+
+    assert json.loads(out.read_text())["golden_set_version"] == 1

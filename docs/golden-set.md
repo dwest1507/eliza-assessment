@@ -2,7 +2,7 @@
 
 The Golden Set is the evaluation's ground truth: 30 labelled questions that the retrieval and generation harnesses score the system against. It lives in [`data/eval/golden_set.json`](../data/eval/golden_set.json) and is read by `edgar_rag.golden_set.load_golden_set()`, which checks the schema. It was written before any retrieval Arm or prompt ran, so no label was written with results in view.
 
-This page describes version 1, the set every result so far was measured on, the Required Fact tiers that version 2 adds, and the [Brief Suite](#the-brief-suite), the brief's questions in a file of their own. The rest of version 2 is decided but not built yet: see [Version 2](#version-2). Version 1's file stays unchanged as a record, and a test pins its digest.
+This page describes version 1, the set every result so far was measured on, the Required Fact tiers that version 2 adds, and the [Brief Suite](#the-brief-suite), the brief's questions in a file of their own. Version 2's [file](#the-file) is built and empty until its cases are drafted; the rest of version 2 is decided but not built yet: see [Version 2](#version-2). Version 1's file stays unchanged as a record, and a test pins its digest.
 
 ## What it covers
 
@@ -35,7 +35,7 @@ The file holds `version`, `split_rule` and `cases`. Each case has:
 | `question` | The latest user message, the one the Answer Call answers |
 | `history` | Earlier turns, oldest first, as `{role, content}` with role `user` or `assistant`. Always ends with an assistant answer. Empty for a single-turn case. |
 | `question_type` | One of `risk`, `figure_trend`, `sector`, `outlook`, `missing_company`, `stale_filing` |
-| `split` | `dev` or `holdout`, as computed by the split rule |
+| `split` | `dev` or `holdout`, as computed by the split rule. From version 2, recorded per case, and `pending` while new cases are drafted ([The file](#the-file)) |
 | `starter` | `{order, label}` for a starter prompt, else `null` |
 | `tags` | Free labels for case features: `brief_example`, `inherits_companies`, `switches_company`, `topic_change_without_company` |
 | `notes` | Why the case exists and what makes it hard |
@@ -113,7 +113,28 @@ No id is in both files: the loader rejects one that is.
 
 ## Version 2
 
-Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers and the Brief Suite, with the brief's three questions, are built so far. Version 1 has too few cases for a comparison to see a real difference, and some of its labels make the judge misread answers ([Evaluation version 2](evaluation.md#evaluation-version-2)).
+Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions, and version 2's file, still empty, are built so far.
+
+### The file
+
+Version 2 lives in [`data/eval/golden_set_v2.json`](../data/eval/golden_set_v2.json), beside version 1, which stays unchanged. It is read by the same loader, `load_golden_set(DEFAULT_GOLDEN_SET_V2)`, with the same case schema and three differences:
+
+- `version` is 2, and every Required Fact names its `tier`;
+- `split_rule` states version 2's rule (`SPLIT_RULE_V2`): each case records its split, and no case ever moves. Version 1's cases rewritten here keep their ids and are `dev`. New cases are `pending` until all of them exist; then the 20 whose ids have the lowest SHA-256 digests become `holdout` and the rest `dev`;
+- `split` is `dev`, `holdout` or `pending`. Version 1's loader still allows only `dev` and `holdout`.
+
+**Runs.** The harnesses keep version 1 as their default until the split is frozen. A version 2 run names the file (`python -m edgar_eval.retrieval --golden-set ../data/eval/golden_set_v2.json`, and likewise `edgar_eval.generation`), and it refuses, naming the cases, while any case is pending (`GoldenSet.require_frozen`). A Brief Suite run is checked against both versions whichever file is named, since its cases replace version 1 cases.
+
+**Checks** (`backend/tests/test_golden_set.py`). The label tests run over version 1, version 2 and the Brief Suite alike: every expected Filing ID and Section exists, every evidence quote is verbatim in its Section after collapsing whitespace, and every fact names its Company and cites one of its case's expected Sources. Version 2 adds:
+
+- **No repeated question.** No question is asked twice across Golden Set version 1, Golden Set version 2 and the Brief Suite, once case and whitespace are normalised. A version 1 case may share its question with the version 2 case that rewrites it under the same id, and with the Brief Suite case that replaces it.
+- **No shared id** between version 2 and the Brief Suite; the Brief Suite's loader checks both versions.
+- **Figures from the reference.** Every dollar amount a version 2 Required Fact states must match a USD value that the SEC company-facts reference records for the fact's own Filing (matched on the accession number in its source URL), at the amount's printed precision: "$60.9 billion" matches 60.85 to 60.95 billion. A figure about a Company the reference does not cache fails. The test is skipped when the cache is absent (`make sec-facts`). Percentages are not checked against it.
+- **The mix by kind of question**, counted per split against ADR 0012's table below and printed with the test run, not yet enforced. A follow-up counts as one whatever it asks; a Coverage Gap case asks about a missing Company or a stale Filing, or for a trend or outlook the Filings cannot give (a `snapshot_trend` or `no_guidance` gap); the rest count by question type (`risk`; `figure_trend` and `outlook` as trends; `sector`).
+
+### What is decided
+
+Version 1 has too few cases for a comparison to see a real difference, and some of its labels make the judge misread answers ([Evaluation version 2](evaluation.md#evaluation-version-2)).
 
 - **The Brief Suite.** The brief's three example questions move out of the dev/holdout split, each with four variants: about 15 cases in all. Each case runs 5 times on every change that could alter an answer. It passes when every must-state Required Fact is stated in at least 4 of the 5 runs and no run has a Contradicted Claim. Its cases are reported one by one and may be tuned on, since it is a must-pass check, not an estimate. The starter prompts keep the brief's three questions, now from the Brief Suite. Built with the three questions ([The Brief Suite](#the-brief-suite)); the variants follow.
 - **60 dev cases and 20 holdout cases:**
@@ -128,6 +149,6 @@ Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-su
 
   Figure facts are labelled from the SEC company-facts reference, independently of the system's own Financial Facts.
 - **Version 1's 27 cases other than the brief's join dev**, including its 10 holdout cases, which were scored once and never tuned on. Their labels are rewritten in the new format.
-- **A split recorded per case.** The 33 new dev cases and 20 holdout cases are drafted together, and the 20 whose ids have the lowest SHA-256 digests are the holdout. Every case records its split, and no case moves when another is added. This replaces the ranking rule above, under which adding a case could move another.
+- **A split recorded per case.** The 33 new dev cases and 20 holdout cases are drafted together, and the 20 whose ids have the lowest SHA-256 digests are the holdout. Every case records its split, and no case moves when another is added. This replaces the ranking rule above, under which adding a case could move another. The recorded split, with `pending` until it is frozen, is built ([The file](#the-file)); freezing it waits for the new cases.
 - **One-claim Required Facts, must-state or detail.** Each fact states one claim and names its Company. A must-state fact is something any good answer covers. A detail is reported, but Fact Recall is scored on the must-state facts. The tiers are built: the loader and the generation harness handle them ([Tiers](#fields)). A fact that bundles two claims ("up 62% from a year earlier and 22% sequentially") becomes two. Every fact keeps a verbatim evidence quote, checked by the tests as before.
 - **Drafted from whole Sections.** Candidate facts are drafted in Claude Code from the whole of each relevant Section, not from what retrieval returns, and the developer accepts or rejects each one. A question's every half gets facts: the pharmaceutical question's "how are they addressing them" and the NVIDIA question's "growth outlook changed" have almost none in version 1.
