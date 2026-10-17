@@ -103,7 +103,7 @@ def _arm(name, rankings, shipped=False):
     return Arm(
         name,
         f"fixed rankings for {name}",
-        lambda messages, index: rankings[messages[-1].content],
+        lambda messages, index, **settings: rankings[messages[-1].content],
         shipped=shipped,
     )
 
@@ -111,7 +111,7 @@ def _arm(name, rankings, shipped=False):
 def test_multi_turn_cases_are_scored_on_their_final_turn():
     seen = []
 
-    def retrieve(messages, index):
+    def retrieve(messages, index, **settings):
         seen.append([(m.role, m.content) for m in messages])
         return [A]
 
@@ -229,21 +229,21 @@ def test_the_fts5_arm_ranks_text_sources_only(index):
 # --- The command line -------------------------------------------------------------------
 
 
-def _first_expected_or_nothing(messages, index):
+def _first_expected_or_nothing(messages, index, **settings):
     """A fake Arm that finds every dev case's first expected pair, by its question."""
     cases = {c.question: c for c in load_golden_set().cases}
     case = cases[messages[-1].content]
     return [(s.filing_id, s.section) for s in case.expected_sources[:1]]
 
 
-def test_the_command_scores_the_dev_split_by_default_and_writes_json(tmp_path, capsys):
+def test_the_command_scores_the_dev_split_by_default_and_writes_json(tmp_path, capsys, index):
     arms = [
         Arm("fts5", "shipped", _first_expected_or_nothing, shipped=True),
-        Arm("nothing", "finds nothing", lambda messages, index: []),
+        Arm("nothing", "finds nothing", lambda messages, index, **settings: []),
     ]
     out = tmp_path / "retrieval-dev.json"
 
-    assert main(["--json", str(out)], arms=arms) == 0
+    assert main(["--json", str(out), "--index", str(index)], arms=arms) == 0
 
     dev = [c for c in load_golden_set().cases if c.split == "dev"]
     printed = capsys.readouterr().out
@@ -257,13 +257,58 @@ def test_the_command_scores_the_dev_split_by_default_and_writes_json(tmp_path, c
     assert sorted(report["case_ids"] + report["unscored"]) == sorted(c.id for c in dev)
     assert report["arms"]["fts5"]["overall"]["mrr"] == 1
     assert report["comparisons"][0]["result"]["verdict"] == "behind"
+    assert (report["chunk_tokens"], report["context_budget"]) == (600, 32_000)
 
 
-def test_the_command_scores_a_chosen_split(tmp_path):
+def test_the_command_scores_a_chosen_context_budget_and_records_the_setting(tmp_path, index):
+    budgets = []
+
+    def retrieve(messages, index, context_budget):
+        budgets.append(context_budget)
+        return _first_expected_or_nothing(messages, index)
+
+    out = tmp_path / "retrieval-dev.json"
+
+    main(
+        ["--context-budget", "9000", "--index", str(index), "--json", str(out)],
+        arms=[Arm("fts5", "shipped", retrieve, shipped=True)],
+    )
+
+    assert budgets and set(budgets) == {9000}
+    report = json.loads(out.read_text())
+    assert (report["chunk_tokens"], report["context_budget"]) == (600, 9000)
+
+
+def test_evidence_reached_counts_the_required_facts_whose_quote_reaches_the_prompt(index):
+    """Whether each Required Fact's evidence quote is in the Answer Context's Sources: a
+    smaller budget leaves some of the brief's risk comparison out."""
+    case = next(c for c in load_golden_set().cases if c.id == "risk-aapl-tsla-jpm")
+    fts5 = next(arm for arm in ARMS if arm.name == "fts5")
+
+    full = evaluate([case], [fts5], index).arms["fts5"]
+    small = evaluate([case], [fts5], index, context_budget=3_000).arms["fts5"]
+
+    assert full.overall.facts == small.overall.facts == len(case.required_facts)
+    assert full.overall.facts_reached == len(case.required_facts)
+    assert 0 < small.overall.facts_reached < full.overall.facts_reached
+    assert small.cases[0].facts_reached == small.overall.facts_reached
+    assert small.overall.mean_source_tokens < full.overall.mean_source_tokens <= 32_000 * 1.05
+
+
+def test_an_arm_measured_by_retrieval_only_reports_no_evidence():
+    cases = [_case("r1", "risk", [A], question="q1")]
+
+    scores = evaluate(cases, [_arm("fts5", {"q1": [A]}, shipped=True)], index="unused")
+
+    assert scores.arms["fts5"].overall.facts_reached is None
+    assert scores.arms["fts5"].overall.mean_source_tokens is None
+
+
+def test_the_command_scores_a_chosen_split(tmp_path, index):
     arms = [Arm("fts5", "shipped", _first_expected_or_nothing, shipped=True)]
     out = tmp_path / "retrieval-holdout.json"
 
-    main(["--split", "holdout", "--json", str(out)], arms=arms)
+    main(["--split", "holdout", "--index", str(index), "--json", str(out)], arms=arms)
 
     holdout = {c.id for c in load_golden_set().cases if c.split == "holdout"}
     report = json.loads(out.read_text())
@@ -302,7 +347,9 @@ def test_a_seam_arm_ranks_the_sources_its_ranker_gives_the_answer_call(index):
 
     context = arm.prepare(question, index)
     ranked = arm.retrieve(question, index)
+    small = arm.prepare(question, index, context_budget=2_000)
 
     assert requests and {r.ticker for r in requests} == {"TSLA"}
     assert context.sources != prepare_answer_context(question, index).sources
     assert ranked == [(s.filing_id, s.section) for s in context.sources if s.kind == "text"]
+    assert sum(len(s.text) for s in small.sources) < sum(len(s.text) for s in context.sources)

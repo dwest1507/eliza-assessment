@@ -22,7 +22,7 @@ from edgar_rag.golden_set import load_golden_set
 TODAY = date(2026, 10, 16)
 
 
-def _first_expected(messages, index):
+def _first_expected(messages, index, **settings):
     """A fake Arm that finds each case's first expected pair, by its question."""
     cases = {c.question: c for c in load_golden_set().cases}
     case = cases[messages[-1].content]
@@ -32,11 +32,16 @@ def _first_expected(messages, index):
 def _write_retrieval_report(eval_dir, split="dev"):
     arms = [
         Arm("fts5", "shipped", _first_expected, shipped=True),
-        Arm("nothing", "finds nothing", lambda messages, index: []),
+        Arm("nothing", "finds nothing", lambda messages, index, **settings: []),
     ]
     path = eval_dir / f"retrieval-{split}.json"
     assert (
-        retrieval.main(["--split", split, "--json", str(path)], arms=arms, out=io.StringIO()) == 0
+        retrieval.main(
+            ["--split", split, "--index", str(eval_dir / "no-index.sqlite"), "--json", str(path)],
+            arms=arms,
+            out=io.StringIO(),
+        )
+        == 0
     )
 
 

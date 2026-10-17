@@ -11,14 +11,19 @@ side could not score, or that only one side answered, are left out of each test.
   **distinguishably better on Fact Recall or on Coverage Gaps** and **worse on none of
   Fact Recall, Faithfulness and Coverage Gaps**.
 
-Under either rule, when several challengers qualify, the **cheapest** wins: the lowest
-mean answer cost, then the earliest listed. `RULES` states both rules, and is the only
+- **Settings** (ADR 0010): a chunk size and context budget replace the shipped ones under
+  the Arm rule. Each setting's report comes from `make eval-generation` with
+  `CHUNK_TOKENS` and `CONTEXT_BUDGET`, and is named by its setting
+  (`chunks-600-budget-32000`); only `compare` applies it.
+
+Under any rule, when several challengers qualify, the **cheapest** wins: the lowest
+mean answer cost, then the earliest listed. `RULES` states the rules, and is the only
 place they differ.
 
     python -m edgar_eval.selection arms [--split dev] [--reuse]
     python -m edgar_eval.selection generators [--split dev] [--reuse]
     python -m edgar_eval.selection compare SHIPPED.json CHALLENGER.json...
-        [--rule arms|generators] [--json PATH]
+        [--rule arms|generators|settings] [--json PATH]
 
 `arms` runs the generation harness once per Arm in `edgar_eval.arms.ARMS`, writing
 `data/derived/eval/generation-arms-<split>-<arm>.json`, and compares the Shipped Arm
@@ -61,7 +66,7 @@ __all__ = [
 
 _EVAL_DIR = DERIVED_DIR / "eval"
 
-RuleName = Literal["arms", "generators"]
+RuleName = Literal["arms", "generators", "settings"]
 Score = Literal["fact_recall", "faithfulness", "coverage_gaps"]
 
 
@@ -105,9 +110,10 @@ class Rule:
     behind_on_none: tuple[Score, ...]
     named_by: str
     """The generation report field that names a candidate (falling back to its model)."""
-    run: Callable[[str, bool, TextIO], list[Path]]
+    run: Callable[[str, bool, TextIO], list[Path]] | None
     """Runs the generation harness once per candidate on a split (reusing reports already
-    written when asked) and returns the reports, the shipped choice's first."""
+    written when asked) and returns the reports, the shipped choice's first; None for a
+    rule applied only to reports already written (`compare`)."""
     choice_file: str
     """The default file the choice is written to, before `-<split>.json`."""
 
@@ -127,8 +133,15 @@ RULES: dict[RuleName, Rule] = {
         run=_run_generators,
         choice_file="generator-choice",
     ),
+    "settings": Rule(
+        ahead_on_any=("fact_recall",),
+        behind_on_none=("faithfulness", "coverage_gaps"),
+        named_by="settings",
+        run=None,
+        choice_file="settings-choice",
+    ),
 }
-"""The only place the Arm rule and the generator rule differ."""
+"""The only place the rules differ."""
 
 
 @dataclass(frozen=True)
@@ -248,7 +261,9 @@ def main(argv: list[str] | None = None, *, out: TextIO | None = None) -> int:
         rule, paths, target = args.rule, args.reports, args.json
     else:
         rule = args.command
-        paths = RULES[rule].run(args.split, args.reuse, out)
+        run = RULES[rule].run
+        assert run is not None
+        paths = run(args.split, args.reuse, out)
         target = args.json or _EVAL_DIR / f"{RULES[rule].choice_file}-{args.split}.json"
     data = [json.loads(Path(p).read_text(encoding="utf-8")) for p in paths]
     candidates = [Candidate.from_report(d, rule) for d in data]

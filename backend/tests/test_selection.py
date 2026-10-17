@@ -160,3 +160,50 @@ def test_generator_reports_are_named_by_model_not_by_arm(tmp_path, capsys):
     assert "Chosen: claude-opus-5-5" in capsys.readouterr().out
     written = json.loads(out.read_text())
     assert written["chosen"] == "claude-opus-5-5" and written["rule"] == "generators"
+
+
+# --- The chunk size and context budget rule (ADR 0010) -----------------------------------
+# The Arm rule, with candidates named by their setting: every setting runs on the
+# Shipped Arm with the shipped generator.
+
+
+def test_setting_reports_are_named_by_their_setting_and_judged_by_the_arm_rule(tmp_path, capsys):
+    from edgar_eval.selection import main
+
+    def report(settings, recall, gaps, cost):
+        cases = [
+            {
+                "case_id": f"c{i}",
+                "fact_recall": r,
+                "faithfulness": 1.0,
+                "coverage_gaps": None if g is None else {"missing": [] if g else ["x"]},
+                "cost_usd": cost,
+            }
+            for i, (r, g) in enumerate(zip(recall, gaps, strict=True))
+        ]
+        data = {"arm": "fts5", "model": "gpt-6-luna", "settings": settings, "cases": cases}
+        path = tmp_path / f"generation-dev-{settings}.json"
+        path.write_text(json.dumps(data | {"split": "dev"}))
+        return str(path)
+
+    shipped = report("chunks-600-budget-32000", [0.0] * 8, [True] * 8, 0.0025)
+    bigger = report("chunks-600-budget-48000", [1.0] * 6 + [0.0] * 2, [True] * 8, 0.0035)
+    smaller = report("chunks-450-budget-32000", [1.0] * 6 + [0.0] * 2, [True] * 8, 0.0024)
+    gapless = report("chunks-300-budget-24000", [1.0] * 8, [False] * 6 + [True] * 2, 0.0020)
+    out = tmp_path / "settings-choice-dev.json"
+
+    code = main(
+        ["compare", shipped, bigger, smaller, gapless, "--rule", "settings", "--json", str(out)]
+    )
+
+    assert code == 0
+    choice = json.loads(out.read_text())
+    assert choice["shipped"] == "chunks-600-budget-32000"
+    assert set(choice["comparisons"]) == {
+        "chunks-600-budget-48000",
+        "chunks-450-budget-32000",
+        "chunks-300-budget-24000",
+    }
+    assert not choice["comparisons"]["chunks-300-budget-24000"]["qualifies"]  # behind on gaps
+    assert choice["chosen"] == "chunks-450-budget-32000"  # the cheaper of the two qualifying
+    assert "Chosen: chunks-450-budget-32000" in capsys.readouterr().out

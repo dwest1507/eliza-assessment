@@ -10,9 +10,10 @@ what should never reach an Answer Call (findings 8–10):
   "Apple Inc. | 2024 Form 10-K | 21", and lines holding only a page number.
 
 The cleaned text is then split into table blocks (runs of `|`-separated rows) and prose.
-Prose is split on sentence boundaries into chunks of about 500–800 tokens, each opening
-with the last sentence or two of the chunk before it. A table is kept whole when it fits,
-else split into row groups that each repeat the table's header rows. A short line of
+Prose is split on sentence boundaries into chunks of about a target size (600 tokens
+unless the index is built with another, ADR 0010), never above four thirds of it, each
+opening with up to a tenth of it from the chunk before it. A table is kept whole when it
+fits, else split into row groups that each repeat the table's header rows. A short line of
 prose just before a table (its caption, "dollars in millions") goes into the table's
 chunks. A 10-Q Risk Factors Section that is too short to hold risk text only points
 elsewhere ("no material changes"), so it becomes one chunk of kind `risk_pointer`
@@ -32,8 +33,7 @@ from edgar_rag.corpus import Filing, Section
 ChunkKind = Literal["prose", "table", "risk_pointer"]
 
 TARGET_TOKENS = 600
-MAX_TOKENS = 800
-OVERLAP_TOKENS = 60
+"""The chunk size: prose chunks are about this many tokens (ADR 0010)."""
 
 # Finding 16: every 10-Q Risk Factors pointer is under 2,500 characters, every Section
 # stating risk text above it.
@@ -47,6 +47,27 @@ _CAPTION_MAX_TOKENS = 60
 _MAX_HEADER_ROWS = 3
 # A chunk with fewer word characters than this carries nothing worth retrieving.
 _MIN_WORD_CHARS = 20
+
+
+@dataclass(frozen=True)
+class ChunkSize:
+    """How big chunks are: about `target` tokens, never above `ceiling`, each opening
+    with up to `overlap` tokens of the chunk before it. The ceiling and the overlap keep
+    the proportions of the first size, 600 tokens: four thirds and a tenth."""
+
+    target: int = TARGET_TOKENS
+
+    def __post_init__(self) -> None:
+        if self.target < 100:
+            raise ValueError(f"a chunk size of {self.target} tokens is too small")
+
+    @property
+    def ceiling(self) -> int:
+        return math.ceil(self.target * 4 / 3)
+
+    @property
+    def overlap(self) -> int:
+        return self.target // 10
 
 
 @dataclass(frozen=True)
@@ -80,7 +101,10 @@ def count_tokens(text: str) -> int:
     return math.ceil(len(text) / 4)
 
 
-def chunk_filing(filing: Filing) -> list[Chunk]:
+DEFAULT_SIZE = ChunkSize()
+
+
+def chunk_filing(filing: Filing, size: ChunkSize = DEFAULT_SIZE) -> list[Chunk]:
     """Every chunk of one Filing, in body order. Chunks never cross a Section boundary."""
     chunks: list[Chunk] = []
     for section in filing.sections:
@@ -90,7 +114,7 @@ def chunk_filing(filing: Filing) -> list[Chunk]:
         if _is_risk_pointer(filing, section, text):
             pieces: list[tuple[ChunkKind, str]] = [("risk_pointer", text.strip())]
         else:
-            pieces = list(_split(text))
+            pieces = list(_split(text, size))
         for kind, piece in pieces:
             if len(re.findall(r"\w", piece)) < _MIN_WORD_CHARS:
                 continue
@@ -249,42 +273,42 @@ def _blocks(text: str) -> Iterator[tuple[bool, list[str]]]:
         yield current_is_table, current
 
 
-def _split(text: str) -> Iterator[tuple[ChunkKind, str]]:
+def _split(text: str, size: ChunkSize) -> Iterator[tuple[ChunkKind, str]]:
     held: str | None = None  # a short prose block, kept back as the next table's caption
     caption: str | None = None  # the line of prose just before the next table
     for is_table, lines in _blocks(text):
         block = "\n".join(lines)
         if is_table:
-            for rows in _row_groups(lines, caption):
+            for rows in _row_groups(lines, caption, size):
                 yield "table", "\n".join(rows)
             held = caption = None
             continue
         if held is not None:
-            yield from (("prose", piece) for piece in _prose_chunks(held))
+            yield from (("prose", piece) for piece in _prose_chunks(held, size))
         if count_tokens(block) <= _CAPTION_MAX_TOKENS:
             held = caption = block
             continue
-        yield from (("prose", piece) for piece in _prose_chunks(block))
+        yield from (("prose", piece) for piece in _prose_chunks(block, size))
         last = _sentences(block)[-1].strip()
         held = None
         caption = last if count_tokens(last) <= _CAPTION_MAX_TOKENS else None
     if held is not None:
-        yield from (("prose", piece) for piece in _prose_chunks(held))
+        yield from (("prose", piece) for piece in _prose_chunks(held, size))
 
 
-def _row_groups(rows: list[str], caption: str | None) -> Iterator[list[str]]:
+def _row_groups(rows: list[str], caption: str | None, size: ChunkSize) -> Iterator[list[str]]:
     """A table whole, or as row groups that each repeat the header rows."""
     lead = [caption] if caption else []
-    if count_tokens("\n".join(lead + rows)) <= MAX_TOKENS:
+    if count_tokens("\n".join(lead + rows)) <= size.ceiling:
         yield lead + rows
         return
     header_count = _header_rows(rows)
     header = lead + rows[:header_count]
-    if count_tokens("\n".join(header)) > MAX_TOKENS // 2:
+    if count_tokens("\n".join(header)) > size.ceiling // 2:
         header = []
     group: list[str] = []
     for row in rows[header_count:] if header else rows:
-        if group and count_tokens("\n".join(header + group + [row])) > TARGET_TOKENS:
+        if group and count_tokens("\n".join(header + group + [row])) > size.target:
             yield header + group
             group = []
         group.append(row)
@@ -313,7 +337,7 @@ def _header_rows(rows: list[str]) -> int:
 _SENTENCE_END = re.compile(r"(?<=[a-z0-9)%][.!?])[\"”’)]?(?:\s+|(?=[A-Z]))|\n+")
 
 
-def _sentences(text: str) -> list[str]:
+def _sentences(text: str, ceiling: int = DEFAULT_SIZE.ceiling) -> list[str]:
     pieces, start = [], 0
     for m in _SENTENCE_END.finditer(text):
         pieces.append(text[start : m.end()])
@@ -324,48 +348,48 @@ def _sentences(text: str) -> list[str]:
         if not piece.strip():
             continue
         # A "sentence" longer than a chunk (a glued heading run, a list) is cut on words.
-        while count_tokens(piece) > MAX_TOKENS:
-            cut = piece.rfind(" ", 0, MAX_TOKENS * 4)
-            cut = cut if cut > 0 else MAX_TOKENS * 4
+        while count_tokens(piece) > ceiling:
+            cut = piece.rfind(" ", 0, ceiling * 4)
+            cut = cut if cut > 0 else ceiling * 4
             sentences.append(piece[:cut])
             piece = piece[cut:]
         sentences.append(piece)
     return sentences
 
 
-def _prose_chunks(text: str) -> list[str]:
-    """Sentences packed into chunks of about TARGET_TOKENS, never above MAX_TOKENS, each
-    opening with up to OVERLAP_TOKENS of the chunk before it."""
+def _prose_chunks(text: str, size: ChunkSize) -> list[str]:
+    """Sentences packed into chunks of about the target size, never above its ceiling,
+    each opening with up to its overlap of the chunk before it."""
     chunks: list[str] = []
     current: list[str] = []
     fresh = False  # whether `current` holds anything beyond the carried-over overlap
-    for sentence in _sentences(text):
-        if fresh and count_tokens("".join(current + [sentence])) > MAX_TOKENS:
+    for sentence in _sentences(text, size.ceiling):
+        if fresh and count_tokens("".join(current + [sentence])) > size.ceiling:
             chunks.append("".join(current).strip())
-            current, fresh = _overlap(current), False
-        if count_tokens("".join(current + [sentence])) > MAX_TOKENS:
+            current, fresh = _overlap(current, size.overlap), False
+        if count_tokens("".join(current + [sentence])) > size.ceiling:
             current = []
         current.append(sentence)
         fresh = True
-        if count_tokens("".join(current)) >= TARGET_TOKENS:
+        if count_tokens("".join(current)) >= size.target:
             chunks.append("".join(current).strip())
-            current, fresh = _overlap(current), False
+            current, fresh = _overlap(current, size.overlap), False
     if fresh:
         chunks.append("".join(current).strip())
     return chunks
 
 
-def _overlap(sentences: list[str]) -> list[str]:
+def _overlap(sentences: list[str], overlap: int) -> list[str]:
     """The end of a chunk to open the next one with: its last sentences that fit in
-    OVERLAP_TOKENS, or, when its last sentence alone is longer, that sentence's last
+    `overlap` tokens, or, when its last sentence alone is longer, that sentence's last
     words."""
     kept: list[str] = []
     for sentence in reversed(sentences):
-        if count_tokens("".join([sentence] + kept)) > OVERLAP_TOKENS:
+        if count_tokens("".join([sentence] + kept)) > overlap:
             break
         kept.insert(0, sentence)
     if kept or not sentences:
         return kept
     last = sentences[-1]
-    cut = last.find(" ", len(last) - OVERLAP_TOKENS * 4)
+    cut = last.find(" ", len(last) - overlap * 4)
     return [last[cut + 1 :]] if cut != -1 else []

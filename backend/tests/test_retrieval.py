@@ -7,6 +7,7 @@ import sqlite3
 import pytest
 
 from edgar_rag.retrieval import (
+    CHUNK_TOKENS,
     CONTEXT_BUDGET_TOKENS,
     NEAR_DUPLICATE,
     PROMPT_VERSION,
@@ -14,6 +15,7 @@ from edgar_rag.retrieval import (
     Message,
     build_index,
     count_tokens,
+    index_chunk_tokens,
     prepare_answer_context,
 )
 
@@ -177,6 +179,24 @@ def test_chunks_stay_inside_their_section_and_within_the_size_limit(index, index
     assert sorted(prose)[len(prose) // 2] >= 500  # most prose chunks are 500–800 tokens
 
 
+def test_the_index_records_its_chunk_size(index):
+    assert index_chunk_tokens(index) == CHUNK_TOKENS == 600
+
+
+def test_an_index_can_be_built_with_another_chunk_size(tmp_path, indexed_filings):
+    filing = _filing(indexed_filings, "AAPL_10-K_2024-09-28")
+
+    small = build_index([filing], tmp_path / "small.sqlite", chunk_tokens=300)
+    default = build_index([filing], tmp_path / "default.sqlite")
+
+    assert index_chunk_tokens(small) == 300
+    chunks = _chunks(small)
+    assert all(count_tokens(c["text"]) <= 400 for c in chunks)  # four thirds of the target
+    prose = [count_tokens(c["text"]) for c in chunks if c["kind"] == "prose"]
+    assert 250 <= sorted(prose)[len(prose) // 2] <= 400
+    assert len(chunks) > len(_chunks(default))
+
+
 def test_consecutive_prose_chunks_overlap(index):
     chunks = _chunks(index, filing_id="TSLA_10-K_2024-12-31", section="Risk Factors")
     pairs = [
@@ -261,6 +281,20 @@ def test_sources_fit_the_context_budget(index):
         per_company[source.ticker] = per_company.get(source.ticker, 0) + count_tokens(source.text)
     assert sum(per_company.values()) <= CONTEXT_BUDGET_TOKENS * 1.05
     assert all(t <= CONTEXT_BUDGET_TOKENS / 3 * 1.05 for t in per_company.values())
+
+
+def test_the_context_budget_can_be_set_per_call(index):
+    messages = [Message("user", BRIEF_QUESTION)]
+
+    small = prepare_answer_context(messages, index, context_budget=9_000)
+    default = prepare_answer_context(messages, index)
+
+    per_company = {}
+    for source in small.sources:
+        per_company[source.ticker] = per_company.get(source.ticker, 0) + count_tokens(source.text)
+    assert set(per_company) == {"AAPL", "TSLA", "JPM"}
+    assert all(t <= 3_000 * 1.05 for t in per_company.values())
+    assert sum(count_tokens(s.text) for s in default.sources) > 2 * sum(per_company.values())
 
 
 def test_a_risk_pointer_is_cited_as_it_stands_but_never_ranked(index):

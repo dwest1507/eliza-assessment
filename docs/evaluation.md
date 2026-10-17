@@ -8,9 +8,10 @@ How the system's quality is measured. Everything is scored against the [Golden S
 make eval-retrieval              # the dev split
 make eval-retrieval SPLIT=all    # dev and holdout together; SPLIT=holdout only once, at the end
 make eval-retrieval ARMS=fts5    # only some Arms (the Shipped Arm always runs)
+make eval-retrieval ARMS=fts5 CHUNK_TOKENS=450 CONTEXT_BUDGET=24000   # another chunk size and context budget
 ```
 
-It needs the index (`make index`, built automatically when missing) and no LLM call. The dense and hybrid Arms also need the chunk embeddings (`make embeddings`, built automatically when missing; see [Arm comparison](#arm-comparison)), and embed each question once, caching the vector, so a rerun makes no network call. It prints the scores and writes them as JSON to `data/derived/eval/retrieval-<split>.json`, for the evaluation export. The code is [`backend/src/edgar_eval/retrieval.py`](../backend/src/edgar_eval/retrieval.py); the Arms are in [`backend/src/edgar_eval/arms.py`](../backend/src/edgar_eval/arms.py).
+It needs the index (`make index`, built automatically when missing) and no LLM call. The dense and hybrid Arms also need the chunk embeddings (`make embeddings`, built automatically when missing; see [Arm comparison](#arm-comparison)), and embed each question once, caching the vector, so a rerun makes no network call. It prints the scores and writes them as JSON to `data/derived/eval/retrieval-<split>.json`, for the evaluation export. `CHUNK_TOKENS` and `CONTEXT_BUDGET` score another chunk size or context budget without editing code ([ADR 0010](adr/0010-chunk-size-and-context-budget.md)): `CHUNK_TOKENS=450` reads `data/derived/edgar_rag-chunks450.sqlite`, built from the Corpus when missing (about 40 seconds), and the report goes to `retrieval-<split>-chunks450-budget24000.json`, so the shipped report is kept. Every report records its chunk size and context budget. The dense and hybrid Arms' embeddings belong to the shipped index, so use `ARMS=fts5` with `CHUNK_TOKENS`. The code is [`backend/src/edgar_eval/retrieval.py`](../backend/src/edgar_eval/retrieval.py); the Arms are in [`backend/src/edgar_eval/arms.py`](../backend/src/edgar_eval/arms.py).
 
 ### Method
 
@@ -22,6 +23,7 @@ It needs the index (`make index`, built automatically when missing) and no LLM c
    - **hit@all, recall@all**: the same over every Source, so whether the pair reached the Answer Call at all.
    - **MRR**: the mean over cases of one over the rank of the first expected pair (0 when none is found).
    - **Sources**: the mean number of Sources returned, so a gain from simply returning more is visible.
+   - **Tokens** and **evidence reached**, for an Arm that prepares the whole Answer Context (every Arm in `ARMS`): the mean tokens of Source text per Answer Context, and how many of the cases' Required Facts have their evidence quote, whitespace aside, in that text. The labels above are Sections, so a change of chunk size or context budget barely moves them; evidence reached shows whether the passages stating the facts reach the prompt, which no prompt can make up for ([ADR 0010](adr/0010-chunk-size-and-context-budget.md)).
 4. **Scores are averaged overall and per question type.** Cases with no expected pair have nothing to find (a Company missing from the Corpus, General Electric today); they are listed as unscored. Whether those answers state their Coverage Gaps is the generation harness's job.
 5. **Challengers are compared with the Shipped Arm question by question.** The gating metric is hit@10: about the first ten Sources are where the Answer Call's context budget starts to bite once several Companies share it. For each challenger, the cases are paired with the Shipped Arm's and McNemar's exact test is run on the discordant ones (cases only one Arm hit): a two-sided binomial test at p = 1/2. The challenger is reported **ahead** or **behind** when p < 0.05, and **indistinguishable** otherwise. On a Golden Set this small that is a high bar: among the discordant cases, 6 wins to 0 losses is ahead (p = 0.031) and so is 8 to 1 (p = 0.039), but 5 to 0 (p = 0.063) is indistinguishable. Small differences are reported as noise, not declared wins.
 
@@ -228,6 +230,7 @@ make eval-generation                       # the dev split, with the default gen
 make eval-generation MODEL=gpt-6.1-sol     # another generator
 make eval-generation MODEL=claude-sonnet-5-5   # a Claude generator (needs ANTHROPIC_API_KEY)
 make eval-generation ARM=hybrid            # another retrieval Arm (see Arm comparison)
+make eval-generation CONTEXT_BUDGET=48000  # another context budget (or CHUNK_TOKENS=...; see Chunk size and context budget)
 make eval-generators                       # the four compared generators, then the selection rule
 ```
 
@@ -433,6 +436,47 @@ Gaps stated is over the 6 holdout cases with expected gaps. The answers averaged
 - **The misses are on outlook and trend questions.** `outlook-msft-cloud` (Fact Recall 0.33) is the retrieval miss above, and leaves out Microsoft's remaining performance obligation and capital expenditure plans. `trend-amzn-aws-two-years` (0.33) states AWS's revenue but computes its own growth rate (19.7%) instead of quoting the MD&A's 19% and 20%. `outlook-nvda-revenue-two-years` (0.50) leaves out the latest quarter's revenue and the H20 export charge.
 - **The one figure failure is a labelled derivation.** The Apple revenue answer gives FY2025 growth as "6.4% ... derived from those reported amounts", as prompt rule 5 asks; the check fails every derived figure by design.
 - Two answers run over 600 words (621 and 609), the same length failure as on dev. Every citation is valid and every expected gap stated.
+
+### Chunk size and context budget
+
+Golden Set version 1, dev split, 2026-10-16, after the holdout run: the `fts5` Arm, `gpt-6-luna`, prompt v7, judged by `jev-1.13.0`. Prose chunks of about 600 tokens and a 32,000-token context budget were the EDA's starting points (finding 15), never tuned. The selection rule, the grid and how candidates reach the generation harness were written down and pushed before any run ([ADR 0010](adr/0010-chunk-size-and-context-budget.md)): a setting replaces them only if the sign test puts it ahead on Fact Recall and behind on neither Faithfulness nor Coverage Gaps, and the cheapest wins ties.
+
+```sh
+make eval-retrieval ARMS=fts5 CHUNK_TOKENS=450 CONTEXT_BUDGET=24000   # one setting of the grid, no LLM call
+make eval-generation CONTEXT_BUDGET=48000                             # a candidate's answers (about $0.07-0.09)
+cd backend && uv run python -m edgar_eval.selection compare SHIPPED.json CANDIDATE.json --rule settings
+```
+
+**Retrieval** on the 16 settings: Required Facts whose evidence reaches the prompt, of 44 (the full table, with hit@k, recall@k, MRR and tokens, is in the ADR).
+
+| Chunk size | 16,000 | 24,000 | 32,000 | 48,000 |
+|---|---|---|---|---|
+| 300 | 21 | 23 | 24 | 26 |
+| 450 | 18 | 25 | 27 | 29 |
+| **600** | 22 | 27 | **30** (shipped) | 32 |
+| 800 | 21 | 24 | 26 | 29 |
+
+Every setting hits and misses the same cases at hit@10 (0.88). Only the 48k budget at 600-token chunks reaches more evidence than the shipped setting, so only it was answered, beside the shipped setting and a control rerun of it.
+
+**Answers:**
+
+| Setting | cases | citations valid | figures exact | gaps stated | structure followed | words | Fact Recall | Faithfulness | input tokens | $ per answer | latency s |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| **600 / 32k** (shipped) | 19 | 0.95 | 0.95 | 1.00 | 0.74 | 382 | **0.64** | **0.94** | 21,151 | 0.0025 | 6.8 |
+| 600 / 32k again (control) | 19 | 0.95 | 1.00 | 1.00 | 0.74 | 387 | 0.68 | 0.97 | 21,151 | 0.0025 | 7.7 |
+| 600 / 48k | 20 | 0.95 | 0.95 | 1.00 | 0.80 | 396 | 0.62 | 0.93 | 27,791 | 0.0032 | 7.7 |
+
+| Setting vs 600 / 32k | Fact Recall (higher / lower, exact p) | Faithfulness | Coverage Gaps | Qualifies |
+|---|---|---|---|---|
+| 600 / 48k | 1 / 1, p = 1.000 | 5 / 5, p = 1.000 | 0 / 0, p = 1.000 | no |
+| 600 / 32k again (control) | 3 / 1, p = 0.625 | 6 / 3, p = 0.508 | 0 / 0, p = 1.000 | no |
+
+**Chosen: 600-token chunks and the 32k budget.** The setting did not change, so the index was not rebuilt with another chunk size and [the holdout run](#the-holdout-run) still describes the shipped setup.
+
+- **More budget, the same answers.** The 48k budget states the one Inflation Reduction Act passage it adds (the pharmaceutical answer's Fact Recall 0.00 → 0.20), but the brief's risk comparison falls from 0.86 to 0.57 with the same seven facts in its prompt at both budgets. One up and one down is the control row's noise, and the budget costs 28% more per answer.
+- **Smaller chunks rank better and reach less.** 450-token chunks have the best MRR (0.84 against 0.73), but carry less text around each match, and reach fewer Required Facts at every budget.
+- **Of the 14 unreached facts, the budget can win two.** Five more sit in cases whose Sources do not fill even 48k, so the Section plan or the search terms leave them out; seven rank below what 48k holds.
+- Jev refused to judge `trend-jpm-revenue-snapshot` on both 32k runs (`max_tokens_exceeded`, as before), so the comparisons pair 19 cases. The three runs cost $0.157 in Answer Calls and $0.075 in Jev judging, **about $0.23 in all**. The holdout split was not scored.
 
 ## Showing the results
 

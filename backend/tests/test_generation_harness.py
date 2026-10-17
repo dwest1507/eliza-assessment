@@ -332,11 +332,11 @@ def test_the_command_answers_through_a_chosen_arm_and_records_it(index, tmp_path
     used = []
 
     def arm(name, shipped=False):
-        def prepare(messages, path):
+        def prepare(messages, path, **settings):
             used.append(name)
-            return prepare_answer_context(messages, path)
+            return prepare_answer_context(messages, path, **settings)
 
-        return Arm(name, name, lambda m, i: [], shipped=shipped, prepare=prepare)
+        return Arm(name, name, lambda m, i, **settings: [], shipped=shipped, prepare=prepare)
 
     path = tmp_path / "generation-arms-dev-dense.json"
     argv = ["--case", "risk-aapl-tsla-jpm", "--index", str(index), "--log", str(tmp_path / "l")]
@@ -443,3 +443,39 @@ def test_the_jev_keys_placeholder_is_in_the_backends_env_example():
 
     example = Path(__file__).resolve().parents[1] / ".env.example"
     assert re.search(rf"^{JEV_KEY_ENV}=your-", example.read_text(), re.M)
+
+
+def test_the_command_answers_with_a_chosen_context_budget_and_records_the_setting(index, tmp_path):
+    import io
+    import json
+
+    from edgar_eval.generation import main
+    from edgar_eval.retrieval import Arm
+    from edgar_rag.retrieval import prepare_answer_context
+
+    budgets = []
+
+    def prepare(messages, path, context_budget):
+        budgets.append(context_budget)
+        return prepare_answer_context(messages, path, context_budget=context_budget)
+
+    path = tmp_path / "generation-dev.json"
+    argv = ["--case", "risk-aapl-tsla-jpm", "--index", str(index), "--log", str(tmp_path / "l")]
+    common = dict(
+        model=FakeModel(ANSWER),
+        judge=FakeJudge(),
+        fact_values=lambda t: [],
+        arms=[Arm("fts5", "", lambda m, i, **settings: [], shipped=True, prepare=prepare)],
+        out=io.StringIO(),
+    )
+
+    main([*argv, "--json", str(path)], **common)
+    default = json.loads(path.read_text())
+    main([*argv, "--context-budget", "6000", "--json", str(path)], **common)
+    small = json.loads(path.read_text())
+
+    assert budgets == [32_000, 6_000]
+    assert (default["chunk_tokens"], default["context_budget"]) == (600, 32_000)
+    assert (small["chunk_tokens"], small["context_budget"]) == (600, 6_000)
+    assert default["settings"] == "chunks-600-budget-32000"
+    assert small["settings"] == "chunks-600-budget-6000"

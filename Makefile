@@ -14,6 +14,14 @@ EMBEDDINGS := data/derived/embeddings/text-embedding-3-small.npy
 API_PORT ?= 8000
 WEB_PORT ?= 3000
 
+# Retrieval settings for one harness run (ADR 0010), unset for the shipped ones:
+# CHUNK_TOKENS picks an index of that chunk size, data/derived/edgar_rag-chunks<N>.sqlite,
+# built when missing; CONTEXT_BUDGET the tokens of Sources per Answer Call. A report of a
+# run with either set carries the setting in its name, so the shipped reports are kept.
+EVAL_INDEX = $(if $(CHUNK_TOKENS),data/derived/edgar_rag-chunks$(CHUNK_TOKENS).sqlite,$(INDEX))
+SETTINGS = $(if $(CHUNK_TOKENS),-chunks$(CHUNK_TOKENS))$(if $(CONTEXT_BUDGET),-budget$(CONTEXT_BUDGET))
+SETTINGS_ARGS = --index ../$(EVAL_INDEX) $(if $(CONTEXT_BUDGET),--context-budget $(CONTEXT_BUDGET))
+
 # Local settings for the backend (copy backend/.env.example). Optional; the variables
 # it defines are exported to the recipes. Make syntax, so values are unquoted.
 ENV_FILE := $(BACKEND)/.env
@@ -97,16 +105,16 @@ ask: $(INDEX) ## Answer a question from the command line: make ask Q="..." (need
 api: $(INDEX) ## Run the chat API on http://localhost:8000, or API_PORT (answers need OPENAI_API_KEY)
 	$(UV) uvicorn edgar_api.app:create_app --factory --host 127.0.0.1 --port $(API_PORT)
 
-eval-retrieval: $(INDEX) $(if $(filter dense hybrid,$(or $(ARMS),dense)),$(EMBEDDINGS)) ## Score retrieval Arms on the Golden Set: make eval-retrieval [SPLIT=dev|holdout|all] [ARMS="fts5 ..."]
+eval-retrieval: $(EVAL_INDEX) $(if $(filter dense hybrid,$(or $(ARMS),dense)),$(EMBEDDINGS)) ## Score retrieval Arms on the Golden Set: make eval-retrieval [SPLIT=dev|holdout|all] [ARMS="fts5 ..."] [CHUNK_TOKENS=...] [CONTEXT_BUDGET=...]
 	$(UV) python -m edgar_eval.retrieval --split $(SPLIT) $(foreach arm,$(ARMS),--arm $(arm)) \
-		--json ../data/derived/eval/retrieval-$(SPLIT).json
+		$(SETTINGS_ARGS) --json ../data/derived/eval/retrieval-$(SPLIT)$(SETTINGS).json
 
-eval-generation: $(INDEX) $(if $(filter dense hybrid,$(ARM)),$(EMBEDDINGS)) ## Score answers on the Golden Set: make eval-generation [SPLIT=...] [MODEL=...] [ARM=...] (costs money)
+eval-generation: $(EVAL_INDEX) $(if $(filter dense hybrid,$(ARM)),$(EMBEDDINGS)) ## Score answers on the Golden Set: make eval-generation [SPLIT=...] [MODEL=...] [ARM=...] [CHUNK_TOKENS=...] [CONTEXT_BUDGET=...] (costs money)
 	@keys=$$($(GENERATOR_KEYS) $(MODEL)) || exit 1; \
 	$(call require_keys,$$keys JEV_API_KEY)
 	$(UV) python -m edgar_eval.generation --split $(SPLIT) $(if $(MODEL),--model $(MODEL)) \
-		$(if $(ARM),--arm $(ARM)) \
-		--json ../data/derived/eval/generation-$(if $(ARM),arms-$(SPLIT)-$(ARM),$(SPLIT)$(if $(MODEL),-$(MODEL))).json
+		$(if $(ARM),--arm $(ARM)) $(SETTINGS_ARGS) \
+		--json ../data/derived/eval/generation-$(if $(ARM),arms-$(SPLIT)-$(ARM),$(SPLIT)$(if $(MODEL),-$(MODEL)))$(SETTINGS).json
 
 # Every saved generation report, the prompt iterations' included.
 GENERATION_REPORTS = $(wildcard data/derived/eval/generation-*.json data/derived/eval/prompt-iterations/generation-*.json)
@@ -163,6 +171,10 @@ frontend-deps:
 # is missing.
 $(INDEX):
 	@$(MAKE) --no-print-directory index
+
+# An index of another chunk size, for a harness run with CHUNK_TOKENS (ADR 0010).
+data/derived/edgar_rag-chunks%.sqlite:
+	$(UV) python -m edgar_rag.retrieval --chunk-tokens $* --index ../$@
 
 # The dense and hybrid Arms read the chunk embeddings; build them only when missing. A
 # rebuilt index with different chunks makes them refuse to load: run `make embeddings`.

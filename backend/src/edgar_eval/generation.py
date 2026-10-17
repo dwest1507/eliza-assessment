@@ -16,7 +16,11 @@ Call to the generator under test. The answer is then scored three ways:
 scores and writes them, with every answer, as JSON under `data/derived/eval/`:
 
     python -m edgar_eval.generation [--split dev|holdout|all] [--model MODEL] [--arm ARM]
-        [--json PATH]
+        [--index PATH] [--context-budget TOKENS] [--json PATH]
+
+`--index` chooses the index, and so the chunk size, and `--context-budget` the tokens of
+Sources per Answer Call (ADR 0010); the report records both, and names the setting
+(`chunks-600-budget-32000`) for the selection rule.
 
 `--model` takes a generator from `edgar_eval.generators.GENERATORS`, which says which
 provider answers with it. It calls the generator and Jev, so it needs `JEV_API_KEY` and
@@ -63,7 +67,13 @@ from edgar_eval.retrieval import Arm, Prepare, conversation
 from edgar_rag.answer_model import DEFAULT_ANSWER_LOG, AnswerCall, AnswerModel
 from edgar_rag.corpus import DEFAULT_SECTOR_TABLE
 from edgar_rag.golden_set import DEFAULT_GOLDEN_SET, GoldenCase, load_golden_set
-from edgar_rag.retrieval import DEFAULT_INDEX, Source, prepare_answer_context
+from edgar_rag.retrieval import (
+    CONTEXT_BUDGET_TOKENS,
+    DEFAULT_INDEX,
+    Source,
+    index_chunk_tokens,
+    prepare_answer_context,
+)
 
 __all__ = [
     "CaseResult",
@@ -160,10 +170,19 @@ class GenerationReport:
     """Cases that could not be answered or judged, with the error."""
     arm: str | None = None
     """The retrieval Arm the Answer Contexts came from."""
+    context_budget: int = CONTEXT_BUDGET_TOKENS
+    """Tokens of Sources each Answer Call was allowed (ADR 0010)."""
+    chunk_tokens: int | None = None
+    """The chunk size of the index the Sources came from, when known (ADR 0010)."""
+
+    @property
+    def settings(self) -> str:
+        """The chunk size and context budget, as the selection rule names a setting."""
+        return f"chunks-{self.chunk_tokens or 'unknown'}-budget-{self.context_budget}"
 
     def to_dict(self) -> dict:
         """The report as plain JSON-ready data, with each case's derived scores."""
-        data = asdict(self)
+        data = asdict(self) | {"settings": self.settings}
         for case, result in zip(data["cases"], self.cases, strict=True):
             case["fact_recall"] = result.fact_recall
             case["faithfulness"] = result.faithfulness
@@ -188,14 +207,28 @@ def evaluate(
     workers: int = 4,
     prepare: Prepare = prepare_answer_context,
     arm: str | None = None,
+    context_budget: int = CONTEXT_BUDGET_TOKENS,
+    chunk_tokens: int | None = None,
 ) -> GenerationReport:
     """Answer every case with the model, score each answer, and summarise the scores
     overall and per question type. Cases run `workers` at a time. `prepare` is the
-    retrieval Arm's (`arm`) way of preparing the Answer Context."""
+    retrieval Arm's (`arm`) way of preparing the Answer Context, allowed
+    `context_budget` tokens of Sources; `chunk_tokens` is recorded as the index's chunk
+    size."""
 
     def run(case: GoldenCase) -> CaseResult | str:
         try:
-            return _run_case(case, model, judge, Path(index), names, fact_values, log_path, prepare)
+            return _run_case(
+                case,
+                model,
+                judge,
+                Path(index),
+                names,
+                fact_values,
+                log_path,
+                prepare,
+                context_budget,
+            )
         except Exception as error:  # noqa: BLE001 - a failed case is reported, not fatal
             return f"{type(error).__name__}: {error}"
 
@@ -215,6 +248,8 @@ def evaluate(
         cases=results,
         errors=errors,
         arm=arm,
+        context_budget=context_budget,
+        chunk_tokens=chunk_tokens,
     )
 
 
@@ -227,8 +262,9 @@ def _run_case(
     fact_values: FactValues,
     log_path: str | Path | None,
     prepare: Prepare = prepare_answer_context,
+    context_budget: int = CONTEXT_BUDGET_TOKENS,
 ) -> CaseResult:
-    context = prepare(conversation(case), index)
+    context = prepare(conversation(case), index, context_budget=context_budget)
     call = AnswerCall(context, model, log_path=log_path)
     answer = "".join(call)
     record = call.record
@@ -422,7 +458,16 @@ def main(
     parser.add_argument("--arm", help="the retrieval Arm (default: the Shipped Arm)")
     parser.add_argument("--case", action="append", metavar="ID", help="only these cases")
     parser.add_argument("--workers", type=int, default=4, help="cases answered at once")
-    parser.add_argument("--index", type=Path, default=DEFAULT_INDEX)
+    parser.add_argument(
+        "--index", type=Path, default=DEFAULT_INDEX, help="the index, and so the chunk size"
+    )
+    parser.add_argument(
+        "--context-budget",
+        type=int,
+        default=CONTEXT_BUDGET_TOKENS,
+        metavar="TOKENS",
+        help="tokens of Sources per Answer Call (ADR 0010)",
+    )
     parser.add_argument("--golden-set", type=Path, default=DEFAULT_GOLDEN_SET)
     parser.add_argument("--log", type=Path, default=DEFAULT_ANSWER_LOG, help="Answer Call log")
     parser.add_argument("--json", type=Path, help="also write the report as JSON here")
@@ -491,6 +536,8 @@ def main(
         workers=args.workers,
         prepare=arm.prepare,
         arm=arm.name,
+        context_budget=args.context_budget,
+        chunk_tokens=index_chunk_tokens(args.index) if args.index.exists() else None,
     )
     _print_report(report, args.split, out)
     if args.json:
@@ -523,8 +570,8 @@ def _share(value: float | None) -> str:
 def _print_report(report: GenerationReport, split: str, out: TextIO) -> None:
     print(
         f"Generation on the {split} split: {report.overall.cases} cases answered by "
-        f"{report.model} (prompt {report.prompt_version}) on the {report.arm or '?'} Arm, "
-        f"judged by {report.judge_model}",
+        f"{report.model} (prompt {report.prompt_version}) on the {report.arm or '?'} Arm "
+        f"({report.settings}), judged by {report.judge_model}",
         file=out,
     )
     headers = ["", *(name for name, _ in _COLUMNS)]

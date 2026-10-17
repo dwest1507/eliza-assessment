@@ -10,11 +10,13 @@ Two entry points:
   `companies`, `filings` and `sections` tables the Query Scope and retrieval plan read,
   and the `financial_facts` table: the Tracked Companies' Financial Facts as the
   Financial Facts seam reads them from each Filing (ADR 0001; never SEC XBRL data). The
-  `filing_chunks` view joins the chunks back into one row per chunk per Filing. `make
-  index` runs it over the whole Corpus.
+  `filing_chunks` view joins the chunks back into one row per chunk per Filing, and the
+  `settings` table records the chunk size the index was built with (`CHUNK_TOKENS`
+  unless another is given, ADR 0010). `make index` runs it over the whole Corpus.
 - `prepare_answer_context(messages)` resolves the latest user message's Query Scope,
   looks up the Financial Facts of any metric it names, retrieves chunks for each Company
-  in it, groups them into numbered Sources and renders the Answer Call's prompt. It is
+  in it within the context budget (`CONTEXT_BUDGET_TOKENS` unless another is given, ADR
+  0010), groups them into numbered Sources and renders the Answer Call's prompt. It is
   deterministic and makes no network calls.
 
 A follow-up inherits each part of the Query Scope it does not name (the Companies, the
@@ -77,7 +79,14 @@ from pathlib import Path
 from typing import Any, Literal
 
 from edgar_rag import _facts
-from edgar_rag._chunks import Chunk, _sentences, chunk_filing, count_tokens
+from edgar_rag._chunks import (
+    TARGET_TOKENS,
+    Chunk,
+    ChunkSize,
+    _sentences,
+    chunk_filing,
+    count_tokens,
+)
 from edgar_rag._coverage import (
     DEFAULT_MISSING_COMPANIES,
     CompanyCoverage,
@@ -105,6 +114,7 @@ from edgar_rag.corpus import Filing
 from edgar_rag.paths import DERIVED_DIR
 
 __all__ = [
+    "CHUNK_TOKENS",
     "CONTEXT_BUDGET_TOKENS",
     "DEFAULT_INDEX",
     "DEFAULT_MISSING_COMPANIES",
@@ -132,14 +142,20 @@ __all__ = [
     "TimeWindow",
     "build_index",
     "count_tokens",
+    "index_chunk_tokens",
     "load_missing_companies",
     "prepare_answer_context",
 ]
 
 DEFAULT_INDEX = DERIVED_DIR / "edgar_rag.sqlite"
 
+CHUNK_TOKENS = TARGET_TOKENS
+"""The chunk size `make index` builds with: prose chunks of about this many tokens, never
+above four thirds of it (ADR 0010)."""
+
 CONTEXT_BUDGET_TOKENS = 32_000
-"""Tokens of Source text per Answer Call, split evenly across the Companies in scope."""
+"""Tokens of Source text per Answer Call, split evenly across the Companies in scope
+(ADR 0010)."""
 
 STUB_TOKENS = 250
 """A Section with less text than this (about 1,000 characters) is a stub, usually a
@@ -149,11 +165,11 @@ RISK_FACTORS = "Risk Factors"
 
 _CANDIDATES_PER_COMPANY = 200
 
-INDEX_VERSION = 4
+INDEX_VERSION = 5
 """Bumped whenever the index's tables change, so an older index is rebuilt, not misread.
 Version 2 adds the `filings` and `sections` tables; version 3 stores each Company's
 repeated chunks once, listing their Filings in `chunk_filings`; version 4 adds the
-`financial_facts` table of ADR 0001."""
+`financial_facts` table of ADR 0001; version 5 adds the `settings` table."""
 
 _SCHEMA = """
 CREATE TABLE companies (
@@ -206,6 +222,10 @@ CREATE TABLE sections (
     tokens INTEGER NOT NULL,
     pointer INTEGER NOT NULL,
     PRIMARY KEY (filing_id, section)
+);
+CREATE TABLE settings (
+    name TEXT PRIMARY KEY,
+    value INTEGER NOT NULL
 );
 CREATE VIRTUAL TABLE chunks_fts USING fts5(
     text, content='chunks', content_rowid='id', tokenize='porter'
@@ -357,8 +377,13 @@ class AnswerContext:
     the Filing text, or a segment reorganisation the series stops at."""
 
 
-def build_index(filings: Iterable[Filing], path: str | Path = DEFAULT_INDEX) -> Path:
-    """Chunk every Filing and write the index to `path`, replacing any index there.
+def build_index(
+    filings: Iterable[Filing],
+    path: str | Path = DEFAULT_INDEX,
+    chunk_tokens: int = CHUNK_TOKENS,
+) -> Path:
+    """Chunk every Filing into chunks of about `chunk_tokens` tokens and write the index
+    to `path`, replacing any index there.
 
     The file is written beside `path` first and moved into place when complete, so a
     failed build never leaves a half-written index. Within each Company, a chunk whose
@@ -367,6 +392,7 @@ def build_index(filings: Iterable[Filing], path: str | Path = DEFAULT_INDEX) -> 
     the Company's previous Filing of the same Form Type.
     """
     path = Path(path)
+    size = ChunkSize(chunk_tokens)
     path.parent.mkdir(parents=True, exist_ok=True)
     partial = path.with_name(path.name + ".partial")
     partial.unlink(missing_ok=True)
@@ -383,7 +409,7 @@ def build_index(filings: Iterable[Filing], path: str | Path = DEFAULT_INDEX) -> 
             )
             earlier = previous.get((filing.ticker, filing.form_type))
             seen: set[int] = set()
-            for chunk in chunk_filing(filing):
+            for chunk in chunk_filing(filing, size):
                 key = (chunk.ticker, chunk.kind, chunk.text)
                 if key not in stored:
                     stored[key] = len(stored) + 1
@@ -395,7 +421,7 @@ def build_index(filings: Iterable[Filing], path: str | Path = DEFAULT_INDEX) -> 
                 new = (
                     None
                     if chunk.kind == "risk_pointer"
-                    else new_text(_sentences(chunk.text), earlier)
+                    else new_text(_sentences(chunk.text, size.ceiling), earlier)
                 )
                 db.execute(
                     "INSERT INTO chunk_filings VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -419,6 +445,7 @@ def build_index(filings: Iterable[Filing], path: str | Path = DEFAULT_INDEX) -> 
             FROM filing_chunks GROUP BY filing_id, section;
             """
         )
+        db.execute("INSERT INTO settings VALUES ('chunk_tokens', ?)", (size.target,))
         db.execute("INSERT INTO chunks_fts (chunks_fts) VALUES ('rebuild')")
         db.execute(f"PRAGMA user_version = {INDEX_VERSION}")
         db.commit()
@@ -428,10 +455,19 @@ def build_index(filings: Iterable[Filing], path: str | Path = DEFAULT_INDEX) -> 
     return path
 
 
+def index_chunk_tokens(index: str | Path = DEFAULT_INDEX) -> int:
+    """The chunk size the index was built with."""
+    with _connect(index) as db:
+        (value,) = db.execute("SELECT value FROM settings WHERE name = 'chunk_tokens'").fetchone()
+    return value
+
+
 def prepare_answer_context(
     messages: Sequence[Message],
     index: str | Path = DEFAULT_INDEX,
     ranker: Ranker | None = None,
+    *,
+    context_budget: int = CONTEXT_BUDGET_TOKENS,
 ) -> AnswerContext:
     """The Answer Context for the latest user message of a conversation.
 
@@ -439,6 +475,8 @@ def prepare_answer_context(
     to answer. Its earlier user messages supply the parts of the Query Scope the latest
     one does not name, and the last turns go into the prompt as history. `ranker`
     replaces the `bm25()` ranking inside the hard filters; None keeps it.
+    `context_budget` is the tokens of Source text retrieved, split evenly across the
+    Companies in scope.
     """
     if not messages or messages[-1].role != "user" or not messages[-1].content.strip():
         raise ValueError("the conversation must end with a non-empty user message")
@@ -501,6 +539,7 @@ def prepare_answer_context(
             scope,
             filings,
             _Search(focus, terms, ranker),
+            context_budget,
             explicit=bool(left_out),
             first_number=len(fact_sources) + 1,
         )
@@ -709,6 +748,7 @@ def _sources(
     scope: QueryScope,
     filings: dict[str, list[ScopeFiling]],
     search: _Search,
+    context_budget: int,
     explicit: bool = False,
     first_number: int = 1,
 ) -> tuple[Source, ...]:
@@ -721,7 +761,7 @@ def _sources(
         if scope.missing_companies:
             return ()
         tickers = [None]
-    budget = CONTEXT_BUDGET_TOKENS // len(tickers)
+    budget = context_budget // len(tickers)
     sources: list[Source] = []
     for ticker in tickers:
         windowed = [
@@ -960,6 +1000,15 @@ def _group(rows: Sequence[_Row], first_number: int) -> list[Source]:
 
 
 if __name__ == "__main__":
+    import argparse
+
     from edgar_rag.corpus import load_corpus
 
-    print(f"Index written to {build_index(load_corpus())}")
+    parser = argparse.ArgumentParser(description="Build the retrieval index from the Corpus.")
+    parser.add_argument("--index", type=Path, default=DEFAULT_INDEX, help="where to write it")
+    parser.add_argument(
+        "--chunk-tokens", type=int, default=CHUNK_TOKENS, help="the chunk size (ADR 0010)"
+    )
+    args = parser.parse_args()
+    path = build_index(load_corpus(), args.index, chunk_tokens=args.chunk_tokens)
+    print(f"Index of {args.chunk_tokens}-token chunks written to {path}")

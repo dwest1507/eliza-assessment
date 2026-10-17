@@ -22,34 +22,20 @@ from __future__ import annotations
 
 from collections.abc import Callable, Sequence
 from functools import cache
-from itertools import zip_longest
 from pathlib import Path
 
 from edgar_eval.metrics import Pair
-from edgar_eval.retrieval import Arm
-from edgar_rag.retrieval import AnswerContext, Message, Ranker, prepare_answer_context
+from edgar_eval.retrieval import Arm, source_ranking
+from edgar_rag.retrieval import (
+    CONTEXT_BUDGET_TOKENS,
+    AnswerContext,
+    Message,
+    Ranker,
+    prepare_answer_context,
+)
 
 MakeRanker = Callable[[Path], Ranker]
 """Builds an Arm's ranker for an index."""
-
-
-def source_ranking(context: AnswerContext) -> list[Pair]:
-    """The Answer Context's text Sources as ranked (Filing ID, Section) pairs.
-
-    Each Company in scope is retrieved separately with its own share of the context
-    budget, and its Sources are numbered after the previous Company's. Ranking them by
-    number would put the last Company's best Source behind every other Company's worst,
-    so the ranking takes each Company's next-best Source in turn instead.
-
-    Facts Sources are left out: they are Financial Facts looked up by rule, not text
-    retrieved by an Arm, and the Golden Set labels Sections.
-    """
-    per_company: dict[str, list[Pair]] = {}
-    for source in (s for s in context.sources if s.kind == "text"):
-        per_company.setdefault(source.ticker, []).append((source.filing_id, source.section))
-    return [
-        pair for turn in zip_longest(*per_company.values()) for pair in turn if pair is not None
-    ]
 
 
 def seam_arm(
@@ -58,12 +44,16 @@ def seam_arm(
     """An Arm that runs the retrieval seam with the ranker `make_ranker` builds for the
     index, or with `bm25()` when it is None."""
 
-    def prepare(messages: Sequence[Message], index: Path) -> AnswerContext:
+    def prepare(
+        messages: Sequence[Message], index: Path, context_budget: int = CONTEXT_BUDGET_TOKENS
+    ) -> AnswerContext:
         ranker = make_ranker(Path(index)) if make_ranker else None
-        return prepare_answer_context(messages, index, ranker=ranker)
+        return prepare_answer_context(messages, index, ranker=ranker, context_budget=context_budget)
 
-    def retrieve(messages: Sequence[Message], index: Path) -> list[Pair]:
-        return source_ranking(prepare(messages, index))
+    def retrieve(
+        messages: Sequence[Message], index: Path, context_budget: int = CONTEXT_BUDGET_TOKENS
+    ) -> list[Pair]:
+        return source_ranking(prepare(messages, index, context_budget))
 
     return Arm(name, description, retrieve, shipped=shipped, prepare=prepare)
 
