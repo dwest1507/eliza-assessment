@@ -4,8 +4,9 @@ starter prompts, and every file's labels against the Corpus.
 The labels were drafted and reviewed by an agent, not a second human, so these tests are
 the mechanical half of the review: every expected Filing and Section exists in the
 Corpus, and every Required Fact's evidence quote is found word for word in its Section.
-Version 2 adds: no question repeated across the three files, version 2's figure facts
-against the SEC company-facts reference (skipped without its cache), and its mix of
+Version 2 adds: no question repeated across the three files, version 2's and the Brief
+Suite's figure facts against the SEC company-facts reference (skipped without its
+cache), the Brief Suite's variants of the brief's questions, and version 2's mix of
 question kinds, reported against ADR 0012's table but not yet enforced.
 """
 
@@ -375,6 +376,46 @@ def test_brief_suite_cases_are_not_valid_golden_set_cases():
         load_golden_set(DEFAULT_BRIEF_SUITE)
 
 
+VARIANT_ANGLES = {"rephrasing", "other_companies", "other_angle", "follow_up"}
+"""The four kinds of variant each brief question gets (ADR 0012): a rephrasing, other
+Companies in the same shape, another time window or Section angle, and a follow-up."""
+
+
+@pytest.mark.parametrize(
+    "brief_case", ["brief-risk-aapl-tsla-jpm", "brief-outlook-nvda-revenue-two-years"]
+)
+def test_a_brief_question_has_four_variants_one_per_angle(brief_suite, brief_case):
+    variants = [case for case in brief_suite.cases if case.variant_of == brief_case]
+
+    assert len(variants) == 4
+    angles = [set(case.tags) & VARIANT_ANGLES for case in variants]
+    assert all(len(angle) == 1 for angle in angles), angles
+    assert set().union(*angles) == VARIANT_ANGLES
+    for case in variants:
+        assert "brief_variant" in case.tags, case.id
+        assert case.replaces is None and case.starter is None, case.id
+        # Only the follow-up has a scripted history, which ends with an assistant answer.
+        assert bool(case.history) == ("follow_up" in case.tags), case.id
+
+
+def test_the_loader_rejects_a_variant_of_no_brief_question(tmp_path):
+    def edit(data):
+        variant = next(c for c in data["cases"] if "variant_of" in c)
+        variant["variant_of"] = "brief-nope"
+
+    path = _rewrite(tmp_path, edit, DEFAULT_BRIEF_SUITE)
+
+    with pytest.raises(ValueError, match="brief-nope"):
+        load_brief_suite(path)
+
+
+def test_only_a_brief_suite_case_is_a_variant(tmp_path):
+    path = _rewrite(tmp_path, lambda d: d["cases"][0].update(variant_of="brief-risk-aapl-tsla-jpm"))
+
+    with pytest.raises(ValueError, match="variant"):
+        load_golden_set(path)
+
+
 # --- Split --------------------------------------------------------------------------------
 
 
@@ -671,6 +712,15 @@ def test_every_version_2_figure_fact_matches_the_sec_reference(golden_set_v2, fi
         pytest.skip("no SEC company-facts cache: run `make sec-facts`")
 
     problems = _figure_problems(golden_set_v2.cases, filings_by_id, load_company_facts)
+
+    assert problems == []
+
+
+def test_every_brief_suite_figure_fact_matches_the_sec_reference(brief_suite, filings_by_id):
+    if not (SEC_CACHE_DIR / "index.json").exists():
+        pytest.skip("no SEC company-facts cache: run `make sec-facts`")
+
+    problems = _figure_problems(brief_suite.cases, filings_by_id, load_company_facts)
 
     assert problems == []
 

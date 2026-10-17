@@ -21,7 +21,8 @@ refuses a set with a pending case (`GoldenSet.require_frozen`).
 The Brief Suite (`data/eval/brief_suite.json`, `load_brief_suite`) holds the brief's
 example questions and variants of them, outside the split: a must-pass check that may be
 tuned on. Its cases use the same schema with no split, every fact names its tier, and a
-case rewritten from a version 1 case records which (`replaces`). No id is in both it and
+case rewritten from a version 1 case records which (`replaces`), and a variant of one of
+the brief's questions names that question's case (`variant_of`). No id is in both it and
 either Golden Set version.
 Starter prompts may come from either (`starter_cases`): a Brief Suite case's starter
 takes the place of the one on the case it replaces.
@@ -185,6 +186,9 @@ class GoldenCase:
     replaces: str | None = None
     """For a Brief Suite case rewritten from a Golden Set version 1 case, that case's id,
     so saved version 1 answers can be matched to the rewritten facts."""
+    variant_of: str | None = None
+    """For a Brief Suite variant of one of the brief's questions (a rephrasing, other
+    Companies, another angle or a follow-up), the id of that question's case."""
 
 
 @dataclass(frozen=True)
@@ -260,7 +264,7 @@ def load_brief_suite(
 ) -> BriefSuite:
     """Read and validate the Brief Suite file. Raises ValueError on a schema problem, on an
     id that is also a case's in one of `golden_sets`, or on a `replaces` naming no case
-    there."""
+    there, or on a `variant_of` naming no Brief Suite case that replaces one."""
     data = json.loads(Path(path).read_text(encoding="utf-8"))
     version = _field(data, "version", int, "Brief Suite")
     cases = tuple(
@@ -272,6 +276,12 @@ def load_brief_suite(
             raise ValueError(f"case {case.id}: the id is also a Golden Set case's")
         if case.replaces is not None and case.replaces not in golden_ids:
             raise ValueError(f"case {case.id}: replaces {case.replaces!r}, no Golden Set case")
+    brief_questions = {c.id for c in cases if c.replaces is not None}
+    for case in cases:
+        if case.variant_of is not None and case.variant_of not in brief_questions:
+            raise ValueError(
+                f"case {case.id}: variant_of {case.variant_of!r}, no brief question's case"
+            )
     ids = [c.id for c in cases]
     if len(set(ids)) != len(ids):
         raise ValueError("Brief Suite: case ids are not unique")
@@ -296,6 +306,9 @@ def _case(raw: dict, version: int, *, brief: bool = False) -> GoldenCase:
     replaces = raw.get("replaces")
     if replaces is not None and (not brief or not isinstance(replaces, str)):
         raise ValueError(f"{where}: only a Brief Suite case replaces one, by its id")
+    variant_of = raw.get("variant_of")
+    if variant_of is not None and (not brief or not isinstance(variant_of, str)):
+        raise ValueError(f"{where}: only a Brief Suite case is a variant of one, by its id")
 
     history = tuple(
         Message(role=_role(m, where), content=_field(m, "content", str, where))
@@ -339,6 +352,7 @@ def _case(raw: dict, version: int, *, brief: bool = False) -> GoldenCase:
         tags=tuple(raw.get("tags", ())),
         notes=raw.get("notes", ""),
         replaces=replaces,
+        variant_of=variant_of,
     )
 
 

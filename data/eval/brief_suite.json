@@ -806,6 +806,1418 @@
           ]
         }
       ]
+    },
+    {
+      "id": "brief-risk-aapl-tsla-jpm-rephrased",
+      "variant_of": "brief-risk-aapl-tsla-jpm",
+      "question": "How do the biggest risks that Apple, Tesla and JPMorgan disclose stack up against each other?",
+      "history": [],
+      "question_type": "risk",
+      "starter": null,
+      "tags": [
+        "brief_variant",
+        "rephrasing"
+      ],
+      "notes": "Variant of brief example 1: the same question in other words, with no 'primary risk factors' or 'compare' for retrieval to match. Same Query Scope (each Company's latest Risk Factors), so the same expected Sources, Required Facts and Coverage Gap as brief-risk-aapl-tsla-jpm.",
+      "expected_sources": [
+        {
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "AAPL_10-Q_2025-12-27",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Apple says a significant majority of its manufacturing is performed by outsourcing partners located primarily in China mainland, India, Japan, South Korea, Taiwan and Vietnam.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "A significant majority of the Company’s manufacturing is performed in whole or in part by outsourcing partners located primarily in China mainland, India, Japan, South Korea, Taiwan and Vietnam",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple says restrictions on international trade, such as tariffs, can materially adversely affect its business and supply chain.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Restrictions on international trade, such as tariffs and other controls on imports or exports of goods, technology or data, can materially adversely affect the Company’s business and supply chain.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple says it is subject to antitrust investigations and litigation in various jurisdictions around the world.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "The Company is also currently subject to antitrust investigations and litigation in various jurisdictions around the world",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple reports that new U.S. tariffs, including on imports from China and India, were announced beginning in the second quarter of fiscal 2025.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Beginning in the second quarter of 2025, new tariffs were announced on imports to the U.S. (“U.S. Tariffs”), including additional tariffs on imports from China, India, Japan, South Korea, Taiwan, Vietnam and the European Union (“EU”), among others.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says the EU's Digital Markets Act provides for significant fines and penalties for noncompliance.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "The DMA provides for significant fines and penalties for noncompliance.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says a reversal on appeal of the remedies ordered against Google could prohibit Google from offering Apple commercial terms for search distribution.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "A reversal of the order on appeal could result in imposition of certain remedies initially proposed by the DOJ, such as those prohibiting Google from offering the Company commercial terms for search distribution.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says obtaining certain components from single or limited sources subjects it to significant supply and pricing risks.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Because the Company currently obtains certain components from single or limited sources, the Company is subject to significant supply and pricing risks.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says adverse macroeconomic conditions can materially adversely affect demand for its products and services.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Adverse macroeconomic conditions, including slow growth or recession, high unemployment, inflation, tighter credit, higher interest rates, and currency fluctuations, can adversely impact consumer confidence and spending and materially adversely affect demand for the Company’s products and services.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says its high profile puts it at a relatively greater risk of being targeted by malicious attacks.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "the Company is at a relatively greater risk of being targeted because of its high profile and the value of the confidential information it creates, owns, manages, stores and processes",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says it generates a significant portion of its net sales from a single product category.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "the Company generates a significant portion of its net sales from a single product category",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's first-quarter fiscal 2026 10-Q reports no material changes to its risk factors since its 2025 Form 10-K.",
+          "filing_id": "AAPL_10-Q_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "There have been no material changes to the Company’s risk factors since the 2025 Form 10-K.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says its future business depends on developing its driver assistance systems and autonomous driving solutions.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "our future business depends on development of our driver assistance systems and autonomous driving solutions",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla says it is highly dependent on the services of Elon Musk, its Chief Executive Officer.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We are highly dependent on the services of Elon Musk, Technoking of Tesla and our Chief Executive Officer.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla says U.S. trade policy changes in 2025, including higher import tariffs, have impacted its supply chain costs.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "U.S. trade policy alterations in 2025, including heightened import tariffs and subsequent retaliatory measures, have impacted our supply chain costs",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla says its future business depends on increasing the production of mass-market vehicles, including Cybercab.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "increasing the production of mass-market vehicles, including Cybercab, our purpose-built Robotaxi product",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says Elon Musk does not devote his full time and attention to Tesla.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "he does not devote his full time and attention to Tesla",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says changing regulations on driver assistance and autonomous driving may delay, restrict or prohibit certain functionalities.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Such regulations, including their enforcement or the enforcement policy associated with the regulations, continue to rapidly change, which increases the likelihood of a patchwork of complex or conflicting regulations, or may delay, restrict or prohibit the availability of certain functionalities and vehicle designs",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says recent government actions have repealed or restricted consumer, manufacturing and charging infrastructure tax credits.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "recent governmental and regulatory actions have repealed and/or restricted consumer, manufacturing and charging infrastructure tax credits",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says it relies on suppliers such as Panasonic and CATL for lithium-ion battery cells.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Currently, we rely on suppliers such as Panasonic and Contemporary Amperex Technology Co. Limited (CATL) for these cells.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says it faces strong competition from a growing list of established and new competitors.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We face strong competition for our products and services from a growing list of established and new competitors.",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan lists legal and regulatory risks, including the impact of extensive supervision and regulation, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Legal and Regulatory risks, including the impact of extensive supervision and regulation",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan says its ability to distribute capital to shareholders could be limited if it does not satisfy regulatory capital requirements.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Capital risks, including the risk that JPMorganChase’s ability to distribute capital to shareholders or to support its business activities could be limited if it does not satisfy applicable regulatory capital requirements.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan lists credit risks, including adverse changes in the financial condition of clients and counterparties, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Credit risks, including the effects from adverse changes in the financial condition of clients, customers, counterparties, central counterparties and other market participants",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan lists market risks, including the effects of changes in interest rates and credit spreads, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Market risks, including the effects that unfavorable economic and market events and conditions, political developments, changes in interest rates and credit spreads, and market fluctuations could have on JPMorganChase’s businesses",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says future security breaches due to cyber attacks are inevitable.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "JPMorganChase has experienced security breaches due to cyber attacks in the past, and future breaches are inevitable.",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says some competitors, such as financial technology companies, may not be subject to banking regulation or may face less stringent oversight.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "certain competitors, such as financial technology companies, may not be subject to banking regulation, or may be subject to less stringent oversight",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan lists the implementation of tariffs and other trade policies among the government policies that could affect economic growth and financial market volatility.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "the implementation of tariffs and other trade policies",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says the significant expansion of private credit could worsen losses among non-bank lenders and their borrowers.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "the significant expansion of private credit could worsen losses among non-bank lenders and their borrowers",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "AAPL",
+            "TSLA",
+            "JPM"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brief-risk-msft-xom-unh",
+      "variant_of": "brief-risk-aapl-tsla-jpm",
+      "question": "What are the primary risk factors facing Microsoft, Exxon Mobil, and UnitedHealth, and how do they compare?",
+      "history": [],
+      "question_type": "risk",
+      "starter": null,
+      "tags": [
+        "brief_variant",
+        "other_companies"
+      ],
+      "notes": "Variant of brief example 1: the same shape, three Companies from three other Sectors (Information Technology, Energy, Health Care). Facts drafted from the whole Risk Factors Section of each latest 10-K and of the 10-Qs after it. Microsoft's two FY2026 10-Qs restate its risk factors in full with a few additions (the October 2025 OpenAI update, community opposition to datacenters); UnitedHealth's three 2025 10-Qs report no material changes. The must-state facts are each Company's defining risks: Microsoft's competition, AI infrastructure costs and cyber incidents; Exxon Mobil's commodity prices, political and regulatory developments and greenhouse gas policy; UnitedHealth's medical costs, the Change Healthcare cyberattack and government program funding. Microsoft's fiscal year ends in June, UnitedHealth's latest 10-K is FY2024 and Exxon Mobil's FY2025, so the periods differ.",
+      "expected_sources": [
+        {
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "MSFT_10-Q_2025-09-30",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "UNH_10-Q_2025-03-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "UNH_10-Q_2025-06-30",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "UNH_10-Q_2025-09-30",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Microsoft says it faces intense competition across all markets for its products and services.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "We face intense competition across all markets for our products and services, which could adversely affect our results of operations.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft says it is incurring significant costs to build and maintain infrastructure for cloud-based and AI services, reducing its operating margins.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "We are incurring significant costs to build and maintain infrastructure to support cloud-based and AI services, reducing operating margins.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft says it has experienced cybersecurity incidents in which threat actors gained unauthorized access to its systems and data.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "we have experienced cybersecurity incidents in which such actors have gained unauthorized access to our systems and data, including customer systems and data",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft says a nation-state associated threat actor used a password spray attack beginning in late November 2023 to gain access to Microsoft email accounts.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "beginning in late November 2023, a nation-state associated threat actor used a password spray attack to compromise a legacy test account and, in turn, gain access to Microsoft email accounts",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says issues in the development, deployment and use of AI may result in reputational or competitive harm or liability.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "Issues in the development, deployment, and use of AI may result in reputational or competitive harm or liability.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says governments are actively enforcing competition laws and enacting new regulations to intervene in digital markets.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "Governments are actively enforcing competition laws and regulations and enacting new regulations to intervene in digital markets",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says U.S. tariff and shifting AI export control policies could increase its operational costs.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "U.S. tariff and shifting AI export controls policies, like the AI Diffusion Rule, could increase operational costs",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft announced a significant update to its strategic partnership with OpenAI in October 2025.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We have a long-term strategic partnership with OpenAI, and in October 2025 we announced a significant update to this partnership.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says community opposition and local moratoriums may impede or delay its infrastructure development.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We also face community opposition, local moratoriums, and hyper-local dissent that may impede or delay infrastructure development.",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says its operations and earnings may be significantly affected by changes in oil, gas and petrochemical prices.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "This means ExxonMobil’s operations and earnings may be significantly affected by changes in oil, gas, and petrochemical prices and by changes in margins on refined products.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "ExxonMobil says its results can be adversely affected by political or regulatory developments affecting its businesses.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "ExxonMobil’s results can be adversely affected by political or regulatory developments affecting our businesses or operations.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "ExxonMobil says government policies to reduce greenhouse gas emissions could reduce demand for hydrocarbons.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "such policies could negatively affect our investment returns, make our hydrocarbon-based products more expensive or less competitive, lengthen project implementation times, and reduce demand for hydrocarbons",
+          "tier": "must_state"
+        },
+        {
+          "fact": "ExxonMobil says the growth of its Low Carbon Solutions and other emerging businesses depends in part on stable and supportive government policies and markets.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "the growth and future returns of LCS and other emerging businesses in which we invest, will depend in part on the development of stable and supportive government policies and markets",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says it is regularly subject to attempted cybersecurity disruptions, including from state-sponsored actors.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "ExxonMobil is regularly subject to attempted cybersecurity disruptions from a variety of sources including state-sponsored actors.",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says it faces competition from state-owned companies that are increasingly competing for opportunities outside their home countries.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We face competition not only from other private firms, but also from state-owned companies that are increasingly competing for opportunities outside of their home countries",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says it may be adversely affected by litigation, especially in countries such as the United States that permit large punitive damage awards.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We also may be adversely affected by the outcome of litigation, including class actions or arbitrations, especially in countries such as the United States that permit large and unpredictable punitive and non-economic damage awards.",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says hurricanes may damage its offshore production facilities and coastal refining and petrochemical plants.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "hurricanes may damage our offshore production facilities or coastal refining and petrochemical plants in vulnerable areas",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says the profitability of its products depends in large part on its ability to predict, price for and manage medical costs.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "The profitability of our products depends in large part on our ability to predict and effectively price for and manage medical costs.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UnitedHealth says its Change Healthcare business was subject to a cyberattack in 2024.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "we previously reported our Change Healthcare business, which we had recently acquired, was subject to a cyberattack in 2024",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UnitedHealth says a reduction or protracted delay in government funding for the health care programs it participates in may materially and adversely affect its results.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "A reduction or less than expected increase, or a protracted delay, in government funding for these programs or change in allocation methodologies, or termination of the contract at the option of the government, has affected and in future periods may materially and adversely affect our results of operations, financial position and cash flows.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UnitedHealth says medical cost increases above its forecasts typically cannot be recovered in the fixed premium period.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Cost increases in excess of our forecasts typically cannot be recovered in the fixed premium period through higher premiums.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says CMS has in the past reduced or frozen Medicare Advantage benchmarks and further cuts are possible.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "CMS in the past has reduced or frozen Medicare Advantage benchmarks and additional cuts to Medicare Advantage benchmarks are possible",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says some of its local plans have been selected for risk adjustment data validation audits.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Some of our local plans have been selected for such audits",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says it is routinely subject to private party and governmental legal actions and investigations.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "We are routinely subject to various private party and governmental legal actions and investigations",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says the health care industry is regularly subject to negative publicity.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "The health care industry is regularly subject to negative publicity",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth's third-quarter 2025 10-Q reports no material changes to its risk factors since its 2024 10-K.",
+          "filing_id": "UNH_10-Q_2025-09-30",
+          "section": "Risk Factors",
+          "evidence": "There have been no material changes to the risk factors as disclosed in our 2024 10-K.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "MSFT",
+            "XOM",
+            "UNH"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brief-risk-aapl-tsla-jpm-fy2025-quarterly-updates",
+      "variant_of": "brief-risk-aapl-tsla-jpm",
+      "question": "What new or updated risk factors did Apple, Tesla and JPMorgan report in their fiscal 2025 quarterly reports?",
+      "history": [],
+      "question_type": "risk",
+      "starter": null,
+      "tags": [
+        "brief_variant",
+        "other_angle"
+      ],
+      "notes": "Variant of brief example 1: the same three Companies, another time window and Section angle: the Risk Factors Sections of their fiscal 2025 10-Qs, which report only changes since the last 10-K, instead of the latest 10-K's. Facts drafted from the whole of each of the nine Sections. Apple's Q1 FY2025 10-Q updates its laws-and-regulation and antitrust risks (the Google remedies, the DMA) and its Q2 10-Q adds the 2025 U.S. tariffs; its Q3 10-Q adds nothing. Tesla's Q1 2025 10-Q adds tariffs and public credibility, its Q2 10-Q the repeal of tax credits, and its Q3 10-Q nothing. JPMorgan's 10-Qs only point back to its 2024 10-K, which is not in the Corpus. Apple's fiscal 2025 quarters end in December, March and June; Tesla's and JPMorgan's in March, June and September.",
+      "expected_sources": [
+        {
+          "filing_id": "AAPL_10-Q_2024-12-28",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "AAPL_10-Q_2025-03-29",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "AAPL_10-Q_2025-06-28",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "TSLA_10-Q_2025-03-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "TSLA_10-Q_2025-06-30",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "TSLA_10-Q_2025-09-30",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "JPM_10-Q_2025-03-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "JPM_10-Q_2025-06-30",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "JPM_10-Q_2025-09-30",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Apple's first-quarter fiscal 2025 10-Q says the DOJ's proposed remedies against Google could prohibit Google from offering Apple commercial terms for search distribution for up to 10 years.",
+          "filing_id": "AAPL_10-Q_2024-12-28",
+          "section": "Risk Factors",
+          "evidence": "range from imposing significant restrictions on Google’s licensing agreements to prohibiting Google from offering the Company commercial terms for search distribution for up to 10 years",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple's first-quarter fiscal 2025 10-Q says Google was found on August 5, 2024 to have violated U.S. antitrust laws.",
+          "filing_id": "AAPL_10-Q_2024-12-28",
+          "section": "Risk Factors",
+          "evidence": "On August 5, 2024, Google was found to have violated U.S. antitrust laws.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's first-quarter fiscal 2025 10-Q says its compliance plan for the EU's Digital Markets Act has been challenged by the European Commission.",
+          "filing_id": "AAPL_10-Q_2024-12-28",
+          "section": "Risk Factors",
+          "evidence": "Although the Company’s compliance plan is intended to address the DMA’s obligations, it has been challenged by the Commission and may be challenged further by private litigants.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's first-quarter fiscal 2025 10-Q says it is subject to civil antitrust lawsuits in the U.S. alleging monopolization of smartphone markets.",
+          "filing_id": "AAPL_10-Q_2024-12-28",
+          "section": "Risk Factors",
+          "evidence": "the Company is subject to civil antitrust lawsuits in the U.S. alleging monopolization or attempted monopolization in the markets for “performance smartphones” and “smartphones” generally",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's second-quarter fiscal 2025 10-Q says new U.S. tariffs were announced beginning in the second quarter of fiscal 2025, including on imports from China and India.",
+          "filing_id": "AAPL_10-Q_2025-03-29",
+          "section": "Risk Factors",
+          "evidence": "Beginning in the second quarter of 2025, new U.S. Tariffs were announced, including additional tariffs on imports from China, India, Japan, South Korea, Taiwan, Vietnam and the EU, among others.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple's second-quarter fiscal 2025 10-Q says several countries have imposed or threatened reciprocal tariffs on imports from the U.S.",
+          "filing_id": "AAPL_10-Q_2025-03-29",
+          "section": "Risk Factors",
+          "evidence": "In response, several countries have imposed, or threatened to impose, reciprocal tariffs on imports from the U.S. and other retaliatory measures.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's second-quarter fiscal 2025 10-Q says the U.S. Department of Commerce has initiated a Section 232 investigation into imports of semiconductors.",
+          "filing_id": "AAPL_10-Q_2025-03-29",
+          "section": "Risk Factors",
+          "evidence": "the U.S. Department of Commerce has initiated an investigation under Section 232 of the Trade Expansion Act of 1962, as amended, into, among other things, imports of semiconductors",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's third-quarter fiscal 2025 10-Q reports no material changes to its risk factors beyond those in its first- and second-quarter 10-Qs.",
+          "filing_id": "AAPL_10-Q_2025-06-28",
+          "section": "Risk Factors",
+          "evidence": "Except for the risk factors disclosed in Part II, Item 1A of the first quarter 2025 Form 10-Q and the second quarter 2025 Form 10-Q, which are hereby incorporated by reference into this Part II, Item 1A of this Form 10-Q, there have been no material changes to the Company’s risk factors since the 2024 Form 10-K.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla's first-quarter 2025 10-Q says the United States has announced changes to trade policy, including increasing tariffs on imports.",
+          "filing_id": "TSLA_10-Q_2025-03-31",
+          "section": "Risk Factors",
+          "evidence": "the United States has recently announced changes to U.S. trade policy, including increasing tariffs on imports, in many cases significantly",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla's first-quarter 2025 10-Q says retaliatory tariffs imposed by other countries on U.S. exports could adversely impact demand for its products.",
+          "filing_id": "TSLA_10-Q_2025-03-31",
+          "section": "Risk Factors",
+          "evidence": "Retaliatory tariffs imposed by other countries on U.S. exports, further increases in U.S. tariffs, and the uncertainties surrounding domestic and foreign tariffs could also adversely impact demand for our products.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla's first-quarter 2025 10-Q adds a risk factor on maintaining public credibility and confidence in its long-term business prospects.",
+          "filing_id": "TSLA_10-Q_2025-03-31",
+          "section": "Risk Factors",
+          "evidence": "We will need to maintain public credibility and confidence in our long-term business prospects in order to succeed.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla's first-quarter 2025 10-Q says criticism of Tesla has incited protests, some escalating to violence targeting its operations, products and personnel.",
+          "filing_id": "TSLA_10-Q_2025-03-31",
+          "section": "Risk Factors",
+          "evidence": "has incited protests, some escalating to violence targeting our operations, products and personnel",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla's second-quarter 2025 10-Q says recent government actions have repealed or restricted consumer, manufacturing and charging infrastructure tax credits.",
+          "filing_id": "TSLA_10-Q_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "recent governmental and regulatory actions have repealed and/or restricted consumer, manufacturing and charging infrastructure tax credits",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla's second-quarter 2025 10-Q says provisions of the OBBBA could affect battery cell expenses and costs for its consumers.",
+          "filing_id": "TSLA_10-Q_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "provisions of the OBBBA could affect battery cell expenses and impact costs for our consumers, negatively impacting demand",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan's first-quarter 2025 10-Q refers to the risk factors in its 2024 Form 10-K rather than setting out new ones.",
+          "filing_id": "JPM_10-Q_2025-03-31",
+          "section": "Risk Factors",
+          "evidence": "Refer to Part I, Item 1A: Risk Factors on pages 10–37 of JPMorganChase’s 2024 Form 10-K",
+          "tier": "must_state"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "AAPL",
+            "TSLA",
+            "JPM"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brief-followup-aapl-tsla-jpm-cybersecurity",
+      "variant_of": "brief-risk-aapl-tsla-jpm",
+      "question": "How do their cybersecurity risks compare?",
+      "history": [
+        {
+          "role": "user",
+          "content": "What are the primary risk factors facing Apple, Tesla, and JPMorgan, and how do they compare?"
+        },
+        {
+          "role": "assistant",
+          "content": "Apple's main risks centre on manufacturing outsourced mostly to partners in Asia, restrictions on international trade such as tariffs, and antitrust investigations and litigation (AAPL_10-K_2025-09-27, Risk Factors). Tesla's centre on developing its driver assistance and autonomous driving solutions, its dependence on Elon Musk, and 2025 U.S. trade policy changes that raised its supply chain costs (TSLA_10-K_2025-12-31, Risk Factors). JPMorgan's principal risks include legal and regulatory, capital and credit risks (JPM_10-K_2025-12-31, Risk Factors). All three name trade policy, regulation, cyber attacks and competition. Apple's fiscal year ends in September, a quarter before Tesla's and JPMorgan's."
+        }
+      ],
+      "question_type": "risk",
+      "starter": null,
+      "tags": [
+        "brief_variant",
+        "follow_up",
+        "inherits_companies"
+      ],
+      "notes": "Variant of brief example 1: a follow-up that names no Company and inherits Apple, Tesla and JPMorgan from the brief question (ADR 0003), narrowing the topic to cybersecurity. Facts drafted from the whole cyber passages of each latest 10-K's Risk Factors. The Cybersecurity Sections (Item 1C) describe governance and point back to Risk Factors, and JPMorgan's points to its MD&A, so they add no risk facts. The must-state facts: Apple's regular attacks and its high-profile target risk; Tesla's exposure of its systems and data and attempts to take control of its products; JPMorgan's numerous attacks and inevitable future breaches.",
+      "expected_sources": [
+        {
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Apple says it experiences malicious attacks and other attempts to gain unauthorized access to its systems on a regular basis.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "The Company experiences malicious attacks and other attempts to gain unauthorized access to its systems on a regular basis.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple says its high profile puts it at a relatively greater risk of being targeted by malicious attacks.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "the Company is at a relatively greater risk of being targeted because of its high profile and the value of the confidential information it creates, owns, manages, stores and processes",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple says attacks are expected to keep accelerating in frequency and sophistication.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Globally, attacks are expected to continue accelerating in both frequency and sophistication",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says its global suppliers are also exposed to ransomware and other malicious attacks that can disrupt business operations.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "The Company relies on global suppliers that are also exposed to ransomware and other malicious attacks that can disrupt business operations.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says attacks against it and its customers can escalate during periods of geopolitical tensions or conflict.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "attacks against the Company and its customers can escalate during periods of geopolitical tensions or conflict",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says its information technology systems or data could be subject to cyber-attacks that could result in data breaches and intellectual property theft.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our information technology systems or data, or those of our service providers or customers or users could be subject to cyber-attacks or other security incidents, which could result in data breaches, intellectual property theft",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla says malicious entities have reportedly attempted to gain unauthorized access to its products' systems to gain control of or change their functionality.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "malicious entities have reportedly attempted, and may attempt in the future, to gain unauthorized access to modify, alter and use such networks, products and systems to gain control of, or to change, our products’ functionality",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla says its service providers, including its workforce management software provider, have been subject to ransomware and other security incidents.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our service providers, including our workforce management software provider, have been subject to ransomware and other security incidents",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says reports that its products or their systems are capable of being hacked may harm its brand.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "reports of unauthorized access to our products, their systems or data, as well as other factors that may result in the perception that our products, their systems or data are capable of being hacked, may harm our brand, prospects and operating results",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says it experiences numerous cyber attacks on its computer systems, software, networks and other technology assets.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "JPMorganChase experiences numerous cyber attacks on its computer systems, software, networks and other technology assets.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan says future security breaches due to cyber attacks are inevitable.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "JPMorganChase has experienced security breaches due to cyber attacks in the past, and future breaches are inevitable.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan says it cannot guarantee that it will always detect cybersecurity threats to its systems.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "JPMorganChase cannot guarantee that it will always detect cybersecurity threats to its systems or implement effective preventive measures against those threats.",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says advances such as AI and quantum computing may enable malicious actors to develop more advanced social engineering attacks.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "technological advances such as artificial intelligence (“AI”) and quantum computing that may enable malicious actors to develop more advanced social engineering attacks",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says it does not control the cybersecurity of the systems of the many clients, counterparties and third-party service providers it does business with.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "JPMorganChase does not have control over the cybersecurity of the systems of the numerous clients, customers, counterparties and third-party service providers with which it does business.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "AAPL",
+            "TSLA",
+            "JPM"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brief-outlook-nvda-revenue-rephrased",
+      "variant_of": "brief-outlook-nvda-revenue-two-years",
+      "question": "Over the past two years, what has happened to NVIDIA's revenue, and how has its view of future growth shifted?",
+      "history": [],
+      "question_type": "outlook",
+      "starter": null,
+      "tags": [
+        "brief_variant",
+        "rephrasing"
+      ],
+      "notes": "Variant of brief example 2: the same question in other words ('the past two years', 'view of future growth' for 'growth outlook'). Same Query Scope, so the same expected Sources, Required Facts and Coverage Gap as brief-outlook-nvda-revenue-two-years.",
+      "expected_sources": [
+        {
+          "filing_id": "NVDA_10-K_2024-01-28",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "NVDA_10-Q_2024-04-28",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "NVDA_10-Q_2024-10-27",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "NVDA_10-Q_2025-04-27",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "NVIDIA's revenue for fiscal year 2024 was $60.9 billion.",
+          "filing_id": "NVDA_10-K_2024-01-28",
+          "section": "MD&A",
+          "evidence": "Revenue for fiscal year 2024 was $60.9 billion, up 126% from a year ago.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA's fiscal year 2024 revenue was up 126% from a year earlier.",
+          "filing_id": "NVDA_10-K_2024-01-28",
+          "section": "MD&A",
+          "evidence": "Revenue for fiscal year 2024 was $60.9 billion, up 126% from a year ago.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA said at the end of fiscal 2024 that it expected its next-generation products to be supply-constrained based on demand indications.",
+          "filing_id": "NVDA_10-K_2024-01-28",
+          "section": "MD&A",
+          "evidence": "We expect our next-generation products to be supply-constrained based upon demand indications.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA said China was a mid-single-digit percentage of its Data Center revenue in the fourth quarter of fiscal 2024 because of U.S. licensing requirements.",
+          "filing_id": "NVDA_10-K_2024-01-28",
+          "section": "MD&A",
+          "evidence": "China represented a mid-single digit percentage of our Data Center revenue in the fourth quarter of fiscal year 2024 due to USG licensing requirements",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA said in the first quarter of fiscal 2025 that it believed initial demand for Blackwell was well ahead of projected supply for that fiscal year.",
+          "filing_id": "NVDA_10-Q_2024-04-28",
+          "section": "MD&A",
+          "evidence": "We believe the initial demand for Blackwell is well ahead of the projected supply for this fiscal year.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA said in the third quarter of fiscal 2025 that it expected demand for Blackwell to exceed supply for several quarters in fiscal 2026.",
+          "filing_id": "NVDA_10-Q_2024-10-27",
+          "section": "MD&A",
+          "evidence": "the demand for Blackwell is expected to exceed supply for several quarters in fiscal year 2026",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA's revenue for fiscal year 2025 was $130.5 billion.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A",
+          "evidence": "Revenue for fiscal year 2025 was $130.5 billion, up 114% from a year ago.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA's fiscal year 2025 revenue was up 114% from a year earlier.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A",
+          "evidence": "Revenue for fiscal year 2025 was $130.5 billion, up 114% from a year ago.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA began shipping production systems of its Blackwell architecture in the fourth quarter of fiscal 2025.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A",
+          "evidence": "We began shipping production systems of the Blackwell architecture in the fourth quarter of fiscal year 2025.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA expected to increase its capital expenditures in fiscal 2026 relative to fiscal 2025.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A",
+          "evidence": "We expect to increase capital expenditures in fiscal year 2026 relative to fiscal year 2025 to support the future growth of our business.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA said the H20 export licensing requirements will negatively affect its future revenue.",
+          "filing_id": "NVDA_10-Q_2025-04-27",
+          "section": "MD&A",
+          "evidence": "The H20 export licensing requirements have impacted our current revenue and will also negatively affect our future revenue.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA's revenue for the third quarter of fiscal 2026 was $57.0 billion.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "Revenue was $57.0 billion, up 62% from a year ago and up 22% sequentially.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA's third-quarter fiscal 2026 revenue was up 62% from a year earlier.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "Revenue was $57.0 billion, up 62% from a year ago and up 22% sequentially.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA's third-quarter fiscal 2026 revenue was up 22% from the previous quarter.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "Revenue was $57.0 billion, up 62% from a year ago and up 22% sequentially.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says its Blackwell architectures are the majority of its Data Center revenue.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "Our Blackwell architectures are the majority of our Data Center revenue.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA incurred a charge in the first quarter of fiscal 2026 for H20 excess inventory and purchase obligations.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "we incurred a $4.5 billion charge in the first quarter of fiscal year 2026 associated with H20 for excess inventory and purchase obligations",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA says the U.S. government informed it in April 2025 that a license is required to export its H20 product to China.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "In April 2025, the U.S. government, or USG, informed us that a license is required for exports of our H20 product into the China market.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says the availability of data centers, energy and capital for its customers' AI infrastructure buildouts is crucial to its future revenue.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "The availability of data centers, energy, and capital to support the buildout of NVIDIA AI infrastructure by our customers is crucial, and any shortage of these resources could impact our future revenue and financial performance.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says the U.S. government announced in May 2025 that it would rescind the AI Diffusion rule and implement a replacement rule.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "In May 2025, the USG announced that it would rescind the AI Diffusion IFR and implement a replacement rule.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "no_guidance",
+          "companies": [
+            "NVDA"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brief-outlook-unh-revenue-two-years",
+      "variant_of": "brief-outlook-nvda-revenue-two-years",
+      "question": "How has UnitedHealth's revenue and growth outlook changed over the last two years?",
+      "history": [],
+      "question_type": "outlook",
+      "starter": null,
+      "tags": [
+        "brief_variant",
+        "other_companies"
+      ],
+      "notes": "Variant of brief example 2: the same shape for another Tracked Company. The last two years are UnitedHealth's eight Filings from Q4 2023 (FY2023 10-K) to Q3 2025; facts drafted from the whole MD&A of each. Revenue figures match the SEC company-facts reference (Revenues: $371,622 million for 2023, $400,278 million for 2024, $113,161 million for Q3 2025). The outlook half: increased care patterns expected and contemplated in pricing through 2024, then 2025 pricing assumptions well short of the medical cost trends incurred, with Medicare Advantage funding pressure throughout. The Filings give no revenue or earnings guidance.",
+      "expected_sources": [
+        {
+          "filing_id": "UNH_10-K_2023-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "UNH_10-Q_2024-09-30",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "UNH_10-Q_2025-06-30",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "UNH_10-Q_2025-09-30",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "UnitedHealth's total revenues for 2023 were $371.6 billion.",
+          "filing_id": "UNH_10-K_2023-12-31",
+          "section": "MD&A",
+          "evidence": "Total revenues | | 371,622 | | | 324,162 | | | 287,597 | | | 47,460 | | | 15 |",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UnitedHealth's total revenues grew 15% in 2023.",
+          "filing_id": "UNH_10-K_2023-12-31",
+          "section": "MD&A",
+          "evidence": "Total revenues | | 371,622 | | | 324,162 | | | 287,597 | | | 47,460 | | | 15 |",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth said in its 2023 annual report that increased care patterns, primarily for seniors' outpatient procedures, were expected to persist throughout 2024.",
+          "filing_id": "UNH_10-K_2023-12-31",
+          "section": "MD&A",
+          "evidence": "During 2023, we observed increased care patterns, primarily related to outpatient procedures for seniors, which we expect will persist throughout 2024, and may continue in future periods.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UnitedHealth said in the third quarter of 2024 that the increased care patterns it continued to observe were expected and contemplated in its benefits design.",
+          "filing_id": "UNH_10-Q_2024-09-30",
+          "section": "MD&A",
+          "evidence": "As expected and contemplated in our benefits design, we have continued to observe increased care patterns, primarily related to outpatient procedures for seniors, which may continue in future periods.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth's total revenues for 2024 were $400.3 billion.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Total revenues | | 400,278 | | | 371,622 | | | 324,162 | | | 28,656 | | | 8 |",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UnitedHealth's consolidated revenues grew 8% in 2024.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Consolidated revenues grew 8%, UnitedHealthcare revenues grew 6% and Optum revenues grew 12%.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says Medicare Advantage funding continues to be pressured.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Medicare Advantage funding continues to be pressured",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says the Final Notices for 2024 and 2025 Medicare Advantage rates resulted in an industry base rate decrease.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "the Final Notice for 2024 and 2025 rates resulted in an industry base rate decrease, both of which are well short of what is an increasing industry forward medical cost trend",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth observed an upshift in hospital coding intensity in 2024.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "We also observed an upshift in hospital coding intensity and an acceleration in the prescribing of certain high-cost medications in early response to the Inflation Reduction Act (IRA).",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth identified on February 21, 2024 that cybercrime threat actors had gained access to certain Change Healthcare information technology systems.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "on February 21, 2024, we identified that cybercrime threat actors had gained access to certain Change Healthcare information technology systems",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says its 2025 pricing trends and member health status assumptions were well short of the medical cost trends incurred, significantly impacting its earnings.",
+          "filing_id": "UNH_10-Q_2025-06-30",
+          "section": "MD&A",
+          "evidence": "For 2025, our pricing trends and patient and member health status assumptions were well-short of the medical cost trends incurred, significantly impacting our earnings.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UnitedHealth says in 2025 that it observed increased care patterns above what it expected and contemplated in its pricing and benefits design.",
+          "filing_id": "UNH_10-Q_2025-09-30",
+          "section": "MD&A",
+          "evidence": "We have observed increased care patterns, more notably related to physician and outpatient care, and to a lesser extent inpatient and emergency room utilization, that are above what we expected and contemplated in our pricing and benefits design.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth's total revenues for the third quarter of 2025 were $113.2 billion.",
+          "filing_id": "UNH_10-Q_2025-09-30",
+          "section": "MD&A",
+          "evidence": "Total revenues | | 113,161 | | | 100,820 | | | 12,341 | | | 12 |",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UnitedHealth's consolidated revenues grew 12% in the third quarter of 2025 from a year earlier.",
+          "filing_id": "UNH_10-Q_2025-09-30",
+          "section": "MD&A",
+          "evidence": "Consolidated revenues grew 12%, UnitedHealthcare revenues grew 16% and Optum revenues grew 8%.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says elevated medical cost trend impacted its third-quarter 2025 earnings from operations.",
+          "filing_id": "UNH_10-Q_2025-09-30",
+          "section": "MD&A",
+          "evidence": "Consolidated earnings from operations of $4.3 billion compared to $8.7 billion last year, with 2025 impacted by elevated medical cost trend and 2024 impacted by the Change Healthcare cyberattack.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says potential changes to pricing and benefit design may result in decreased membership in future periods.",
+          "filing_id": "UNH_10-Q_2025-09-30",
+          "section": "MD&A",
+          "evidence": "These potential changes, along with certain regulatory impacts, may result in decreased membership in future periods.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "no_guidance",
+          "companies": [
+            "UNH"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brief-outlook-nvda-revenue-fy2024",
+      "variant_of": "brief-outlook-nvda-revenue-two-years",
+      "question": "How did NVIDIA's revenue and growth outlook change during fiscal 2024?",
+      "history": [],
+      "question_type": "outlook",
+      "starter": null,
+      "tags": [
+        "brief_variant",
+        "other_angle"
+      ],
+      "notes": "Variant of brief example 2: the same Company and question, another time window: NVIDIA's fiscal 2024 (February 2023 to January 2024), the year before the brief's window, from the FY2023 10-K through the three FY2024 10-Qs to the FY2024 10-K. Facts drafted from the whole MD&A of each. Revenue figures and growth rates match the SEC company-facts reference (Revenues: $26,974 million for FY2023, $7,192 million, $13,507 million and $18,120 million for Q1 to Q3 FY2024, $60,922 million for FY2024). The outlook half: from inventory charges for excess supply at the end of FY2023, through surging Data Center demand with visibility into the next year, to the October 2023 export rules cutting China sales and next-generation products expected to be supply-constrained. Revenue guidance is in earnings releases, not in the Filings.",
+      "expected_sources": [
+        {
+          "filing_id": "NVDA_10-K_2023-01-29",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "NVDA_10-Q_2023-04-30",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "NVDA_10-Q_2023-07-30",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "NVDA_10-Q_2023-10-29",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "NVDA_10-K_2024-01-28",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "NVIDIA's revenue for fiscal year 2023 was $26.97 billion.",
+          "filing_id": "NVDA_10-K_2023-01-29",
+          "section": "MD&A",
+          "evidence": "Revenue for fiscal year 2023 revenue was $26.97 billion, flat compared with a year ago.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA's fiscal year 2023 revenue was flat compared with a year earlier.",
+          "filing_id": "NVDA_10-K_2023-01-29",
+          "section": "MD&A",
+          "evidence": "Revenue for fiscal year 2023 revenue was $26.97 billion, flat compared with a year ago.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA's fiscal year 2023 gross margin declined because of inventory charges largely relating to excess supply of Ampere architecture Gaming and Data Center products.",
+          "filing_id": "NVDA_10-K_2023-01-29",
+          "section": "MD&A",
+          "evidence": "Gross margin for fiscal year 2023 declined from a year ago, driven by $2.17 billion of inventory charges largely relating to excess supply of NVIDIA Ampere architecture Gaming and Data Center products",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA's revenue for the first quarter of fiscal 2024 was $7.19 billion.",
+          "filing_id": "NVDA_10-Q_2023-04-30",
+          "section": "MD&A",
+          "evidence": "Revenue for the first quarter of fiscal year 2024 was $7.19 billion, down 13% from a year ago and up 19% sequentially.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA said in the first quarter of fiscal 2024 that it had procured substantially higher Data Center supply for the second half of the year.",
+          "filing_id": "NVDA_10-Q_2023-04-30",
+          "section": "MD&A",
+          "evidence": "We have procured substantially higher Data Center supply for the second half compared to the first half of fiscal year 2024.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA's revenue for the second quarter of fiscal 2024 was $13.51 billion.",
+          "filing_id": "NVDA_10-Q_2023-07-30",
+          "section": "MD&A",
+          "evidence": "Revenue for the second quarter of fiscal year 2024 was $13.51 billion, up 101% from a year ago and up 88% sequentially.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA's second-quarter fiscal 2024 revenue was up 101% from a year earlier.",
+          "filing_id": "NVDA_10-Q_2023-07-30",
+          "section": "MD&A",
+          "evidence": "Revenue for the second quarter of fiscal year 2024 was $13.51 billion, up 101% from a year ago and up 88% sequentially.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA said in the second quarter of fiscal 2024 that demand for its data center systems and products had surged, with demand visibility extending into the next year.",
+          "filing_id": "NVDA_10-Q_2023-07-30",
+          "section": "MD&A",
+          "evidence": "Demand for our data center systems and products has surged over the last two quarters and our demand visibility extends into next year.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA said in the second quarter of fiscal 2024 that it expected its supply to increase each quarter through the next year.",
+          "filing_id": "NVDA_10-Q_2023-07-30",
+          "section": "MD&A",
+          "evidence": "We expect our supply to increase each quarter through next year.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA's revenue for the third quarter of fiscal 2024 was $18.12 billion.",
+          "filing_id": "NVDA_10-Q_2023-10-29",
+          "section": "MD&A",
+          "evidence": "Revenue for the third quarter of fiscal year 2024 was $18.12 billion, up 206% from a year ago and up 34% sequentially.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA's third-quarter fiscal 2024 revenue was up 206% from a year earlier.",
+          "filing_id": "NVDA_10-Q_2023-10-29",
+          "section": "MD&A",
+          "evidence": "Revenue for the third quarter of fiscal year 2024 was $18.12 billion, up 206% from a year ago and up 34% sequentially.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says the U.S. government announced new licensing requirements on October 17, 2023 for exports to China of products exceeding certain performance thresholds.",
+          "filing_id": "NVDA_10-Q_2023-10-29",
+          "section": "MD&A",
+          "evidence": "On October 17, 2023, the USG announced new and updated licensing requirements effective in our fourth quarter of fiscal year 2024 for exports to China",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA expected its sales to China and the other affected destinations to decline significantly in the fourth quarter of fiscal 2024.",
+          "filing_id": "NVDA_10-Q_2023-10-29",
+          "section": "MD&A",
+          "evidence": "We expect that our sales to these destinations will decline significantly in the fourth quarter of fiscal year 2024, though we believe the decline will be more than offset by strong growth in other regions.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA believed the decline in sales to China and the other affected destinations would be more than offset by strong growth in other regions.",
+          "filing_id": "NVDA_10-Q_2023-10-29",
+          "section": "MD&A",
+          "evidence": "We expect that our sales to these destinations will decline significantly in the fourth quarter of fiscal year 2024, though we believe the decline will be more than offset by strong growth in other regions.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA's revenue for fiscal year 2024 was $60.9 billion.",
+          "filing_id": "NVDA_10-K_2024-01-28",
+          "section": "MD&A",
+          "evidence": "Revenue for fiscal year 2024 was $60.9 billion, up 126% from a year ago.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA's fiscal year 2024 revenue was up 126% from a year earlier.",
+          "filing_id": "NVDA_10-K_2024-01-28",
+          "section": "MD&A",
+          "evidence": "Revenue for fiscal year 2024 was $60.9 billion, up 126% from a year ago.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA said at the end of fiscal 2024 that it expected its next-generation products to be supply-constrained based on demand indications.",
+          "filing_id": "NVDA_10-K_2024-01-28",
+          "section": "MD&A",
+          "evidence": "We expect our next-generation products to be supply-constrained based upon demand indications.",
+          "tier": "must_state"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "no_guidance",
+          "companies": [
+            "NVDA"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brief-followup-nvda-net-income",
+      "variant_of": "brief-outlook-nvda-revenue-two-years",
+      "question": "How did its net income change over the same period?",
+      "history": [
+        {
+          "role": "user",
+          "content": "How has NVIDIA's revenue and growth outlook changed over the last two years?"
+        },
+        {
+          "role": "assistant",
+          "content": "NVIDIA's revenue grew from $60.9 billion in fiscal 2024 (NVDA_10-K_2024-01-28, MD&A) to $130.5 billion in fiscal 2025 (NVDA_10-K_2025-01-26, MD&A), and was $57.0 billion in the third quarter of fiscal 2026, up 62% from a year earlier (NVDA_10-Q_2025-10-26, MD&A). Its outlook moved from expecting next-generation products to be supply-constrained (NVDA_10-K_2024-01-28, MD&A) to Blackwell making up the majority of Data Center revenue, while the H20 export licensing requirements weigh on future revenue (NVDA_10-Q_2025-04-27, MD&A; NVDA_10-Q_2025-10-26, MD&A). The Filings give no revenue guidance."
+        }
+      ],
+      "question_type": "figure_trend",
+      "starter": null,
+      "tags": [
+        "brief_variant",
+        "follow_up",
+        "inherits_companies"
+      ],
+      "notes": "Variant of brief example 2: a follow-up that names no Company or time window, so it inherits NVIDIA and 'the last two years' (Q4 FY2024 to Q3 FY2026) from the brief question and switches the metric to net income (ADR 0003). Facts drafted from the whole MD&A of the FY2024 and FY2025 10-Ks and the Q1 and Q3 FY2026 10-Qs. Net income figures and growth rates match the SEC company-facts reference (NetIncomeLoss: $29,760 million for FY2024, $72,880 million for FY2025, $22,091 million for Q4 FY2025, $18,775 million for Q1 FY2026, $31,910 million for Q3 FY2026 against $19,309 million a year earlier). They come from the MD&A summary tables, as the Filings state net income only there.",
+      "expected_sources": [
+        {
+          "filing_id": "NVDA_10-K_2024-01-28",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "NVDA_10-Q_2025-04-27",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "NVIDIA's net income for fiscal year 2024 was $29.76 billion.",
+          "filing_id": "NVDA_10-K_2024-01-28",
+          "section": "MD&A",
+          "evidence": "Net income | $ | 29,760 | | | $ | 4,368 | | | Up 581%",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA's fiscal year 2024 net income was up 581% from a year earlier.",
+          "filing_id": "NVDA_10-K_2024-01-28",
+          "section": "MD&A",
+          "evidence": "Net income | $ | 29,760 | | | $ | 4,368 | | | Up 581%",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says its gross margin increased in fiscal 2024, primarily driven by Data Center revenue growth and lower net inventory provisions as a percentage of revenue.",
+          "filing_id": "NVDA_10-K_2024-01-28",
+          "section": "MD&A",
+          "evidence": "Gross margin increased in fiscal year 2024, primarily driven by Data Center revenue growth and lower net inventory provisions as a percentage of revenue.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA's net income for fiscal year 2025 was $72.88 billion.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A",
+          "evidence": "Net income | $ | 72,880 | | | $ | 29,760 | | | Up 145%",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA's fiscal year 2025 net income was up 145% from a year earlier.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A",
+          "evidence": "Net income | $ | 72,880 | | | $ | 29,760 | | | Up 145%",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says its gross margin increased in fiscal 2025, driven by a higher mix of Data Center revenue.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A",
+          "evidence": "Gross margin increased in fiscal year 2025 driven by a higher mix of Data Center revenue.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA's net income for the first quarter of fiscal 2026 was down 15% from the previous quarter.",
+          "filing_id": "NVDA_10-Q_2025-04-27",
+          "section": "MD&A",
+          "evidence": "Net income | $ | 18,775 | | | $ | 22,091 | | | $ | 14,881 | | | (15) | % | | 26 | %",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says its first-quarter fiscal 2026 gross margin decreased, primarily due to a charge associated with H20 excess inventory and purchase obligations.",
+          "filing_id": "NVDA_10-Q_2025-04-27",
+          "section": "MD&A",
+          "evidence": "Gross margin decreased from a year ago and sequentially, primarily due to a $4.5 billion charge associated with H20 excess inventory and purchase obligations",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA's net income for the third quarter of fiscal 2026 was $31.91 billion.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "Net income | $ | 31,910 | | | $ | 26,422 | | | $ | 19,309 | | | 21 | % | | 65 | %",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA's third-quarter fiscal 2026 net income was up 65% from a year earlier.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "Net income | $ | 31,910 | | | $ | 26,422 | | | $ | 19,309 | | | 21 | % | | 65 | %",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
     }
   ]
 }
