@@ -1,0 +1,13 @@
+{
+  "split": "dev",
+  "arm": "fts5",
+  "golden_set_version": 1,
+  "cases": 17,
+  "chunk_tokens": 600,
+  "context_budget": 32000,
+  "floors": {
+    "hit@10": 0.88,
+    "recall@10": 0.82,
+    "mrr": 0.73
+  }
+}

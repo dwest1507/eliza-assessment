@@ -1,0 +1,20 @@
+{
+  "packages": {
+    ".": {
+      "release-type": "simple",
+      "package-name": "eliza-assessment",
+      "changelog-path": "CHANGELOG.md",
+      "extra-files": [
+        "frontend/package.json",
+        "backend/pyproject.toml",
+        {
+          "type": "toml",
+          "path": "backend/uv.lock",
+          "jsonpath": "$.package[?(@.name.value=='edgar-rag')].version"
+        }
+      ]
+    }
+  },
+  "bootstrap-sha": "63e2045837ea91fa9250d6ea4c25240e22839ea4",
+  "$schema": "https://raw.githubusercontent.com/googleapis/release-please/main/schemas/config.json"
+}
