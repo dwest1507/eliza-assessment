@@ -388,6 +388,36 @@ def test_only_the_lead_in_sentence_of_a_paragraph_ending_in_a_colon_is_exempt():
     ]
 
 
+def test_each_claim_carries_its_nearest_heading_and_a_table_row_its_header_row():
+    answer = """\
+Apple outsources most manufacturing [S1].
+
+## Apple's risks
+
+It faces new tariffs [S1].
+
+**Tesla (TSLA)**
+
+It depends on its CEO [S2].
+
+| Company | FY2025 revenue [S3] |
+|---|---|
+| Apple | $416.2 billion [S3] |
+
+## Outlook
+
+Revenue may grow [S4].
+"""
+
+    assert [(c.text, c.heading, c.table_header) for c in claims(answer)] == [
+        ("Apple outsources most manufacturing.", "", ""),  # above any heading
+        ("It faces new tariffs.", "Apple's risks", ""),
+        ("It depends on its CEO.", "Tesla (TSLA)", ""),  # a bold label heads what follows
+        ("| Apple | $416.2 billion |", "Tesla (TSLA)", "| Company | FY2025 revenue |"),
+        ("Revenue may grow.", "Outlook", ""),  # a heading ends the table before it
+    ]
+
+
 def test_a_run_of_tags_after_the_full_stop_belongs_to_the_sentence_before_it():
     answer = "Apple faces tariffs. Tesla faces incentive cuts. [S1] [S5] [S8]"
 

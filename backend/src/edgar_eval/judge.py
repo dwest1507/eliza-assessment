@@ -17,8 +17,11 @@ Two judgments, each a narrow question over the state it needs:
 - **Faithfulness.** The answer's claims (`edgar_eval.answer_checks.claims`: every
   sentence but its headings, Coverage Gap wordings and lead-ins) are grouped by the
   Sources they cite. One request per group: the state is those Sources' text, and each
-  claim is a Choice between supported, unsupported and contradicted. A claim citing no
-  Source of the turn, an uncited sentence among them, is unsupported and never sent.
+  claim is a Choice between supported, unsupported and contradicted. Beside the claim,
+  marked as context and not judged, go its nearest heading and, for a table row, the
+  table's header row, so "it" and a row of figures keep their meaning; each verdict
+  records them. A claim citing no Source of the turn, an uncited sentence among them,
+  is unsupported and never sent.
   Faithfulness is the share of claims supported by the Sources they cite.
 
 The key is read from `JEV_API_KEY` (`backend/.env`). The SDK is a dev dependency and is
@@ -88,6 +91,11 @@ _CLAIM_CRITERIA = {
     "contradicted": "The sources say something different from the claim, such as another "
     "figure, period, company or direction of change.",
 }
+_CONTEXT_NOTE = (
+    " `context` is where `claim` sits in the answer: the heading above it and, for a table "
+    'row, the table\'s header row. Use it only to read `claim`, such as what "it" refers to '
+    "or what a row's figures measure; judge `claim` alone, not `context`."
+)
 
 
 @dataclass(frozen=True)
@@ -116,6 +124,9 @@ class ClaimJudgment:
     tags: tuple[str, ...]
     verdict: str
     probabilities: dict[str, float]
+    heading: str = ""
+    """The context the claim was judged with (`edgar_eval.answer_checks.Claim`)."""
+    table_header: str = ""
 
 
 @dataclass(frozen=True)
@@ -214,7 +225,7 @@ class JevJudge:
             if known:
                 groups.setdefault(known, []).append(i)
             else:
-                verdicts[i] = ClaimJudgment(claim.text, claim.tags, "unsupported", {})
+                verdicts[i] = _verdict(claim, "unsupported", {})
         from typesafe_sdk import Choice
 
         for tags, members in groups.items():
@@ -226,17 +237,14 @@ class JevJudge:
             }
             questions = {
                 f"claim_{i}": Choice(
-                    instructions={"claim": claims[i].text, "question": _CLAIM_QUESTION},
-                    criteria=_CLAIM_CRITERIA,
+                    instructions=_claim_instructions(claims[i]), criteria=_CLAIM_CRITERIA
                 )
                 for i in members
             }
             response = self._ask(state, questions, responses)
             for i in members:
                 answer = response.choices[f"claim_{i}"]
-                verdicts[i] = ClaimJudgment(
-                    claims[i].text, claims[i].tags, answer.choice, dict(answer.probabilities)
-                )
+                verdicts[i] = _verdict(claims[i], answer.choice, dict(answer.probabilities))
         return tuple(verdicts[i] for i in range(len(claims)))
 
     def _ask(self, state: dict, questions: dict, responses: list[Any]) -> Any:
@@ -253,6 +261,26 @@ class JevJudge:
             )
         responses.append(response)
         return response
+
+
+def _claim_instructions(claim: Claim) -> dict[str, Any]:
+    """A claim's question: the claim, and beside it, marked as context, its heading and
+    table header when it has them. A claim with neither is asked exactly as before claims
+    carried context."""
+    context = {
+        key: value
+        for key, value in (("heading", claim.heading), ("table_header", claim.table_header))
+        if value
+    }
+    if not context:
+        return {"claim": claim.text, "question": _CLAIM_QUESTION}
+    return {"claim": claim.text, "context": context, "question": _CLAIM_QUESTION + _CONTEXT_NOTE}
+
+
+def _verdict(claim: Claim, verdict: str, probabilities: dict[str, float]) -> ClaimJudgment:
+    return ClaimJudgment(
+        claim.text, claim.tags, verdict, probabilities, claim.heading, claim.table_header
+    )
 
 
 def _strings(value: object):

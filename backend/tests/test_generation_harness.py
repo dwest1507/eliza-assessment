@@ -517,6 +517,77 @@ def test_an_uncited_sentence_is_unsupported_without_a_jev_call(index, tmp_path):
     assert report.overall.faithfulness == 0.5
 
 
+CONTEXT_ANSWER = """\
+## Tesla
+
+It depends on its CEO [S1].
+
+| Company | Main risk |
+|---|---|
+| Apple | Outsourcing [S1] |
+"""
+
+
+def _context_report(index, answer):
+    from edgar_eval.generation import evaluate
+
+    jev = FakeJev(
+        choices={
+            "It depends on its CEO.": "supported",
+            "| Apple | Outsourcing |": "supported",
+            "Apple relies on outsourcing partners in Asia.": "supported",
+        }
+    )
+    report = evaluate(
+        [_case("apple", "What are the primary risk factors facing Apple?")],
+        FakeModel(answer),
+        JevJudge(client=jev),
+        index,
+        names={"AAPL": ("AAPL", "Apple")},
+        fact_values=lambda filing_id: [],
+        log_path=None,
+    )
+    asked = [q.instructions for r in jev.requests for q in r.questions.values()]
+    return report, asked
+
+
+def test_a_claim_reaches_jev_with_its_heading_and_a_table_row_with_its_header(index):
+    report, asked = _context_report(index, CONTEXT_ANSWER)
+
+    # The context is beside the claim, marked as context, never part of the claim.
+    assert [(i["claim"], i["context"]) for i in asked] == [
+        ("It depends on its CEO.", {"heading": "Tesla"}),
+        (
+            "| Apple | Outsourcing |",
+            {"heading": "Tesla", "table_header": "| Company | Main risk |"},
+        ),
+    ]
+    assert all("`context`" in i["question"] for i in asked)
+    assert report.cases[0].faithfulness == 1.0
+
+
+def test_the_report_stores_each_claims_context_beside_it(index):
+    report, _ = _context_report(index, CONTEXT_ANSWER)
+
+    [case] = report.to_dict()["cases"]
+    assert [(c["claim"], c["heading"], c["table_header"]) for c in case["judgments"]["claims"]] == [
+        ("It depends on its CEO.", "Tesla", ""),
+        ("| Apple | Outsourcing |", "Tesla", "| Company | Main risk |"),
+    ]
+
+
+def test_a_claim_with_no_heading_or_table_reaches_jev_as_before(index):
+    report, asked = _context_report(index, "Apple relies on outsourcing partners in Asia [S1].")
+
+    # No context and no mention of one: the same request as before claims carried context.
+    [instructions] = asked
+    assert instructions.keys() == {"claim", "question"}
+    assert instructions["claim"] == "Apple relies on outsourcing partners in Asia."
+    assert "context" not in instructions["question"]
+    [claim] = report.to_dict()["cases"][0]["judgments"]["claims"]
+    assert (claim["heading"], claim["table_header"]) == ("", "")
+
+
 def test_the_command_line_prints_scores_with_cost_and_latency_and_writes_json(index, tmp_path):
     import io
     import json

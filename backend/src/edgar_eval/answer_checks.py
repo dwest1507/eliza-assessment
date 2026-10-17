@@ -74,6 +74,11 @@ class Unit:
     lead_in: bool = False
     """True for a paragraph exempt only because it ends with a colon: its sentences
     before the colon still make claims."""
+    heading: str = ""
+    """The nearest heading or bold label above the unit, without its markup or tags;
+    empty above the first."""
+    table_header: str = ""
+    """For a table row after the first, the table's header row without its tags."""
 
 
 @dataclass(frozen=True)
@@ -110,12 +115,17 @@ def units(answer: str) -> list[Unit]:
     in_coverage = False
     paragraph: list[str] = []
     table_rows = 0
+    heading = header = ""
 
     def flush() -> None:
+        nonlocal heading
         if paragraph:
             text = " ".join(paragraph)
             lead_in = not in_coverage and _is_lead_in(text)
-            result.append(_unit(text, in_coverage or lead_in, lead_in))
+            unit = _unit(text, in_coverage or lead_in, heading, lead_in)
+            result.append(unit)
+            if _BOLD_ONLY.match(text):
+                heading = _heading_text(text)  # a bold label heads what follows
             paragraph.clear()
 
     for raw in answer.splitlines():
@@ -126,7 +136,11 @@ def units(answer: str) -> list[Unit]:
                 continue
             table_rows += 1
             # The first row of a table is its header; a separator row follows it.
-            result.append(_unit(line, in_coverage or table_rows == 1))
+            if table_rows == 1:
+                header = strip_tags(line)
+                result.append(_unit(line, True, heading))
+            else:
+                result.append(_unit(line, in_coverage, heading, table_header=header))
             continue
         table_rows = 0
         if not line or _RULE.match(line):
@@ -135,7 +149,8 @@ def units(answer: str) -> list[Unit]:
         if _HEADING.match(line):
             flush()
             in_coverage = bool(_COVERAGE.match(line))
-            result.append(_unit(line, True))
+            result.append(_unit(line, True, heading))
+            heading = _heading_text(line)
             continue
         if _LIST_ITEM.match(line):
             flush()
@@ -153,9 +168,24 @@ def units(answer: str) -> list[Unit]:
     return result
 
 
-def _unit(text: str, exempt: bool, lead_in: bool = False) -> Unit:
+def _unit(
+    text: str, exempt: bool, heading: str, lead_in: bool = False, table_header: str = ""
+) -> Unit:
     bold = bool(_BOLD_ONLY.match(text))
-    return Unit(text=text, tags=tags_in(text), exempt=exempt or bold, lead_in=lead_in and not bold)
+    return Unit(
+        text=text,
+        tags=tags_in(text),
+        exempt=exempt or bold,
+        lead_in=lead_in and not bold,
+        heading=heading,
+        table_header=table_header,
+    )
+
+
+def _heading_text(line: str) -> str:
+    """A heading or bold label as context for what follows: "## Apple's risks [S1]" is
+    "Apple's risks"."""
+    return strip_tags(re.sub(r"^#{1,6}\s+", "", line).strip("*_: ").strip())
 
 
 def _is_lead_in(text: str) -> bool:
@@ -485,6 +515,12 @@ class Claim:
     tags: tuple[str, ...]
     """Empty for a sentence that cites no Source: it is unsupported, with nothing to
     judge it against."""
+    heading: str = ""
+    """Context, not part of the claim: the nearest heading or bold label above the
+    sentence, so "It" keeps its subject. Empty above the first heading."""
+    table_header: str = ""
+    """Context, not part of the claim: for a table row, the table's header row, so a
+    row of numbers keeps its meaning. Empty outside a table."""
 
 
 def claims(answer: str) -> list[Claim]:
@@ -502,6 +538,9 @@ def claims(answer: str) -> list[Claim]:
     wordings and the plain variants `check_coverage_gaps` recognises) or saying what
     the Sources lack, which have nothing to cite. A sentence that rests on a tag is
     judged whatever it says.
+
+    Each claim carries its context for the judge: the nearest heading above it and, for
+    a table row, the table's header row (`Claim.heading`, `Claim.table_header`).
     """
     found: list[Claim] = []
     for unit in units(answer):
@@ -515,7 +554,7 @@ def claims(answer: str) -> list[Claim]:
                 continue
             if not tags and (text.endswith(":") or _states_gap(text)):
                 continue
-            found.append(Claim(text=text, tags=tags))
+            found.append(Claim(text, tags, unit.heading, unit.table_header))
     return found
 
 
