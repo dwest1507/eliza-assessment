@@ -34,7 +34,8 @@ with each challenger. `generators` runs it once per model in
 report to `generation-<split>.json` and each other's to `generation-<split>-<model>.json`
 (the names `make eval-generation` uses), and compares the default with each other model;
 `--model` (repeatable) limits it to the generators named, the default always run first
-(Golden Set version 2 compares `gpt-6-luna` with `claude-haiku-5-5` only).
+(`make eval-generators` passes `gpt-6-luna` and `claude-haiku-5-5`, Golden Set version
+2's comparison, unless `MODELS=` says otherwise).
 With `--reuse`, a report already written is read instead of rerun. Both call the
 generators and Jev, so they cost money. `compare` applies a rule to generation reports
 already written, the first being the shipped choice. All three print the comparison and

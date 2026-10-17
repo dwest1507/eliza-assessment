@@ -128,11 +128,11 @@ eval-arms: $(INDEX) $(EMBEDDINGS) ## Answer the split through every Arm and choo
 	$(call require_keys,$$keys JEV_API_KEY)
 	$(UV) python -m edgar_eval.selection arms --split $(SPLIT)
 
-# The generators `make eval-generators` compares; empty for every one in the table. Golden
-# Set version 2 compares two: MODELS="gpt-6-luna claude-haiku-5-5".
-MODELS ?=
+# The generators `make eval-generators` compares: Golden Set version 2's two by default.
+# MODELS="..." names other rows of the table; MODELS= (empty) runs every one.
+MODELS ?= gpt-6-luna claude-haiku-5-5
 
-eval-generators: $(INDEX) ## Answer the split with each compared generator and choose one by the selection rule [MODELS="gpt-6-luna claude-haiku-5-5"] (costs money)
+eval-generators: $(INDEX) ## Answer the split with gpt-6-luna and claude-haiku-5-5 and choose one by the selection rule [MODELS="..."; empty for every generator] (costs money)
 	@keys=$$( ($(GENERATOR_KEYS)) && ($(GENERATOR_KEYS) $(or $(MODELS),--all)) ) || exit 1; \
 	$(call require_keys,$$keys JEV_API_KEY)
 	$(UV) python -m edgar_eval.selection generators --split $(SPLIT) $(foreach m,$(MODELS),--model $(m))

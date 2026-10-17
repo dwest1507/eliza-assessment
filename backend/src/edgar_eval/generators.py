@@ -100,7 +100,8 @@ output and are already counted in the output tokens. Every input token is priced
 full rate, ignoring cached input, so a cost is an upper bound.
 
 Golden Set version 1 compared the first four; version 2 compares `gpt-6-luna` with
-`claude-haiku-5-5` only (`make eval-generators MODELS="gpt-6-luna claude-haiku-5-5"`).
+`claude-haiku-5-5` only, which is what `make eval-generators` runs unless `MODELS=` names
+other rows (or is empty, for every row).
 The version 1 rows stay at their prices, so a version 1 run is still accepted and priced
 as its saved reports were."""
 
