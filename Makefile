@@ -128,10 +128,14 @@ eval-arms: $(INDEX) $(EMBEDDINGS) ## Answer the split through every Arm and choo
 	$(call require_keys,$$keys JEV_API_KEY)
 	$(UV) python -m edgar_eval.selection arms --split $(SPLIT)
 
-eval-generators: $(INDEX) ## Answer the split with each of the four generators and choose one by the selection rule (costs money)
-	@keys=$$($(GENERATOR_KEYS) --all) || exit 1; \
+# The generators `make eval-generators` compares; empty for every one in the table. Golden
+# Set version 2 compares two: MODELS="gpt-6-luna claude-haiku-5-5".
+MODELS ?=
+
+eval-generators: $(INDEX) ## Answer the split with each compared generator and choose one by the selection rule [MODELS="gpt-6-luna claude-haiku-5-5"] (costs money)
+	@keys=$$( ($(GENERATOR_KEYS)) && ($(GENERATOR_KEYS) $(or $(MODELS),--all)) ) || exit 1; \
 	$(call require_keys,$$keys JEV_API_KEY)
-	$(UV) python -m edgar_eval.selection generators --split $(SPLIT)
+	$(UV) python -m edgar_eval.selection generators --split $(SPLIT) $(foreach m,$(MODELS),--model $(m))
 
 SPLIT ?= dev
 RETRIEVAL_REPORT = data/derived/eval/retrieval-$(SPLIT).json

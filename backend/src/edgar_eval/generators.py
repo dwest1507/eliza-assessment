@@ -7,8 +7,8 @@ Everything that depends on a generator reads the table: the answer cost
 (`answer_model`), the list `make eval-generators` runs, and the API key the Makefile
 checks for before a paid run:
 
-    python -m edgar_eval.generators keys [MODEL]   # the key MODEL's provider needs
-    python -m edgar_eval.generators keys --all     # every compared generator's keys
+    python -m edgar_eval.generators keys [MODEL...]   # the keys those models' providers need
+    python -m edgar_eval.generators keys --all        # every compared generator's keys
 
 With no MODEL, the default generator is `OPENAI_MODEL`, else the shipped one (the
 table's first row). A model not in the table is refused: it has no provider and no
@@ -87,14 +87,22 @@ GENERATORS: tuple[Generator, ...] = (
     Generator("gpt-6.1-sol", OPENAI, Price(input=2.00, output=10.00)),
     Generator("claude-sonnet-5-5", ANTHROPIC, Price(input=2.00, output=10.00)),
     Generator("claude-opus-5-5", ANTHROPIC, Price(input=4.00, output=20.00)),
+    Generator("claude-haiku-5-5", ANTHROPIC, Price(input=0.10, output=0.50)),
 )
 """The generators the comparison measures, the shipped default first.
 
-Prices are list prices per million tokens on 2026-10-16: OpenAI's standard tier
+Prices are list prices per million tokens: OpenAI's standard tier
 (developers.openai.com/api/docs/pricing) and Anthropic's first-party API
-(platform.claude.com/docs/en/about-claude/pricing). Reasoning and thinking tokens are
-billed as output and are already counted in the output tokens. Every input token is
-priced at the full rate, ignoring cached input, so a cost is an upper bound."""
+(platform.claude.com/docs/en/about-claude/pricing), listed on 2026-10-16, and
+`claude-haiku-5-5` on 2026-10-17 at its rate for prompts under 100k tokens (an Answer
+Context stays within the 32k context budget). Reasoning and thinking tokens are billed as
+output and are already counted in the output tokens. Every input token is priced at the
+full rate, ignoring cached input, so a cost is an upper bound.
+
+Golden Set version 1 compared the first four; version 2 compares `gpt-6-luna` with
+`claude-haiku-5-5` only (`make eval-generators MODELS="gpt-6-luna claude-haiku-5-5"`).
+The version 1 rows stay at their prices, so a version 1 run is still accepted and priced
+as its saved reports were."""
 
 
 def generator(model: str | None = None) -> Generator | None:
@@ -137,11 +145,11 @@ def main(argv: list[str] | None = None, *, out: TextIO | None = None) -> int:
     parser = argparse.ArgumentParser(description="The compared generators.")
     commands = parser.add_subparsers(dest="command", required=True)
     keys = commands.add_parser("keys", help="print the API key variables a run needs")
-    keys.add_argument("model", nargs="?", help="the generator (default: the default one)")
+    keys.add_argument("model", nargs="*", help="the generators (default: the default one)")
     keys.add_argument("--all", action="store_true", help="every compared generator")
     args = parser.parse_args(argv)
 
-    rows = GENERATORS if args.all else (_require(args.model),)
+    rows = GENERATORS if args.all else tuple(_require(m) for m in args.model or [None])
     print("\n".join(dict.fromkeys(g.provider.key_env_var for g in rows)), file=out)
     return 0
 

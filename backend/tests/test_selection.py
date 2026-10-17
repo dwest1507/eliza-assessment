@@ -2,7 +2,9 @@
 is distinguishably better on Fact Recall, question by question, and not worse on
 Faithfulness or Coverage Gaps; the cheapest wins ties."""
 
+import io
 import json
+from pathlib import Path
 
 import pytest
 
@@ -207,3 +209,75 @@ def test_setting_reports_are_named_by_their_setting_and_judged_by_the_arm_rule(t
     assert not choice["comparisons"]["chunks-300-budget-24000"]["qualifies"]  # behind on gaps
     assert choice["chosen"] == "chunks-450-budget-32000"  # the cheaper of the two qualifying
     assert "Chosen: chunks-450-budget-32000" in capsys.readouterr().out
+
+
+# --- Limiting the generator comparison ----------------------------------------------------
+# Golden Set version 2 compares gpt-6-luna with claude-haiku-5-5 only; the other rows stay
+# in the table so version 1's reports still price.
+
+
+def _fake_generation_runs(monkeypatch, tmp_path):
+    from edgar_eval import generation, selection
+
+    ran = []
+
+    def fake_main(argv, *, out=None):
+        model, target = argv[argv.index("--model") + 1], Path(argv[argv.index("--json") + 1])
+        ran.append(model)
+        cases = [{"case_id": "c0", "fact_recall": 0.5, "faithfulness": 1.0, "coverage_gaps": None}]
+        target.write_text(json.dumps({"model": model, "split": "dev", "cases": cases}))
+        return 0
+
+    monkeypatch.setattr(generation, "main", fake_main)
+    monkeypatch.setattr(selection, "_EVAL_DIR", tmp_path)
+    return ran
+
+
+def test_the_generator_comparison_can_be_limited_to_named_generators(monkeypatch, tmp_path):
+    from edgar_eval.selection import main
+
+    ran = _fake_generation_runs(monkeypatch, tmp_path)
+    out = tmp_path / "generator-choice-dev.json"
+
+    main(["generators", "--model", "claude-haiku-5-5", "--json", str(out)], out=io.StringIO())
+
+    assert ran == ["gpt-6-luna", "claude-haiku-5-5"]  # the shipped generator always first
+    written = json.loads(out.read_text())
+    assert written["reports"] == [
+        str(tmp_path / "generation-dev.json"),
+        str(tmp_path / "generation-dev-claude-haiku-5-5.json"),
+    ]
+    assert list(written["comparisons"]) == ["claude-haiku-5-5"]
+
+
+def test_naming_the_shipped_generator_runs_it_once(monkeypatch, tmp_path):
+    from edgar_eval.selection import main
+
+    ran = _fake_generation_runs(monkeypatch, tmp_path)
+    argv = ["generators", "--model", "gpt-6-luna", "--model", "claude-haiku-5-5"]
+
+    main([*argv, "--json", str(tmp_path / "c.json")], out=io.StringIO())
+
+    assert ran == ["gpt-6-luna", "claude-haiku-5-5"]
+
+
+def test_with_no_generator_named_every_generator_in_the_table_runs(monkeypatch, tmp_path):
+    from edgar_eval.generators import GENERATORS
+    from edgar_eval.selection import main
+
+    ran = _fake_generation_runs(monkeypatch, tmp_path)
+
+    main(["generators", "--json", str(tmp_path / "c.json")], out=io.StringIO())
+
+    assert ran == [g.model for g in GENERATORS]
+
+
+def test_a_generator_not_in_the_table_is_refused_before_any_run(monkeypatch, tmp_path):
+    from edgar_eval.selection import main
+
+    ran = _fake_generation_runs(monkeypatch, tmp_path)
+
+    with pytest.raises(SystemExit) as stopped:
+        main(["generators", "--model", "gemini-9"], out=io.StringIO())
+
+    assert stopped.value.code != 0 and ran == []

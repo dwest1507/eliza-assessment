@@ -21,7 +21,7 @@ mean answer cost, then the earliest listed. `RULES` states the rules, and is the
 place they differ.
 
     python -m edgar_eval.selection arms [--split dev] [--reuse]
-    python -m edgar_eval.selection generators [--split dev] [--reuse]
+    python -m edgar_eval.selection generators [--split dev] [--reuse] [--model MODEL]...
     python -m edgar_eval.selection compare SHIPPED.json CHALLENGER.json...
         [--rule arms|generators|settings] [--json PATH]
 
@@ -30,7 +30,9 @@ place they differ.
 with each challenger. `generators` runs it once per model in
 `edgar_eval.generators.GENERATORS` on the Shipped Arm, writing the default generator's
 report to `generation-<split>.json` and each other's to `generation-<split>-<model>.json`
-(the names `make eval-generation` uses), and compares the default with each other model.
+(the names `make eval-generation` uses), and compares the default with each other model;
+`--model` (repeatable) limits it to the generators named, the default always run first
+(Golden Set version 2 compares `gpt-6-luna` with `claude-haiku-5-5` only).
 With `--reuse`, a report already written is read instead of rerun. Both call the
 generators and Jev, so they cost money. `compare` applies a rule to generation reports
 already written, the first being the shipped choice. All three print the comparison and
@@ -84,12 +86,17 @@ def _run_arms(split: str, reuse: bool, out: TextIO) -> list[Path]:
     return paths
 
 
-def _run_generators(split: str, reuse: bool, out: TextIO) -> list[Path]:
+def _run_generators(split: str, reuse: bool, out: TextIO, only: Sequence[str] = ()) -> list[Path]:
     from edgar_eval import generation
-    from edgar_eval.generators import GENERATORS
+    from edgar_eval.generators import GENERATORS, generator
 
+    unknown = [m for m in only if generator(m) is None]
+    if unknown:
+        listed = ", ".join(g.model for g in GENERATORS)
+        raise SystemExit(f"error: not compared generators: {', '.join(unknown)} (one of {listed})")
+    models = [g.model for g in GENERATORS if g is GENERATORS[0] or not only or g.model in only]
     paths = []
-    for n, model in enumerate(g.model for g in GENERATORS):
+    for n, model in enumerate(models):
         path = _EVAL_DIR / (
             f"generation-{split}.json" if n == 0 else f"generation-{split}-{model}.json"
         )
@@ -110,10 +117,11 @@ class Rule:
     behind_on_none: tuple[Score, ...]
     named_by: str
     """The generation report field that names a candidate (falling back to its model)."""
-    run: Callable[[str, bool, TextIO], list[Path]] | None
+    run: Callable[..., list[Path]] | None
     """Runs the generation harness once per candidate on a split (reusing reports already
     written when asked) and returns the reports, the shipped choice's first; None for a
-    rule applied only to reports already written (`compare`)."""
+    rule applied only to reports already written (`compare`). The generator rule's also
+    takes `only`, the models to limit the run to."""
     choice_file: str
     """The default file the choice is written to, before `-<split>.json`."""
 
@@ -249,6 +257,9 @@ def main(argv: list[str] | None = None, *, out: TextIO | None = None) -> int:
     generators = commands.add_parser("generators", help="run every generator through the harness")
     generators.add_argument("--split", choices=("dev", "holdout", "all"), default="dev")
     generators.add_argument("--reuse", action="store_true", help="read reports already written")
+    generators.add_argument(
+        "--model", action="append", default=[], help="run only this generator (repeatable)"
+    )
     generators.add_argument("--json", type=Path)
     reports = commands.add_parser("compare", help="compare generation reports")
     reports.add_argument("reports", type=Path, nargs="+", help="the shipped choice's first")
@@ -263,7 +274,8 @@ def main(argv: list[str] | None = None, *, out: TextIO | None = None) -> int:
         rule = args.command
         run = RULES[rule].run
         assert run is not None
-        paths = run(args.split, args.reuse, out)
+        only = {"only": args.model} if args.command == "generators" else {}
+        paths = run(args.split, args.reuse, out, **only)
         target = args.json or _EVAL_DIR / f"{RULES[rule].choice_file}-{args.split}.json"
     data = [json.loads(Path(p).read_text(encoding="utf-8")) for p in paths]
     candidates = [Candidate.from_report(d, rule) for d in data]
