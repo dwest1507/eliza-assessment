@@ -170,7 +170,7 @@ make dev API_PORT=8001 WEB_PORT=3001   # other ports
 
 `make dev` builds the index first if it is missing, and installs the front-end's dependencies if they are missing or `package-lock.json` changed. If either server exits, it stops the other, and Ctrl+C stops both.
 
-In the workspace, type a question or click one of the six starter prompts, which are the Golden Set's starter cases. The answer streams in as Markdown. Every `[Sn]` citation is a link: clicking it opens the Sources panel at that Source, showing its Filing ID, Form Type, Report Period, Fiscal Period, Section, Item and passage text. A Financial Facts Source shows a table of the figures that Filing reports instead of a passage. The answer's Sources are also listed under it, and they are clickable as soon as the answer starts. Follow-up questions build on earlier ones ("Which of them has the most regulatory exposure?", "And what about Microsoft?"), and each answer's Query Scope chips show what was inherited. The conversation is kept in the browser's session storage, so a refresh keeps it; "New conversation" in the header clears it.
+In the workspace, type a question or click one of the six starter prompts, which are labelled cases: the brief's three questions from the Brief Suite and three from the Golden Set. The answer streams in as Markdown. Every `[Sn]` citation is a link: clicking it opens the Sources panel at that Source, showing its Filing ID, Form Type, Report Period, Fiscal Period, Section, Item and passage text. A Financial Facts Source shows a table of the figures that Filing reports instead of a passage. The answer's Sources are also listed under it, and they are clickable as soon as the answer starts. Follow-up questions build on earlier ones ("Which of them has the most regulatory exposure?", "And what about Microsoft?"), and each answer's Query Scope chips show what was inherited. The conversation is kept in the browser's session storage, so a refresh keeps it; "New conversation" in the header clears it.
 
 The browser never calls the API directly. It posts to the workspace's own route (`frontend/app/api/chat/route.ts`), which forwards the conversation's last 11 messages (the turns the prompt uses, so a long conversation keeps working) to the API and streams the answer back, so the API's URL stays on the server. When the API rejects a request, the workspace shows its reason. That URL comes from `BACKEND_URL` in `frontend/.env` (copy `frontend/.env.example`); it defaults to `http://127.0.0.1:8000`, and `make dev` points it at the API it starts. To run the halves separately, use `make api` and `cd frontend && npm run dev`. [`frontend/README.md`](frontend/README.md) describes the app's layout and tests.
 
@@ -276,6 +276,7 @@ context.messages  # the rendered prompt for the Answer Call
 │   ├── reference/sectors.csv  the curated Sector table, one row per Company
 │   ├── reference/missing_companies.csv  notable Companies not in the Corpus
 │   ├── eval/golden_set.json   the Golden Set: labelled evaluation questions and starter prompts
+│   ├── eval/brief_suite.json  the Brief Suite: the brief's questions, a must-pass check
 │   └── derived/               anything built from the Corpus (gitignored)
 ├── docs/
 │   ├── AI-RAG Assessment.md   the assessment brief

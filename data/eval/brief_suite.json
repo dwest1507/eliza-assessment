@@ -1,0 +1,811 @@
+{
+  "version": 1,
+  "about": "The Brief Suite: the brief's example questions and variants of them, outside the Golden Set's dev/holdout split. Each case runs 5 times and passes when every must-state Required Fact is stated in at least 4 of the 5 runs and no run has a Contradicted Claim (ADR 0012, docs/golden-set.md). Same case schema as the Golden Set, with no split; a case rewritten from a version 1 case names it in replaces.",
+  "cases": [
+    {
+      "id": "brief-risk-aapl-tsla-jpm",
+      "replaces": "risk-aapl-tsla-jpm",
+      "question": "What are the primary risk factors facing Apple, Tesla, and JPMorgan, and how do they compare?",
+      "history": [],
+      "question_type": "risk",
+      "starter": {
+        "order": 1,
+        "label": "Compare the risk factors of Apple, Tesla and JPMorgan"
+      },
+      "tags": [
+        "brief_example"
+      ],
+      "notes": "Brief example 1 (EDA 8.1), rewritten from risk-aapl-tsla-jpm in one-claim, tiered facts drafted from the whole Risk Factors Section of each Company's latest 10-K, plus Apple's later 10-Q, which reports no material changes. The must-state facts are each Company's defining risks. The comparison rests on themes all three name (trade policy and tariffs, regulation, cyber attacks, competition), which the details cover. Apple's fiscal year ends a quarter before the other two.",
+      "expected_sources": [
+        {
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "AAPL_10-Q_2025-12-27",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Apple says a significant majority of its manufacturing is performed by outsourcing partners located primarily in China mainland, India, Japan, South Korea, Taiwan and Vietnam.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "A significant majority of the Company’s manufacturing is performed in whole or in part by outsourcing partners located primarily in China mainland, India, Japan, South Korea, Taiwan and Vietnam",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple says restrictions on international trade, such as tariffs, can materially adversely affect its business and supply chain.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Restrictions on international trade, such as tariffs and other controls on imports or exports of goods, technology or data, can materially adversely affect the Company’s business and supply chain.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple says it is subject to antitrust investigations and litigation in various jurisdictions around the world.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "The Company is also currently subject to antitrust investigations and litigation in various jurisdictions around the world",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple reports that new U.S. tariffs, including on imports from China and India, were announced beginning in the second quarter of fiscal 2025.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Beginning in the second quarter of 2025, new tariffs were announced on imports to the U.S. (“U.S. Tariffs”), including additional tariffs on imports from China, India, Japan, South Korea, Taiwan, Vietnam and the European Union (“EU”), among others.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says the EU's Digital Markets Act provides for significant fines and penalties for noncompliance.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "The DMA provides for significant fines and penalties for noncompliance.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says a reversal on appeal of the remedies ordered against Google could prohibit Google from offering Apple commercial terms for search distribution.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "A reversal of the order on appeal could result in imposition of certain remedies initially proposed by the DOJ, such as those prohibiting Google from offering the Company commercial terms for search distribution.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says obtaining certain components from single or limited sources subjects it to significant supply and pricing risks.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Because the Company currently obtains certain components from single or limited sources, the Company is subject to significant supply and pricing risks.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says adverse macroeconomic conditions can materially adversely affect demand for its products and services.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Adverse macroeconomic conditions, including slow growth or recession, high unemployment, inflation, tighter credit, higher interest rates, and currency fluctuations, can adversely impact consumer confidence and spending and materially adversely affect demand for the Company’s products and services.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says its high profile puts it at a relatively greater risk of being targeted by malicious attacks.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "the Company is at a relatively greater risk of being targeted because of its high profile and the value of the confidential information it creates, owns, manages, stores and processes",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says it generates a significant portion of its net sales from a single product category.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "the Company generates a significant portion of its net sales from a single product category",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's first-quarter fiscal 2026 10-Q reports no material changes to its risk factors since its 2025 Form 10-K.",
+          "filing_id": "AAPL_10-Q_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "There have been no material changes to the Company’s risk factors since the 2025 Form 10-K.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says its future business depends on developing its driver assistance systems and autonomous driving solutions.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "our future business depends on development of our driver assistance systems and autonomous driving solutions",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla says it is highly dependent on the services of Elon Musk, its Chief Executive Officer.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We are highly dependent on the services of Elon Musk, Technoking of Tesla and our Chief Executive Officer.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla says U.S. trade policy changes in 2025, including higher import tariffs, have impacted its supply chain costs.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "U.S. trade policy alterations in 2025, including heightened import tariffs and subsequent retaliatory measures, have impacted our supply chain costs",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla says its future business depends on increasing the production of mass-market vehicles, including Cybercab.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "increasing the production of mass-market vehicles, including Cybercab, our purpose-built Robotaxi product",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says Elon Musk does not devote his full time and attention to Tesla.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "he does not devote his full time and attention to Tesla",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says changing regulations on driver assistance and autonomous driving may delay, restrict or prohibit certain functionalities.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Such regulations, including their enforcement or the enforcement policy associated with the regulations, continue to rapidly change, which increases the likelihood of a patchwork of complex or conflicting regulations, or may delay, restrict or prohibit the availability of certain functionalities and vehicle designs",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says recent government actions have repealed or restricted consumer, manufacturing and charging infrastructure tax credits.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "recent governmental and regulatory actions have repealed and/or restricted consumer, manufacturing and charging infrastructure tax credits",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says it relies on suppliers such as Panasonic and CATL for lithium-ion battery cells.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Currently, we rely on suppliers such as Panasonic and Contemporary Amperex Technology Co. Limited (CATL) for these cells.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says it faces strong competition from a growing list of established and new competitors.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We face strong competition for our products and services from a growing list of established and new competitors.",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan lists legal and regulatory risks, including the impact of extensive supervision and regulation, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Legal and Regulatory risks, including the impact of extensive supervision and regulation",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan says its ability to distribute capital to shareholders could be limited if it does not satisfy regulatory capital requirements.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Capital risks, including the risk that JPMorganChase’s ability to distribute capital to shareholders or to support its business activities could be limited if it does not satisfy applicable regulatory capital requirements.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan lists credit risks, including adverse changes in the financial condition of clients and counterparties, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Credit risks, including the effects from adverse changes in the financial condition of clients, customers, counterparties, central counterparties and other market participants",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan lists market risks, including the effects of changes in interest rates and credit spreads, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Market risks, including the effects that unfavorable economic and market events and conditions, political developments, changes in interest rates and credit spreads, and market fluctuations could have on JPMorganChase’s businesses",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says future security breaches due to cyber attacks are inevitable.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "JPMorganChase has experienced security breaches due to cyber attacks in the past, and future breaches are inevitable.",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says some competitors, such as financial technology companies, may not be subject to banking regulation or may face less stringent oversight.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "certain competitors, such as financial technology companies, may not be subject to banking regulation, or may be subject to less stringent oversight",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan lists the implementation of tariffs and other trade policies among the government policies that could affect economic growth and financial market volatility.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "the implementation of tariffs and other trade policies",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says the significant expansion of private credit could worsen losses among non-bank lenders and their borrowers.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "the significant expansion of private credit could worsen losses among non-bank lenders and their borrowers",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "AAPL",
+            "TSLA",
+            "JPM"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brief-outlook-nvda-revenue-two-years",
+      "replaces": "outlook-nvda-revenue-two-years",
+      "question": "How has NVIDIA's revenue and growth outlook changed over the last two years?",
+      "history": [],
+      "question_type": "outlook",
+      "starter": {
+        "order": 2,
+        "label": "How has NVIDIA's revenue and outlook changed?"
+      },
+      "tags": [
+        "brief_example"
+      ],
+      "notes": "Brief example 2 (EDA 8.2), rewritten from outlook-nvda-revenue-two-years, a version 1 holdout case. The last two years are NVIDIA's eight Filings from Q4 FY2024 (FY2024 10-K) to Q3 FY2026; facts drafted from the whole MD&A of each. Revenue figures and growth rates match the SEC company-facts reference. The outlook half: from demand outrunning supply (next-generation products supply-constrained, Blackwell demand ahead of supply) to Blackwell as the majority of Data Center revenue, with H20 export licensing hurting future revenue. Revenue guidance is in earnings releases, not in the Filings.",
+      "expected_sources": [
+        {
+          "filing_id": "NVDA_10-K_2024-01-28",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "NVDA_10-Q_2024-04-28",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "NVDA_10-Q_2024-10-27",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "NVDA_10-Q_2025-04-27",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "NVIDIA's revenue for fiscal year 2024 was $60.9 billion.",
+          "filing_id": "NVDA_10-K_2024-01-28",
+          "section": "MD&A",
+          "evidence": "Revenue for fiscal year 2024 was $60.9 billion, up 126% from a year ago.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA's fiscal year 2024 revenue was up 126% from a year earlier.",
+          "filing_id": "NVDA_10-K_2024-01-28",
+          "section": "MD&A",
+          "evidence": "Revenue for fiscal year 2024 was $60.9 billion, up 126% from a year ago.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA said at the end of fiscal 2024 that it expected its next-generation products to be supply-constrained based on demand indications.",
+          "filing_id": "NVDA_10-K_2024-01-28",
+          "section": "MD&A",
+          "evidence": "We expect our next-generation products to be supply-constrained based upon demand indications.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA said China was a mid-single-digit percentage of its Data Center revenue in the fourth quarter of fiscal 2024 because of U.S. licensing requirements.",
+          "filing_id": "NVDA_10-K_2024-01-28",
+          "section": "MD&A",
+          "evidence": "China represented a mid-single digit percentage of our Data Center revenue in the fourth quarter of fiscal year 2024 due to USG licensing requirements",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA said in the first quarter of fiscal 2025 that it believed initial demand for Blackwell was well ahead of projected supply for that fiscal year.",
+          "filing_id": "NVDA_10-Q_2024-04-28",
+          "section": "MD&A",
+          "evidence": "We believe the initial demand for Blackwell is well ahead of the projected supply for this fiscal year.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA said in the third quarter of fiscal 2025 that it expected demand for Blackwell to exceed supply for several quarters in fiscal 2026.",
+          "filing_id": "NVDA_10-Q_2024-10-27",
+          "section": "MD&A",
+          "evidence": "the demand for Blackwell is expected to exceed supply for several quarters in fiscal year 2026",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA's revenue for fiscal year 2025 was $130.5 billion.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A",
+          "evidence": "Revenue for fiscal year 2025 was $130.5 billion, up 114% from a year ago.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA's fiscal year 2025 revenue was up 114% from a year earlier.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A",
+          "evidence": "Revenue for fiscal year 2025 was $130.5 billion, up 114% from a year ago.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA began shipping production systems of its Blackwell architecture in the fourth quarter of fiscal 2025.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A",
+          "evidence": "We began shipping production systems of the Blackwell architecture in the fourth quarter of fiscal year 2025.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA expected to increase its capital expenditures in fiscal 2026 relative to fiscal 2025.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "MD&A",
+          "evidence": "We expect to increase capital expenditures in fiscal year 2026 relative to fiscal year 2025 to support the future growth of our business.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA said the H20 export licensing requirements will negatively affect its future revenue.",
+          "filing_id": "NVDA_10-Q_2025-04-27",
+          "section": "MD&A",
+          "evidence": "The H20 export licensing requirements have impacted our current revenue and will also negatively affect our future revenue.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA's revenue for the third quarter of fiscal 2026 was $57.0 billion.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "Revenue was $57.0 billion, up 62% from a year ago and up 22% sequentially.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA's third-quarter fiscal 2026 revenue was up 62% from a year earlier.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "Revenue was $57.0 billion, up 62% from a year ago and up 22% sequentially.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA's third-quarter fiscal 2026 revenue was up 22% from the previous quarter.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "Revenue was $57.0 billion, up 62% from a year ago and up 22% sequentially.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says its Blackwell architectures are the majority of its Data Center revenue.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "Our Blackwell architectures are the majority of our Data Center revenue.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA incurred a charge in the first quarter of fiscal 2026 for H20 excess inventory and purchase obligations.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "we incurred a $4.5 billion charge in the first quarter of fiscal year 2026 associated with H20 for excess inventory and purchase obligations",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA says the U.S. government informed it in April 2025 that a license is required to export its H20 product to China.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "In April 2025, the U.S. government, or USG, informed us that a license is required for exports of our H20 product into the China market.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says the availability of data centers, energy and capital for its customers' AI infrastructure buildouts is crucial to its future revenue.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "The availability of data centers, energy, and capital to support the buildout of NVIDIA AI infrastructure by our customers is crucial, and any shortage of these resources could impact our future revenue and financial performance.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says the U.S. government announced in May 2025 that it would rescind the AI Diffusion rule and implement a replacement rule.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "In May 2025, the USG announced that it would rescind the AI Diffusion IFR and implement a replacement rule.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "no_guidance",
+          "companies": [
+            "NVDA"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brief-sector-pharma-regulatory",
+      "replaces": "sector-pharma-regulatory",
+      "question": "What regulatory risks do the major pharmaceutical companies face, and how are they addressing them?",
+      "history": [],
+      "question_type": "sector",
+      "starter": {
+        "order": 3,
+        "label": "Regulatory risks at the major pharmaceutical companies"
+      },
+      "tags": [
+        "brief_example"
+      ],
+      "notes": "Brief example 3 (EDA 8.3), rewritten from sector-pharma-regulatory. The Sector table resolves the phrase to AbbVie, Johnson & Johnson, Eli Lilly, Merck and Pfizer. Facts drafted from the whole Risk Factors Section of each latest 10-K, and from the regulation and pricing parts of its Business and MD&A Sections. The 'how are they addressing them' half rests mostly on Business and MD&A: the Janssen and Merck lawsuits over the IRA's price negotiation, Lilly's preliminary agreements with the U.S. government, Pfizer's engagement with payors and the government, and each Company's 340B policies. AbbVie's 10-K names no specific response beyond evaluating the IRA and the cost of compliance, so its responses are details. AbbVie, Merck and Pfizer's latest 10-Ks are FY2024; J&J's and Lilly's are FY2025.",
+      "expected_sources": [
+        {
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Business"
+        },
+        {
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Business"
+        },
+        {
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Business"
+        },
+        {
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business"
+        },
+        {
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "AbbVie says the Inflation Reduction Act will reduce prices and reimbursements for certain of its products.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "In particular, the IRA will have the effect of reducing prices and reimbursements for certain of our products, which could significantly impact AbbVie’s results of operations.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AbbVie says Imbruvica was selected as one of the first 10 medicines subject to government-set Medicare prices beginning in 2026.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "In August 2023, HHS, through the CMS, selected Imbruvica as one of the first 10 medicines subject to government-set prices beginning in 2026.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AbbVie says Vraylar and Linzess were selected as two of the 15 medicines subject to government-set Medicare Part D prices beginning in 2027.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "HHS, through the CMS, selected Vraylar and Linzess as two of the 15 medicines subject to government-set prices in Medicare Part D beginning in 2027.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AbbVie says violations of health care fraud and abuse laws can be punished by sanctions including exclusion from federal and state health care programs.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Violations of such laws and regulations may be punishable by criminal and/or civil sanctions, including, in some instances, substantial fines, imprisonment and exclusion from participation in federal and state health care programs",
+          "tier": "detail"
+        },
+        {
+          "fact": "AbbVie says it continues to evaluate the impact the Inflation Reduction Act may have on the company.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "AbbVie continues to evaluate the impact that the IRA may have on the company.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AbbVie says it must incur expense and spend time and effort to ensure compliance with complex regulations.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "AbbVie must incur expense and spend time and effort to ensure compliance with these complex regulations.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says the Inflation Reduction Act has subjected certain of its products to government-established pricing beginning in 2026.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "the Inflation Reduction Act of 2022 (IRA) has changed Medicare Part D benefit design and has subjected certain of the Company's products to government-established pricing beginning in 2026",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Johnson & Johnson says increased third-party use of the 340B drug discount program may hurt its financial performance.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "increased third-party utilization of the 340B Federal Drug Discount Program from expanded interpretations of the statute and program abuse may have a negative impact on the Company's financial performance",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says reductions to the FDA's budget and staff may delay the development and regulatory approval of new products.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "the development and regulatory approval of new products may be delayed due to limits on federal agency budgets or personnel, including reductions to the U.S. FDA’s budget, employees, and operations",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says compliance issues with current Good Manufacturing Practices can lead to fines, product recalls and product shortages.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "Regulatory issues regarding compliance with current Good Manufacturing Practices (cGMP) (and comparable quality regulations in foreign countries) by manufacturers of drugs and devices can lead to fines and penalties, product recalls, product shortages",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson's Janssen unit filed litigation in July 2023 challenging the constitutionality of the IRA's Medicare Drug Price Negotiation Program.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Business",
+          "evidence": "In July 2023, Janssen Pharmaceuticals, Inc. (Janssen) filed litigation against the U.S. Department of Health and Human Services as well as the Centers for Medicare and Medicaid Services challenging the constitutionality of the IRA's Medicare Drug Price Negotiation Program.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Johnson & Johnson maintains a policy that no end customer is permitted direct delivery of product to a location other than the billing location.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "MD&A",
+          "evidence": "The Company maintains a policy that no end customer will be permitted direct delivery of product to a location other than the billing location.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says it will continue to offer 340B discounts to covered entities on all of its covered outpatient drugs.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "MD&A",
+          "evidence": "The Company has been and will continue to offer 340B discounts to covered entities on all of its covered outpatient drugs",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson has established privacy compliance programs and controls that its businesses worldwide must follow.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "The Company has established privacy compliance programs and controls with which our businesses worldwide are required to comply.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly says its business is subject to government price controls and other restrictions on pricing, reimbursement and access for its drugs.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our business is subject to government price controls and other public and private restrictions on pricing, reimbursement, and access for our drugs",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Eli Lilly says HHS selected Jardiance as one of the first ten medicines subject to government-set Medicare prices, effective beginning in 2026.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "in August 2023, HHS selected Jardiance, which is part of our collaboration with Boehringer Ingelheim, as one of the first ten medicines subject to government-set prices in Medicare (effective beginning in 2026)",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly says HHS selected Trulicity and Verzenio in January 2026 for government-set prices effective in 2028.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In January 2026, HHS selected Trulicity and Verzenio as additional medicines subject to government-set prices to be effective in 2028.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly says the continued expansion of the 340B program impacts its revenue on an increasing percentage of sales.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Continued expansion of the 340B program and growth of entities claiming entitlement to 340B pricing, including in ways that may be inconsistent with the statutory scheme and through state laws that purport to mandate 340B sales to contract pharmacies, impact our revenue on an increasing percentage of sales.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly says counterfeit, misbranded, adulterated and mass-compounded incretins continue to be produced and sold in the U.S. and other markets.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "we continue to see the production, marketing, and sale of counterfeit, misbranded, adulterated, and mass-compounded incretins in the U.S. and other markets",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly announced preliminary voluntary agreements with the U.S. government in November 2025 under which it agreed to lower Medicaid and certain other drug prices for U.S. patients.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In November 2025, we announced preliminary voluntary agreements with the U.S. government in which, among other arrangements, we agreed to implement measures to lower Medicaid and certain other drug prices for U.S. patients",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Eli Lilly says its preliminary agreements with the U.S. government give it a three-year grace period from Section 232 tariffs if it meets U.S. manufacturing investment commitments.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Business",
+          "evidence": "The preliminary agreements also provide a three-year grace period during which time our products under a Section 232 investigation will not face tariffs, provided that we meet U.S. manufacturing investment commitments.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly says it will participate in a government direct-to-patient purchasing platform offering certain of its medicines at significant discounts to list prices.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Business",
+          "evidence": "We will also participate in a government direct-to-patient purchasing platform that will direct people in the U.S. to offerings to purchase certain medicines from us at significant discounts to current list prices.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly has implemented a Contract Pharmacy Limited Distribution System for sales through the 340B program.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Business",
+          "evidence": "We have implemented a Contract Pharmacy Limited Distribution System applicable to sales through the 340B program",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly says it has filed lawsuits and taken other legal actions to protect its intellectual property and address unlawful practices.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We have also filed lawsuits and taken other legal actions to protect our intellectual property and address unlawful practices.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck expects U.S. sales of Keytruda to decline beginning in January 2028 when government pricing under the Inflation Reduction Act takes effect.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "the Company expects U.S. sales of Keytruda to decline beginning in January 2028 upon implementation of government pricing under the IRA",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Merck says HHS selected Januvia for the first year of IRA price setting, with a government-set price effective January 1, 2026.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "in 2023, HHS selected Januvia for the first year of the IRA’s price setting program, which will result in a government set price becoming effective on January 1, 2026",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says increased utilization of the 340B program is having a negative impact on its performance.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "increased utilization of the 340B Federal Drug Discount Program and restrictions on the Company’s ability to identify inappropriate discounts are having a negative impact on the Company’s performance",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says changes at HHS could make it more difficult for the FDA to grant regulatory approvals for drugs and vaccines.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "HHS could undergo changes that could make it more difficult for the FDA to grant regulatory approvals for drugs and vaccines",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says the American Rescue Plan Act eliminated the statutory cap on the rebates drug manufacturers pay to Medicaid beginning in January 2024.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "in 2021, Congress passed the American Rescue Plan Act, which included a provision that eliminates the statutory cap on rebates drug manufacturers pay to Medicaid beginning in January 2024",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck has sued the U.S. government over the IRA's Drug Price Negotiation Program.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "The Company has sued the U.S. government regarding the IRA’s Program",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Merck says it is working to mitigate the potentially harmful effects of the Inflation Reduction Act.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "Merck is working to mitigate the potentially harmful effects that the law could have",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says it remains committed to the 340B Program and to providing 340B discounts to eligible covered entities.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Merck remains committed to the 340B Program and to providing 340B discounts to eligible covered entities.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says changes in U.S. and international regulations that mandate price controls could adversely affect its future results.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our future results could be adversely affected by changes in U.S. and international governmental regulations that mandate price controls, create coverage criteria, or limit patient access to our products.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Pfizer says Eliquis was among the first ten medicines subject to the IRA's Medicare drug price negotiation program.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "In August 2023, CMS published the first ten medicines subject to the MDPNP, which included Eliquis.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says Ibrance and Xtandi were among the 15 Medicare Part D drugs CMS selected in January 2025 for maximum fair prices.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "On January 17, 2025, CMS announced the selection of another 15 drugs from Medicare Part D for the maximum fair price, with prices to be set and effective on January 1, 2027. Ibrance and Xtandi were included in the list of 15 drugs selected.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says it may face greater pricing pressure from private payors as Inflation Reduction Act prices become publicly available.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "as the IRA prices become publicly available, we may face greater pricing pressure from private third-party payors",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says failure to comply with current Good Manufacturing Practices may subject it to warning letters, suspension of manufacturing or product recalls.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Failure to comply with these requirements may subject us to possible legal or regulatory actions, such as warning letters, suspension of manufacturing, seizure of product, injunctions, debarment, product recalls",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says executive orders or other changes in policy regarding tariffs could have a material adverse effect on its business.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "issued or future executive orders or other new or changes in laws, regulations or policy regarding tariffs, could have a material adverse effect on our business, earnings and financial guidance",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says it has engaged with major payors and the U.S. government to explore opportunities to improve access and reimbursement.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "We have engaged with major payors and the U.S. government to explore opportunities to improve access and reimbursement in an effort to drive pro-patient policies.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Pfizer says it continues to evaluate the impact of the Inflation Reduction Act on its business.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "We continue to evaluate the impact of the IRA on our business, operations and financial condition and results as the full effect of the IRA on our business and the pharmaceutical industry remains uncertain.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer implemented a policy in 2022 to help improve contract pharmacy integrity under the 340B Program.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "In 2022, we implemented a policy to help improve contract pharmacy integrity.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says it is actively engaging with regulatory authorities on the potential presence of nitrosamines in its products.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "manufacturers across the pharmaceutical industry, including Pfizer, are evaluating their product portfolios for the potential presence or formation of nitrosamines and we are actively engaging with regulatory authorities on this topic",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says it is evaluating opportunities and developing plans that may help mitigate the potential impact of tariffs.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "We are evaluating opportunities and developing plans which may help mitigate the potential impact of tariffs on our business and operations.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "ABBV",
+            "JNJ",
+            "LLY",
+            "MRK",
+            "PFE"
+          ]
+        }
+      ]
+    }
+  ]
+}

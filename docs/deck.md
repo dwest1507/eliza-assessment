@@ -88,7 +88,7 @@ question → **rules** resolve the Query Scope (Companies, Sector phrase, time w
 
 <!--
 Run `make dev` before the meeting and open http://localhost:3000. Items 1 to 4 are starter
-prompts, and every starter is a Golden Set case, so each one is measured. For the panel's
+prompts, and every starter is a Golden Set or Brief Suite case, so each one is measured. For the panel's
 own question, point at the Query Scope chips first: they show what the rules understood.
 -->
 

@@ -1,10 +1,12 @@
-"""Tests for the Golden Set: its schema, its split, and its labels against the Corpus.
+"""Tests for the Golden Set and the Brief Suite: their schema, the Golden Set's split, the
+starter prompts, and both files' labels against the Corpus.
 
 The labels were drafted and reviewed by an agent, not a second human, so these tests are
 the mechanical half of the review: every expected Filing and Section exists in the
 Corpus, and every Required Fact's evidence quote is found word for word in its Section.
 """
 
+import hashlib
 import json
 import re
 
@@ -13,13 +15,16 @@ import pytest
 from edgar_rag.corpus import load_corpus, load_sector_table
 from edgar_rag.golden_set import (
     COVERAGE_GAP_KINDS,
+    DEFAULT_BRIEF_SUITE,
     DEFAULT_GOLDEN_SET,
     QUESTION_TYPES,
     SPLIT_RULE,
     TIERS,
     assign_splits,
+    load_brief_suite,
     load_golden_set,
     normalise_whitespace,
+    starter_cases,
 )
 
 BRIEF_QUESTIONS = {
@@ -33,6 +38,17 @@ BRIEF_QUESTIONS = {
 @pytest.fixture(scope="module")
 def golden_set():
     return load_golden_set()
+
+
+@pytest.fixture(scope="module")
+def brief_suite():
+    return load_brief_suite()
+
+
+@pytest.fixture(scope="module")
+def labelled_cases(golden_set, brief_suite):
+    """Every labelled case: the Golden Set's and the Brief Suite's."""
+    return (*golden_set.cases, *brief_suite.cases)
 
 
 @pytest.fixture(scope="module")
@@ -50,10 +66,10 @@ def company_names():
     return names
 
 
-def _rewrite(tmp_path, edit):
-    data = json.loads(DEFAULT_GOLDEN_SET.read_text(encoding="utf-8"))
+def _rewrite(tmp_path, edit, source=DEFAULT_GOLDEN_SET):
+    data = json.loads(source.read_text(encoding="utf-8"))
     edit(data)
-    path = tmp_path / "golden_set.json"
+    path = tmp_path / source.name
     path.write_text(json.dumps(data), encoding="utf-8")
     return path
 
@@ -171,9 +187,9 @@ def test_a_case_with_no_facts_is_valid_only_when_it_expects_coverage_gaps(tmp_pa
 
 
 def test_every_required_fact_is_a_sentence_naming_its_company(
-    golden_set, filings_by_id, company_names
+    labelled_cases, filings_by_id, company_names
 ):
-    for case in golden_set.cases:
+    for case in labelled_cases:
         for fact in case.required_facts:
             names = company_names[filings_by_id[fact.filing_id].ticker]
             assert fact.fact.endswith("."), (case.id, fact.fact)
@@ -185,8 +201,8 @@ def test_every_required_fact_is_a_sentence_naming_its_company(
             )
 
 
-def test_every_required_fact_cites_one_of_its_cases_expected_sources(golden_set):
-    for case in golden_set.cases:
+def test_every_required_fact_cites_one_of_its_cases_expected_sources(labelled_cases):
+    for case in labelled_cases:
         expected = {(s.filing_id, s.section) for s in case.expected_sources}
         for fact in case.required_facts:
             assert (fact.filing_id, fact.section) in expected, (case.id, fact.fact)
@@ -243,6 +259,99 @@ def test_the_starters_include_the_brief_examples_and_the_hard_cases(golden_set):
     assert {"snapshot_trend", "missing_company"} <= gap_kinds
 
 
+def test_the_brief_starters_come_from_the_brief_suite_and_the_rest_from_the_golden_set(
+    golden_set, brief_suite
+):
+    starters = starter_cases(golden_set, brief_suite)
+
+    assert [case.starter.order for case in starters] == [1, 2, 3, 4, 5, 6]
+    brief = {case.id for case in brief_suite.cases}
+    for case in starters:
+        assert (case.id in brief) == (case.question in BRIEF_QUESTIONS), case.id
+    # The text the front-end shows is the version 1 starters', unchanged.
+    assert [(c.starter.label, c.question) for c in starters] == [
+        (c.starter.label, c.question) for c in golden_set.starters()
+    ]
+
+
+# --- The Brief Suite ----------------------------------------------------------------------
+
+VERSION_1_SHA256 = "4127b0df5ea101918dd1b181491030ce570eec50a0d6ca9ac571ca7b6a695aa4"
+"""The digest of Golden Set version 1's file, which stays unchanged as a record."""
+
+
+def test_version_1s_golden_set_file_is_unchanged():
+    digest = hashlib.sha256(DEFAULT_GOLDEN_SET.read_bytes()).hexdigest()
+
+    assert digest == VERSION_1_SHA256
+
+
+def test_the_brief_suite_holds_the_brief_questions_each_replacing_its_version_1_case(
+    golden_set, brief_suite
+):
+    golden = {case.id: case for case in golden_set.cases}
+
+    replaced = [case for case in brief_suite.cases if case.replaces]
+    assert {case.question for case in replaced} == BRIEF_QUESTIONS
+    assert len(replaced) == 3
+    for case in replaced:
+        old = golden[case.replaces]
+        assert "brief_example" in old.tags, case.id
+        assert case.question == old.question, case.id
+        assert case.question_type == old.question_type, case.id
+        assert case.split is None, case.id  # outside the dev/holdout split
+
+
+def test_brief_suite_ids_are_unique_and_never_golden_set_ids(golden_set, brief_suite):
+    ids = [case.id for case in brief_suite.cases]
+
+    assert len(set(ids)) == len(ids)
+    assert not set(ids) & {case.id for case in golden_set.cases}
+
+
+def test_every_brief_suite_case_has_facts_in_both_tiers(brief_suite):
+    for case in brief_suite.cases:
+        tiers = {fact.tier for fact in case.required_facts}
+        assert tiers == {"must_state", "detail"}, case.id
+
+
+def test_the_loader_rejects_an_id_in_both_the_brief_suite_and_the_golden_set(tmp_path):
+    path = _rewrite(
+        tmp_path, lambda d: d["cases"][0].update(id="risk-aapl-tsla-jpm"), DEFAULT_BRIEF_SUITE
+    )
+
+    with pytest.raises(ValueError, match="risk-aapl-tsla-jpm"):
+        load_brief_suite(path)
+
+
+def test_the_loader_rejects_a_brief_suite_case_with_a_split(tmp_path):
+    path = _rewrite(tmp_path, lambda d: d["cases"][0].update(split="dev"), DEFAULT_BRIEF_SUITE)
+
+    with pytest.raises(ValueError, match="split"):
+        load_brief_suite(path)
+
+
+def test_the_loader_rejects_a_brief_suite_fact_with_no_tier(tmp_path):
+    path = _rewrite(
+        tmp_path, lambda d: d["cases"][0]["required_facts"][0].pop("tier"), DEFAULT_BRIEF_SUITE
+    )
+
+    with pytest.raises(ValueError, match="tier"):
+        load_brief_suite(path)
+
+
+def test_the_loader_rejects_a_replaced_case_the_golden_set_does_not_hold(tmp_path):
+    path = _rewrite(tmp_path, lambda d: d["cases"][0].update(replaces="nope"), DEFAULT_BRIEF_SUITE)
+
+    with pytest.raises(ValueError, match="nope"):
+        load_brief_suite(path)
+
+
+def test_brief_suite_cases_are_not_valid_golden_set_cases():
+    with pytest.raises(ValueError):
+        load_golden_set(DEFAULT_BRIEF_SUITE)
+
+
 # --- Split --------------------------------------------------------------------------------
 
 
@@ -272,16 +381,18 @@ def test_the_split_depends_only_on_the_ids_not_their_order():
 # --- Labels against the Corpus ------------------------------------------------------------
 
 
-def test_every_expected_filing_and_section_exists_in_the_corpus(golden_set, filings_by_id):
-    for case in golden_set.cases:
+def test_every_expected_filing_and_section_exists_in_the_corpus(labelled_cases, filings_by_id):
+    for case in labelled_cases:
         for source in case.expected_sources:
             assert source.filing_id in filings_by_id, (case.id, source.filing_id)
             names = {s.name for s in filings_by_id[source.filing_id].sections}
             assert source.section in names, (case.id, source)
 
 
-def test_every_evidence_quote_appears_verbatim_in_its_labelled_section(golden_set, filings_by_id):
-    for case in golden_set.cases:
+def test_every_evidence_quote_appears_verbatim_in_its_labelled_section(
+    labelled_cases, filings_by_id
+):
+    for case in labelled_cases:
         for fact in case.required_facts:
             sections = filings_by_id[fact.filing_id].sections
             texts = [normalise_whitespace(s.text) for s in sections if s.name == fact.section]

@@ -44,7 +44,7 @@ for key in $(1); do \
 	done
 endef
 
-.PHONY: help install test lint format eda sec-facts index embeddings ask api eval-retrieval eval-generation eval-rescore eval-arms eval-generators eval-export deck dev frontend-deps
+.PHONY: help install test lint format eda sec-facts index embeddings ask api eval-retrieval eval-generation eval-brief eval-rescore eval-arms eval-generators eval-export deck dev frontend-deps
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-15s %s\n", $$1, $$2}'
@@ -115,6 +115,13 @@ eval-generation: $(EVAL_INDEX) $(if $(filter dense hybrid,$(ARM)),$(EMBEDDINGS))
 	$(UV) python -m edgar_eval.generation --split $(SPLIT) $(if $(MODEL),--model $(MODEL)) \
 		$(if $(ARM),--arm $(ARM)) $(SETTINGS_ARGS) \
 		--json ../data/derived/eval/generation-$(if $(ARM),arms-$(SPLIT)-$(ARM),$(SPLIT)$(if $(MODEL),-$(MODEL)))$(SETTINGS).json
+
+eval-brief: $(EVAL_INDEX) $(if $(filter dense hybrid,$(ARM)),$(EMBEDDINGS)) ## Run the Brief Suite, 5 runs a case, a verdict per case: make eval-brief [RUNS=...] [MODEL=...] [ARM=...] [CHUNK_TOKENS=...] [CONTEXT_BUDGET=...] (costs money)
+	@keys=$$($(GENERATOR_KEYS) $(MODEL)) || exit 1; \
+	$(call require_keys,$$keys JEV_API_KEY)
+	$(UV) python -m edgar_eval.generation --brief-suite $(if $(RUNS),--runs $(RUNS)) \
+		$(if $(MODEL),--model $(MODEL)) $(if $(ARM),--arm $(ARM)) $(SETTINGS_ARGS) \
+		--json ../data/derived/eval/brief-suite$(if $(ARM),-$(ARM))$(if $(MODEL),-$(MODEL))$(SETTINGS).json
 
 # Every saved generation report, the prompt iterations' included.
 GENERATION_REPORTS = $(wildcard data/derived/eval/generation-*.json data/derived/eval/prompt-iterations/generation-*.json)

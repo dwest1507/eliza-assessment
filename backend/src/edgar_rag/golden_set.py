@@ -15,8 +15,16 @@ Cases are split dev/holdout by a hash of each case id (`assign_splits`), so prom
 Arm choices are tuned on dev and the holdout is scored once per final setup, never to
 choose.
 
-`load_golden_set` checks the schema and raises `ValueError` on any problem. Checking the
-labels against the Corpus is left to the tests, so loading needs no Corpus.
+The Brief Suite (`data/eval/brief_suite.json`, `load_brief_suite`) holds the brief's
+example questions and variants of them, outside the split: a must-pass check that may be
+tuned on. Its cases use the same schema with no split, every fact names its tier, and a
+case rewritten from a version 1 case records which (`replaces`). No id is in both files.
+Starter prompts may come from either (`starter_cases`): a Brief Suite case's starter
+takes the place of the one on the case it replaces.
+
+`load_golden_set` and `load_brief_suite` check the schema and raise `ValueError` on any
+problem. Checking the labels against the Corpus is left to the tests, so loading needs
+no Corpus.
 """
 
 from __future__ import annotations
@@ -33,10 +41,12 @@ from edgar_rag.paths import DATA_DIR
 
 __all__ = [
     "COVERAGE_GAP_KINDS",
+    "DEFAULT_BRIEF_SUITE",
     "DEFAULT_GOLDEN_SET",
     "QUESTION_TYPES",
     "SPLIT_RULE",
     "TIERS",
+    "BriefSuite",
     "CoverageGapLabel",
     "ExpectedSource",
     "GoldenCase",
@@ -44,12 +54,16 @@ __all__ = [
     "Message",
     "RequiredFact",
     "Starter",
+    "load_brief_suite",
     "load_golden_set",
     "normalise_whitespace",
     "assign_splits",
+    "starter_cases",
 ]
 
 DEFAULT_GOLDEN_SET = DATA_DIR / "eval" / "golden_set.json"
+
+DEFAULT_BRIEF_SUITE = DATA_DIR / "eval" / "brief_suite.json"
 
 QUESTION_TYPES = (
     "risk",
@@ -145,10 +159,14 @@ class GoldenCase:
     expected_sources: tuple[ExpectedSource, ...]
     required_facts: tuple[RequiredFact, ...]
     expected_coverage_gaps: tuple[CoverageGapLabel, ...]
-    split: Split
+    split: Split | None
+    """None for a Brief Suite case, which is outside the split."""
     starter: Starter | None
     tags: tuple[str, ...]
     notes: str
+    replaces: str | None = None
+    """For a Brief Suite case rewritten from a Golden Set version 1 case, that case's id,
+    so saved version 1 answers can be matched to the rewritten facts."""
 
 
 @dataclass(frozen=True)
@@ -163,6 +181,24 @@ class GoldenSet:
 
     def split(self, split: Split) -> list[GoldenCase]:
         return [c for c in self.cases if c.split == split]
+
+
+@dataclass(frozen=True)
+class BriefSuite:
+    version: int
+    cases: tuple[GoldenCase, ...]
+
+    def starters(self) -> list[GoldenCase]:
+        """The starter-prompt cases, in the order the front-end shows them."""
+        return sorted((c for c in self.cases if c.starter), key=lambda c: c.starter.order)
+
+
+def starter_cases(golden_set: GoldenSet, brief_suite: BriefSuite) -> list[GoldenCase]:
+    """The front-end's starter prompts, in order: the Brief Suite's, and the Golden Set's
+    whose case no Brief Suite case replaces."""
+    replaced = {c.replaces for c in brief_suite.cases}
+    golden = [c for c in golden_set.starters() if c.id not in replaced]
+    return sorted([*golden, *brief_suite.starters()], key=lambda c: c.starter.order)
 
 
 def assign_splits(case_ids: Iterable[str]) -> dict[str, Split]:
@@ -190,15 +226,47 @@ def load_golden_set(path: str | Path = DEFAULT_GOLDEN_SET) -> GoldenSet:
     )
 
 
-def _case(raw: dict, version: int) -> GoldenCase:
+def load_brief_suite(
+    path: str | Path = DEFAULT_BRIEF_SUITE,
+    golden_sets: Iterable[str | Path] = (DEFAULT_GOLDEN_SET,),
+) -> BriefSuite:
+    """Read and validate the Brief Suite file. Raises ValueError on a schema problem, on an
+    id that is also a case's in one of `golden_sets`, or on a `replaces` naming no case
+    there."""
+    data = json.loads(Path(path).read_text(encoding="utf-8"))
+    version = _field(data, "version", int, "Brief Suite")
+    cases = tuple(
+        _case(raw, version, brief=True) for raw in _field(data, "cases", list, "Brief Suite")
+    )
+    golden_ids = {c.id for p in golden_sets for c in load_golden_set(p).cases}
+    for case in cases:
+        if case.id in golden_ids:
+            raise ValueError(f"case {case.id}: the id is also a Golden Set case's")
+        if case.replaces is not None and case.replaces not in golden_ids:
+            raise ValueError(f"case {case.id}: replaces {case.replaces!r}, no Golden Set case")
+    ids = [c.id for c in cases]
+    if len(set(ids)) != len(ids):
+        raise ValueError("Brief Suite: case ids are not unique")
+    return BriefSuite(version=version, cases=cases)
+
+
+def _case(raw: dict, version: int, *, brief: bool = False) -> GoldenCase:
     case_id = _field(raw, "id", str, "case")
     where = f"case {case_id}"
     question_type = _field(raw, "question_type", str, where)
     if question_type not in QUESTION_TYPES:
         raise ValueError(f"{where}: unknown question_type {question_type!r}")
-    split = _field(raw, "split", str, where)
-    if split not in ("dev", "holdout"):
-        raise ValueError(f"{where}: split must be 'dev' or 'holdout', not {split!r}")
+    if brief:
+        if "split" in raw:
+            raise ValueError(f"{where}: a Brief Suite case is outside the split and has none")
+        split = None
+    else:
+        split = _field(raw, "split", str, where)
+        if split not in ("dev", "holdout"):
+            raise ValueError(f"{where}: split must be 'dev' or 'holdout', not {split!r}")
+    replaces = raw.get("replaces")
+    if replaces is not None and (not brief or not isinstance(replaces, str)):
+        raise ValueError(f"{where}: only a Brief Suite case replaces one, by its id")
 
     history = tuple(
         Message(role=_role(m, where), content=_field(m, "content", str, where))
@@ -214,7 +282,7 @@ def _case(raw: dict, version: int) -> GoldenCase:
             filing_id=_field(f, "filing_id", str, where),
             section=_field(f, "section", str, where),
             evidence=_field(f, "evidence", str, where),
-            tier=_tier(f, version, where),
+            tier=_tier(f, version if not brief else None, where),
         )
         for f in _field(raw, "required_facts", list, where)
     )
@@ -241,6 +309,7 @@ def _case(raw: dict, version: int) -> GoldenCase:
         starter=starter,
         tags=tuple(raw.get("tags", ())),
         notes=raw.get("notes", ""),
+        replaces=replaces,
     )
 
 
@@ -251,8 +320,9 @@ def _role(message: dict, where: str) -> Literal["user", "assistant"]:
     return role
 
 
-def _tier(fact: dict, version: int, where: str) -> Tier:
-    """The fact's tier. Version 1 predates tiers, so its facts are all must-state."""
+def _tier(fact: dict, version: int | None, where: str) -> Tier:
+    """The fact's tier. Golden Set version 1 predates tiers, so its facts are all
+    must-state; every other file's facts (`version` None for the Brief Suite) name one."""
     if version == 1 and "tier" not in fact:
         return "must_state"
     tier = _field(fact, "tier", str, where)

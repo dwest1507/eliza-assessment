@@ -25,14 +25,14 @@ The conversation is kept in the browser's session storage ([`lib/conversation.ts
 | `components/SourcesPanel.tsx`      | The side panel showing one Source's Filing metadata and passage, or a Facts Source's table of figures |
 | `components/AmbientBackground.tsx` | The portfolio's fixed, blurred background glow                                                        |
 | `lib/chat.ts`                      | The stream's data part types, the shared message readers, the turn limit and the citation helpers     |
-| `lib/starters.ts`                  | The six starter prompts, copied from the Golden Set                                                   |
+| `lib/starters.ts`                  | The six starter prompts, copied from the Brief Suite and the Golden Set                               |
 | `lib/conversation.ts`              | Keeps the conversation in session storage                                                             |
 | `components/HowItWorks.tsx`        | The architecture, the evaluation scoreboard and the coverage grid                                     |
 | `lib/evalExport.ts`                | The evaluation export's types and number formats                                                      |
 | `data/eval-export.json`            | The evaluation export, written by `make eval-export` (committed)                                      |
 | `__tests__/`                       | Vitest and React Testing Library tests                                                                |
 
-The starter prompts are the Golden Set cases that carry a `starter` object (`data/eval/golden_set.json`), so every demo prompt is measured. `__tests__/starters.test.ts` fails if the copy in `lib/starters.ts` drifts from the Golden Set.
+The starter prompts are the labelled cases that carry a `starter` object, so every demo prompt is measured: the brief's three questions from the Brief Suite (`data/eval/brief_suite.json`), each taking over the starter of the Golden Set version 1 case it replaces, and three Golden Set cases (`data/eval/golden_set.json`). `__tests__/starters.test.ts` reads both files and fails if the copy in `lib/starters.ts` drifts from them.
 
 ## The "How it works" page
 

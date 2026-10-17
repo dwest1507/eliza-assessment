@@ -60,7 +60,11 @@ Names match in any case, with spaces or hyphens between words ("Bristol-Myers Sq
 
 ## Golden Set (`eval/golden_set.json`)
 
-The evaluation's ground truth: 30 labelled questions, each with the (Filing ID, Section) pairs that should be retrieved, the Required Facts an answer must state (each with an evidence quote from its Section) and the Coverage Gaps it must state. Six of them are the front-end's starter prompts. Like the Sector table it is ours to edit, and tests check every label against the Corpus. Its fields, split rule and review are described in [`docs/golden-set.md`](../docs/golden-set.md).
+The evaluation's ground truth: 30 labelled questions, each with the (Filing ID, Section) pairs that should be retrieved, the Required Facts an answer must state (each with an evidence quote from its Section) and the Coverage Gaps it must state. Six of them are the front-end's starter prompts. Like the Sector table it is ours to edit, and tests check every label against the Corpus. Its fields, split rule and review are described in [`docs/golden-set.md`](../docs/golden-set.md). Version 1's file stays unchanged as a record.
+
+## Brief Suite (`eval/brief_suite.json`)
+
+The brief's example questions, outside the Golden Set's dev/holdout split: a must-pass check, each case answered 5 times by `make eval-brief`. Same case schema as the Golden Set's, with no split, a tier on every Required Fact, and `replaces` naming the version 1 case a case was rewritten from. Three of its cases (the brief's three questions) are front-end starter prompts. The same tests check its labels against the Corpus; see [`docs/golden-set.md`](../docs/golden-set.md#the-brief-suite).
 
 ## Derived files
 

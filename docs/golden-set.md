@@ -2,7 +2,7 @@
 
 The Golden Set is the evaluation's ground truth: 30 labelled questions that the retrieval and generation harnesses score the system against. It lives in [`data/eval/golden_set.json`](../data/eval/golden_set.json) and is read by `edgar_rag.golden_set.load_golden_set()`, which checks the schema. It was written before any retrieval Arm or prompt ran, so no label was written with results in view.
 
-This page describes version 1, the set every result so far was measured on, and the Required Fact tiers that version 2 adds. The rest of version 2 is decided but not built yet: see [Version 2](#version-2).
+This page describes version 1, the set every result so far was measured on, the Required Fact tiers that version 2 adds, and the [Brief Suite](#the-brief-suite), the brief's questions in a file of their own. The rest of version 2 is decided but not built yet: see [Version 2](#version-2). Version 1's file stays unchanged as a record, and a test pins its digest.
 
 ## What it covers
 
@@ -23,7 +23,7 @@ The cases are seeded from the eight questions traced in EDA analysis 8 (the brie
 - Switching the Company: "And what about Microsoft?", "And the oil majors?" and "What about Honeywell?"
 - A change of topic that names no Company (`followup-topic-change-export-controls`, tagged `topic_change_without_company`). The rules wrongly inherit Apple from the earlier question. The case expects the whole-Corpus answer (NVIDIA and AMD), so it measures ADR 0003's known weakness rather than hiding it.
 
-**Starter prompts.** The six cases with a `starter` object are the front-end's starter prompts. `order` sets their position and `label` is the button text. They are the brief's three example questions, a sector phrase (the major banks), a Coverage Gap (JPMorgan's revenue trend, a Snapshot Company) and a Company missing from the Corpus (Wells Fargo). Every starter is therefore measured, and none was picked after seeing results.
+**Starter prompts.** The cases with a `starter` object are the front-end's starter prompts. `order` sets their position and `label` is the button text. They are the brief's three example questions, a sector phrase (the major banks), a Coverage Gap (JPMorgan's revenue trend, a Snapshot Company) and a Company missing from the Corpus (Wells Fargo). Every starter is therefore measured, and none was picked after seeing results. Starters may come from either file: the brief's three now point at their [Brief Suite](#the-brief-suite) cases, which take over the starter of the version 1 case each replaces (`edgar_rag.golden_set.starter_cases`), and the other three stay here. The text is unchanged, and the front-end's sync test reads both files.
 
 ## Fields
 
@@ -84,11 +84,38 @@ No second human was available to label, so an agent drafted every case from the 
 
 The tests prove that the labels point at real text. They cannot prove that the labels are complete: an answer may cite a correct Source or state a correct fact that the case does not list. Fact Recall is therefore scored against the Required Facts, while Faithfulness is judged separately from the cited passages.
 
+## The Brief Suite
+
+The brief's example questions, kept outside the dev/holdout split in their own file, [`data/eval/brief_suite.json`](../data/eval/brief_suite.json), read by `edgar_rag.golden_set.load_brief_suite()` ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). It is a must-pass check, not an estimate, so it may be tuned on freely and never loses a case to the holdout. Each case runs 5 times, passes or fails on its own, and is reported one by one ([The Brief Suite run](evaluation.md#the-brief-suite-run)).
+
+**The cases.** The brief's three questions, with the same wording as version 1:
+
+| Case | Replaces | Required Facts (must-state / detail) | Sections drafted from |
+|---|---|---|---|
+| `brief-risk-aapl-tsla-jpm` | `risk-aapl-tsla-jpm` | 9 / 19 | Risk Factors of the three latest 10-Ks, and Apple's later 10-Q |
+| `brief-outlook-nvda-revenue-two-years` | `outlook-nvda-revenue-two-years` | 7 / 12 | MD&A of NVIDIA's eight Filings from the FY2024 10-K to the Q3 FY2026 10-Q |
+| `brief-sector-pharma-regulatory` | `sector-pharma-regulatory` | 9 / 34 | Risk Factors of each latest 10-K, and its Business and MD&A regulation and pricing passages |
+
+Four variants of each follow, in later slices.
+
+- **Every half of a question has facts.** The risk comparison's must-state facts are each Company's defining risks, and the comparison rests on the themes all three name (tariffs and trade policy, regulation, cyber attacks, competition). NVIDIA's outlook facts trace how it changed: next-generation products expected to be supply-constrained at the end of FY2024, Blackwell demand ahead of supply through FY2025, then Blackwell as the majority of Data Center revenue and H20 export licensing hurting future revenue. The pharmaceutical facts cover "how are they addressing them" from the Business and MD&A Sections: Janssen's and Merck's lawsuits over the IRA's price negotiation, Lilly's preliminary agreements with the U.S. government, Pfizer's engagement with payors and the government, and each Company's 340B and compliance responses. AbbVie's 10-K names no specific response beyond evaluating the IRA and the cost of compliance, so its responses are details.
+- **Figures from the reference.** NVIDIA's revenue figures and growth rates match the SEC company-facts reference (Revenues: $60,922 million for FY2024, $130,497 million for FY2025, $57,006 million for Q3 FY2026). The $4.5 billion H20 charge has no company-facts value, so its fact states the charge without the amount; the amount is still in its evidence quote.
+
+**Fields.** The same case schema as the Golden Set's, with three differences:
+
+- no `split`: the loader rejects one, and the Golden Set's loader rejects a Brief Suite case, which has none;
+- every Required Fact names its `tier`;
+- `replaces`, on a case rewritten from a version 1 case, names that case, so saved version 1 answers can be matched to the rewritten facts. It must name a Golden Set case.
+
+No id is in both files: the loader rejects one that is.
+
+**Checks.** The Golden Set's label tests run over the Brief Suite too (every expected Filing and Section exists, every evidence quote is verbatim in its Section, every fact names its Company and cites one of its case's expected Sources), and the Brief Suite's own tests check that its cases replace the version 1 brief cases with the same questions, that every case has facts of both tiers, and the loader's refusals.
+
 ## Version 2
 
-Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). Only the Required Fact tiers are built so far. Version 1 has too few cases for a comparison to see a real difference, and some of its labels make the judge misread answers ([Evaluation version 2](evaluation.md#evaluation-version-2)).
+Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers and the Brief Suite, with the brief's three questions, are built so far. Version 1 has too few cases for a comparison to see a real difference, and some of its labels make the judge misread answers ([Evaluation version 2](evaluation.md#evaluation-version-2)).
 
-- **The Brief Suite.** The brief's three example questions move out of the dev/holdout split, each with four variants: about 15 cases in all. Each case runs 5 times on every change that could alter an answer. It passes when every must-state Required Fact is stated in at least 4 of the 5 runs and no run has a Contradicted Claim. Its cases are reported one by one and may be tuned on, since it is a must-pass check, not an estimate. The starter prompts keep the brief's three questions, now from the Brief Suite.
+- **The Brief Suite.** The brief's three example questions move out of the dev/holdout split, each with four variants: about 15 cases in all. Each case runs 5 times on every change that could alter an answer. It passes when every must-state Required Fact is stated in at least 4 of the 5 runs and no run has a Contradicted Claim. Its cases are reported one by one and may be tuned on, since it is a must-pass check, not an estimate. The starter prompts keep the brief's three questions, now from the Brief Suite. Built with the three questions ([The Brief Suite](#the-brief-suite)); the variants follow.
 - **60 dev cases and 20 holdout cases:**
 
   | Kind of question | Dev | Holdout |

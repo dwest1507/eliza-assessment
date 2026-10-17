@@ -34,6 +34,13 @@ scores and writes them, with every answer, as JSON under `data/derived/eval/`:
 Sources per Answer Call (ADR 0010); the report records both, and names the setting
 (`chunks-600-budget-32000`) for the selection rule.
 
+`--brief-suite` answers the Brief Suite instead of a Golden Set split, each case
+`--runs` times (5 by default), and gives each case a pass/fail verdict
+(`edgar_eval.brief_suite`; `make eval-brief`). A Golden Set run answers each case once.
+Every paid run prints its estimated cost (`edgar_eval.brief_suite.estimate_cost`) before
+the first Answer Call. Each case result records Evidence Reached for each Required Fact:
+whether its evidence quote is in the text of the Answer Context's Sources.
+
 `--model` takes a generator from `edgar_eval.generators.GENERATORS`, which says which
 provider answers with it. It calls the generator and Jev, so it needs `JEV_API_KEY` and
 the key of the generator's provider (`OPENAI_API_KEY` or `ANTHROPIC_API_KEY`), and it
@@ -78,7 +85,15 @@ from edgar_eval.judge import Evidence, Judgments
 from edgar_eval.retrieval import Arm, Prepare, conversation
 from edgar_rag.answer_model import DEFAULT_ANSWER_LOG, AnswerCall, AnswerModel, StopReason
 from edgar_rag.corpus import DEFAULT_SECTOR_TABLE
-from edgar_rag.golden_set import DEFAULT_GOLDEN_SET, GoldenCase, Tier, load_golden_set
+from edgar_rag.golden_set import (
+    DEFAULT_BRIEF_SUITE,
+    DEFAULT_GOLDEN_SET,
+    GoldenCase,
+    Tier,
+    load_brief_suite,
+    load_golden_set,
+    normalise_whitespace,
+)
 from edgar_rag.retrieval import (
     CONTEXT_BUDGET_TOKENS,
     DEFAULT_INDEX,
@@ -156,6 +171,10 @@ class CaseResult:
     stop_reason: StopReason | None = None
     """Why the model stopped, from the Answer Call's record."""
     raw_stop_reason: str | None = None
+    evidence_reached: tuple[bool, ...] = ()
+    """Evidence Reached for each Required Fact, in the case's order: whether its evidence
+    quote is in the text of the Answer Context's Sources. Empty in reports saved before
+    it was recorded."""
 
     @property
     def truncated(self) -> bool:
@@ -365,6 +384,7 @@ def _run_case(
 
     passages = {s.number: s.text for s in context.sources}
     evidence = {s.tag: Evidence(s.tag, s.label, s.text) for s in context.sources}
+    source_text = normalise_whitespace("\n".join(s.text for s in context.sources))
     covered = {s.ticker: names.get(s.ticker, (s.ticker,)) for s in context.sources}
     gaps = case.expected_coverage_gaps
     return CaseResult(
@@ -389,6 +409,9 @@ def _run_case(
         fact_tiers=tuple(f.tier for f in case.required_facts),
         stop_reason=record.stop_reason,
         raw_stop_reason=record.raw_stop_reason,
+        evidence_reached=tuple(
+            normalise_whitespace(f.evidence) in source_text for f in case.required_facts
+        ),
     )
 
 
@@ -555,8 +578,17 @@ def main(
     arms: Sequence[Arm] | None = None,
     out: TextIO | None = None,
 ) -> int:
+    from edgar_eval.brief_suite import (
+        BRIEF_SUITE_RUNS,
+        estimate_cost,
+        evaluate_brief_suite,
+        print_brief_suite_report,
+    )
+
     out = out or sys.stdout
-    parser = argparse.ArgumentParser(description="Score generated answers on the Golden Set.")
+    parser = argparse.ArgumentParser(
+        description="Score generated answers on the Golden Set or the Brief Suite."
+    )
     parser.add_argument("--split", choices=("dev", "holdout", "all"), default="dev")
     parser.add_argument(
         "--model", help="a model in GENERATORS (default: OPENAI_MODEL, else the shipped one)"
@@ -575,6 +607,19 @@ def main(
         help="tokens of Sources per Answer Call (ADR 0010)",
     )
     parser.add_argument("--golden-set", type=Path, default=DEFAULT_GOLDEN_SET)
+    parser.add_argument(
+        "--brief-suite",
+        type=Path,
+        nargs="?",
+        const=DEFAULT_BRIEF_SUITE,
+        metavar="PATH",
+        help="answer the Brief Suite (default file if no PATH) instead of a Golden Set split",
+    )
+    parser.add_argument(
+        "--runs",
+        type=int,
+        help=f"times each case is answered (the Brief Suite: default {BRIEF_SUITE_RUNS})",
+    )
     parser.add_argument("--log", type=Path, default=DEFAULT_ANSWER_LOG, help="Answer Call log")
     parser.add_argument("--json", type=Path, help="also write the report as JSON here")
     parser.add_argument(
@@ -618,11 +663,21 @@ def main(
                 file=out,
             )
         return 0
-    cases = golden.cases if args.split == "all" else golden.split(args.split)
+    if args.brief_suite:
+        suite = load_brief_suite(args.brief_suite, (args.golden_set,))
+        cases, where, runs = suite.cases, "Brief Suite", args.runs or BRIEF_SUITE_RUNS
+        if runs < 1:
+            parser.error("--runs must be at least 1")
+    else:
+        suite = None
+        cases = golden.cases if args.split == "all" else golden.split(args.split)
+        where, runs = f"{args.split} split", 1
+        if args.runs not in (None, 1):
+            parser.error("--runs applies to the Brief Suite; a Golden Set run answers once")
     if args.case:
         unknown = set(args.case) - {c.id for c in cases}
         if unknown:
-            parser.error(f"no such case in the {args.split} split: {', '.join(sorted(unknown))}")
+            parser.error(f"no such case in the {where}: {', '.join(sorted(unknown))}")
         cases = [c for c in cases if c.id in args.case]
     if model is None:
         model = answer_model(args.model)
@@ -631,12 +686,10 @@ def main(
 
         judge = JevJudge()
 
-    report = evaluate(
-        cases,
-        model,
-        judge,
-        args.index,
-        names=company_names() | _missing_company_names(golden.cases),
+    print(estimate_cost(model.model, len(cases) * runs, args.context_budget).line(), file=out)
+    labelled = (*golden.cases, *(suite.cases if suite else ()))
+    settings = dict(
+        names=company_names() | _missing_company_names(labelled),
         fact_values=fact_values or corpus_fact_values,
         log_path=args.log,
         workers=args.workers,
@@ -645,6 +698,17 @@ def main(
         context_budget=args.context_budget,
         chunk_tokens=index_chunk_tokens(args.index) if args.index.exists() else None,
     )
+    if suite is not None:
+        brief = evaluate_brief_suite(cases, model, judge, args.index, runs=runs, **settings)
+        print_brief_suite_report(brief, out)
+        if args.json:
+            args.json.parent.mkdir(parents=True, exist_ok=True)
+            data = {"brief_suite_version": suite.version} | brief.to_dict()
+            args.json.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
+            print(f"\nWritten to {args.json.resolve()}", file=out)
+        return 1 if any(r.errors for r in brief.run_reports) else 0
+
+    report = evaluate(cases, model, judge, args.index, **settings)
     _print_report(report, args.split, out)
     if args.json:
         args.json.parent.mkdir(parents=True, exist_ok=True)
