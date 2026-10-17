@@ -243,3 +243,31 @@ export function citedSources(text: string, sources: readonly Source[]): Source[]
     .filter((source) => cited.has(source.tag))
     .sort((a, b) => tagNumber(a.tag) - tagNumber(b.tag))
 }
+
+/** An answer's opening paragraph, the direct answer, and the rest of its analysis. */
+export interface AnswerSplit {
+  opening: string
+  remainder: string
+}
+
+/** A blank line, which ends a Markdown paragraph: `\n\n`, `\r\n\r\n`, or one holding spaces. */
+const BLANK_LINE = /\r?\n[ \t]*\r?\n/
+
+/** A first block that is not a prose direct answer: a heading, a list item or a table row. */
+const NOT_PROSE = /^\s*(?:#{1,6}(?:\s|$)|(?:[-*+]|\d+[.)])(?:\s|$)|\|)/
+
+/**
+ * An answer's text split at its first blank line into the opening paragraph, which the
+ * prompt's fixed structure makes the direct answer, and the remainder. There is no split
+ * (null) when there is no remainder yet, or when the first block is a heading, list item
+ * or table row, since then it is not a prose answer and the whole text should show.
+ */
+export function splitAnswer(text: string): AnswerSplit | null {
+  const body = text.replace(/^(?:[ \t]*\r?\n)+/, '')
+  if (NOT_PROSE.test(body)) return null
+  const match = BLANK_LINE.exec(body)
+  if (!match) return null
+  const remainder = body.slice(match.index + match[0].length).replace(/^(?:[ \t]*\r?\n)+/, '')
+  if (!remainder.trim()) return null
+  return { opening: body.slice(0, match.index), remainder }
+}

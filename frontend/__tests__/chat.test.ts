@@ -11,6 +11,7 @@ import {
   messageText,
   promptMessages,
   rejectionReason,
+  splitAnswer,
   type QueryScope,
   type ResearchMessage,
   type Source,
@@ -181,6 +182,60 @@ describe('citedSources', () => {
   it('is empty when the answer cites nothing', () => {
     expect(citedSources('No citations here, nor S1 without brackets.', given)).toEqual([])
     expect(citedSources('', given)).toEqual([])
+  })
+})
+
+describe('splitAnswer', () => {
+  it('splits the opening paragraph from the rest at the first blank line', () => {
+    const text =
+      'Apple faces tariffs [S1].\nIt says so twice.\n\n**Apple.** Detail [S1].\n\nCoverage: none.'
+    expect(splitAnswer(text)).toEqual({
+      opening: 'Apple faces tariffs [S1].\nIt says so twice.',
+      remainder: '**Apple.** Detail [S1].\n\nCoverage: none.',
+    })
+  })
+
+  it('reads Windows line breaks and a blank line holding spaces as a paragraph break', () => {
+    expect(splitAnswer('Apple faces tariffs.\r\n  \r\nDetail.\r\n')).toEqual({
+      opening: 'Apple faces tariffs.',
+      remainder: 'Detail.\r\n',
+    })
+  })
+
+  it('skips blank lines before the opening', () => {
+    expect(splitAnswer('\n\nApple faces tariffs.\n\nDetail.')).toEqual({
+      opening: 'Apple faces tariffs.',
+      remainder: 'Detail.',
+    })
+  })
+
+  it('has no split when there is no remainder', () => {
+    expect(splitAnswer('Apple faces tariffs [S1].')).toBeNull()
+    expect(splitAnswer('Apple faces tariffs [S1].\n\n')).toBeNull()
+    expect(splitAnswer('Apple faces tariffs [S1].\r\n\r\n  \n')).toBeNull()
+    expect(splitAnswer('')).toBeNull()
+  })
+
+  it('has no split when the first block is a heading, list item or table row', () => {
+    for (const opening of [
+      '## Apple',
+      '# Answer',
+      '- Apple faces tariffs.',
+      '* Apple faces tariffs.',
+      '+ Apple faces tariffs.',
+      '1. Apple faces tariffs.',
+      '2) Apple faces tariffs.',
+      '| Company | Risk |\n| --- | --- |\n| Apple | Tariffs |',
+    ]) {
+      expect(splitAnswer(`${opening}\n\nDetail [S1].`)).toBeNull()
+    }
+  })
+
+  it('splits an opening that only mentions a number or a hash mark', () => {
+    expect(splitAnswer('2024 revenue rose; #1 in its market.\n\nDetail.')).toEqual({
+      opening: '2024 revenue rose; #1 in its market.',
+      remainder: 'Detail.',
+    })
   })
 })
 

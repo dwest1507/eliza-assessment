@@ -1,9 +1,13 @@
+'use client'
+
+import { useState } from 'react'
 import ReactMarkdown, { type Components } from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import {
   citedSources,
   citedTag,
   linkCitations,
+  splitAnswer,
   type CoverageGap,
   type QueryScope,
   type Source,
@@ -30,7 +34,11 @@ interface AnswerMessageProps {
 /**
  * One answer: the Coverage Gap callout, then its Markdown, with every `[Sn]` a link that
  * opens the Sources panel at that Source. The Sources arrive before the text, so the
- * citations work while the answer is still streaming. Once it is complete, two collapsed
+ * citations work while the answer is still streaming. Only the opening paragraph, the
+ * direct answer, shows at first: "Show full analysis" reveals the rest, live while it
+ * streams, and the expanded state is this answer's own, never saved, so a restored answer
+ * starts collapsed. An answer with one paragraph, or one that does not open with prose,
+ * shows whole with no control. Once it is complete, two collapsed
  * disclosures follow: "Sources (N)", the Sources it cites, and "How this was answered",
  * its Query Scope chips and every Source it was given.
  */
@@ -43,8 +51,11 @@ export default function AnswerMessage({
   openTag,
   onCite,
 }: AnswerMessageProps) {
+  const [expanded, setExpanded] = useState(false)
   const tags = new Set(sources.map((s) => s.tag))
   const cited = citedSources(text, sources)
+  const split = splitAnswer(text)
+  const shown = split && !expanded ? split.opening : text
 
   const components: Components = {
     a: ({ href, children }) => {
@@ -97,8 +108,39 @@ export default function AnswerMessage({
       {text && (
         <div className="answer text-[14.5px] leading-relaxed text-ink">
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
-            {linkCitations(text)}
+            {linkCitations(shown)}
           </ReactMarkdown>
+        </div>
+      )}
+      {split && (
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+          <button
+            type="button"
+            aria-expanded={expanded}
+            onClick={() => setExpanded(!expanded)}
+            className="group flex items-center gap-1.5 rounded-md py-1 text-[13px] font-medium text-accent-strong transition-colors hover:text-accent"
+          >
+            <svg
+              viewBox="0 0 24 24"
+              className="h-3.5 w-3.5 transition-transform group-aria-expanded:rotate-90"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              aria-hidden="true"
+            >
+              <path d="m9 6 6 6-6 6" />
+            </svg>
+            {expanded ? 'Hide full analysis' : 'Show full analysis'}
+          </button>
+          {!complete && (
+            <span className="flex items-center gap-1.5 text-[12px] text-muted">
+              <span
+                className="h-1.5 w-1.5 animate-pulse rounded-full bg-accent"
+                aria-hidden="true"
+              />
+              The rest is still being written…
+            </span>
+          )}
         </div>
       )}
       {complete && (

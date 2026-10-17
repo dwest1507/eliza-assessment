@@ -55,6 +55,16 @@ const ANSWER = [
   'Tesla is exposed to tariffs [S2].',
 ]
 
+/**
+ * An answer in the prompt's fixed structure: the direct answer, the per-Company detail
+ * and the closing Coverage note, each a paragraph, streamed one paragraph at a time.
+ */
+const LONG_ANSWER = [
+  'Apple and Tesla both face **trade policy** risk [S1].\n\n',
+  '**Apple.** Apple depends on outsourcing partners.\n\n',
+  '**Tesla.** Tesla is exposed to tariffs [S2].\n\nCoverage: Wells Fargo is not in the Filings provided.',
+]
+
 const QUERY_SCOPE = {
   companies: [
     { ticker: 'AAPL', name: 'Apple Inc', coverage: 'tracked' },
@@ -112,10 +122,11 @@ function uiMessageParts(
   answer: string[] = ANSWER,
   scope: object = QUERY_SCOPE,
   sources: object[] = SOURCES,
-  gaps: object[] = []
+  gaps: object[] = [],
+  messageId = 'msg-1'
 ): StreamPart[] {
   return [
-    { type: 'start', messageId: 'msg-1' },
+    { type: 'start', messageId },
     { type: 'data-query-scope', data: scope },
     { type: 'data-sources', data: { sources } },
     { type: 'data-coverage-gaps', data: { gaps } },
@@ -485,6 +496,179 @@ describe('Workspace', () => {
     expect(switcher()).toEqual(['S1', 'S2'])
   })
 
+  it('shows only the opening paragraph until "Show full analysis" is clicked', async () => {
+    fetchMock.mockImplementation(async () => uiMessageStream(LONG_ANSWER))
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    const toggle = await within(answer).findByRole('button', { name: 'Show full analysis' })
+
+    expect(within(answer).getByText('trade policy')).toBeInTheDocument()
+    expect(within(answer).queryByText(/outsourcing partners/)).not.toBeInTheDocument()
+    expect(within(answer).queryByText(/Coverage:/)).not.toBeInTheDocument()
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(within(answer).queryByText(/still being written/)).not.toBeInTheDocument()
+
+    await user.click(toggle)
+    const hide = within(answer).getByRole('button', { name: 'Hide full analysis' })
+    expect(hide).toHaveAttribute('aria-expanded', 'true')
+    expect(within(answer).getByText(/outsourcing partners/)).toBeInTheDocument()
+    expect(within(answer).getByText(/Coverage:/)).toBeInTheDocument()
+    expect(within(answer).getByRole('link', { name: 'Source S2' })).toBeInTheDocument()
+
+    await user.click(hide)
+    expect(within(answer).queryByText(/outsourcing partners/)).not.toBeInTheDocument()
+    // The Sources it cites are counted from the whole answer, not only the opening.
+    expect(within(answer).getByRole('button', { name: 'Sources (2)' })).toBeInTheDocument()
+  })
+
+  it('opens the Sources panel from a citation in the short answer', async () => {
+    fetchMock.mockImplementation(async () => uiMessageStream(LONG_ANSWER))
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    await within(answer).findByRole('button', { name: 'Show full analysis' })
+
+    await user.click(within(answer).getByRole('link', { name: 'Source S1' }))
+
+    const panel = await screen.findByRole('complementary', { name: 'Sources' })
+    expect(within(panel).getByRole('region', { name: /^S1/ })).toHaveTextContent(
+      'AAPL_10-K_2025-09-27'
+    )
+  })
+
+  it('shows a Coverage Gap once by default, leaving the closing Coverage note to the full analysis', async () => {
+    const gaps = [
+      {
+        kind: 'missing_company',
+        label: 'Not in the Corpus',
+        companies: ['Wells Fargo'],
+        text: 'Not in the Corpus: Wells Fargo is not in the Filings provided, so this answer does not cover it.',
+      },
+    ]
+    fetchMock.mockImplementation(async () =>
+      uiMessageStream(LONG_ANSWER, QUERY_SCOPE, SOURCES, gaps)
+    )
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    const toggle = await within(answer).findByRole('button', { name: 'Show full analysis' })
+
+    expect(answer.textContent?.match(/Wells Fargo is not in the Filings/g)).toHaveLength(1)
+    await user.click(toggle)
+    expect(answer.textContent?.match(/Wells Fargo is not in the Filings/g)).toHaveLength(2)
+  })
+
+  it('shows the whole answer, with no control, when it has one paragraph', async () => {
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    await within(answer).findByRole('button', { name: 'How this was answered' })
+
+    expect(within(answer).getByText(/Tesla is exposed to tariffs/)).toBeInTheDocument()
+    expect(within(answer).queryByRole('button', { name: /full analysis/ })).not.toBeInTheDocument()
+  })
+
+  it.each([
+    ['a table', '| Company | Risk |\n| --- | --- |\n| Apple | Tariffs [S1] |\n\n'],
+    ['a heading', '## Apple and Tesla [S1]\n\n'],
+  ])('shows the whole answer, with no control, when it opens with %s', async (_, opening) => {
+    fetchMock.mockImplementation(async () =>
+      uiMessageStream([opening, '**Tesla.** Tesla is exposed to tariffs [S2].'])
+    )
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    await within(answer).findByRole('button', { name: 'How this was answered' })
+
+    expect(within(answer).getByText(/Tesla is exposed to tariffs/)).toBeInTheDocument()
+    expect(within(answer).queryByRole('button', { name: /full analysis/ })).not.toBeInTheDocument()
+  })
+
+  it('offers no control while only the opening has streamed', async () => {
+    const { response, release } = heldUiMessageStream(
+      (part) => part.type === 'text-delta',
+      LONG_ANSWER
+    )
+    fetchMock.mockImplementation(async () => response)
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+
+    const answer = await screen.findByRole('article', { name: 'Answer' })
+    await within(answer).findByText('trade policy')
+    expect(within(answer).queryByRole('button', { name: /full analysis/ })).not.toBeInTheDocument()
+
+    release()
+    expect(
+      await within(answer).findByRole('button', { name: 'Show full analysis' })
+    ).toBeInTheDocument()
+  })
+
+  it('expands mid-stream, showing the rest live and that it is still being written', async () => {
+    const { response, release } = heldUiMessageStream(
+      (part) => part.type === 'text-delta' && String(part.delta).includes('outsourcing'),
+      LONG_ANSWER
+    )
+    fetchMock.mockImplementation(async () => response)
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+
+    const answer = await screen.findByRole('article', { name: 'Answer' })
+    const toggle = await within(answer).findByRole('button', { name: 'Show full analysis' })
+    expect(within(answer).getByText(/still being written/)).toBeInTheDocument()
+    expect(within(answer).queryByText(/outsourcing partners/)).not.toBeInTheDocument()
+
+    await user.click(toggle)
+    expect(within(answer).getByText(/outsourcing partners/)).toBeInTheDocument()
+    expect(within(answer).queryByText(/Tesla is exposed/)).not.toBeInTheDocument()
+    expect(within(answer).getByText(/still being written/)).toBeInTheDocument()
+
+    release()
+    expect(await within(answer).findByText(/Tesla is exposed/)).toBeInTheDocument()
+    expect(within(answer).queryByText(/still being written/)).not.toBeInTheDocument()
+    expect(within(answer).getByRole('button', { name: 'Hide full analysis' })).toBeInTheDocument()
+  })
+
+  it('keeps each answer expanded or collapsed on its own, and restores them collapsed', async () => {
+    fetchMock
+      .mockImplementationOnce(async () => uiMessageStream(LONG_ANSWER))
+      .mockImplementationOnce(async () =>
+        uiMessageStream(LONG_ANSWER, QUERY_SCOPE, SOURCES, [], 'msg-2')
+      )
+    const user = userEvent.setup()
+    const { unmount } = render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByRole('button', { name: 'Show full analysis' })
+    await user.type(screen.getByRole('textbox', { name: 'Question' }), 'And Microsoft?{Enter}')
+    await waitFor(() =>
+      expect(screen.getAllByRole('button', { name: 'Show full analysis' })).toHaveLength(2)
+    )
+
+    const [first, second] = screen.getAllByRole('article', { name: 'Answer' })
+    await user.click(within(second).getByRole('button', { name: 'Show full analysis' }))
+    expect(within(second).getByText(/outsourcing partners/)).toBeInTheDocument()
+    expect(within(first).queryByText(/outsourcing partners/)).not.toBeInTheDocument()
+    unmount()
+
+    render(<Workspace />)
+    const restored = await screen.findAllByRole('article', { name: 'Answer' })
+    expect(restored).toHaveLength(2)
+    for (const answer of restored) {
+      expect(within(answer).getByRole('button', { name: 'Show full analysis' })).toHaveAttribute(
+        'aria-expanded',
+        'false'
+      )
+      expect(within(answer).queryByText(/outsourcing partners/)).not.toBeInTheDocument()
+    }
+  })
+
   it('shows a cited tag that is not among the Sources as unavailable', async () => {
     fetchMock.mockImplementation(async () =>
       uiMessageStream(['Apple relies on **partners** [S1] and [S7].'])
@@ -561,6 +745,11 @@ describe('Workspace', () => {
 
     const answer = screen.getByRole('article', { name: 'Answer' })
     const callout = within(answer).getByRole('note', { name: 'Coverage Gaps' })
+    // Headed in plain words, keeping the domain term as its accessible name and hover text.
+    const heading = within(callout).getByRole('heading', {
+      name: 'What these Filings can’t answer',
+    })
+    expect(heading).toHaveAttribute('title', 'Coverage Gaps')
     const items = within(callout).getAllByRole('listitem')
     expect(items).toHaveLength(2)
     expect(within(items[0]).getByText('Not in the Corpus')).toBeInTheDocument()
