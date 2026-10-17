@@ -11,7 +11,7 @@ Two judgments, each a narrow question over the state it needs:
 
 - **Fact Recall.** One request per answer. The state is the answer; each Required Fact
   is a Noul ("does the answer state this fact?"). A fact counts as stated at a
-  probability of at least `STATED_AT`. Every Required Fact is judged, whatever its tier;
+  probability of at least `FACT_CUTOFF`. Every Required Fact is judged, whatever its tier;
   the generation harness scores Fact Recall on the must-state ones and detail recall on
   the details (`edgar_eval.generation.CaseResult`).
 - **Faithfulness.** The answer's claims (`edgar_eval.answer_checks.claims`: every
@@ -45,10 +45,15 @@ from edgar_eval.answer_checks import Claim
 from edgar_rag.retrieval import count_tokens
 
 __all__ = [
+    "CLAIM_CRITERIA",
+    "CLAIM_QUESTION",
+    "CONTEXT_NOTE",
+    "FACT_CRITERIA",
+    "FACT_CUTOFF",
+    "FACT_QUESTION",
     "JEV_KEY_ENV",
     "JEV_MODEL",
     "JEV_USD_PER_MILLION_INPUT_TOKENS",
-    "STATED_AT",
     "VERDICTS",
     "ClaimJudgment",
     "Evidence",
@@ -66,8 +71,10 @@ JEV_KEY_ENV = "JEV_API_KEY"
 JEV_USD_PER_MILLION_INPUT_TOKENS = 0.042
 """Jev's price (docs.typesafe.ai/models, 2026-10-16). Output tokens are free."""
 
-STATED_AT = 0.5
-"""The probability from which a Required Fact counts as stated."""
+FACT_CUTOFF = 0.5
+"""The fact cut-off: the probability from which a Required Fact counts as stated. It
+stays 0.5 until the judge study (ADR 0013) sets it, and every generation report records
+it (`GenerationReport.fact_cutoff`)."""
 
 VERDICTS = ("supported", "unsupported", "contradicted")
 
@@ -76,21 +83,21 @@ LONG_CONTEXT_TOKENS = 28_000
 limit is 32k tokens of state plus any one question."""
 _LONG_CONTEXT_HEADER = {"TypeSafe-Danger-Zone-Long-Context": "true"}
 
-_FACT_QUESTION = (
+FACT_QUESTION = (
     "Does the `answer` state `required_fact`? It counts as stated when the answer gives "
     "the same information in other words or in more detail. It does not count when the "
     "answer states only part of it, something related but different, or the opposite."
 )
-_FACT_CRITERIA = {
+FACT_CRITERIA = {
     "true": "The answer states the required fact, in any wording.",
     "false": "The answer does not state the required fact, states only part of it, or "
     "contradicts it.",
 }
-_CLAIM_QUESTION = (
+CLAIM_QUESTION = (
     "`claim` is a sentence from an answer about public companies that cites the `sources`, "
     "excerpts from SEC filings. How do the `sources` relate to `claim`?"
 )
-_CLAIM_CRITERIA = {
+CLAIM_CRITERIA = {
     "supported": "The sources state the claim or directly imply it, including every figure, "
     "period and company name in it.",
     "unsupported": "The sources do not say this: the claim adds information, figures or "
@@ -98,7 +105,7 @@ _CLAIM_CRITERIA = {
     "contradicted": "The sources say something different from the claim, such as another "
     "figure, period, company or direction of change.",
 }
-_CONTEXT_NOTE = (
+CONTEXT_NOTE = (
     " `context` is where `claim` sits in the answer: the heading above it and, for a table "
     'row, the table\'s header row. Use it only to read `claim`, such as what "it" refers to '
     "or what a row's figures measure; judge `claim` alone, not `context`."
@@ -122,7 +129,7 @@ class FactJudgment:
 
     @property
     def stated(self) -> bool:
-        return self.probability >= STATED_AT
+        return self.probability >= FACT_CUTOFF
 
 
 @dataclass(frozen=True)
@@ -234,8 +241,8 @@ class JevJudge:
 
         questions = {
             f"fact_{i}": Noul(
-                instructions={"required_fact": fact, "question": _FACT_QUESTION},
-                criteria=_FACT_CRITERIA,
+                instructions={"required_fact": fact, "question": FACT_QUESTION},
+                criteria=FACT_CRITERIA,
             )
             for i, fact in enumerate(facts)
         }
@@ -275,7 +282,7 @@ class JevJudge:
             }
             questions = {
                 f"claim_{i}": Choice(
-                    instructions=_claim_instructions(claims[i]), criteria=_CLAIM_CRITERIA
+                    instructions=_claim_instructions(claims[i]), criteria=CLAIM_CRITERIA
                 )
                 for i in members
             }
@@ -320,8 +327,8 @@ def _claim_instructions(claim: Claim) -> dict[str, Any]:
         if value
     }
     if not context:
-        return {"claim": claim.text, "question": _CLAIM_QUESTION}
-    return {"claim": claim.text, "context": context, "question": _CLAIM_QUESTION + _CONTEXT_NOTE}
+        return {"claim": claim.text, "question": CLAIM_QUESTION}
+    return {"claim": claim.text, "context": context, "question": CLAIM_QUESTION + CONTEXT_NOTE}
 
 
 def _verdict(claim: Claim, verdict: str, probabilities: dict[str, float]) -> ClaimJudgment:

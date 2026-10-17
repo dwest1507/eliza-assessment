@@ -404,3 +404,462 @@ def test_a_source_cited_by_several_claim_items_is_shown_in_full_once(tmp_path):
     assert sheet.count("> Text 1.") == 1
     assert sheet.count("> Source 1 of case-0") == 3  # every item still names its Source
     assert sheet.count("its text is under claim item 1 above") == 2
+
+
+# --- Judging and scoring --------------------------------------------------------------------
+
+
+def _fact_item(n, model):
+    from edgar_eval.judge_study import StudyItem
+
+    return StudyItem(
+        id=f"F-{n:010x}", kind="fact", case_id=f"case-{n}", model=model, answer="An answer."
+    )
+
+
+def _claim_item(n, model):
+    from edgar_eval.judge_study import StudyItem
+
+    return StudyItem(
+        id=f"C-{n:010x}",
+        kind="claim",
+        case_id=f"case-{n}",
+        model=model,
+        answer=f"Claim {n}. [S1]",
+        claim=f"Claim {n}.",
+        sources=(Evidence("S1", "Source 1", "Text 1."),),
+    )
+
+
+def _study(facts, claims):
+    """A sample, its labels and Jev's two runs, from rows of (model, label, run 1, run 2):
+    a fact's runs are probabilities, a claim's verdicts; None is a failed judgment."""
+    from edgar_eval.judge import JEV_MODEL
+    from edgar_eval.judge_study import JudgeRun, Sample, Verdict
+
+    items, labels, verdicts = [], {}, ([], [])
+    for n, (model, label, *runs) in enumerate(facts, 1):
+        item = _fact_item(n, model)
+        items.append(item)
+        labels[item.id] = label
+        for run, p in zip(verdicts, runs, strict=True):
+            run.append(
+                Verdict.of_fact(item.id, p) if p is not None else Verdict.failed(item.id, "x")
+            )
+    for n, (model, label, *runs) in enumerate(claims, 1):
+        item = _claim_item(n, model)
+        items.append(item)
+        labels[item.id] = label
+        for run, v in zip(verdicts, runs, strict=True):
+            run.append(
+                Verdict(item.id, v, probabilities={v: 1.0}) if v else Verdict.failed(item.id, "x")
+            )
+    sample = Sample(seed=1, reports=(), items=tuple(items), skipped={})
+    runs = tuple(
+        JudgeRun(judge=JEV_MODEL, run=r, verdicts={v.item_id: v for v in vs})
+        for r, vs in enumerate(verdicts, 1)
+    )
+    return sample, labels, runs
+
+
+GPT, HAIKU = "gpt-6-luna", "claude-haiku-5-5"
+
+# Ten fact items: (model, label, Jev run 1, Jev run 2). At the 0.5 cut-off run 1 states
+# F1, F2, F5, F7 and F10; the labels state F1, F2, F3, F7 and F8.
+FACTS = [
+    (GPT, "stated", 0.9, 0.9),
+    (GPT, "stated", 0.6, 0.4),  # flips between the runs
+    (GPT, "stated", 0.3, 0.3),
+    (GPT, "not stated", 0.2, 0.2),
+    (GPT, "not stated", 0.55, 0.55),
+    (GPT, "not stated", 0.05, None),  # run 2 failed on it
+    (HAIKU, "stated", 0.95, 0.95),
+    (HAIKU, "stated", 0.45, 0.45),
+    (HAIKU, "not stated", 0.1, 0.2),
+    (HAIKU, "not stated", 0.7, 0.7),
+]
+# Ten claim items: (model, label, Jev run 1, Jev run 2).
+CLAIMS = [
+    (GPT, "supported", "supported", "supported"),
+    (GPT, "supported", "supported", "supported"),
+    (GPT, "supported", "unsupported", "supported"),  # flips
+    (GPT, "unsupported", "supported", "supported"),
+    (GPT, "unsupported", "unsupported", "contradicted"),  # flips
+    (GPT, "contradicted", "contradicted", "contradicted"),
+    (HAIKU, "supported", "supported", "supported"),
+    (HAIKU, "unsupported", "supported", "supported"),
+    (HAIKU, "contradicted", "supported", "supported"),
+    (HAIKU, "unsupported", "unsupported", "unsupported"),
+]
+
+
+def test_the_score_reports_agreement_with_the_labels_against_hand_computed_values():
+    from pytest import approx
+
+    from edgar_eval.judge_study import score
+
+    sample, labels, runs = _study(FACTS, CLAIMS)
+    report = score(sample, labels, runs)
+    first = report.judges[0]
+
+    # Facts at 0.5: 6 of 10 agree; both sides state 5 of 10, so chance agreement is 0.5
+    # and kappa (0.6 - 0.5) / (1 - 0.5) = 0.2.
+    assert (first.facts.items, first.facts.accuracy, first.facts.kappa) == (10, 0.6, approx(0.2))
+    # Claims: 6 of 10 agree. The labels split 4/4/2 (supported, unsupported,
+    # contradicted), Jev 6/3/1: chance agreement 0.24 + 0.12 + 0.02 = 0.38, and kappa
+    # 0.22 / 0.62.
+    assert (first.claims.items, first.claims.accuracy) == (10, 0.6)
+    assert first.claims.kappa == approx(0.22 / 0.62)
+    # Of 6 bad claims, Jev calls C4, C8 and C9 supported: 3 of 6, Wilson 95% interval
+    # 0.1876 to 0.8124.
+    bad = first.false_supported
+    assert (bad.count, bad.of, bad.share) == (3, 6, 0.5)
+    assert (bad.low, bad.high) == (approx(0.1876, abs=1e-4), approx(0.8124, abs=1e-4))
+    # Errors by generator: gpt-6-luna misses F3 and F5 of 6 facts and C3 and C4 of 6
+    # claims; claude-haiku-5-5 misses F8 and F10 of 4 and C8 and C9 of 4. With the same
+    # pattern, Fisher's exact test finds no difference (p = 1).
+    by = {(g.model, g.kind): g for g in first.by_generator}
+    assert (by[GPT, "fact"].items, by[GPT, "fact"].errors) == (6, 2)
+    assert (by[GPT, "claim"].items, by[GPT, "claim"].errors) == (6, 2)
+    assert (by[HAIKU, "fact"].items, by[HAIKU, "fact"].errors) == (4, 2)
+    assert (by[HAIKU, "claim"].items, by[HAIKU, "claim"].errors) == (4, 2)
+    assert by[GPT, "fact"].p_value == approx(1.0)
+    assert not first.generator_differs
+
+    # Run 2 failed on F6: it is judged on 9 facts and counts the failure.
+    assert (report.judges[1].facts.items, report.judges[1].failed) == (9, 1)
+    # Run to run: F2 flips of the 9 facts both runs judged; C3 and C5 flip of 10 claims.
+    agreement = report.run_agreement
+    assert (agreement.facts.agree, agreement.facts.of) == (8, 9)
+    assert (agreement.claims.agree, agreement.claims.of) == (8, 10)
+
+
+def test_the_cut_off_sweep_and_averaged_probabilities_against_hand_computed_values():
+    from pytest import approx
+
+    from edgar_eval.judge_study import CUTOFFS, score
+
+    sample, labels, runs = _study(FACTS, CLAIMS)
+    first = score(sample, labels, runs).judges[0]
+
+    assert CUTOFFS == (0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
+    sweep = {c.cutoff: c for c in first.cutoffs}
+    # At 0.1 every fact but F6 counts as stated: 6 of 10 agree, kappa 0.2.
+    assert (sweep[0.1].accuracy, sweep[0.1].kappa) == (0.6, approx(0.2))
+    # At 0.3 (F3's 0.3 counts as stated) 8 of 10 agree, Jev states 7: kappa 0.6.
+    assert (sweep[0.3].accuracy, sweep[0.3].kappa) == (0.8, approx(0.6))
+    assert sweep[0.5].accuracy == first.facts.accuracy
+    # At 0.9 only F1 and F7 count: 7 of 10 agree, kappa 0.4.
+    assert (sweep[0.9].accuracy, sweep[0.9].kappa) == (0.7, approx(0.4))
+    # Averaged, each fact counts as its probability of a stated fact: agreement is p for
+    # a stated label and 1 - p otherwise, (3.2 + 3.4) / 10.
+    assert first.averaged == approx(0.66)
+
+
+def _bad_claims(called_supported, bad, good=0, model=GPT):
+    """Claim rows: `bad` labelled unsupported, `called_supported` of them judged
+    supported, and `good` labelled and judged supported."""
+    rows = [
+        (model, "unsupported", v, v)
+        for v in ["supported"] * called_supported + ["unsupported"] * (bad - called_supported)
+    ]
+    return rows + [(model, "supported", "supported", "supported")] * good
+
+
+def test_the_revisit_trigger_fires_just_above_one_in_five_and_not_at_exactly_one_in_five():
+    from edgar_eval.judge_study import score
+
+    facts = [(GPT, "stated", 0.9, 0.9)]
+    at = score(*_study(facts, _bad_claims(5, 25)))
+    assert at.judges[0].false_supported.share == 0.2
+    assert not at.revisit.fired and not at.revisit.false_supported_above
+
+    above = score(*_study(facts, _bad_claims(6, 29)))  # 0.207
+    assert above.revisit.fired and above.revisit.false_supported_above
+    assert not above.revisit.generator_differs
+
+
+def test_the_revisit_trigger_fires_when_the_error_differs_by_generator():
+    from edgar_eval.judge_study import score
+
+    facts = [(GPT, "stated", 0.9, 0.9)]
+    # Jev errs on every gpt-6-luna claim and on no claude-haiku-5-5 claim: 2 / C(20, 10).
+    claims = [(GPT, "supported", "unsupported", "unsupported")] * 10
+    claims += [(HAIKU, "supported", "supported", "supported")] * 10
+    report = score(*_study(facts, claims))
+    assert not report.revisit.false_supported_above  # no bad claim at all
+    p = {(g.model, g.kind): g.p_value for g in report.judges[0].by_generator}
+    assert p[GPT, "claim"] < 1e-4
+    assert report.revisit.generator_differs and report.revisit.fired
+
+
+def _unlabel(labels, sample, kind, keep):
+    """Labels with all but the first `keep` items of a kind left blank."""
+    items = [i.id for i in sample.items if i.kind == kind]
+    return {**labels, **{i: None for i in items[keep:]}}
+
+
+def test_the_stopping_rule_is_met_once_every_fact_and_100_claims_are_labelled_and_decided():
+    from edgar_eval.judge_study import score
+
+    facts = [(GPT, "stated", 0.9, 0.9), (GPT, "not stated", 0.1, 0.1)]
+    # Of the first 100 claims, 40 bad and 2 of them called supported: the 95% interval,
+    # 0.014 to 0.165, lies wholly below one in five. 50 more claims stay unlabelled.
+    claims = _bad_claims(2, 40, good=60) + _bad_claims(0, 0, good=50)
+    sample, labels, runs = _study(facts, claims)
+    report = score(sample, _unlabel(labels, sample, "claim", 100), runs)
+    assert report.stopping.met and report.stopping.decided == "below"
+    assert (report.stopping.claims_labelled, report.stopping.claims) == (100, 150)
+    assert not report.partial
+    assert report.judges[0].claims.items == 100
+
+    # 20 of 40 called supported: 0.35 to 0.65, wholly above.
+    sample, labels, runs = _study(facts, _bad_claims(20, 40, good=60) + _bad_claims(0, 0, good=5))
+    report = score(sample, _unlabel(labels, sample, "claim", 100), runs)
+    assert report.stopping.met and report.stopping.decided == "above"
+
+
+def test_the_stopping_rule_is_not_met_short_of_100_claims_an_unlabelled_fact_or_an_open_interval():
+    from edgar_eval.judge_study import Unlabelled, score
+
+    facts = [(GPT, "stated", 0.9, 0.9), (GPT, "not stated", 0.1, 0.1)]
+    decided = _bad_claims(2, 40, good=60) + _bad_claims(0, 0, good=50)
+    sample, labels, runs = _study(facts, decided)
+    short = score(sample, _unlabel(labels, sample, "claim", 99), runs, partial=True)
+    assert not short.stopping.met and short.stopping.decided == "below"
+    assert short.partial
+    fact_left = _unlabel(_unlabel(labels, sample, "claim", 100), sample, "fact", 1)
+    assert not score(sample, fact_left, runs, partial=True).stopping.met
+
+    # 8 of 40 called supported: 0.105 to 0.348 holds one in five, so all 200 are labelled.
+    open_sample, open_labels, open_runs = _study(
+        facts, _bad_claims(8, 40, good=60) + _bad_claims(0, 0, good=5)
+    )
+    open_labels = _unlabel(open_labels, open_sample, "claim", 100)
+    open_ = score(open_sample, open_labels, open_runs, partial=True)
+    assert not open_.stopping.met and open_.stopping.decided is None
+
+    # Without a partial report, each of them is refused.
+    for refused in (
+        (sample, _unlabel(labels, sample, "claim", 99), runs),
+        (sample, fact_left, runs),
+        (open_sample, open_labels, open_runs),
+    ):
+        try:
+            score(*refused)
+        except Unlabelled as error:
+            assert "unlabelled" in str(error)
+        else:
+            raise AssertionError("scored with items unlabelled")
+
+
+class FakeJevClient:
+    """Jev's client, answering from tables: a fact's probability, a claim's verdict. A
+    request asking about anything in `fail_on` fails, as a long input does."""
+
+    def __init__(self, nouls=None, choices=None, fail_on=(), before_first=None):
+        from edgar_eval.judge import JEV_MODEL
+
+        self.requests = []
+        self.nouls, self.choices, self.fail_on = nouls or {}, choices or {}, set(fail_on)
+        self.model = JEV_MODEL
+        self.before_first = before_first
+
+    def system_one(self, state, questions, *, model=None, extra_headers=None):
+        from types import SimpleNamespace
+
+        if not self.requests and self.before_first:
+            self.before_first()
+        self.requests.append(questions)
+        asked = {
+            q.instructions.get("required_fact") or q.instructions["claim"]
+            for q in questions.values()
+        }
+        if asked & self.fail_on:
+            raise RuntimeError("max_tokens_exceeded")
+        nouls, choices = {}, {}
+        for qid, q in questions.items():
+            if "required_fact" in q.instructions:
+                nouls[qid] = SimpleNamespace(
+                    noul=self.nouls.get(q.instructions["required_fact"], 0.9)
+                )
+            else:
+                verdict = self.choices.get(q.instructions["claim"], "supported")
+                choices[qid] = SimpleNamespace(choice=verdict, probabilities={verdict: 0.8})
+        return SimpleNamespace(
+            model=self.model,
+            usage=SimpleNamespace(input_tokens=1_000),
+            nouls=nouls,
+            choices=choices,
+        )
+
+
+def _judge_command(tmp_path, *extra, jev=None, reference=None, sample=None, out=None):
+    """Draw a small sample, write its sheet, and run `judge` on it."""
+    from edgar_eval.judge_study import main
+
+    if sample is None:
+        reports, facts, _ = _synthetic_reports(cases=2, sentences=3)
+        sample = draw_sample(reports, facts, _sources, seed=4, fact_items=4, claim_items=6)
+    write_sheet(sample, tmp_path / "sheet.md")
+    (tmp_path / "sample.json").write_text(json.dumps(sample.to_dict()))
+    argv = ["judge", "--sample", str(tmp_path / "sample.json")]
+    argv += ["--verdicts", str(tmp_path / "verdicts.json")]
+    code = main([*argv, *extra], jev=jev, reference=reference, out=out or io.StringIO())
+    return code, sample
+
+
+def test_jev_judges_every_item_twice_and_a_failure_is_recorded_against_its_item(tmp_path):
+    from edgar_eval.judge import JEV_MODEL, JevJudge
+    from edgar_eval.judge_study import JudgeRun
+
+    reports, facts, _ = _synthetic_reports(cases=2, sentences=3)
+    sample = draw_sample(reports, facts, _sources, seed=4, fact_items=4, claim_items=6)
+    failing = next(i for i in sample.items if i.kind == "claim")
+    stated = next(i for i in sample.items if i.kind == "fact")
+    client = FakeJevClient(nouls={stated.fact: 0.2}, choices={}, fail_on={failing.claim})
+    sheet_before = None
+
+    code, _ = _judge_command(tmp_path, jev=JevJudge(client=client), sample=sample)
+    assert code == 0
+    sheet_before = (tmp_path / "sheet.md").read_text()
+    saved = json.loads((tmp_path / "verdicts.json").read_text())
+    runs = [JudgeRun.from_dict(r) for r in saved["runs"]]
+
+    assert [(r.judge, r.run) for r in runs] == [(JEV_MODEL, 1), (JEV_MODEL, 2)]
+    # The failed request judged every claim citing the same Sources in that answer.
+    same_request = {
+        i.id
+        for i in sample.items
+        if i.kind == "claim" and i.answer == failing.answer and i.sources == failing.sources
+    }
+    for run in runs:
+        assert set(run.verdicts) == {i.id for i in sample.items}  # none dropped
+        for item_id in same_request:
+            failed = run.verdicts[item_id]
+            assert failed.verdict is None and "max_tokens_exceeded" in failed.error
+        assert run.verdicts[stated.id].probability == 0.2
+        assert run.verdicts[stated.id].verdict == "not stated"
+        others = [v for i, v in run.verdicts.items() if i not in same_request]
+        assert others and all(v.verdict is not None and v.error is None for v in others)
+    # Each answer is asked once per run, its facts and claims together.
+    assert len(client.requests) >= 2
+    # The verdicts are kept apart from the sheet, which stays blind.
+    assert (tmp_path / "sheet.md").read_text() == sheet_before
+    assert "0.2" not in sheet_before and "supported\n" not in sheet_before
+
+
+def test_the_cost_estimate_is_printed_before_any_judge_is_called(tmp_path):
+    from edgar_eval.judge import JevJudge
+
+    out = io.StringIO()
+    seen = []
+    client = FakeJevClient(before_first=lambda: seen.append(out.getvalue()))
+    _judge_command(tmp_path, jev=JevJudge(client=client), out=out)
+    assert seen and "Estimated cost" in seen[0] and "$" in seen[0]
+    assert "claude-haiku-5-5" not in seen[0]  # no reference asked for
+
+
+class FakeAnthropic:
+    """Anthropic's client: a JSON verdict for each request, or a refusal for an item
+    whose text holds `refuse`."""
+
+    def __init__(self, refuse=None):
+        self.requests = []
+        self.refuse = refuse
+        self.messages = self
+
+    def create(self, **request):
+        from types import SimpleNamespace
+
+        self.requests.append(request)
+        prompt = request["messages"][0]["content"]
+        schema = request["output_config"]["format"]["schema"]
+        body = {"stated": False} if "stated" in schema["properties"] else {"verdict": "unsupported"}
+        refused = self.refuse is not None and self.refuse in prompt
+        return SimpleNamespace(
+            model=request["model"],
+            stop_reason="refusal" if refused else "end_turn",
+            content=[] if refused else [SimpleNamespace(type="text", text=json.dumps(body))],
+            usage=SimpleNamespace(input_tokens=500, output_tokens=50),
+        )
+
+
+def test_the_reference_judge_runs_once_pinned_and_records_its_failures(tmp_path, monkeypatch):
+    from edgar_eval.judge import JevJudge
+    from edgar_eval.judge_study import REFERENCE_MODEL, JudgeRun, ReferenceJudge, score
+
+    # No provider's SDK can be imported: every client is a fake. (Jev's question types
+    # come from its SDK, which the fake client answers without any request.)
+    for module in ("openai", "anthropic"):
+        monkeypatch.setitem(sys.modules, module, None)
+    reports, facts, _ = _synthetic_reports(cases=2, sentences=3)
+    sample = draw_sample(reports, facts, _sources, seed=4, fact_items=4, claim_items=6)
+    refused = next(i for i in sample.items if i.kind == "claim")
+    anthropic = FakeAnthropic(refuse=f"<claim>\n{refused.claim}\n</claim>")
+    # Every item asking about that claim, whichever generator's answer it is from.
+    refusals = {i.id for i in sample.items if i.kind == "claim" and i.claim == refused.claim}
+    out = io.StringIO()
+
+    code, _ = _judge_command(
+        tmp_path,
+        "--reference",
+        jev=JevJudge(client=FakeJevClient()),
+        reference=ReferenceJudge(client=anthropic),
+        sample=sample,
+        out=out,
+    )
+    assert code == 0
+    assert REFERENCE_MODEL == "claude-haiku-5-5"
+    assert f"{REFERENCE_MODEL} once" in out.getvalue()
+    assert len(anthropic.requests) == len(sample.items)  # one request an item, once
+    assert {r["model"] for r in anthropic.requests} == {REFERENCE_MODEL}
+    runs = [
+        JudgeRun.from_dict(r) for r in json.loads((tmp_path / "verdicts.json").read_text())["runs"]
+    ]
+    assert [r.judge for r in runs] == ["jev-1.13.0", "jev-1.13.0", REFERENCE_MODEL]
+    reference = runs[2].verdicts
+    for item_id in refusals:
+        assert reference[item_id].verdict is None and "refusal" in reference[item_id].error
+    assert all(
+        v.verdict == ("not stated" if i.startswith("F-") else "unsupported")
+        for i, v in reference.items()
+        if i not in refusals
+    )
+
+    # The score reports it beside Jev's runs, without a cut-off sweep.
+    labels = {i.id: "stated" if i.kind == "fact" else "supported" for i in sample.items}
+    report = score(sample, labels, runs)
+    haiku = report.judges[2]
+    assert haiku.judge == REFERENCE_MODEL and haiku.failed == len(refusals)
+    assert haiku.facts.accuracy == 0.0 and haiku.cutoffs == () and haiku.averaged is None
+
+
+def test_the_score_command_refuses_unlabelled_items_unless_a_partial_report_is_asked_for(
+    tmp_path,
+):
+    from edgar_eval.judge import JevJudge
+    from edgar_eval.judge_study import main
+
+    code, sample = _judge_command(tmp_path, jev=JevJudge(client=FakeJevClient()))
+    fact = next(i for i in sample.items if i.kind == "fact")
+    _label_some(tmp_path / "sheet.md", {fact.id: "stated"})
+    argv = [
+        "score",
+        "--sheet",
+        str(tmp_path / "sheet.md"),
+        "--sample",
+        str(tmp_path / "sample.json"),
+    ]
+    argv += ["--verdicts", str(tmp_path / "verdicts.json"), "--json", str(tmp_path / "score.json")]
+
+    err = io.StringIO()
+    assert main(argv, out=io.StringIO(), err=err) == 1
+    assert "unlabelled" in err.getvalue()
+    assert not (tmp_path / "score.json").exists()
+
+    out = io.StringIO()
+    assert main([*argv, "--partial"], out=out) == 0
+    saved = json.loads((tmp_path / "score.json").read_text())
+    assert saved["partial"] and saved["judges"][0]["facts"]["items"] == 1
+    assert "partial" in out.getvalue().lower()

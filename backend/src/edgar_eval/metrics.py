@@ -1,5 +1,6 @@
 """The harnesses' pure parts: ranking metrics, McNemar's exact test, the sign test and
-the bootstrap interval.
+the bootstrap interval, and the judge study's agreement statistics (Cohen's kappa, the
+Wilson score interval and Fisher's exact test).
 
 A ranking is the list of (Filing ID, Section) pairs an Arm returns, best first, one per
 Source. `k=None` means the whole ranking: every Source that reaches the Answer Call.
@@ -9,9 +10,9 @@ from __future__ import annotations
 
 from collections.abc import Collection, Sequence
 from dataclasses import dataclass
-from math import comb
+from math import comb, sqrt
 from random import Random
-from statistics import fmean
+from statistics import NormalDist, fmean
 from typing import Literal
 
 Pair = tuple[str, str]
@@ -157,3 +158,44 @@ def bootstrap_interval(
         resamples=resamples,
         seed=seed,
     )
+
+
+def cohen_kappa(pairs: Sequence[tuple[str, str]]) -> float | None:
+    """Cohen's kappa of (label, verdict) pairs: their agreement beyond what chance gives
+    with each side's own shares of the categories. None with no pair, or when chance
+    alone gives full agreement (both sides use one category), where it is undefined."""
+    if not pairs:
+        return None
+    n = len(pairs)
+    observed = sum(a == b for a, b in pairs) / n
+    categories = {c for pair in pairs for c in pair}
+    chance = sum(
+        sum(a == c for a, _ in pairs) / n * sum(b == c for _, b in pairs) / n for c in categories
+    )
+    return None if chance == 1 else (observed - chance) / (1 - chance)
+
+
+def wilson_interval(count: int, of: int, *, confidence: float = 0.95) -> tuple[float, float] | None:
+    """The Wilson score interval of the share `count / of`, or None when `of` is 0."""
+    if of == 0:
+        return None
+    z = NormalDist().inv_cdf(0.5 + confidence / 2)
+    p, z2 = count / of, z * z
+    denominator = 1 + z2 / of
+    centre = (p + z2 / (2 * of)) / denominator
+    half = z * sqrt(p * (1 - p) / of + z2 / (4 * of * of)) / denominator
+    return max(0.0, centre - half), min(1.0, centre + half)
+
+
+def fisher_exact(a: int, b: int, c: int, d: int) -> float:
+    """Fisher's exact test, two-sided, of the 2x2 table [[a, b], [c, d]]: the probability,
+    with the margins fixed, of a table no more likely than this one."""
+    row, column, n = a + b, a + c, a + b + c + d
+
+    def weight(x: int) -> int:
+        return comb(column, x) * comb(n - column, row - x)
+
+    observed = weight(a)
+    tables = range(max(0, row + column - n), min(row, column) + 1)
+    # Integer weights, so ties with the observed table are exact.
+    return sum(w for w in map(weight, tables) if w <= observed) / comb(n, row)

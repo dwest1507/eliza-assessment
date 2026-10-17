@@ -87,7 +87,7 @@ from edgar_eval.answer_checks import (
     claims,
 )
 from edgar_eval.generators import answer_cost, answer_model
-from edgar_eval.judge import Evidence, Judgments
+from edgar_eval.judge import FACT_CUTOFF, Evidence, Judgments
 from edgar_eval.retrieval import Arm, Prepare, conversation
 from edgar_rag.answer_model import DEFAULT_ANSWER_LOG, AnswerCall, AnswerModel, StopReason
 from edgar_rag.corpus import DEFAULT_SECTOR_TABLE
@@ -287,6 +287,10 @@ class GenerationReport:
     """Tokens of Sources each Answer Call was allowed (ADR 0010)."""
     chunk_tokens: int | None = None
     """The chunk size of the index the Sources came from, when known (ADR 0010)."""
+    fact_cutoff: float = FACT_CUTOFF
+    """The probability from which Jev's Required Fact counted as stated
+    (`edgar_eval.judge.FACT_CUTOFF`). A report saved before it was recorded was scored at
+    0.5."""
 
     @property
     def settings(self) -> str:
@@ -785,7 +789,8 @@ def _print_report(report: GenerationReport, split: str, out: TextIO) -> None:
     print(
         f"Generation on the {split} split: {report.overall.cases} cases answered by "
         f"{report.model} (prompt {report.prompt_version}) on the {report.arm or '?'} Arm "
-        f"({report.settings}), judged by {report.judge_model}",
+        f"({report.settings}), judged by {report.judge_model} "
+        f"at the fact cut-off {report.fact_cutoff}",
         file=out,
     )
     headers = ["", *(name for name, _ in _COLUMNS)]

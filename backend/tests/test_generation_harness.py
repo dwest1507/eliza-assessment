@@ -281,6 +281,28 @@ def test_each_case_is_answered_checked_judged_and_priced(index, tmp_path):
     assert report.by_type["risk"].cases == 1
 
 
+def test_every_generation_report_records_the_fact_cut_off(index, tmp_path):
+    import json
+
+    from edgar_eval.generation import evaluate
+    from edgar_eval.judge import FACT_CUTOFF
+
+    cases = [_case("apple", "What are Apple's risks?", facts=["Apple uses outsourcing."])]
+    report = evaluate(
+        cases,
+        FakeModel(ANSWER),
+        FakeJudge(),
+        index,
+        names={},
+        fact_values=lambda filing_id: [],
+        log_path=None,
+    )
+
+    assert FACT_CUTOFF == 0.5  # until the judge study sets it
+    assert report.fact_cutoff == FACT_CUTOFF
+    assert json.loads(json.dumps(report.to_dict()))["fact_cutoff"] == 0.5
+
+
 def test_fact_recall_scores_must_state_facts_and_detail_recall_the_details(index, tmp_path):
     import json
 

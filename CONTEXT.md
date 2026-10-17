@@ -43,7 +43,7 @@ One claim, naming its Company, that a good answer to a Golden Set or Brief Suite
 _Avoid_: Expected answer, key point
 
 **Fact Recall**:
-The share of a case's must-state Required Facts that an answer states, as judged by Jev. The same share over its details is detail recall, reported beside Fact Recall and never decided on. An answer cut off at the Answer Call's token cap fails, with a Fact Recall of 0.
+The share of a case's must-state Required Facts that an answer states, as judged by Jev: a fact is stated when Jev's probability reaches the fact cut-off, 0.5 until the judge study sets it. The same share over its details is detail recall, reported beside Fact Recall and never decided on. An answer cut off at the Answer Call's token cap fails, with a Fact Recall of 0.
 _Avoid_: Recall (unqualified), coverage
 
 **Faithfulness**:
