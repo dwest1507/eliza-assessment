@@ -203,8 +203,8 @@ function Scoreboard({ data }: { data: EvalExport }) {
       intro={
         <>
           The harnesses’ latest results on the Golden Set’s {split} split, exported on{' '}
-          {data.exportedOn}. Choices are tuned on dev; the holdout is scored once, at the end.
-          Scores are shares from 0 to 1.
+          {data.exportedOn}. Choices are tuned on dev; the holdout is scored once per final setup,
+          never to choose. Scores are shares from 0 to 1.
         </>
       }
     >

@@ -7,7 +7,8 @@ Required Facts an answer must state (each with an evidence quote from its Sectio
 the Coverage Gaps it must state. Six cases are the front-end's starter prompts.
 
 Cases are split dev/holdout by a hash of each case id (`assign_splits`), so prompt and
-Arm choices are tuned on dev and the holdout is scored once at the end.
+Arm choices are tuned on dev and the holdout is scored once per final setup, never to
+choose.
 
 `load_golden_set` checks the schema and raises `ValueError` on any problem. Checking the
 labels against the Corpus is left to the tests, so loading needs no Corpus.

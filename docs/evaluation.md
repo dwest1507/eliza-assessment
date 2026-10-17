@@ -1,12 +1,12 @@
 # Evaluation
 
-How the system's quality is measured. Everything is scored against the [Golden Set](golden-set.md): choices are tuned on its dev split, and the holdout split is scored once, at the end. Two harnesses do the measuring: the [retrieval harness](#retrieval-harness) asks whether the right Sections reach the Answer Call; the [generation harness](#generation-harness) asks whether the answers are right, and what they cost. `make eval-export` puts their latest results in the workspace's "How it works" page ([Showing the results](#showing-the-results)).
+How the system's quality is measured. Everything is scored against the [Golden Set](golden-set.md): choices are tuned on its dev split, and the holdout split is scored once per final setup, after every choice is made on dev, and never used to choose ([the holdout rule](#the-holdout-rule)). Two harnesses do the measuring: the [retrieval harness](#retrieval-harness) asks whether the right Sections reach the Answer Call; the [generation harness](#generation-harness) asks whether the answers are right, and what they cost. `make eval-export` puts their latest results in the workspace's "How it works" page ([Showing the results](#showing-the-results)).
 
 ## Retrieval harness
 
 ```sh
 make eval-retrieval              # the dev split
-make eval-retrieval SPLIT=all    # dev and holdout together; SPLIT=holdout only once, at the end
+make eval-retrieval SPLIT=all    # dev and holdout together; SPLIT=holdout only once per final setup
 make eval-retrieval ARMS=fts5    # only some Arms (the Shipped Arm always runs)
 make eval-retrieval ARMS=fts5 CHUNK_TOKENS=450 CONTEXT_BUDGET=24000   # another chunk size and context budget
 ```
@@ -401,7 +401,7 @@ Jev refused to judge `trend-jpm-revenue-snapshot` for every model but Sonnet (`m
 
 ### The holdout run
 
-The final configuration, the `fts5` Arm, `gpt-6-luna` and prompt v7, run once on the holdout split (10 cases) on 2026-10-16, after every choice above was made on dev. Nothing was changed after it.
+The final configuration, the `fts5` Arm, `gpt-6-luna` and prompt v7 (with 600-token chunks and the 32k context budget, then untuned), run once on the holdout split (10 cases) on 2026-10-16, after every choice above was made on dev. Nothing was changed after it. The tuning that followed left what ships unchanged, so this run stands for the shipped setup ([Scoring the holdout once more](#scoring-the-holdout-once-more)).
 
 ```sh
 make eval-retrieval SPLIT=holdout ARMS=fts5
@@ -494,6 +494,32 @@ Golden Set version 1, dev split, 2026-10-16, after the chunk size and context bu
 - **A budget per Company shortened the five-Company answer, not the three-Company one.** The pharmaceutical comparison came in at 492 to 556 words under a sentence budget, against 627 to 785 in every v7 run. The brief's risk comparison of Apple, Tesla and JPMorgan ran over in every run of every version (601 to 722 words): the model gave each Company three paragraphs or bullets whatever the budget said.
 - **v12's second run fell behind on Faithfulness** against one v7 run (1 case higher, 9 lower, p = 0.021). No version was ahead on anything.
 - The five runs cost $0.238 in Answer Calls and $0.105 in Jev judging, **about $0.34 in all**. The holdout split was not scored.
+
+### Scoring the holdout once more
+
+The holdout run above came before two tickets that could change what ships, [the chunk size and context budget](#chunk-size-and-context-budget) and [the answer length](#answer-length-prompts-v11-to-v14); if either had, its numbers would describe a setup that is no longer demoed. The decision (2026-10-16) was to score the holdout once more only if what ships changed, by this rule, written down before any run.
+
+#### The holdout rule
+
+- **The holdout is scored once per final setup and never used to choose.** Every choice is made on dev. The holdout is scored once on the setup that ships after them, and again only if a later dev choice changes that setup: then one retrieval run and one generation run (`make eval-retrieval SPLIT=holdout ARMS=fts5`, `make eval-generation SPLIT=holdout`, about $0.04), shown beside the earlier run.
+- **That run reports and decides nothing, and nothing changes after it.** Whatever it scores, no Arm, chunk size, context budget, template or generator is changed, and no Golden Set case is relabelled. A worse score is reported as it is.
+- **It is read with the 10-case caveat.** On 10 cases one case moves a share by 0.10, so two holdout runs that differ by a case or two do not show that the setup got better or worse.
+- Rescoring a saved holdout report offline with a corrected check ([Rescoring a fixed check](#generation-harness)) is not a run: it makes no Answer Call and changes no choice.
+
+**The setup a second run would measure** is the one that ships: the `fts5` Arm with prose chunks of about 600 tokens and a 32,000-token per-Company context budget, `gpt-6-luna` at reasoning effort `low`, prompt v7, judged by `jev-1.13.0`.
+
+#### The first run stands
+
+| | First holdout run (2026-10-16) | Ships now |
+|---|---|---|
+| Retrieval Arm | `fts5` | `fts5` ([ADR 0008](adr/0008-fts5-stays-the-shipped-arm.md)) |
+| Chunk size | about 600 tokens (the EDA's starting point) | about 600 tokens ([ADR 0010](adr/0010-chunk-size-and-context-budget.md)) |
+| Context budget per Company | 32,000 tokens (the EDA's starting point) | 32,000 tokens ([ADR 0010](adr/0010-chunk-size-and-context-budget.md)) |
+| Generator | `gpt-6-luna` | `gpt-6-luna` ([ADR 0009](adr/0009-gpt-6-luna-stays-the-generator.md)) |
+| Answer Call prompt | v7 | v7 (v11 to v14 discarded) |
+| Judge | `jev-1.13.0` | `jev-1.13.0` |
+
+**What ships did not change, so the holdout was not scored again**, and [the first holdout run](#the-holdout-run) stands for the shipped setup. The chunk size and context budget sweep kept 600-token chunks and the 32k budget, and the shipped index's chunks are byte-identical to the ones the first run searched; the answer length versions were discarded and v7 stays. The changes made since the first run alter how the setup is measured or served, not what it answers with: the stricter figure check was applied to the first run's saved answers offline, which prepared each holdout case's Answer Context again and found its Sources unchanged (every figures-exact score stayed the same); the retrieval seam was reorganised with no change in behaviour; and the chat API now refuses more turns than the prompt uses, which no Golden Set case reaches.
 
 ## Showing the results
 

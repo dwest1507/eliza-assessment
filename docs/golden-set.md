@@ -59,7 +59,7 @@ Section names are the Corpus seam's standard names (`Risk Factors`, `MD&A`, `Leg
 
 Sort the case ids by the SHA-256 hex digest of each id (UTF-8). The first third, rounded to the nearest whole case, are holdout; the rest are dev. That gives 10 holdout cases and 20 dev cases.
 
-The rule is written in the file (`split_rule`), each case records its split, and a test recomputes the split from the ids and checks it matches. Prompt and Arm choices are tuned on dev only, and the holdout is run once at the end.
+The rule is written in the file (`split_rule`), each case records its split, and a test recomputes the split from the ids and checks it matches. Prompt and Arm choices are tuned on dev only, and the holdout is scored once per final setup and never used to choose ([the holdout rule](evaluation.md#the-holdout-rule)).
 
 The first rule tried was a per-case threshold: holdout when the hash modulo 10 is 7, 8 or 9, about 30% of cases. On these 30 ids it put only 5 cases in the holdout, too few to score. It was replaced by ranking before any Arm or prompt had run, so no score could have influenced the change. Ranking keeps the holdout at exactly a third. The cost is that adding a case can move one other case across the boundary, so cases should not be added after the holdout has been scored.
 

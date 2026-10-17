@@ -96,7 +96,7 @@ own question, point at the Query Scope chips first: they show what the rules und
 
 # Evaluation: the final holdout numbers
 
-The final configuration (FTS5, `gpt-6-luna`, prompt v7) was scored once on the holdout split, after every choice was made on dev. The Golden Set has 30 labelled questions: 20 dev, 10 holdout.
+The final configuration (FTS5, `gpt-6-luna`, prompt v7) was scored once on the holdout split, after every choice was made on dev. The tuning since left what ships unchanged, so this run stands. The Golden Set has 30 labelled questions: 20 dev, 10 holdout.
 
 | Retrieval | | Answers | |
 |---|---|---|---|
