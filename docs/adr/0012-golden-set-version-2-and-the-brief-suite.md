@@ -27,7 +27,7 @@ We decided:
   Figure facts are labelled from the SEC company-facts reference, independently of the system's own Financial Facts.
 - **Version 1's cases are reused.** Its 27 cases other than the brief's join dev, including the 10 version 1 holdout cases, which were scored once and never tuned on. The 33 new dev cases and 20 holdout cases are drafted together, and the 20 whose ids have the lowest SHA-256 digests become the holdout. Every case then records its split, and no case ever moves.
 - **One-claim Required Facts, in two tiers.** Each fact states one claim and names its Company. It is either must-state (something any good answer covers) or a detail. Fact Recall gates on the must-state facts, and recall of details is reported beside it. Every fact keeps a verbatim evidence quote that the Golden Set's tests check against the Corpus.
-- **Drafted from whole Sections, not from what retrieval returns.** Candidates are drafted in Claude Code, so no API spend, and the developer accepts or rejects each one. This keeps the labels from inheriting the system's own Section plan: "how are they addressing them" is not answered by Risk Factors alone.
+- **Drafted from whole Sections, not from what retrieval returns.** Candidates are drafted in Claude Code, so no API spend. The developer should review every drafted fact, but because this is a quick-turn demo, it is acceptable not to (see the note of 2026-10-17 below). Drafting from whole Sections keeps the labels from inheriting the system's own Section plan: "how are they addressing them" is not answered by Risk Factors alone.
 - **The holdout rule applies per Golden Set version.** Version 2's holdout is scored once, on the final version 2 setup. Version 1's holdout run stands as recorded.
 
 ## Considered options
@@ -39,7 +39,13 @@ We decided:
 
 ## Consequences
 
-- About 65 new cases and 27 rewrites, roughly 7 hours of the developer's review.
+- About 65 new cases and 27 rewrites. Reviewing them would take the developer roughly 7 hours, which the developer chose not to spend (see the note below).
 - Version 2 scores are not comparable with version 1's, so the shipped setup is scored afresh on version 2 before any comparison.
 - The Golden Set's loader, schema and tests change: tiers, a recorded split, and the Brief Suite.
 - The front-end's starter prompts still include the brief's three questions; they now come from the Brief Suite.
+
+## Note, 2026-10-17: no developer review of drafted labels
+
+The developer should review every drafted fact, but because this is a quick-turn demo, it is acceptable not to. The developer chose not to (decided 2026-10-17, recorded on #43). Drafting does not wait for, or ask for, the developer to accept each case or fact.
+
+The mechanical checks stand in for the review: every evidence quote is checked verbatim against the Corpus, every figure against the SEC company-facts reference, and every new question against the others for duplicates. So does the implementer's read-back of each case against its Sections. These prove that the labels point at real text, not that they are complete, so no human has checked that a case lists everything its answer must say.
