@@ -19,14 +19,20 @@ front-end's `useChat` reads it as is:
 
 If the provider fails mid-answer, the text ends and an `error` part replaces the finish.
 
-The backend is stateless: the browser sends the whole conversation every time and the
-Query Scope is recomputed from it, a follow-up inheriting each part it does not name
-from the most recent earlier question that named it (ADR 0003). An earlier answer may
-carry the Filing ID each of its Source tags cited (a `sources` map, or its own
-`data-sources` part), and the prompt's history names those Filings in place of the
-tags. Nothing about one request is kept for the
-next. The answer model is built once, on the first question, so `/api/health` works
-without a provider key.
+The backend is stateless: the browser sends the conversation every time and the Query
+Scope is recomputed from it, a follow-up inheriting each part it does not name from the
+most recent earlier question that named it (ADR 0003). An earlier answer may carry the
+Filing ID each of its Source tags cited (a `sources` map, or its own `data-sources`
+part), and the prompt's history names those Filings in place of the tags. Nothing about
+one request is kept for the next. The answer model is built once, on the first question,
+so `/api/health` works without a provider key.
+
+A request is answered with 400 and a `detail` saying why when it has no messages, more
+than `MAX_MESSAGES` (the question and the `HISTORY_TURNS` messages before it, all the
+prompt uses), an earlier message longer than `MAX_EARLIER_MESSAGE_CHARS`, or a latest
+message that is not the user's, is blank, or is longer than `MAX_MESSAGE_CHARS`. The
+front-end's chat proxy sends only the last `MAX_MESSAGES`, so a long conversation keeps
+working there.
 
 Run it with `make api`. Configuration comes from the environment: `CORS_ALLOWED_ORIGINS`
 (comma-separated; none by default) and the answer model's own variables (`OPENAI_API_KEY`,
@@ -52,6 +58,7 @@ from pydantic import BaseModel, ConfigDict
 from edgar_rag.answer_model import DEFAULT_ANSWER_LOG, AnswerCall, AnswerModel
 from edgar_rag.retrieval import (
     DEFAULT_INDEX,
+    HISTORY_TURNS,
     AnswerContext,
     CoverageGap,
     Message,
@@ -60,10 +67,25 @@ from edgar_rag.retrieval import (
     prepare_answer_context,
 )
 
-__all__ = ["CORS_ENV_VAR", "MAX_MESSAGE_CHARS", "create_app"]
+__all__ = [
+    "CORS_ENV_VAR",
+    "MAX_EARLIER_MESSAGE_CHARS",
+    "MAX_MESSAGES",
+    "MAX_MESSAGE_CHARS",
+    "create_app",
+]
 
 MAX_MESSAGE_CHARS = 4_000
 """The longest latest message answered. A business question is a sentence or two."""
+
+MAX_EARLIER_MESSAGE_CHARS = 20_000
+"""The longest earlier message accepted. An earlier answer is capped at 2,500 completion
+tokens, about 10,000 characters; this leaves it room and still bounds the request."""
+
+MAX_MESSAGES = HISTORY_TURNS + 1
+"""The most messages a conversation may send: the question and the earlier messages the
+prompt keeps as history. Its one source of truth is the prompt's `HISTORY_TURNS`; the
+front-end's chat proxy sends no more than this, dropping the oldest."""
 
 CORS_ENV_VAR = "CORS_ALLOWED_ORIGINS"
 
@@ -174,10 +196,24 @@ def create_app(
 
 
 def _conversation(messages: Sequence[ChatMessage]) -> list[Message]:
-    """The conversation for the retrieval seam, or a 400 if its latest message is not a
+    """The conversation for the retrieval seam, or a 400 if it holds more messages than the
+    prompt uses, an earlier message over its length cap, or a latest message that is not a
     question we can answer."""
     if not messages:
         raise HTTPException(400, "The conversation has no messages.")
+    if len(messages) > MAX_MESSAGES:
+        raise HTTPException(
+            400,
+            f"The conversation has {len(messages)} messages; send at most {MAX_MESSAGES}, "
+            f"the question and the {HISTORY_TURNS} messages before it that the prompt uses.",
+        )
+    for number, message in enumerate(messages[:-1], start=1):
+        if len(message.text) > MAX_EARLIER_MESSAGE_CHARS:
+            raise HTTPException(
+                400,
+                f"Message {number} of the conversation is longer than "
+                f"{MAX_EARLIER_MESSAGE_CHARS:,} characters.",
+            )
     latest = messages[-1]
     if latest.role != "user":
         raise HTTPException(400, "The latest message must be the user's question.")

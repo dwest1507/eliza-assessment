@@ -133,6 +133,41 @@ export function messageCitedFilings(message: MessageLike): Record<string, string
   return cited
 }
 
+/**
+ * How many earlier messages the Answer Call's prompt keeps as history: the backend's
+ * `HISTORY_TURNS` (`backend/src/edgar_rag/_prompt.py`), its one source of truth.
+ * `__tests__/chat.test.ts` fails if this copy drifts from it.
+ */
+export const HISTORY_TURNS = 10
+
+/** The most messages the chat API accepts: the question and the history the prompt keeps. */
+export const MAX_MESSAGES = HISTORY_TURNS + 1
+
+/**
+ * The messages to send for the next answer: the latest `MAX_MESSAGES`, dropping the
+ * oldest, so a long conversation keeps working. The prompt would not use the older ones.
+ */
+export function promptMessages<T>(messages: readonly T[]): T[] {
+  return messages.slice(-MAX_MESSAGES)
+}
+
+/**
+ * The chat API's reason for rejecting a request (a 4xx answer with a `detail` string),
+ * from the error `useChat` reports, or null for any other failure, whose details are
+ * not for the analyst.
+ */
+export function rejectionReason(error: unknown): string | null {
+  if (!isRecord(error) || typeof error.statusCode !== 'number') return null
+  if (error.statusCode < 400 || error.statusCode >= 500) return null
+  if (typeof error.responseBody !== 'string') return null
+  try {
+    const body: unknown = JSON.parse(error.responseBody)
+    return isRecord(body) && typeof body.detail === 'string' ? body.detail : null
+  } catch {
+    return null
+  }
+}
+
 /** A gap's wording without its leading label, which the callout shows as a heading. */
 export function gapWording(gap: CoverageGap): string {
   const prefix = `${gap.label}: `

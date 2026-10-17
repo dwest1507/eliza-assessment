@@ -23,3 +23,4 @@ The system is a chat: the browser sends the conversation, and each user message 
 
 - A change of topic that names no Company wrongly inherits the earlier Companies. The front-end shows each answer's resolved Query Scope, and the Golden Set holds a case for this failure so it is measured.
 - The backend stays stateless: the Query Scope is recomputed from the user messages the browser sends.
+- Inheritance reaches back only as far as the prompt's history: the chat API accepts at most the question and the 10 messages before it, and the workspace sends no more, dropping the oldest. A part last named before that is no longer inherited.

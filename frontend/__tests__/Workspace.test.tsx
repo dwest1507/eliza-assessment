@@ -444,6 +444,19 @@ describe('Workspace', () => {
     ])
   })
 
+  it("shows the API's reason when it rejects the question", async () => {
+    const reason = 'Message 2 of the conversation is longer than 20,000 characters.'
+    fetchMock.mockImplementation(async () => Response.json({ detail: reason }, { status: 400 }))
+    const user = userEvent.setup()
+    render(<Workspace />)
+
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(reason)
+    expect(alert).not.toHaveTextContent('make dev')
+  })
+
   it('says so when the answer cannot be loaded, without leaking the error', async () => {
     fetchMock.mockImplementation(async () => new Response('backend exploded', { status: 502 }))
     const user = userEvent.setup()

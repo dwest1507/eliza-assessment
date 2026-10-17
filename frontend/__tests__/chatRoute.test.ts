@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { POST } from '@/app/api/chat/route'
+import { MAX_MESSAGES } from '@/lib/chat'
 
 const fetchMock = vi.fn()
 
@@ -72,6 +73,23 @@ describe('POST /api/chat (proxy)', () => {
     })
   })
 
+  it('sends at most the turns the prompt uses, dropping the oldest', async () => {
+    fetchMock.mockResolvedValue(new Response('data: [DONE]\n\n'))
+    const count = MAX_MESSAGES + 4
+    const messages = Array.from({ length: count }, (_, i) => ({
+      id: `m${i}`,
+      role: (count - i) % 2 ? 'user' : 'assistant',
+      parts: [{ type: 'text', text: `message ${i}` }],
+    }))
+
+    await POST(chatRequest({ id: 'chat-1', messages }))
+
+    const sent = JSON.parse(fetchMock.mock.calls[0][1].body).messages
+    expect(sent).toHaveLength(MAX_MESSAGES)
+    expect(sent[0].content).toBe('message 4')
+    expect(sent.at(-1)).toEqual({ role: 'user', content: `message ${count - 1}` })
+  })
+
   it('streams the backend response through as a UI message stream', async () => {
     const body = 'data: {"type":"start"}\n\ndata: [DONE]\n\n'
     fetchMock.mockResolvedValue(
@@ -88,7 +106,7 @@ describe('POST /api/chat (proxy)', () => {
     expect(await response.text()).toBe(body)
   })
 
-  it('passes a validation error from the backend through', async () => {
+  it('passes a validation error from the backend through, with its reason', async () => {
     fetchMock.mockResolvedValue(
       Response.json({ detail: 'The question is empty.' }, { status: 400 })
     )
@@ -96,6 +114,7 @@ describe('POST /api/chat (proxy)', () => {
     const response = await POST(chatRequest(conversation))
 
     expect(response.status).toBe(400)
+    expect(await response.json()).toEqual({ detail: 'The question is empty.' })
   })
 
   it('answers 502 when the backend is not reachable', async () => {

@@ -8,9 +8,9 @@ import json
 import pytest
 from fastapi.testclient import TestClient
 
-from edgar_api.app import MAX_MESSAGE_CHARS, create_app
+from edgar_api.app import MAX_EARLIER_MESSAGE_CHARS, MAX_MESSAGE_CHARS, MAX_MESSAGES, create_app
 from edgar_rag.answer_model import Usage
-from edgar_rag.retrieval import Message, prepare_answer_context
+from edgar_rag.retrieval import HISTORY_TURNS, Message, prepare_answer_context
 
 QUESTION = "What are the primary risk factors facing Apple, Tesla, and JPMorgan?"
 
@@ -356,6 +356,54 @@ def test_an_unanswerable_latest_message_is_rejected_with_400(client, model, mess
 
 def test_a_latest_message_at_the_length_cap_is_accepted(client):
     assert chat(client, user("Apple " + "x" * (MAX_MESSAGE_CHARS - 6))).status_code == 200
+
+
+def turns(count, *, earlier="Apple faces supply chain risk."):
+    """A conversation of `count` messages, alternating, ending with the user's question."""
+    roles = ["user" if (count - i) % 2 else "assistant" for i in range(count)]
+    return [{"role": role, "content": earlier} for role in roles[:-1]] + [user(QUESTION)]
+
+
+def test_the_message_limit_is_the_turns_the_prompt_uses():
+    # The prompt keeps the last HISTORY_TURNS messages as history, then the question.
+    assert MAX_MESSAGES == HISTORY_TURNS + 1
+
+
+def test_a_conversation_of_as_many_turns_as_the_prompt_uses_is_accepted(client, model):
+    response = chat(client, *turns(MAX_MESSAGES))
+
+    assert response.status_code == 200
+    assert len(model.received) == 1
+
+
+def test_a_conversation_of_more_turns_than_the_prompt_uses_is_rejected_with_400(client, model):
+    response = chat(client, *turns(MAX_MESSAGES + 1))
+
+    assert response.status_code == 400
+    detail = response.json()["detail"]
+    assert f"{MAX_MESSAGES + 1} messages" in detail
+    assert f"at most {MAX_MESSAGES}" in detail
+    assert model.received == []
+
+
+def test_an_earlier_message_over_the_length_cap_is_rejected_with_400(client, model):
+    messages = turns(3)
+    messages[1] = {"role": "assistant", "content": "x" * (MAX_EARLIER_MESSAGE_CHARS + 1)}
+
+    response = chat(client, *messages)
+
+    assert response.status_code == 400
+    detail = response.json()["detail"]
+    assert "message 2" in detail.lower()
+    assert f"{MAX_EARLIER_MESSAGE_CHARS:,} characters" in detail
+    assert model.received == []
+
+
+def test_an_earlier_message_at_the_length_cap_is_accepted(client):
+    messages = turns(3)
+    messages[1] = {"role": "assistant", "content": "x" * MAX_EARLIER_MESSAGE_CHARS}
+
+    assert chat(client, *messages).status_code == 200
 
 
 def test_a_malformed_body_is_rejected(client):

@@ -3,16 +3,19 @@
  * backend's URL stays on the server: it comes from `BACKEND_URL` (see `.env.example`),
  * defaulting to the API `make api` runs locally.
  *
- * Each message's role and text are forwarded, and for an earlier answer the Filing ID
- * each of its Source tags cited (`sources`), so the prompt's history can name those
- * Filings in place of tags that meant that turn's Sources. The passages are not sent:
+ * Only the turns the prompt uses are forwarded (`promptMessages`: the question and the
+ * `HISTORY_TURNS` messages before it), dropping the oldest, so a long conversation keeps
+ * working; the API rejects more. Each message's role and text are forwarded, and for an
+ * earlier answer the Filing ID each of its Source tags cited (`sources`), so the
+ * prompt's history can name those Filings in place of tags that meant that turn's
+ * Sources. The passages are not sent:
  * an earlier answer's Sources are not evidence for the next question (the backend
  * retrieves afresh), and resending them would only make every follow-up heavier. The
  * backend's AI SDK UI message stream is passed through untouched, and so are its
- * validation statuses.
+ * validation statuses and their reasons (`{"detail": "..."}`), which the workspace shows.
  */
 
-import { messageCitedFilings, messageText, type MessageLike } from '@/lib/chat'
+import { messageCitedFilings, messageText, promptMessages, type MessageLike } from '@/lib/chat'
 
 const DEFAULT_BACKEND_URL = 'http://127.0.0.1:8000'
 
@@ -28,7 +31,7 @@ export async function POST(request: Request): Promise<Response> {
   if (!Array.isArray(body?.messages)) {
     return Response.json({ detail: 'The request has no messages.' }, { status: 400 })
   }
-  const messages = (body.messages as IncomingMessage[]).map((m) => {
+  const messages = promptMessages(body.messages as IncomingMessage[]).map((m) => {
     const cited = messageCitedFilings(m)
     return {
       role: m.role,

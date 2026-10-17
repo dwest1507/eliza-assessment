@@ -6,7 +6,13 @@ import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import AnswerMessage from '@/components/AnswerMessage'
 import SourcesPanel from '@/components/SourcesPanel'
-import { messageDataPart, messageSources, messageText, type ResearchMessage } from '@/lib/chat'
+import {
+  messageDataPart,
+  messageSources,
+  messageText,
+  rejectionReason,
+  type ResearchMessage,
+} from '@/lib/chat'
 import { loadConversation, saveConversation } from '@/lib/conversation'
 import { STARTERS } from '@/lib/starters'
 
@@ -26,7 +32,7 @@ export default function Workspace() {
   const [transport] = useState(
     () => new DefaultChatTransport<ResearchMessage>({ api: '/api/chat' })
   )
-  const { messages, sendMessage, setMessages, status, stop } = useChat<ResearchMessage>({
+  const { messages, sendMessage, setMessages, status, stop, error } = useChat<ResearchMessage>({
     transport,
   })
   const [input, setInput] = useState('')
@@ -133,8 +139,12 @@ export default function Workspace() {
                   role="alert"
                   className="rounded-md border border-red-200 bg-red-50 px-4 py-3 text-[14px] text-red-800"
                 >
-                  The answer could not be loaded. Check that the API is running (
-                  <code className="font-mono text-[13px]">make dev</code>) and try again.
+                  {rejectionReason(error) ?? (
+                    <>
+                      The answer could not be loaded. Check that the API is running (
+                      <code className="font-mono text-[13px]">make dev</code>) and try again.
+                    </>
+                  )}
                 </div>
               )}
               <div ref={endRef} />
