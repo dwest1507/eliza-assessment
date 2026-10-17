@@ -440,7 +440,7 @@
       "tags": [
         "brief_example"
       ],
-      "notes": "Brief example 3 (EDA 8.3), rewritten from sector-pharma-regulatory. The Sector table resolves the phrase to AbbVie, Johnson & Johnson, Eli Lilly, Merck and Pfizer. Facts drafted from the whole Risk Factors Section of each latest 10-K, and from the regulation and pricing parts of its Business and MD&A Sections. The 'how are they addressing them' half rests mostly on Business and MD&A: the Janssen and Merck lawsuits over the IRA's price negotiation, Lilly's preliminary agreements with the U.S. government, Pfizer's engagement with payors and the government, and each Company's 340B policies. AbbVie's 10-K names no specific response beyond evaluating the IRA and the cost of compliance, so its responses are details. AbbVie, Merck and Pfizer's latest 10-Ks are FY2024; J&J's and Lilly's are FY2025.",
+      "notes": "Brief example 3 (EDA 8.3), rewritten from sector-pharma-regulatory. The Sector table resolves the phrase to AbbVie, Johnson & Johnson, Eli Lilly, Merck and Pfizer. Facts drafted from the whole Risk Factors Section of each latest 10-K, and from the regulation and pricing parts of its Business and MD&A Sections. Pfizer's latest window also holds its three 2025 10-Qs, whose Risk Factors only point back to the 10-K; the Q3 2025 10-Q's MD&A adds its September 2025 preliminary agreements with the U.S. government, a detail, since Pfizer's must-state response is already its engagement with payors and the government. The 'how are they addressing them' half rests mostly on Business and MD&A: the Janssen and Merck lawsuits over the IRA's price negotiation, Lilly's preliminary agreements with the U.S. government, Pfizer's engagement with payors and the government and its September 2025 agreements, and each Company's 340B policies. AbbVie's 10-K names no specific response beyond evaluating the IRA and the cost of compliance, so its responses are details. AbbVie, Merck and Pfizer's latest 10-Ks are FY2024; J&J's and Lilly's are FY2025. Only Pfizer has 10-Qs after its latest 10-K.",
       "expected_sources": [
         {
           "filing_id": "ABBV_10-K_2024-12-31",
@@ -488,6 +488,10 @@
         },
         {
           "filing_id": "PFE_10-K_2024-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "PFE_10-Q_2025-09-28",
           "section": "MD&A"
         }
       ],
@@ -764,6 +768,13 @@
           "section": "Business",
           "evidence": "We have engaged with major payors and the U.S. government to explore opportunities to improve access and reimbursement in an effort to drive pro-patient policies.",
           "tier": "must_state"
+        },
+        {
+          "fact": "Pfizer announced preliminary agreements with the Trump Administration in September 2025 to make certain drug prices for U.S. patients more comparable to those in other developed countries.",
+          "filing_id": "PFE_10-Q_2025-09-28",
+          "section": "MD&A",
+          "evidence": "In September 2025, we announced preliminary agreements with the Trump Administration in which we voluntarily agreed to implement measures designed to make certain drug prices for U.S. patients more comparable to those in other developed countries.",
+          "tier": "detail"
         },
         {
           "fact": "Pfizer says it continues to evaluate the impact of the Inflation Reduction Act on its business.",
@@ -2279,6 +2290,10 @@
         {
           "filing_id": "PFE_10-K_2024-12-31",
           "section": "MD&A"
+        },
+        {
+          "filing_id": "PFE_10-Q_2025-09-28",
+          "section": "MD&A"
         }
       ],
       "required_facts": [
@@ -2554,6 +2569,13 @@
           "section": "Business",
           "evidence": "We have engaged with major payors and the U.S. government to explore opportunities to improve access and reimbursement in an effort to drive pro-patient policies.",
           "tier": "must_state"
+        },
+        {
+          "fact": "Pfizer announced preliminary agreements with the Trump Administration in September 2025 to make certain drug prices for U.S. patients more comparable to those in other developed countries.",
+          "filing_id": "PFE_10-Q_2025-09-28",
+          "section": "MD&A",
+          "evidence": "In September 2025, we announced preliminary agreements with the Trump Administration in which we voluntarily agreed to implement measures designed to make certain drug prices for U.S. patients more comparable to those in other developed countries.",
+          "tier": "detail"
         },
         {
           "fact": "Pfizer says it continues to evaluate the impact of the Inflation Reduction Act on its business.",
