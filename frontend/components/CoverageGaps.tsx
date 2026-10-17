@@ -9,15 +9,15 @@ export default function CoverageGaps({ gaps }: { gaps: CoverageGap[] }) {
     <aside
       role="note"
       aria-label="Coverage Gaps"
-      className="rounded-md border border-amber-200 bg-amber-50 px-3.5 py-2.5 text-[13px] text-amber-950"
+      className="rounded-xl border border-amber-400/25 bg-amber-400/[0.07] px-3.5 py-2.5 text-[13px] text-amber-100"
     >
-      <h3 className="mb-1 text-[12px] font-medium tracking-wide text-amber-800 uppercase">
+      <h3 className="mb-1 font-mono text-[10.5px] tracking-widest text-amber-300 uppercase">
         Coverage Gaps
       </h3>
       <ul className="flex flex-col gap-1">
         {gaps.map((gap) => (
           <li key={gap.text} className="leading-snug">
-            <strong className="font-semibold">{gap.label}</strong>
+            <strong className="font-semibold text-amber-50">{gap.label}</strong>
             {': '}
             {gapWording(gap)}
           </li>

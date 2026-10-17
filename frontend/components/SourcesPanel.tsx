@@ -41,15 +41,15 @@ export default function SourcesPanel({ sources, selected, onSelect, onClose }: S
   return (
     <aside
       aria-label="Sources"
-      className="fixed inset-0 z-20 flex flex-col bg-white lg:static lg:z-auto lg:w-[30rem] lg:shrink-0 lg:border-l lg:border-line"
+      className="fixed inset-0 z-20 flex flex-col bg-elevated lg:static lg:z-auto lg:w-[30rem] lg:shrink-0 lg:border-l lg:border-line lg:bg-canvas/70 lg:backdrop-blur-xl"
     >
       <div className="flex shrink-0 items-center justify-between border-b border-line px-4 py-3">
-        <h2 className="text-[14px] font-semibold">Sources</h2>
+        <h2 className="eyebrow text-ink">Sources</h2>
         <button
           type="button"
           onClick={onClose}
           aria-label="Close Sources"
-          className="rounded p-1 text-muted hover:bg-canvas hover:text-ink"
+          className="rounded-md p-1 text-muted transition-colors hover:bg-raised hover:text-ink"
         >
           <svg
             viewBox="0 0 24 24"
@@ -73,7 +73,7 @@ export default function SourcesPanel({ sources, selected, onSelect, onClose }: S
                 onClick={() => onSelect(s.tag)}
                 aria-pressed={s.tag === source.tag}
                 title={shortLabel(s)}
-                className="rounded px-2 py-0.5 font-mono text-[12px] text-muted hover:bg-canvas hover:text-ink aria-pressed:bg-accent aria-pressed:text-white"
+                className="rounded-md px-2 py-0.5 font-mono text-[12px] text-muted transition-colors hover:bg-raised hover:text-ink aria-pressed:bg-accent aria-pressed:text-on-accent"
               >
                 {s.tag}
               </button>
@@ -87,14 +87,14 @@ export default function SourcesPanel({ sources, selected, onSelect, onClose }: S
         className="flex min-h-0 flex-1 flex-col"
       >
         <div className="shrink-0 px-4 pt-4">
-          <h3 id={`source-heading-${source.tag}`} className="text-[14px] font-semibold">
-            <span className="mr-2 font-mono text-accent">{source.tag}</span>
+          <h3 id={`source-heading-${source.tag}`} className="text-[14px] font-semibold text-white">
+            <span className="mr-2 font-mono text-accent-strong">{source.tag}</span>
             {shortLabel(source)}
           </h3>
           <dl className="mt-3 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-[13px]">
             {fields.map(([name, value]) => (
               <div key={name} className="contents">
-                <dt className="text-muted">{name}</dt>
+                <dt className="font-mono text-[11px] tracking-wide text-muted/80">{name}</dt>
                 <dd className="font-mono text-[12.5px] break-all text-ink">{value}</dd>
               </div>
             ))}
@@ -102,7 +102,7 @@ export default function SourcesPanel({ sources, selected, onSelect, onClose }: S
         </div>
         <div
           ref={passageRef}
-          className="mt-4 min-h-0 flex-1 overflow-y-auto border-t border-line bg-canvas px-4 py-4"
+          className="mt-4 min-h-0 flex-1 overflow-y-auto border-t border-line bg-canvas-deep/60 px-4 py-4"
         >
           {source.kind === 'facts' && source.rows ? (
             <FactsTable rows={source.rows} />
@@ -131,7 +131,7 @@ function FactsTable({ rows }: { rows: FactRow[] }) {
       </thead>
       <tbody>
         {rows.map((row) => (
-          <tr key={`${row.metric}:${row.segment ?? ''}`} className="border-b border-line/60">
+          <tr key={`${row.metric}:${row.segment ?? ''}`} className="border-b border-line">
             <td className="py-1 pr-3 text-ink">{row.metricName}</td>
             <td className="py-1 pr-3 text-muted">
               {row.months} months ended {row.reportPeriod}

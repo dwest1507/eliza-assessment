@@ -42,7 +42,7 @@ export default function AnswerMessage({
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-accent underline"
+            className="text-accent-strong underline underline-offset-2 transition-colors hover:text-accent"
           >
             {children}
           </a>
@@ -91,9 +91,7 @@ export default function AnswerMessage({
       )}
       {sources.length > 0 && (
         <footer className="border-t border-line pt-3">
-          <h3 className="mb-2 text-[12px] font-medium tracking-wide text-muted uppercase">
-            Sources
-          </h3>
+          <h3 className="eyebrow mb-2">Sources</h3>
           <ul className="flex flex-wrap gap-1.5">
             {sources.map((source) => (
               <li key={source.tag}>
@@ -101,9 +99,11 @@ export default function AnswerMessage({
                   type="button"
                   onClick={() => onCite(source.tag)}
                   aria-pressed={openTag === source.tag}
-                  className="rounded border border-line bg-white px-2 py-1 text-left text-[12px] text-ink hover:border-accent aria-pressed:border-accent aria-pressed:bg-accent/5"
+                  className="rounded-md border border-line bg-surface px-2 py-1 text-left text-[12px] text-ink transition-colors hover:border-accent/50 hover:bg-raised aria-pressed:border-accent/50 aria-pressed:bg-accent/10"
                 >
-                  <span className="mr-1.5 font-mono font-medium text-accent">{source.tag}</span>
+                  <span className="mr-1.5 font-mono font-medium text-accent-strong">
+                    {source.tag}
+                  </span>
                   {shortLabel(source)}
                 </button>
               </li>
