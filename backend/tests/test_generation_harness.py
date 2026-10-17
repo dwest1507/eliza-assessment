@@ -153,7 +153,7 @@ class FakeJudge:
         )
 
 
-def _case(case_id, question, question_type="risk", facts=(), gaps=()):
+def _case(case_id, question, question_type="risk", facts=(), gaps=(), details=()):
     from edgar_rag.golden_set import CoverageGapLabel, GoldenCase, RequiredFact
 
     return GoldenCase(
@@ -162,7 +162,8 @@ def _case(case_id, question, question_type="risk", facts=(), gaps=()):
         history=(),
         question_type=question_type,
         expected_sources=(),
-        required_facts=tuple(RequiredFact(f, "X", "Risk Factors", "e") for f in facts),
+        required_facts=tuple(RequiredFact(f, "X", "Risk Factors", "e") for f in facts)
+        + tuple(RequiredFact(f, "X", "Risk Factors", "e", tier="detail") for f in details),
         expected_coverage_gaps=tuple(CoverageGapLabel(k, c) for k, c in gaps),
         split="dev",
         starter=None,
@@ -244,6 +245,50 @@ def test_each_case_is_answered_checked_judged_and_priced(index, tmp_path):
     assert overall.mean_cost_usd == pytest.approx(0.0025)
     assert overall.judge_cost_usd == pytest.approx(5_000 * 0.042 / 1_000_000)
     assert report.by_type["risk"].cases == 1
+
+
+def test_fact_recall_scores_must_state_facts_and_detail_recall_the_details(index, tmp_path):
+    import json
+
+    from edgar_eval.generation import evaluate
+
+    cases = [
+        _case(
+            "both-tiers",
+            "What are the primary risk factors facing Apple and Tesla?",
+            facts=["Apple uses outsourcing partners.", "Tesla depends on Elon Musk."],
+            details=["Apple sells the iPhone.", "Tesla builds cars in Texas.", "Tesla has a CEO."],
+        ),
+        _case("must-state-only", "What are Apple's risks?", facts=["Apple uses outsourcing."]),
+    ]
+    judge = FakeJudge()  # states the facts that name Apple, and no others
+
+    report = evaluate(
+        cases,
+        FakeModel(ANSWER),
+        judge,
+        index,
+        names={},
+        fact_values=lambda filing_id: [],
+        log_path=None,
+    )
+
+    # Jev is asked about every fact, of both tiers, in one judgment.
+    assert sorted(len(facts) for _, facts, _, _ in judge.asked) == [1, 5]
+    both, must_state_only = report.cases
+    assert both.fact_recall == 0.5  # one of the two must-state facts
+    assert both.detail_recall == pytest.approx(1 / 3)  # one of the three details
+    assert must_state_only.fact_recall == 1.0
+    assert must_state_only.detail_recall is None  # no detail to score, not zero
+    assert report.overall.fact_recall == 0.75
+    assert report.overall.detail_recall == pytest.approx(1 / 3)
+    assert report.by_type["risk"].detail_recall == pytest.approx(1 / 3)
+    # Both are written into the report, per case and overall.
+    data = json.loads(json.dumps(report.to_dict()))
+    assert [c["fact_recall"] for c in data["cases"]] == [0.5, 1.0]
+    assert [c["detail_recall"] for c in data["cases"]] == [pytest.approx(1 / 3), None]
+    assert data["cases"][0]["fact_tiers"] == ["must_state"] * 2 + ["detail"] * 3
+    assert data["overall"]["detail_recall"] == pytest.approx(1 / 3)
 
 
 def test_a_figure_matching_only_an_uncited_filings_financial_fact_fails(index, tmp_path):
@@ -415,6 +460,37 @@ def test_rescoring_redoes_the_figure_check_from_the_saved_answers_alone(index, t
             summary.pop("figures_exact")
     assert after == before
     assert "1.00 → 0.00" in out.getvalue()
+
+
+def test_a_report_saved_before_tiers_still_loads_and_rescores(index, tmp_path):
+    """Version 1 reports name no tier and no detail recall: every fact was must-state."""
+    import io
+    import json
+
+    from edgar_eval.generation import main
+    from edgar_eval.selection import Candidate
+
+    path, saved = _saved_report(index, tmp_path, ANSWER, lambda filing_id: [])
+    for case in saved["cases"]:
+        del case["fact_tiers"], case["detail_recall"]
+    for summary in (saved["overall"], *saved["by_type"].values()):
+        del summary["detail_recall"]
+    path.write_text(json.dumps(saved))
+
+    code = main(
+        ["--rescore", str(path), "--index", str(index)],
+        model=Refuses(),
+        judge=Refuses(),
+        fact_values=lambda filing_id: [],
+        out=io.StringIO(),
+    )
+
+    assert code == 0
+    rescored = json.loads(path.read_text())
+    assert rescored == saved  # the same figures, and no field added
+    assert Candidate.from_report(rescored).fact_recall == {
+        "risk-aapl-tsla-jpm": saved["cases"][0]["fact_recall"]
+    }
 
 
 def test_rescoring_refuses_a_report_whose_sources_cannot_be_rebuilt(index, tmp_path):

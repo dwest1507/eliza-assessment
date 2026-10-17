@@ -16,6 +16,7 @@ from edgar_rag.golden_set import (
     DEFAULT_GOLDEN_SET,
     QUESTION_TYPES,
     SPLIT_RULE,
+    TIERS,
     assign_splits,
     load_golden_set,
     normalise_whitespace,
@@ -99,6 +100,70 @@ def test_the_loader_rejects_an_unknown_coverage_gap_kind(tmp_path):
         data["cases"][0]["expected_coverage_gaps"] = [{"kind": "vibes", "companies": ["AAPL"]}]
 
     with pytest.raises(ValueError, match="kind"):
+        load_golden_set(_rewrite(tmp_path, edit))
+
+
+# --- Required Fact tiers ------------------------------------------------------------------
+
+
+def test_version_1_facts_have_no_tier_and_load_as_must_state(golden_set):
+    raw = json.loads(DEFAULT_GOLDEN_SET.read_text(encoding="utf-8"))
+    assert golden_set.version == 1
+    assert not any("tier" in f for c in raw["cases"] for f in c["required_facts"])
+    assert {f.tier for c in golden_set.cases for f in c.required_facts} == {"must_state"}
+
+
+def test_a_case_can_mark_each_required_fact_must_state_or_detail(tmp_path):
+    def edit(data):
+        case = next(c for c in data["cases"] if len(c["required_facts"]) >= 2)
+        case["required_facts"][0]["tier"] = "must_state"
+        case["required_facts"][1]["tier"] = "detail"
+
+    golden = load_golden_set(_rewrite(tmp_path, edit))
+
+    case = next(c for c in golden.cases if len(c.required_facts) >= 2)
+    assert [f.tier for f in case.required_facts[:2]] == ["must_state", "detail"]
+    assert set(TIERS) == {"must_state", "detail"}
+
+
+def test_the_loader_rejects_an_unknown_tier(tmp_path):
+    def edit(data):
+        data["cases"][0]["required_facts"][0]["tier"] = "nice_to_have"
+
+    with pytest.raises(ValueError, match="tier"):
+        load_golden_set(_rewrite(tmp_path, edit))
+
+
+def test_after_version_1_every_fact_must_name_its_tier(tmp_path):
+    def edit(data):
+        data["version"] = 2
+        for case in data["cases"]:
+            for fact in case["required_facts"]:
+                fact["tier"] = "must_state"
+        del data["cases"][0]["required_facts"][0]["tier"]
+
+    with pytest.raises(ValueError, match="tier"):
+        load_golden_set(_rewrite(tmp_path, edit))
+
+
+def test_the_loader_rejects_a_case_whose_facts_are_all_details(tmp_path):
+    def edit(data):
+        for fact in data["cases"][0]["required_facts"]:
+            fact["tier"] = "detail"
+
+    with pytest.raises(ValueError, match="must-state"):
+        load_golden_set(_rewrite(tmp_path, edit))
+
+
+def test_a_case_with_no_facts_is_valid_only_when_it_expects_coverage_gaps(tmp_path, golden_set):
+    gaps_only = next(c for c in golden_set.cases if not c.required_facts)
+    assert gaps_only.expected_coverage_gaps  # such cases load, as version 1's do
+
+    def edit(data):
+        case = next(c for c in data["cases"] if c["id"] == gaps_only.id)
+        case["expected_coverage_gaps"] = []
+
+    with pytest.raises(ValueError, match="must-state"):
         load_golden_set(_rewrite(tmp_path, edit))
 
 

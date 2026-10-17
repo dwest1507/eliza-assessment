@@ -6,6 +6,11 @@ its question type, the (Filing ID, Section) pairs that should reach the Answer C
 Required Facts an answer must state (each with an evidence quote from its Section) and
 the Coverage Gaps it must state. Six cases are the front-end's starter prompts.
 
+Each Required Fact has a tier (`TIERS`): `must_state`, which any good answer covers and
+Fact Recall is scored on, or `detail`, reported as detail recall but never counted as a
+miss. Version 1's facts name no tier and load as `must_state`; later versions must name
+one. Every case has a must-state fact unless it expects only Coverage Gaps.
+
 Cases are split dev/holdout by a hash of each case id (`assign_splits`), so prompt and
 Arm choices are tuned on dev and the holdout is scored once per final setup, never to
 choose.
@@ -31,6 +36,7 @@ __all__ = [
     "DEFAULT_GOLDEN_SET",
     "QUESTION_TYPES",
     "SPLIT_RULE",
+    "TIERS",
     "CoverageGapLabel",
     "ExpectedSource",
     "GoldenCase",
@@ -67,6 +73,12 @@ COVERAGE_GAP_KINDS = (
 
 Split = Literal["dev", "holdout"]
 
+Tier = Literal["must_state", "detail"]
+
+TIERS: tuple[Tier, ...] = ("must_state", "detail")
+"""A Required Fact's tier. Fact Recall is the share of must-state facts stated; detail
+recall, reported beside it, the share of details."""
+
 SPLIT_RULE = (
     "Sort the case ids by the SHA-256 hex digest of each id (UTF-8). The first third, "
     "rounded to the nearest whole case, are holdout; the rest are dev."
@@ -100,6 +112,8 @@ class RequiredFact:
     section: str
     evidence: str
     """A quote from the Section, found word for word in it (up to whitespace)."""
+    tier: Tier = "must_state"
+    """`must_state` (scored as Fact Recall) or `detail` (reported as detail recall)."""
 
 
 @dataclass(frozen=True)
@@ -167,15 +181,16 @@ def normalise_whitespace(text: str) -> str:
 def load_golden_set(path: str | Path = DEFAULT_GOLDEN_SET) -> GoldenSet:
     """Read and validate the Golden Set file. Raises ValueError on a schema problem."""
     data = json.loads(Path(path).read_text(encoding="utf-8"))
-    cases = tuple(_case(raw) for raw in _field(data, "cases", list, "Golden Set"))
+    version = _field(data, "version", int, "Golden Set")
+    cases = tuple(_case(raw, version) for raw in _field(data, "cases", list, "Golden Set"))
     return GoldenSet(
-        version=_field(data, "version", int, "Golden Set"),
+        version=version,
         split_rule=_field(data, "split_rule", str, "Golden Set"),
         cases=cases,
     )
 
 
-def _case(raw: dict) -> GoldenCase:
+def _case(raw: dict, version: int) -> GoldenCase:
     case_id = _field(raw, "id", str, "case")
     where = f"case {case_id}"
     question_type = _field(raw, "question_type", str, where)
@@ -199,10 +214,15 @@ def _case(raw: dict) -> GoldenCase:
             filing_id=_field(f, "filing_id", str, where),
             section=_field(f, "section", str, where),
             evidence=_field(f, "evidence", str, where),
+            tier=_tier(f, version, where),
         )
         for f in _field(raw, "required_facts", list, where)
     )
     gaps = tuple(_gap(g, where) for g in _field(raw, "expected_coverage_gaps", list, where))
+    if not any(f.tier == "must_state" for f in facts) and (facts or not gaps):
+        raise ValueError(
+            f"{where}: no must-state Required Fact, and it does not expect only Coverage Gaps"
+        )
     starter_raw = raw.get("starter")
     starter = (
         Starter(_field(starter_raw, "order", int, where), _field(starter_raw, "label", str, where))
@@ -229,6 +249,16 @@ def _role(message: dict, where: str) -> Literal["user", "assistant"]:
     if role not in ("user", "assistant"):
         raise ValueError(f"{where}: history role must be 'user' or 'assistant', not {role!r}")
     return role
+
+
+def _tier(fact: dict, version: int, where: str) -> Tier:
+    """The fact's tier. Version 1 predates tiers, so its facts are all must-state."""
+    if version == 1 and "tier" not in fact:
+        return "must_state"
+    tier = _field(fact, "tier", str, where)
+    if tier not in TIERS:
+        raise ValueError(f"{where}: a Required Fact's tier must be one of {TIERS}, not {tier!r}")
+    return tier
 
 
 def _gap(raw: dict, where: str) -> CoverageGapLabel:

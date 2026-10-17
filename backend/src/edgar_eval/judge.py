@@ -11,8 +11,9 @@ Two judgments, each a narrow question over the state it needs:
 
 - **Fact Recall.** One request per answer. The state is the answer; each Required Fact
   is a Noul ("does the answer state this fact?"). A fact counts as stated at a
-  probability of at least `STATED_AT`. Fact Recall is the share of the case's Required
-  Facts stated.
+  probability of at least `STATED_AT`. Every Required Fact is judged, whatever its tier;
+  the generation harness scores Fact Recall on the must-state ones and detail recall on
+  the details (`edgar_eval.generation.CaseResult`).
 - **Faithfulness.** The answer's claims (`edgar_eval.answer_checks.claims`) are grouped
   by the Sources they cite. One request per group: the state is those Sources' text,
   and each claim is a Choice between supported, unsupported and contradicted.
@@ -125,7 +126,8 @@ class Judgments:
 
     @property
     def fact_recall(self) -> float | None:
-        """The share of Required Facts stated, or None if the case has none."""
+        """The share of the facts judged that are stated, or None if none was. Tier-blind:
+        the harness's `CaseResult.fact_recall` counts the must-state facts only."""
         if not self.facts:
             return None
         return sum(f.stated for f in self.facts) / len(self.facts)

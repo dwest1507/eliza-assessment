@@ -6,8 +6,10 @@ Call to the generator under test. The answer is then scored three ways:
 
 - **In code** (`edgar_eval.answer_checks`): citation validity, figure exactness,
   Coverage Gap statements, and the answer's structure (assumption 8).
-- **By Jev** (`edgar_eval.judge`), pinned to an exact version: Fact Recall against the
-  case's Required Facts, and Faithfulness of each claim to the Sources it cites.
+- **By Jev** (`edgar_eval.judge`), pinned to an exact version: whether the answer
+  states each of the case's Required Facts, and Faithfulness of each claim to the
+  Sources it cites. Fact Recall is scored on the must-state facts only; detail recall,
+  on the details, is reported beside it and decides nothing.
 - **Cost and latency**, from the Answer Call's logged record: its token usage priced
   at the model's price in `edgar_eval.generators.GENERATORS`, and its latency to the
   first text and to the end.
@@ -66,7 +68,7 @@ from edgar_eval.judge import Evidence, Judgments
 from edgar_eval.retrieval import Arm, Prepare, conversation
 from edgar_rag.answer_model import DEFAULT_ANSWER_LOG, AnswerCall, AnswerModel
 from edgar_rag.corpus import DEFAULT_SECTOR_TABLE
-from edgar_rag.golden_set import DEFAULT_GOLDEN_SET, GoldenCase, load_golden_set
+from edgar_rag.golden_set import DEFAULT_GOLDEN_SET, GoldenCase, Tier, load_golden_set
 from edgar_rag.retrieval import (
     CONTEXT_BUDGET_TOKENS,
     DEFAULT_INDEX,
@@ -118,10 +120,24 @@ class CaseResult:
     """None when the case expects no Coverage Gap."""
     judgments: Judgments
     structure: StructureCheck
+    fact_tiers: tuple[Tier, ...] = ()
+    """Each judged Required Fact's tier, in the order of `judgments.facts`. Empty means
+    every fact is must-state, as in version 1."""
 
     @property
     def fact_recall(self) -> float | None:
-        return self.judgments.fact_recall
+        """The share of must-state Required Facts stated, or None if the case has none."""
+        return self._recall("must_state")
+
+    @property
+    def detail_recall(self) -> float | None:
+        """The share of detail Required Facts stated, or None if the case has none."""
+        return self._recall("detail")
+
+    def _recall(self, tier: Tier) -> float | None:
+        tiers = self.fact_tiers or ("must_state",) * len(self.judgments.facts)
+        stated = [f.stated for f, t in zip(self.judgments.facts, tiers, strict=True) if t == tier]
+        return sum(stated) / len(stated) if stated else None
 
     @property
     def faithfulness(self) -> float | None:
@@ -145,7 +161,10 @@ class Summary:
     """Share of answers in the PE-analyst structure of assumption 8."""
     mean_words: float
     fact_recall: float | None
-    """Mean share of Required Facts stated, over cases with Required Facts."""
+    """Mean share of must-state Required Facts stated, over cases with any."""
+    detail_recall: float | None
+    """Mean share of detail Required Facts stated, over cases with any. Reported, never
+    decided on."""
     faithfulness: float | None
     """Mean share of claims supported by their cited Sources, over answers with claims."""
     mean_cost_usd: float | None
@@ -185,6 +204,7 @@ class GenerationReport:
         data = asdict(self) | {"settings": self.settings}
         for case, result in zip(data["cases"], self.cases, strict=True):
             case["fact_recall"] = result.fact_recall
+            case["detail_recall"] = result.detail_recall
             case["faithfulness"] = result.faithfulness
             case["judgments"]["judge_cost_usd"] = result.judgments.cost_usd
         return data
@@ -295,6 +315,7 @@ def _run_case(
             answer, [f.fact for f in case.required_facts], claims(answer), evidence
         ),
         structure=check_structure(answer, covered),
+        fact_tiers=tuple(f.tier for f in case.required_facts),
     )
 
 
@@ -325,6 +346,7 @@ def _summarise(results: Sequence[CaseResult]) -> Summary:
         structure_followed=mean(r.structure.passed for r in results) or 0.0,
         mean_words=mean(r.structure.words for r in results) or 0.0,
         fact_recall=mean(r.fact_recall for r in results),
+        detail_recall=mean(r.detail_recall for r in results),
         faithfulness=mean(r.faithfulness for r in results),
         mean_cost_usd=fmean(priced) if priced else None,
         total_cost_usd=sum(priced) if priced else None,
@@ -564,6 +586,7 @@ _COLUMNS = (
     ("structure", lambda s: _share(s.structure_followed)),
     ("words", lambda s: f"{s.mean_words:.0f}"),
     ("recall", lambda s: _share(s.fact_recall)),
+    ("detail", lambda s: _share(s.detail_recall)),
     ("faithful", lambda s: _share(s.faithfulness)),
     ("$/answer", lambda s: "–" if s.mean_cost_usd is None else f"{s.mean_cost_usd:.4f}"),
     ("latency s", lambda s: f"{s.mean_latency_s:.1f}"),

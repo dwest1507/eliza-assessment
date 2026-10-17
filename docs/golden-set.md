@@ -2,7 +2,7 @@
 
 The Golden Set is the evaluation's ground truth: 30 labelled questions that the retrieval and generation harnesses score the system against. It lives in [`data/eval/golden_set.json`](../data/eval/golden_set.json) and is read by `edgar_rag.golden_set.load_golden_set()`, which checks the schema. It was written before any retrieval Arm or prompt ran, so no label was written with results in view.
 
-This page describes version 1, the set every result so far was measured on. Version 2 is decided but not built yet: see [Version 2](#version-2).
+This page describes version 1, the set every result so far was measured on, and the Required Fact tiers that version 2 adds. The rest of version 2 is decided but not built yet: see [Version 2](#version-2).
 
 ## What it covers
 
@@ -40,7 +40,7 @@ The file holds `version`, `split_rule` and `cases`. Each case has:
 | `tags` | Free labels for case features: `brief_example`, `inherits_companies`, `switches_company`, `topic_change_without_company` |
 | `notes` | Why the case exists and what makes it hard |
 | `expected_sources` | The (`filing_id`, `section`) pairs that should reach the Answer Call. These are what hit@k, recall@k and MRR are scored against. Empty when nothing should be retrieved (a Company missing from the Corpus, GE today). |
-| `required_facts` | What a good answer must state. Each is `{fact, filing_id, section, evidence}`: a self-contained sentence naming its Company, the Filing and Section that support it, and a quote from that Section. |
+| `required_facts` | What a good answer must state. Each is `{fact, filing_id, section, evidence, tier}`: a self-contained sentence naming its Company, the Filing and Section that support it, a quote from that Section, and its tier (see below). |
 | `expected_coverage_gaps` | The Coverage Gaps the answer must state, as `{kind, companies}`. Companies are tickers, or names for Companies missing from the Corpus. |
 
 Coverage Gap kinds follow EDA notebook section 8.6:
@@ -52,6 +52,8 @@ Coverage Gap kinds follow EDA notebook section 8.6:
 | `stale_filing` | The answer would rest on GE Capital's FY2014 Filing |
 | `no_guidance` | An outlook question whose guidance is not in the Filings |
 | `periods_differ` | The compared Companies' latest Filings cover different periods |
+
+**Tiers.** A Required Fact's `tier` is `must_state`, something any good answer covers, or `detail`. The generation harness asks Jev about every fact, scores Fact Recall on the must-state facts only and reports detail recall beside it, so a missed detail is visible but never counts as a miss ([evaluation](evaluation.md#method)). Version 1's facts have no `tier` field and load as `must_state`, so version 1 is scored exactly as before; from version 2 on every fact must name its tier. The loader rejects an unknown tier, and a case with no must-state fact unless it has no Required Facts at all and expects a Coverage Gap (a Company missing from the Corpus, GE today).
 
 The generation harness checks only the gaps listed. A system that states an extra gap is not penalised by the Golden Set; Faithfulness judging covers whether it was warranted.
 
@@ -84,7 +86,7 @@ The tests prove that the labels point at real text. They cannot prove that the l
 
 ## Version 2
 
-Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)) and not built yet. Version 1 has too few cases for a comparison to see a real difference, and some of its labels make the judge misread answers ([Evaluation version 2](evaluation.md#evaluation-version-2)).
+Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). Only the Required Fact tiers are built so far. Version 1 has too few cases for a comparison to see a real difference, and some of its labels make the judge misread answers ([Evaluation version 2](evaluation.md#evaluation-version-2)).
 
 - **The Brief Suite.** The brief's three example questions move out of the dev/holdout split, each with four variants: about 15 cases in all. Each case runs 5 times on every change that could alter an answer. It passes when every must-state Required Fact is stated in at least 4 of the 5 runs and no run has a Contradicted Claim. Its cases are reported one by one and may be tuned on, since it is a must-pass check, not an estimate. The starter prompts keep the brief's three questions, now from the Brief Suite.
 - **60 dev cases and 20 holdout cases:**
@@ -100,5 +102,5 @@ Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-su
   Figure facts are labelled from the SEC company-facts reference, independently of the system's own Financial Facts.
 - **Version 1's 27 cases other than the brief's join dev**, including its 10 holdout cases, which were scored once and never tuned on. Their labels are rewritten in the new format.
 - **A split recorded per case.** The 33 new dev cases and 20 holdout cases are drafted together, and the 20 whose ids have the lowest SHA-256 digests are the holdout. Every case records its split, and no case moves when another is added. This replaces the ranking rule above, under which adding a case could move another.
-- **One-claim Required Facts, must-state or detail.** Each fact states one claim and names its Company. A must-state fact is something any good answer covers. A detail is reported, but Fact Recall is scored on the must-state facts. A fact that bundles two claims ("up 62% from a year earlier and 22% sequentially") becomes two. Every fact keeps a verbatim evidence quote, checked by the tests as before.
+- **One-claim Required Facts, must-state or detail.** Each fact states one claim and names its Company. A must-state fact is something any good answer covers. A detail is reported, but Fact Recall is scored on the must-state facts. The tiers are built: the loader and the generation harness handle them ([Tiers](#fields)). A fact that bundles two claims ("up 62% from a year earlier and 22% sequentially") becomes two. Every fact keeps a verbatim evidence quote, checked by the tests as before.
 - **Drafted from whole Sections.** Candidate facts are drafted in Claude Code from the whole of each relevant Section, not from what retrieval returns, and the developer accepts or rejects each one. A question's every half gets facts: the pharmaceutical question's "how are they addressing them" and the NVIDIA question's "growth outlook changed" have almost none in version 1.

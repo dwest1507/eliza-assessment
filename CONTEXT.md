@@ -43,7 +43,7 @@ One claim, naming its Company, that a good answer to a Golden Set or Brief Suite
 _Avoid_: Expected answer, key point
 
 **Fact Recall**:
-The share of a case's must-state Required Facts that an answer states, as judged by Jev.
+The share of a case's must-state Required Facts that an answer states, as judged by Jev. The same share over its details is detail recall, reported beside Fact Recall and never decided on.
 _Avoid_: Recall (unqualified), coverage
 
 **Faithfulness**:
