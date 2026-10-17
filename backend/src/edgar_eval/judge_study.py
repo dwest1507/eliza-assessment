@@ -61,7 +61,10 @@ label goes on its own `LABEL <id> (...):` line: `stated` or `not stated` for a f
 A Source's text is shown in full under the first claim item citing it, and named by the
 later ones, which keeps the sheet a size an editor opens.
 Writing the sheet again keeps every label already entered, and refuses to drop an item
-that has one, so labelling can stop and resume across sittings.
+that has one, so labelling can stop and resume across sittings. The sheet and the sample
+go to `data/eval/judge_study/` (`LABELS_DIR`), committed beside the Golden Set, since the
+labels are made by hand; the verdicts and the score, which can be regenerated, go to
+`data/derived/judge_study/`.
 
 **Judging.** Jev judges each saved answer's items together, as a harness run does: its
 facts in one request, its claims in one per set of cited Sources. The reference judge is
@@ -244,11 +247,16 @@ GENERATOR_SHARE = 1 / 2
 FACT_LABELS = ("stated", "not stated")
 CLAIM_LABELS = ("supported", "unsupported", "contradicted")
 
-STUDY_DIR = DATA_DIR / "derived" / "judge_study"
-DEFAULT_SHEET = STUDY_DIR / "sheet.md"
-DEFAULT_SAMPLE = STUDY_DIR / "sample.json"
-DEFAULT_VERDICTS = STUDY_DIR / "verdicts.json"
-DEFAULT_SCORE = STUDY_DIR / "score.json"
+LABELS_DIR = DATA_DIR / "eval" / "judge_study"
+"""The sheet and the sample, committed beside the Golden Set: they hold hand-made labels."""
+
+DERIVED_STUDY_DIR = DATA_DIR / "derived" / "judge_study"
+"""The verdicts and the score (gitignored): both can be regenerated."""
+
+DEFAULT_SHEET = LABELS_DIR / "sheet.md"
+DEFAULT_SAMPLE = LABELS_DIR / "sample.json"
+DEFAULT_VERDICTS = DERIVED_STUDY_DIR / "verdicts.json"
+DEFAULT_SCORE = DERIVED_STUDY_DIR / "score.json"
 
 Kind = Literal["fact", "claim"]
 
@@ -993,7 +1001,7 @@ SPLIT_MAX_TOKENS = 8_000
 SPLIT_OUTPUT_TOKENS = 1_500
 """The output tokens, thinking included, the cost estimate allows each split request."""
 
-DEFAULT_SPLIT_CACHE = STUDY_DIR / "llm_split"
+DEFAULT_SPLIT_CACHE = DERIVED_STUDY_DIR / "llm_split"
 
 SPLIT_INSTRUCTIONS = (
     "Split each numbered sentence of the answer above into one-claim, self-contained "

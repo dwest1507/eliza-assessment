@@ -163,7 +163,7 @@ RETRIEVAL_REPORT = data/derived/eval/retrieval-$(SPLIT).json
 eval-export: $(RETRIEVAL_REPORT) ## Export the latest eval results and Corpus coverage for the "How it works" page [SPLIT=...]
 	$(UV) python -m edgar_eval.export --split $(SPLIT)
 
-judge-study-sample: $(INDEX) ## Draw the judge study's items from the saved reports and write its blind labelling sheet (no provider call) [SEED=...]
+judge-study-sample: $(INDEX) ## Draw the judge study's items from the saved reports and write its blind labelling sheet to data/eval/judge_study/ (no provider call) [SEED=...]
 	$(UV) python -m edgar_eval.judge_study sample $(if $(SEED),--seed $(SEED))
 
 judge-study-judge: ## Judge every sampled item: Jev twice, claude-haiku-5-5 once with REFERENCE=1, and the trial LLM claim split with LLM_SPLIT=1; prints the cost first (costs money) [REFERENCE=1] [LLM_SPLIT=1]

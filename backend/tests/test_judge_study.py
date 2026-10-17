@@ -335,6 +335,61 @@ def test_a_rerun_that_would_drop_a_labelled_item_refuses_and_leaves_the_sheet(tm
     assert sheet.read_text() == before
 
 
+def test_the_labels_are_committed_and_the_verdicts_and_score_are_derived():
+    import subprocess
+
+    from edgar_eval.judge_study import (
+        DEFAULT_SAMPLE,
+        DEFAULT_SCORE,
+        DEFAULT_SHEET,
+        DEFAULT_VERDICTS,
+    )
+    from edgar_rag.paths import DATA_DIR, DERIVED_DIR, REPO_ROOT
+
+    assert DEFAULT_SHEET.parent == DEFAULT_SAMPLE.parent == DATA_DIR / "eval" / "judge_study"
+    assert DEFAULT_VERDICTS.parent == DEFAULT_SCORE.parent == DERIVED_DIR / "judge_study"
+    assert (DEFAULT_SHEET.parent / "README.md").is_file()
+
+    def ignored(path):
+        check = ["git", "-C", str(REPO_ROOT), "check-ignore", "-q", str(path)]
+        return subprocess.run(check, check=False).returncode == 0
+
+    assert not ignored(DEFAULT_SHEET) and not ignored(DEFAULT_SAMPLE)
+    assert ignored(DEFAULT_VERDICTS) and ignored(DEFAULT_SCORE)
+
+
+def test_the_sample_command_resumes_and_refuses_at_its_default_paths(tmp_path, monkeypatch):
+    """With no `--sheet` or `--sample`, the command writes both to the labels directory,
+    creating it, keeps the labels on a rerun and refuses one that would drop them."""
+    from edgar_eval import judge_study
+
+    labels_dir = tmp_path / "data" / "eval" / "judge_study"
+    monkeypatch.setattr(judge_study, "DEFAULT_SHEET", labels_dir / "sheet.md")
+    monkeypatch.setattr(judge_study, "DEFAULT_SAMPLE", labels_dir / "sample.json")
+    reports, _, _ = _synthetic_reports()
+    paths = []
+    for name, data in reports:
+        (tmp_path / name).write_text(json.dumps(data))
+        paths.append(str(tmp_path / name))
+    v2 = _v2_file(tmp_path, {})
+
+    def run(seed):
+        argv = ["sample", "--reports", *paths, "--golden-set-v2", str(v2), "--seed", str(seed)]
+        return judge_study.main(argv, sources=_sources, out=io.StringIO(), err=io.StringIO())
+
+    assert run(2) == 0
+    sheet = labels_dir / "sheet.md"
+    assert (labels_dir / "sample.json").is_file()
+    drawn = [i["id"] for i in json.loads((labels_dir / "sample.json").read_text())["items"]]
+    _label_some(sheet, dict.fromkeys(drawn, "supported"))
+
+    assert run(2) == 0
+    assert set(judge_study.read_labels(sheet).values()) == {"supported"}
+    before = sheet.read_text()
+    assert run(99) == 1  # another draw would drop labelled items
+    assert sheet.read_text() == before
+
+
 def test_a_label_that_is_not_one_is_refused_rather_than_lost(tmp_path):
     from edgar_eval.judge_study import read_labels
 

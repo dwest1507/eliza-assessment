@@ -70,12 +70,17 @@ Version 2 of the Golden Set, beside version 1 and empty until its cases are draf
 
 The brief's example questions and variants of them (a rephrasing, other Companies, another time window, Section angle or a single Company, a follow-up), outside the Golden Set's dev/holdout split: a must-pass check, each case answered 5 times by `make eval-brief`. Same case schema as the Golden Set's, with no split, a tier on every Required Fact, `replaces` naming the version 1 case a case was rewritten from, and `variant_of` naming the brief question a variant varies. Three of its cases (the brief's three questions) are front-end starter prompts. The same tests check its labels against the Corpus; see [`docs/golden-set.md`](../docs/golden-set.md#the-brief-suite).
 
+## Judge study labels (`eval/judge_study/`)
+
+The judge study's blind labelling sheet, `sheet.md`, and its sample, `sample.json`, written by `make judge-study-sample` ([ADR 0013](../docs/adr/0013-jev-stays-the-judge-checked-by-a-judge-study.md)). They hold the developer's hand-made labels, so they are committed beside the Golden Set, not derived: the developer commits the labelled sheet. Running the command again keeps every label, and refuses to drop a labelled item. Neither is drawn until version 1's cases are rewritten. Jev's verdicts and the score can be regenerated, so they stay in `derived/judge_study/`; see [`docs/evaluation.md`](../docs/evaluation.md#the-judge-studys-sample).
+
 ## Derived files
 
 Anything built from the Corpus (cleaned Sections, a Financial Facts database, indexes) is written to `data/derived/`, which is gitignored and rebuilt by Makefile targets.
 
 - `edgar_rag.sqlite`: the retrieval index, rebuilt by `make index`. Its `chunks` table holds every chunk with its Filing's metadata (Filing ID, Company, Sector and industry, Form Type, Report Period, Fiscal Period, Tracked/Snapshot class, Section, Item and chunk kind: `prose`, `table` or `risk_pointer`); `chunks_fts` is the FTS5 index over their text; `companies` lists the indexed Companies.
 - `logs/answer_calls.jsonl`: one line per Answer Call, with its model, prompt version, token usage and latency.
+- `judge_study/verdicts.json` and `judge_study/score.json`: the judge study's verdicts, written by `make judge-study-judge`, and its score, by `make judge-study-score`. Its sheet and sample are committed in `eval/judge_study/` instead.
 
 ## SEC company-facts reference (`derived/sec_companyfacts/`)
 
