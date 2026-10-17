@@ -48,18 +48,31 @@ the shipped setup and of this round, and otherwise runs them again first.
     python -m edgar_eval.selection compare SHIPPED.json CHALLENGER.json...
         [--control CONTROL.json] [--rule arms|generators|settings] [--json PATH]
 
-`arms` runs the generation harness once per challenger Arm in `edgar_eval.arms.ARMS`,
-writing `data/derived/eval/generation-arms-<split>-<arm>.json`. `generators` runs it
+**The screen** (ADR 0011): before any paid Answer Call, the `arms` and `settings`
+commands score every candidate with the retrieval harness, which is free, and answer only
+through the candidates whose Evidence Reached is not behind the shipped choice's
+(one-sided p < `BEHIND_P`), at most three, the most Evidence Reached first and the
+cheapest on a tie (`edgar_eval.retrieval.screen`). The choice file records the screen,
+with every candidate screened and why it was kept or dropped.
+
+`arms` runs the retrieval harness on the split for every Arm in `edgar_eval.arms.ARMS`,
+writing `data/derived/eval/retrieval-<split>.json` with its screen, then the generation
+harness once per challenger Arm the screen keeps, writing
+`generation-arms-<split>-<arm>.json`. `generators` runs it
 once per other model in `edgar_eval.generators.GENERATORS` on the Shipped Arm, writing
 `generation-<split>-<model>.json` (the name `make eval-generation` uses); `--model`
 (repeatable) limits it to the generators named (`make eval-generators` passes
 `gpt-6-luna` and `claude-haiku-5-5`, Golden Set version 2's comparison, unless `MODELS=`
-says otherwise). `settings` runs it once per `--setting`, a chunk size and context
-budget such as `450:32000`, writing `generation-<split>-chunks<N>-budget<B>.json` (the
-name `make eval-generation CHUNK_TOKENS=<N> CONTEXT_BUDGET=<B>` uses) and building the
-index of another chunk size, `data/derived/edgar_rag-chunks<N>.sqlite`, when missing.
-With `--reuse`, a challenger's report already written is read instead of rerun; the
-shipped run and Control Run are reused by round, with or without it. All three call the
+says otherwise). `settings` runs the retrieval harness on the Shipped Arm for the shipped
+setting and each `--setting`, a chunk size and context budget such as `450:32000`,
+writing `retrieval-<split>-chunks<N>-budget<B>.json`, then the generation harness once
+per setting the screen keeps, writing `generation-<split>-chunks<N>-budget<B>.json` (the
+names `make eval-retrieval` and `make eval-generation` use with `CHUNK_TOKENS=<N>
+CONTEXT_BUDGET=<B>`), and builds the index of another chunk size,
+`data/derived/edgar_rag-chunks<N>.sqlite`, when missing.
+With `--reuse`, a challenger's report already written is read instead of rerun (for
+`arms` and `settings`, the retrieval reports too); the shipped run and Control Run are
+reused by round, with or without it. All three call the
 generators and Jev, so they cost money. `compare` applies a rule to generation reports
 already written, the first being the shipped choice, with `--control` the Control Run's
 (without one, as for version 1's reports, it says the noise is not shown). All print the
@@ -78,7 +91,7 @@ from pathlib import Path
 from statistics import fmean
 from typing import Any, Literal, TextIO
 
-from edgar_eval.metrics import Interval, Verdict, bootstrap_interval, sign_test
+from edgar_eval.metrics import Interval, McNemarResult, Verdict, bootstrap_interval, sign_test
 from edgar_rag.paths import DERIVED_DIR
 
 __all__ = [
@@ -93,6 +106,7 @@ __all__ = [
     "ScoreComparison",
     "choose",
     "main",
+    "one_sided_verdict",
     "sign_test",
 ]
 
@@ -112,21 +126,45 @@ looser cut-off, so a drop is flagged sooner. Both are fixed before any run on Go
 version 2 and are the same for every rule (ADR 0011)."""
 
 
-def _run_arms(split: str, reuse: bool, out: TextIO) -> list[Path]:
-    from edgar_eval import generation
+def one_sided_verdict(test: McNemarResult) -> Verdict:
+    """`ahead` at one-sided p < AHEAD_P, `behind` at one-sided p < BEHIND_P, else
+    `indistinguishable` (both cannot hold at once): the verdict of every rule, and of
+    the retrieval harness's gate on Evidence Reached."""
+    if test.p_ahead < AHEAD_P:
+        return "ahead"
+    if test.p_behind < BEHIND_P:
+        return "behind"
+    return "indistinguishable"
+
+
+def _run_arms(split: str, reuse: bool, out: TextIO) -> tuple[list[Path], dict | None]:
+    from edgar_eval import generation, retrieval
     from edgar_eval.arms import ARMS
 
+    screened = _EVAL_DIR / f"retrieval-{split}.json"
+    report = json.loads(screened.read_text(encoding="utf-8")) if screened.exists() else {}
+    if not (reuse and report.get("screen")):
+        print("\n== The screen: every Arm through the retrieval harness ==", file=out, flush=True)
+        retrieval.main(["--split", split, "--json", str(screened)], out=out)
+        report = json.loads(screened.read_text(encoding="utf-8"))
+    else:
+        kept_names = ", ".join(report["screen"]["kept"]) or "none"
+        print(f"\nThe screen, reused from {screened}: go on: {kept_names}", file=out)
+    screen = report["screen"]
+    kept = set(screen["kept"])
     paths = []
-    for arm in (a for a in ARMS if not a.shipped):
+    for arm in (a for a in ARMS if not a.shipped and a.name in kept):
         path = _EVAL_DIR / f"generation-arms-{split}-{arm.name}.json"
         if not (reuse and path.exists()):
             print(f"\n== Arm {arm.name} ==", file=out, flush=True)
             generation.main(["--split", split, "--arm", arm.name, "--json", str(path)], out=out)
         paths.append(path)
-    return paths
+    return paths, screen
 
 
-def _run_generators(split: str, reuse: bool, out: TextIO, only: Sequence[str] = ()) -> list[Path]:
+def _run_generators(
+    split: str, reuse: bool, out: TextIO, only: Sequence[str] = ()
+) -> tuple[list[Path], None]:
     from edgar_eval import generation
     from edgar_eval.generators import GENERATORS
 
@@ -139,7 +177,7 @@ def _run_generators(split: str, reuse: bool, out: TextIO, only: Sequence[str] = 
             print(f"\n== Generator {model} ==", file=out, flush=True)
             generation.main(["--split", split, "--model", model, "--json", str(path)], out=out)
         paths.append(path)
-    return paths
+    return paths, None
 
 
 def _check_generators(only: Sequence[str]) -> None:
@@ -154,27 +192,50 @@ def _check_generators(only: Sequence[str]) -> None:
 
 def _run_settings(
     split: str, reuse: bool, out: TextIO, settings: Sequence[tuple[int, int]] = ()
-) -> list[Path]:
-    from edgar_eval import generation
-    from edgar_rag.retrieval import CHUNK_TOKENS
+) -> tuple[list[Path], dict]:
+    from edgar_eval import generation, retrieval
+    from edgar_eval.arms import ARMS
+    from edgar_eval.retrieval import EvidenceRun, print_screen, screen
+    from edgar_rag.retrieval import CHUNK_TOKENS, CONTEXT_BUDGET_TOKENS
 
     if not settings:
         raise SystemExit("error: name each setting to compare: --setting CHUNKS:BUDGET")
+    shipped = (CHUNK_TOKENS, CONTEXT_BUDGET_TOKENS)
+    index = {chunks: _index_args(chunks, CHUNK_TOKENS) for chunks, _ in (shipped, *settings)}
+    arm = next(a.name for a in ARMS if a.shipped)
+    runs = []
+    for chunks, budget in (shipped, *settings):  # the screen: the shipped setting first
+        path = _EVAL_DIR / f"retrieval-{split}-chunks{chunks}-budget{budget}.json"
+        if not (reuse and path.exists()):
+            print(f"\n== The screen: chunks-{chunks}-budget-{budget} ==", file=out, flush=True)
+            argv = ["--split", split, "--arm", arm, *index[chunks]]
+            retrieval.main([*argv, "--context-budget", str(budget), "--json", str(path)], out=out)
+        runs.append(EvidenceRun.from_report(json.loads(path.read_text(encoding="utf-8"))))
+    result = screen(runs[0], runs[1:])
+    print_screen(result, out)
     paths = []
     for chunks, budget in settings:
+        if f"chunks-{chunks}-budget-{budget}" not in result.kept:
+            continue
         path = _EVAL_DIR / f"generation-{split}-chunks{chunks}-budget{budget}.json"
         if not (reuse and path.exists()):
-            index: list[str] = []
-            if chunks != CHUNK_TOKENS:
-                index_path = _INDEX_DIR / f"edgar_rag-chunks{chunks}.sqlite"
-                if not index_path.exists():
-                    _build_index(chunks, index_path)
-                index = ["--index", str(index_path)]
             print(f"\n== Setting chunks-{chunks}-budget-{budget} ==", file=out, flush=True)
-            argv = ["--split", split, *index, "--context-budget", str(budget), "--json", str(path)]
+            argv = ["--split", split, *index[chunks]]
+            argv += ["--context-budget", str(budget), "--json", str(path)]
             generation.main(argv, out=out)
         paths.append(path)
-    return paths
+    return paths, asdict(result)
+
+
+def _index_args(chunks: int, shipped_chunks: int) -> list[str]:
+    """The harness arguments for an index of `chunks`-token chunks: none for the shipped
+    index, else the index of that chunk size, built when missing."""
+    if chunks == shipped_chunks:
+        return []
+    index_path = _INDEX_DIR / f"edgar_rag-chunks{chunks}.sqlite"
+    if not index_path.exists():
+        _build_index(chunks, index_path)
+    return ["--index", str(index_path)]
 
 
 def _build_index(chunks: int, path: Path) -> None:
@@ -249,12 +310,14 @@ class Rule:
     behind_on_none: tuple[Score, ...]
     named_by: str
     """The generation report field that names a candidate (falling back to its model)."""
-    run: Callable[..., list[Path]]
+    run: Callable[..., tuple[list[Path], dict | None]]
     """Runs the generation harness once per challenger on a split (reusing reports
-    already written when asked) and returns their reports; the shipped run and Control
-    Run come from the round (`_round_runs`). The generator rule's also takes `only`, the
-    models to limit the run to; the settings rule's `settings`, the (chunk size, context
-    budget) pairs to compare."""
+    already written when asked) and returns their reports, with the screen that chose
+    the challengers (None for a rule that does not screen); the shipped run and Control
+    Run come from the round (`_round_runs`). The Arm and settings rules' screen every
+    candidate on Evidence Reached first (ADR 0011) and answer only through the ones it
+    keeps. The generator rule's also takes `only`, the models to limit the run to; the
+    settings rule's `settings`, the (chunk size, context budget) pairs to compare."""
     choice_file: str
     """The default file the choice is written to, before `-<split>.json`."""
 
@@ -406,11 +469,7 @@ def _compare_score(
     a = [float(challenger[c]) for c in both]  # type: ignore[arg-type]
     b = [float(shipped[c]) for c in both]  # type: ignore[arg-type]
     test = sign_test(a, b)
-    verdict: Verdict = "indistinguishable"
-    if test.p_ahead < AHEAD_P:
-        verdict = "ahead"
-    elif test.p_behind < BEHIND_P:
-        verdict = "behind"
+    verdict = one_sided_verdict(test)
     return ScoreComparison(
         paired=len(both),
         left_out=len(scored_a ^ scored_b),
@@ -519,6 +578,7 @@ def main(argv: list[str] | None = None, *, out: TextIO | None = None) -> int:
     args = parser.parse_args(argv)
 
     rule: RuleName
+    screen: dict | None = None
     if args.command == "compare":
         rule, paths, control, target = args.rule, args.reports, args.control, args.json
     else:
@@ -532,7 +592,8 @@ def main(argv: list[str] | None = None, *, out: TextIO | None = None) -> int:
                 parser.error("name each setting to compare: --setting CHUNKS:BUDGET")
             options = {"settings": args.setting}
         shipped_path, control = _round_runs(args.split, out)
-        paths = [shipped_path, *RULES[rule].run(args.split, args.reuse, out, **options)]
+        challengers, screen = RULES[rule].run(args.split, args.reuse, out, **options)
+        paths = [shipped_path, *challengers]
         target = args.json or _EVAL_DIR / f"{RULES[rule].choice_file}-{args.split}.json"
     data = [json.loads(Path(p).read_text(encoding="utf-8")) for p in paths]
     candidates = [Candidate.from_report(d, rule) for d in data]
@@ -550,6 +611,8 @@ def main(argv: list[str] | None = None, *, out: TextIO | None = None) -> int:
             "reports": [str(p) for p in paths],
             "control_report": str(control) if control else None,
         }
+        if screen is not None:
+            record["screen"] = screen
         target.write_text(json.dumps(record | asdict(choice), indent=2) + "\n", encoding="utf-8")
         print(f"\nWritten to {target.resolve()}", file=out)
     return 0

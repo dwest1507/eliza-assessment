@@ -607,13 +607,30 @@ def test_the_compare_command_takes_a_control_run_and_says_why_it_is_inconclusive
 # when they exist for that round and running them again when any of the three differs.
 
 
+def _level_retrieval(argv, *, arms=None, out=None):
+    """A fake retrieval harness whose every candidate reaches the shipped choice's
+    evidence, so the screen keeps them all."""
+    from edgar_eval.arms import ARMS
+
+    chunks = 600
+    if "--index" in argv:
+        chunks = int(argv[argv.index("--index") + 1].rsplit("chunks", 1)[1].split(".")[0])
+    budget = int(argv[argv.index("--context-budget") + 1]) if "--context-budget" in argv else 32000
+    challengers = [a.name for a in ARMS if not a.shipped]
+    _retrieval_report(
+        Path(argv[argv.index("--json") + 1]), [[True]], 9_000, chunks, budget, kept=challengers
+    )
+    return 0
+
+
 @pytest.fixture
 def harness_runs(monkeypatch, tmp_path, request):
     """A fake generation harness that records each run (its report's name, and its
     arguments in `request.node.argvs`) and writes a report stamped with the current
     round, a dict the test can change; an index of another chunk size is recorded in
-    `request.node.built` instead of built."""
-    from edgar_eval import generation, selection
+    `request.node.built` instead of built. The screen's retrieval runs keep every
+    candidate."""
+    from edgar_eval import generation, retrieval, selection
 
     current = {"code_version": "code-1", "prompt_version": "v7", "golden_set_version": 1}
     runs, argvs = [], {}
@@ -640,6 +657,7 @@ def harness_runs(monkeypatch, tmp_path, request):
         return 0
 
     monkeypatch.setattr(generation, "main", fake_main)
+    monkeypatch.setattr(retrieval, "main", _level_retrieval)
     monkeypatch.setattr(generation, "current_round", lambda golden_set=None: dict(current))
     monkeypatch.setattr(selection, "_EVAL_DIR", tmp_path)
     monkeypatch.setattr(selection, "_INDEX_DIR", tmp_path)
@@ -740,3 +758,84 @@ def test_the_settings_command_needs_a_named_setting(harness_runs, tmp_path):
         main(["settings"], out=io.StringIO())
 
     assert stopped.value.code != 0 and runs == []
+
+
+# --- The screen on Evidence Reached (ADR 0011) ---------------------------------------------
+# Every candidate Arm and setting is scored by the retrieval harness first, for free; only
+# those the screen keeps go on to paid Answer Calls.
+
+
+def _retrieval_report(path, evidence, tokens, chunks=600, budget=32_000, kept=None):
+    """A saved retrieval report whose Shipped Arm reached `evidence` (per case, per fact)."""
+    cases = [
+        {"case_id": f"c{i}", "evidence_reached": list(reached)}
+        for i, reached in enumerate(evidence)
+    ]
+    arm = {"name": "fts5", "shipped": True, "cases": cases}
+    arm["overall"] = {"mean_source_tokens": tokens}
+    data = {"split": "dev", "chunk_tokens": chunks, "context_budget": budget, "arms": {"fts5": arm}}
+    if kept is not None:
+        data["screen"] = {"shipped": "fts5", "limit": 3, "kept": kept, "candidates": []}
+    path.write_text(json.dumps(data))
+    return str(path)
+
+
+def test_the_arm_comparison_answers_only_the_arms_the_screen_keeps(
+    harness_runs, monkeypatch, tmp_path
+):
+    from edgar_eval import retrieval
+
+    runs, _ = harness_runs
+    screened = []
+
+    def fake_retrieval(argv, *, arms=None, out=None):
+        screened.append(argv)
+        _retrieval_report(Path(argv[argv.index("--json") + 1]), [[True]], 9_000, kept=["hybrid"])
+        return 0
+
+    monkeypatch.setattr(retrieval, "main", fake_retrieval)
+
+    _, choice = _command("arms", tmp_path=tmp_path)
+
+    assert len(screened) == 1 and "--arm" not in screened[0]  # every Arm, for free
+    assert runs == [  # then the round's two runs and the one Arm the screen kept
+        "generation-dev.json",
+        "generation-control-dev.json",
+        "generation-arms-dev-hybrid.json",
+    ]
+    assert list(choice["comparisons"]) == ["hybrid"]
+    assert choice["screen"]["kept"] == ["hybrid"]
+
+
+def test_the_settings_command_answers_only_the_settings_the_screen_keeps(
+    harness_runs, monkeypatch, tmp_path
+):
+    from edgar_eval import retrieval
+
+    runs, _ = harness_runs
+    evidence = {  # per context budget: the shipped one, one 3 facts behind, one ahead
+        "32000": [[True, False]] * 6,
+        "24000": [[False, False]] * 3 + [[True, False]] * 3,
+        "48000": [[True, True]] * 6,
+    }
+
+    def fake_retrieval(argv, *, arms=None, out=None):
+        assert argv[argv.index("--arm") + 1] == "fts5"  # the Shipped Arm only
+        budget = argv[argv.index("--context-budget") + 1]
+        path = Path(argv[argv.index("--json") + 1])
+        _retrieval_report(path, evidence[budget], int(budget) / 4, budget=int(budget))
+        return 0
+
+    monkeypatch.setattr(retrieval, "main", fake_retrieval)
+
+    printed, choice = _command(
+        "settings", "--setting", "600:24000", "--setting", "600:48000", tmp_path=tmp_path
+    )
+
+    assert "generation-dev-chunks600-budget24000.json" not in runs
+    assert runs[-1] == "generation-dev-chunks600-budget48000.json"
+    assert choice["screen"]["shipped"] == "chunks-600-budget-32000"
+    assert choice["screen"]["kept"] == ["chunks-600-budget-48000"]
+    reasons = {c["name"]: c["reason"] for c in choice["screen"]["candidates"]}
+    assert reasons["chunks-600-budget-24000"].startswith("dropped: behind")
+    assert "chunks-600-budget-24000: " in printed and "Go on: chunks-600-budget-48000" in printed

@@ -134,7 +134,7 @@ eval-rescore: $(INDEX) ## Redo the figure check of every saved generation report
 # Run (generation-control-<split>.json), reusing them while the code, prompt and Golden Set
 # version are unchanged, and running them first otherwise (ADR 0011).
 
-eval-arms: $(INDEX) $(EMBEDDINGS) ## Answer the split through every Arm, with the round's shipped run and Control Run, and choose one by the selection rule (costs money)
+eval-arms: $(INDEX) $(EMBEDDINGS) ## Screen every Arm on Evidence Reached (free), answer the split through the ones kept, with the round's shipped run and Control Run, and choose one by the selection rule (costs money)
 	@keys=$$($(GENERATOR_KEYS)) || exit 1; \
 	$(call require_keys,$$keys JEV_API_KEY)
 	$(UV) python -m edgar_eval.selection arms --split $(SPLIT)
@@ -151,7 +151,7 @@ eval-generators: $(INDEX) ## Answer the split with gpt-6-luna and claude-haiku-5
 # The settings `make eval-settings` compares, each CHUNKS:BUDGET (ADR 0010's grid).
 CANDIDATES ?=
 
-eval-settings: $(INDEX) ## Answer the split at each chunk size and context budget named and choose by the selection rule: make eval-settings CANDIDATES="450:32000 600:48000" (costs money)
+eval-settings: $(INDEX) ## Screen each chunk size and context budget named on Evidence Reached (free), answer the split at the ones kept and choose by the selection rule: make eval-settings CANDIDATES="450:32000 600:48000" (costs money)
 	@if [ -z "$(CANDIDATES)" ]; then echo 'usage: make eval-settings CANDIDATES="450:32000 ..."' >&2; exit 1; fi
 	@keys=$$($(GENERATOR_KEYS)) || exit 1; \
 	$(call require_keys,$$keys JEV_API_KEY)

@@ -4,7 +4,10 @@ JSON file for the front-end's "How it works" page.
 It reads the reports the harnesses last wrote for a split under `data/derived/eval/`:
 
 - `retrieval-<split>.json` (`make eval-retrieval`): every Arm's scores, overall and per
-  question type, and each challenger's comparison with the Shipped Arm. Required.
+  question type, and each challenger's comparison with the Shipped Arm. Required. The
+  page shows version 1's view of retrieval, gated on hit@10, until a later spec moves it
+  to version 2: for a report gated on Evidence Reached (ADR 0011) the export pairs the
+  Arms' cases on hit@10 itself, as version 1's harness did.
 - `generation-<split>[-<model>].json` (`make eval-generation`): one per generator run,
   each with its scores, cost and latency. Optional, since a run costs money: the export
   lists none until one has run.
@@ -33,6 +36,7 @@ from datetime import date
 from pathlib import Path
 from typing import Any, TextIO
 
+from edgar_eval.metrics import mcnemar_exact
 from edgar_rag.corpus import Filing, load_corpus, report_quarter
 from edgar_rag.golden_set import DEFAULT_GOLDEN_SET, load_golden_set
 from edgar_rag.paths import DERIVED_DIR, REPO_ROOT
@@ -43,6 +47,8 @@ DEFAULT_EVAL_DIR = DERIVED_DIR / "eval"
 DEFAULT_EXPORT = REPO_ROOT / "frontend" / "data" / "eval-export.json"
 
 _COVERAGE_ORDER = ("tracked", "snapshot")
+_PAGE_GATE_K = 10
+"""The hit@k the page gates retrieval on (version 1's), for a report that does not."""
 
 
 def export(
@@ -142,9 +148,9 @@ def _read(path: Path) -> dict[str, Any]:
 
 
 def _retrieval(report: dict[str, Any]) -> dict[str, Any]:
-    gate = str(report["gate_k"])
+    gate = str(report.get("gate_k", _PAGE_GATE_K))
     return {
-        "gatingMetric": report["gating_metric"],
+        "gatingMetric": f"hit@{gate}",
         "ks": report["ks"],
         "scoredCases": len(report["case_ids"]),
         "unscored": report["unscored"],
@@ -172,9 +178,28 @@ def _retrieval(report: dict[str, Any]) -> dict[str, Any]:
                 "pValue": c["result"]["p_value"],
                 "verdict": c["result"]["verdict"],
             }
-            for c in report["comparisons"]
+            for c in (report["comparisons"] if "gate_k" in report else _hit_comparisons(report))
         ],
     }
+
+
+def _hit_comparisons(report: dict[str, Any]) -> list[dict[str, Any]]:
+    """Each challenger Arm against the Shipped Arm on hit@10, case by case, as version 1's
+    harness compared them: the page's view of a report gated on Evidence Reached."""
+    gate = str(_PAGE_GATE_K)
+    arms = report["arms"].values()
+    shipped = next(a for a in arms if a["shipped"])
+    hits = [c["hit"][gate] for c in shipped["cases"]]
+    return [
+        {
+            "arm": arm["name"],
+            "shipped_arm": shipped["name"],
+            "metric": f"hit@{gate}",
+            "result": vars(mcnemar_exact([c["hit"][gate] for c in arm["cases"]], hits)),
+        }
+        for arm in arms
+        if not arm["shipped"]
+    ]
 
 
 def _retrieval_summary(s: dict[str, Any]) -> dict[str, Any]:
