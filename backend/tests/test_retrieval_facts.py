@@ -5,6 +5,7 @@ figure question asks for into the prompt, cited by one Source per Filing."""
 import sqlite3
 import subprocess
 import sys
+from pathlib import Path
 
 import pytest
 
@@ -81,9 +82,9 @@ def test_sec_xbrl_data_is_never_loaded_into_the_store():
     ).stdout.strip()
     assert loaded == "False"
 
-    import edgar_rag.retrieval as retrieval
+    from edgar_rag import retrieval
 
-    source = open(retrieval.__file__, encoding="utf-8").read()
+    source = Path(retrieval.__file__).read_text(encoding="utf-8")
     assert "sec_reference" not in source
     assert "sec_companyfacts" not in source
 

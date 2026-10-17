@@ -1185,14 +1185,13 @@ def test_the_llm_split_lives_in_the_study_only_and_the_harness_still_splits_by_s
     import edgar_eval.answer_checks as answer_checks
     import edgar_eval.brief_suite as brief_suite
     import edgar_eval.generation as generation
-    from edgar_eval.answer_checks import claims
 
     for module in (generation, brief_suite, answer_checks):
         source = inspect.getsource(module)
         assert "judge_study" not in source and "LLMSplitter" not in source
     # The harness's claims are still the answer's sentences.
     answer = "## Apple\n\nRevenue rose and margins fell. [S1, S2] Costs grew. [S1]"
-    assert [(c.text, c.tags) for c in claims(answer)] == [
+    assert [(c.text, c.tags) for c in answer_checks.claims(answer)] == [
         ("Revenue rose and margins fell.", ("S1", "S2")),
         ("Costs grew.", ("S1",)),
     ]

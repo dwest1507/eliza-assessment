@@ -551,16 +551,20 @@ def _render(sample: Sample, labels: Mapping[str, str]) -> str:
     lines = [
         "# Judge study labelling sheet",
         "",
-        f"Seed: {sample.seed}. Drawn from {len(sample.reports)} saved report(s): "
-        f"{len(facts)} fact items and {len(claims)} claim items.",
+        (
+            f"Seed: {sample.seed}. Drawn from {len(sample.reports)} saved report(s): "
+            f"{len(facts)} fact items and {len(claims)} claim items."
+        ),
         "",
-        "Label each item on its `LABEL` line, after the colon. A fact item is `stated` or "
-        "`not stated`: does the answer state the Required Fact, in any wording? A claim "
-        "item is `supported`, `unsupported` or `contradicted`: how do the cited Sources "
-        "relate to the claim? Its context (heading, table header) is there to read the "
-        "claim by, not to be judged. Label every fact item, then the claim items in "
-        "order. Leave a label blank to come back to it; drawing the sheet again keeps "
-        "every label written here.",
+        (
+            "Label each item on its `LABEL` line, after the colon. A fact item is `stated` or "
+            "`not stated`: does the answer state the Required Fact, in any wording? A claim "
+            "item is `supported`, `unsupported` or `contradicted`: how do the cited Sources "
+            "relate to the claim? Its context (heading, table header) is there to read the "
+            "claim by, not to be judged. Label every fact item, then the claim items in "
+            "order. Leave a label blank to come back to it; drawing the sheet again keeps "
+            "every label written here."
+        ),
         "",
         "## Fact items",
         "",

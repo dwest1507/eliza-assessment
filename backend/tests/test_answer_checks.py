@@ -561,8 +561,10 @@ def test_an_answer_in_the_analyst_structure_passes():
         "## Apple (AAPL)",
         "| Company | Main risk |\n|---|---|\n| Apple | Outsourcing [S1] |",
         "- Apple outsources manufacturing [S1].",
-        "Apple outsources [S1]. Tesla depends on Elon Musk [S3]. Both face tariffs [S1]. "
-        "Apple sells abroad [S1]. Tesla builds factories [S3].",
+        (
+            "Apple outsources [S1]. Tesla depends on Elon Musk [S3]. Both face tariffs [S1]. "
+            "Apple sells abroad [S1]. Tesla builds factories [S3]."
+        ),
     ],
 )
 def test_an_answer_that_does_not_open_with_a_short_direct_answer_fails(opening):
@@ -590,8 +592,10 @@ def test_several_companies_need_a_heading_each_or_a_comparison_table():
     "coverage",
     [
         "### Coverage\n\nJPMorgan's risk factors were not among the Sources.",
-        "Tesla also faces tariffs [S3]. **Coverage:** JPMorgan's risk factors were not "
-        "among the Sources.",
+        (
+            "Tesla also faces tariffs [S3]. **Coverage:** JPMorgan's risk factors were not "
+            "among the Sources."
+        ),
     ],
 )
 def test_a_closing_coverage_note_may_be_a_heading_or_a_bold_label(coverage):
@@ -604,8 +608,10 @@ def test_a_closing_coverage_note_may_be_a_heading_or_a_bold_label(coverage):
     "coverage",
     [
         "Tesla also faces tariffs [S3].",
-        "**Coverage:** JPMorgan's risk factors were not among the Sources.\n\n"
-        "## Tesla (TSLA)\n\nTesla also faces tariffs [S3].",
+        (
+            "**Coverage:** JPMorgan's risk factors were not among the Sources.\n\n"
+            "## Tesla (TSLA)\n\nTesla also faces tariffs [S3]."
+        ),
     ],
 )
 def test_an_answer_that_does_not_end_with_a_coverage_note_fails(coverage):
