@@ -36,7 +36,7 @@ for key in $(1); do \
 	done
 endef
 
-.PHONY: help install test lint format eda sec-facts index embeddings ask api eval-retrieval eval-generation eval-arms eval-generators eval-export deck dev frontend-deps
+.PHONY: help install test lint format eda sec-facts index embeddings ask api eval-retrieval eval-generation eval-rescore eval-arms eval-generators eval-export deck dev frontend-deps
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-15s %s\n", $$1, $$2}'
@@ -107,6 +107,13 @@ eval-generation: $(INDEX) $(if $(filter dense hybrid,$(ARM)),$(EMBEDDINGS)) ## S
 	$(UV) python -m edgar_eval.generation --split $(SPLIT) $(if $(MODEL),--model $(MODEL)) \
 		$(if $(ARM),--arm $(ARM)) \
 		--json ../data/derived/eval/generation-$(if $(ARM),arms-$(SPLIT)-$(ARM),$(SPLIT)$(if $(MODEL),-$(MODEL))).json
+
+# Every saved generation report, the prompt iterations' included.
+GENERATION_REPORTS = $(wildcard data/derived/eval/generation-*.json data/derived/eval/prompt-iterations/generation-*.json)
+
+eval-rescore: $(INDEX) ## Redo the figure check of every saved generation report from its stored answers, in place (no Answer Call, no Jev call)
+	@if [ -z "$(GENERATION_REPORTS)" ]; then echo 'No saved generation reports in data/derived/eval/.'; exit 0; fi
+	$(UV) python -m edgar_eval.generation --rescore $(addprefix ../,$(GENERATION_REPORTS))
 
 eval-arms: $(INDEX) $(EMBEDDINGS) ## Answer the split through every Arm and choose one by the selection rule (costs money)
 	@keys=$$($(GENERATOR_KEYS)) || exit 1; \

@@ -248,7 +248,8 @@ class FigureCheck:
     figures: int
     """How many figures the answer states."""
     unmatched: tuple[str, ...]
-    """Figures that match no Financial Fact and appear in no cited passage."""
+    """Figures that match no Financial Fact of a cited Filing and appear in no cited
+    passage."""
 
     @property
     def passed(self) -> bool:
@@ -285,13 +286,15 @@ def figures(text: str) -> list[Figure]:
 
 
 def check_figures(
-    answer: str, passages: Mapping[int, str], fact_values: Iterable[int]
+    answer: str, passages: Mapping[int, str], fact_values: Mapping[int, Iterable[int]]
 ) -> FigureCheck:
-    """Every figure in the answer matches a Financial Fact or appears in a passage the
-    answer cites.
+    """Every figure in the answer matches a Financial Fact of a Filing the answer cites,
+    or appears in a passage the answer cites.
 
-    `passages` maps each of this turn's Source numbers to its text; only the Sources the
-    answer cites count. `fact_values` are Financial Facts' values in whole US dollars.
+    `passages` maps each of this turn's Source numbers to its text, and `fact_values`
+    maps each to the values, in whole US dollars, of the Financial Facts its Filing
+    reports. Only the Sources the answer cites count, so a figure for another Report
+    Period, or from a Filing the answer never cites, does not pass.
 
     A figure may be rounded and rescaled: "$416.2 billion" appears in a passage that
     reads "416,161" in a table in millions, and matches a revenue fact of
@@ -304,7 +307,9 @@ def check_figures(
         if number in cited
         for n in _PASSAGE_NUMBER.findall(text)
     }
-    facts = [abs(Decimal(v)) for v in fact_values]
+    facts = [
+        abs(Decimal(v)) for number, values in fact_values.items() if number in cited for v in values
+    ]
     stated = [f for unit in units(answer) for f in figures(strip_tags(unit.text))]
     unmatched = tuple(
         f.text for f in stated if not (_in_passages(f, numbers) or _is_fact(f, facts))

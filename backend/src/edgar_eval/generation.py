@@ -23,6 +23,11 @@ provider answers with it. It calls the generator and Jev, so it needs `JEV_API_K
 the key of the generator's provider (`OPENAI_API_KEY` or `ANTHROPIC_API_KEY`), and it
 costs money:
 about a third of a cent per case with `gpt-6-luna`, Jev included.
+
+`--rescore REPORT...` (`make eval-rescore`) instead redoes the figure check of saved
+reports from their stored answers, in place, with no Answer Call and no Jev call
+(`rescore_figures`). A changed check is a fixed measurement, not a new choice, so
+rescoring is allowed on the holdout.
 """
 
 from __future__ import annotations
@@ -58,7 +63,7 @@ from edgar_eval.retrieval import Arm, Prepare, conversation
 from edgar_rag.answer_model import DEFAULT_ANSWER_LOG, AnswerCall, AnswerModel
 from edgar_rag.corpus import DEFAULT_SECTOR_TABLE
 from edgar_rag.golden_set import DEFAULT_GOLDEN_SET, GoldenCase, load_golden_set
-from edgar_rag.retrieval import DEFAULT_INDEX, prepare_answer_context
+from edgar_rag.retrieval import DEFAULT_INDEX, Source, prepare_answer_context
 
 __all__ = [
     "CaseResult",
@@ -68,6 +73,7 @@ __all__ = [
     "company_names",
     "evaluate",
     "main",
+    "rescore_figures",
 ]
 
 
@@ -121,7 +127,8 @@ class Summary:
     citations_valid: float
     """Share of answers whose every tag is a listed Source and every unit cites one."""
     figures_exact: float
-    """Share of answers whose every figure matches a Financial Fact or a cited passage."""
+    """Share of answers whose every figure matches a cited Filing's Financial Fact or
+    appears in a cited passage."""
     coverage_gaps_stated: float | None
     """Share of answers with expected Coverage Gaps that state every one of them."""
     structure_followed: float
@@ -164,8 +171,9 @@ class GenerationReport:
         return data
 
 
-FactValues = Callable[[Iterable[str]], list[int]]
-"""The Financial Facts' values, in whole US dollars, of the given tickers."""
+FactValues = Callable[[str], Sequence[int]]
+"""The values, in whole US dollars, of the Financial Facts the Filing with this Filing ID
+reports."""
 
 
 def evaluate(
@@ -228,9 +236,6 @@ def _run_case(
     if not record.completed:
         raise RuntimeError("the Answer Call stopped before the end of its stream")
 
-    tickers = {c.ticker for c in context.query_scope.companies} | {
-        s.ticker for s in context.sources
-    }
     passages = {s.number: s.text for s in context.sources}
     evidence = {s.tag: Evidence(s.tag, s.label, s.text) for s in context.sources}
     covered = {s.ticker: names.get(s.ticker, (s.ticker,)) for s in context.sources}
@@ -248,12 +253,22 @@ def _run_case(
         first_token_s=record.first_token_s,
         cost_usd=answer_cost(record.model, record.input_tokens, record.output_tokens),
         citations=check_citations(answer, passages),
-        figures=check_figures(answer, passages, fact_values(tickers)),
+        figures=_check_figures(answer, context.sources, fact_values),
         coverage_gaps=check_coverage_gaps(answer, gaps, names) if gaps else None,
         judgments=judge.judge(
             answer, [f.fact for f in case.required_facts], claims(answer), evidence
         ),
         structure=check_structure(answer, covered),
+    )
+
+
+def _check_figures(answer: str, sources: Sequence[Source], fact_values: FactValues) -> FigureCheck:
+    """The figure check against the turn's Sources: their passages, and the Financial
+    Facts of each one's Filing."""
+    return check_figures(
+        answer,
+        {s.number: s.text for s in sources},
+        {s.number: fact_values(s.filing_id) for s in sources},
     )
 
 
@@ -284,6 +299,45 @@ def _summarise(results: Sequence[CaseResult]) -> Summary:
         mean_output_tokens=mean(r.output_tokens for r in results),
         judge_cost_usd=sum(r.judgments.cost_usd for r in results),
     )
+
+
+def rescore_figures(
+    report: dict,
+    cases: Iterable[GoldenCase],
+    index: str | Path,
+    *,
+    fact_values: FactValues,
+    prepare: Prepare = prepare_answer_context,
+) -> dict:
+    """A saved report (`GenerationReport.to_dict`) with its figure check redone from its
+    stored answers, and its figures-exact scores recomputed. Nothing else changes.
+
+    A report stores each answer but not its Sources, so each case's Answer Context is
+    prepared again through `prepare`, the Arm the report was answered through. That is
+    deterministic and makes no Answer Call and no Jev call; it raises ValueError when
+    a case's Sources no longer number what they did, since its answer then cites
+    Sources it was never given.
+    """
+    by_id = {c.id: c for c in cases}
+    rescored = json.loads(json.dumps(report))
+    for case in rescored["cases"]:
+        context = prepare(conversation(by_id[case["case_id"]]), Path(index))
+        if len(context.sources) != case["sources"]:
+            raise ValueError(
+                f"{case['case_id']}: the Answer Context now has {len(context.sources)} "
+                f"Sources, not the {case['sources']} the answer was given"
+            )
+        case["figures"] = asdict(_check_figures(case["answer"], context.sources, fact_values))
+
+    def figures_exact(group: Iterable[dict]) -> float:
+        return fmean(not c["figures"]["unmatched"] for c in group)
+
+    rescored["overall"]["figures_exact"] = figures_exact(rescored["cases"])
+    for kind, summary in rescored["by_type"].items():
+        summary["figures_exact"] = figures_exact(
+            c for c in rescored["cases"] if c["question_type"] == kind
+        )
+    return rescored
 
 
 # --- Inputs the harness reads from the repository -----------------------------------------
@@ -337,15 +391,14 @@ def _all_fact_values() -> dict[str, tuple[int, ...]]:
     for filing in load_corpus():
         if filing.coverage == "tracked":
             for fact in extract_financial_facts(filing):
-                values.setdefault(fact.ticker, []).append(fact.value)
-    return {ticker: tuple(v) for ticker, v in values.items()}
+                values.setdefault(fact.filing_id, []).append(fact.value)
+    return {filing_id: tuple(v) for filing_id, v in values.items()}
 
 
-def corpus_fact_values(tickers: Iterable[str]) -> list[int]:
-    """The values of every Financial Fact the Corpus yields for the tickers. Financial
+def corpus_fact_values(filing_id: str) -> tuple[int, ...]:
+    """The values of every Financial Fact the Corpus yields for the Filing. Financial
     Facts are extracted for Tracked Companies only (ADR 0001)."""
-    facts = _all_fact_values()
-    return [v for ticker in tickers for v in facts.get(ticker, ())]
+    return _all_fact_values().get(filing_id, ())
 
 
 # --- Command line -------------------------------------------------------------------------
@@ -373,6 +426,14 @@ def main(
     parser.add_argument("--golden-set", type=Path, default=DEFAULT_GOLDEN_SET)
     parser.add_argument("--log", type=Path, default=DEFAULT_ANSWER_LOG, help="Answer Call log")
     parser.add_argument("--json", type=Path, help="also write the report as JSON here")
+    parser.add_argument(
+        "--rescore",
+        type=Path,
+        nargs="+",
+        metavar="REPORT",
+        help="redo the figure check of saved reports from their answers, in place, "
+        "with no Answer Call and no Jev call",
+    )
     args = parser.parse_args(argv)
 
     if arms is None:
@@ -386,6 +447,26 @@ def main(
     if arm.prepare is None:
         parser.error(f"the {arm.name} Arm cannot prepare an Answer Context")
     golden = load_golden_set(args.golden_set)
+    if args.rescore:
+        for path in args.rescore:
+            report = json.loads(path.read_text(encoding="utf-8"))
+            saved_arm = by_name[report["arm"]] if report.get("arm") else arm
+            rescored = rescore_figures(
+                report,
+                golden.cases,
+                args.index,
+                fact_values=fact_values or corpus_fact_values,
+                prepare=saved_arm.prepare or prepare_answer_context,
+            )
+            path.write_text(json.dumps(rescored, indent=2) + "\n", encoding="utf-8")
+            was, now = report["overall"]["figures_exact"], rescored["overall"]["figures_exact"]
+            failing = [c["case_id"] for c in rescored["cases"] if c["figures"]["unmatched"]]
+            print(
+                f"{path}: figures exact {was:.2f} → {now:.2f}; "
+                f"not exact: {', '.join(failing) or 'none'}",
+                file=out,
+            )
+        return 0
     cases = golden.cases if args.split == "all" else golden.split(args.split)
     if args.case:
         unknown = set(args.case) - {c.id for c in cases}

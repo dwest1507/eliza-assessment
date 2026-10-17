@@ -113,6 +113,8 @@ PASSAGES = {
     2: "Net income attributable to the Company was $1.2 billion, up 15% on the prior year.",
 }
 NVDA_REVENUE = 46_743_000_000  # a Financial Fact, in whole US dollars
+# Each Source's Filing's Financial Facts: S1's Filing reports NVIDIA's revenue.
+FACTS = {1: [NVDA_REVENUE], 2: []}
 
 
 def test_figures_are_amounts_percentages_and_counts_but_not_years_dates_or_labels():
@@ -129,7 +131,7 @@ def test_figures_are_amounts_percentages_and_counts_but_not_years_dates_or_label
 def test_a_figure_found_in_a_cited_passage_is_exact():
     answer = "Net sales were $416,161 million [S1], with a 46.9% gross margin [S1]."
 
-    check = check_figures(answer, PASSAGES, fact_values=())
+    check = check_figures(answer, PASSAGES, fact_values={})
 
     assert check.passed
     assert check.figures == 2
@@ -138,19 +140,30 @@ def test_a_figure_found_in_a_cited_passage_is_exact():
 def test_a_figure_rounded_or_rescaled_from_a_cited_passage_is_exact():
     answer = "Net sales were $416.2 billion [S1]; net income was $1,200 million [S2]."
 
-    assert check_figures(answer, PASSAGES, fact_values=()).passed
+    assert check_figures(answer, PASSAGES, fact_values={}).passed
 
 
-def test_a_figure_that_matches_a_financial_fact_is_exact():
+def test_a_figure_that_matches_a_financial_fact_of_a_cited_filing_is_exact():
     answer = "NVIDIA's revenue was $46.7 billion [S1], or $46,743 million."
 
-    assert check_figures(answer, PASSAGES, fact_values=[NVDA_REVENUE]).passed
+    assert check_figures(answer, PASSAGES, fact_values=FACTS).passed
+
+
+def test_a_figure_matching_only_an_uncited_filings_financial_fact_is_not_exact():
+    # S1's Filing reports the revenue, but the answer cites only S2: a figure for the
+    # wrong period, or from a Filing the answer never cites, must not pass.
+    answer = "NVIDIA's revenue was $46.7 billion [S2]."
+
+    check = check_figures(answer, PASSAGES, fact_values=FACTS)
+
+    assert not check.passed
+    assert check.unmatched == ("$46.7 billion",)
 
 
 def test_a_figure_in_no_cited_passage_and_no_financial_fact_is_not_exact():
     answer = "Net sales were $420.0 billion [S1], up 6.4% [S1]; net income rose 15% [S2]."
 
-    check = check_figures(answer, PASSAGES, fact_values=[NVDA_REVENUE])
+    check = check_figures(answer, PASSAGES, fact_values=FACTS)
 
     assert not check.passed
     assert check.unmatched == ("$420.0 billion", "6.4%")
@@ -159,12 +172,12 @@ def test_a_figure_in_no_cited_passage_and_no_financial_fact_is_not_exact():
 def test_only_passages_the_answer_cites_count():
     answer = "Net income was $1.2 billion [S1]."
 
-    assert check_figures(answer, PASSAGES, fact_values=()).unmatched == ("$1.2 billion",)
+    assert check_figures(answer, PASSAGES, fact_values={}).unmatched == ("$1.2 billion",)
 
 
 def test_a_percentage_must_appear_as_written_not_rescaled():
     # 46.9 appears in the passage, but 0.0469% is not 46.9%.
-    assert not check_figures("Margin was 0.0469% [S1].", PASSAGES, fact_values=()).passed
+    assert not check_figures("Margin was 0.0469% [S1].", PASSAGES, fact_values={}).passed
 
 
 # --- Coverage Gaps ------------------------------------------------------------------------

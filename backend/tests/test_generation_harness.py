@@ -171,6 +171,9 @@ def _case(case_id, question, question_type="risk", facts=(), gaps=()):
     )
 
 
+APPLE_10K = "AAPL_10-K_2025-09-27"
+APPLE_FY2024_10K = "AAPL_10-K_2024-09-28"
+
 ANSWER = (
     "Apple relies on outsourcing partners in Asia [S1]. Tesla depends on its CEO [S99].\n\n"
     "Apple's revenue was $416.2 billion.\n\n"
@@ -197,7 +200,7 @@ def test_each_case_is_answered_checked_judged_and_priced(index, tmp_path):
         judge,
         index,
         names={"AAPL": ("AAPL", "Apple"), "TSLA": ("TSLA", "Tesla")},
-        fact_values=lambda tickers: [416_161_000_000] if "AAPL" in set(tickers) else [],
+        fact_values=lambda filing_id: [416_161_000_000] if filing_id == APPLE_10K else [],
         log_path=tmp_path / "answer_calls.jsonl",
     )
 
@@ -206,7 +209,7 @@ def test_each_case_is_answered_checked_judged_and_priced(index, tmp_path):
     assert result.answer == ANSWER
     # Checks in code.
     assert result.citations.unknown_tags == ("S99",)  # not among this turn's Sources
-    assert result.figures.passed  # matches Apple's revenue Financial Fact
+    assert result.figures.passed  # matches the revenue Financial Fact of a cited 10-K
     assert result.coverage_gaps.stated == ("periods_differ",)
     assert result.coverage_gaps.missing == ("no_guidance",)
     # Its structure, against the Companies its Sources come from (Apple and Tesla).
@@ -241,6 +244,25 @@ def test_each_case_is_answered_checked_judged_and_priced(index, tmp_path):
     assert overall.mean_cost_usd == pytest.approx(0.0025)
     assert overall.judge_cost_usd == pytest.approx(5_000 * 0.042 / 1_000_000)
     assert report.by_type["risk"].cases == 1
+
+
+def test_a_figure_matching_only_an_uncited_filings_financial_fact_fails(index, tmp_path):
+    from edgar_eval.generation import evaluate
+
+    report = evaluate(
+        [_case("apple", "What are the primary risk factors facing Apple?")],
+        FakeModel("Apple outsources manufacturing [S1]. Its revenue was $391.0 billion [S1]."),
+        FakeJudge(),
+        index,
+        names={},
+        # Apple's FY2024 revenue, reported by its FY2024 10-K, which no Source is from.
+        fact_values=lambda filing_id: [391_035_000_000] if filing_id == APPLE_FY2024_10K else [],
+        log_path=None,
+    )
+
+    [result] = report.cases
+    assert result.figures.unmatched == ("$391.0 billion",)
+    assert report.overall.figures_exact == 0
 
 
 def test_a_score_with_nothing_to_score_is_none_not_zero(index, tmp_path):
@@ -328,6 +350,90 @@ def test_the_command_answers_through_a_chosen_arm_and_records_it(index, tmp_path
 
     assert used == ["dense", "fts5"]  # the shipped Arm by default
     assert json.loads(path.read_text())["arm"] == "dense"
+
+
+def _saved_report(index, tmp_path, answer, fact_values):
+    """A generation report written by the command line, as `make eval-generation` saves it."""
+    import io
+    import json
+
+    from edgar_eval.generation import main
+
+    path = tmp_path / "generation-dev.json"
+    argv = ["--case", "risk-aapl-tsla-jpm", "--index", str(index), "--log", str(tmp_path / "l")]
+    code = main(
+        [*argv, "--json", str(path)],
+        model=FakeModel(answer),
+        judge=FakeJudge(),
+        fact_values=fact_values,
+        out=io.StringIO(),
+    )
+    assert code == 0
+    return path, json.loads(path.read_text())
+
+
+class Refuses:
+    """An answer model or judge that must not be called."""
+
+    model = "never"
+
+    def __getattr__(self, name):
+        raise AssertionError(f"called {name} while rescoring")
+
+
+def test_rescoring_redoes_the_figure_check_from_the_saved_answers_alone(index, tmp_path):
+    import io
+    import json
+
+    from edgar_eval.generation import main
+
+    answer = "Apple outsources manufacturing [S1]. Its revenue was $391.0 billion [S1]."
+    # Saved under the old rule: any Financial Fact of Apple's, whichever Filing reports it.
+    path, before = _saved_report(index, tmp_path, answer, lambda filing_id: [391_035_000_000])
+    assert before["overall"]["figures_exact"] == 1.0
+
+    out = io.StringIO()
+    code = main(
+        ["--rescore", str(path), "--index", str(index)],
+        model=Refuses(),
+        judge=Refuses(),
+        fact_values=lambda filing_id: [391_035_000_000] if filing_id == APPLE_FY2024_10K else [],
+        out=out,
+    )
+
+    assert code == 0
+    after = json.loads(path.read_text())
+    [case] = after["cases"]
+    assert case["figures"] == {"figures": 1, "unmatched": ["$391.0 billion"]}
+    assert after["overall"]["figures_exact"] == 0.0
+    assert after["by_type"]["risk"]["figures_exact"] == 0.0
+    # Nothing else in the report changes.
+    for report in (before, after):
+        for case in report["cases"]:
+            case.pop("figures")
+        for summary in (report["overall"], *report["by_type"].values()):
+            summary.pop("figures_exact")
+    assert after == before
+    assert "1.00 → 0.00" in out.getvalue()
+
+
+def test_rescoring_refuses_a_report_whose_sources_cannot_be_rebuilt(index, tmp_path):
+    import io
+    import json
+
+    from edgar_eval.generation import main
+
+    path, saved = _saved_report(index, tmp_path, ANSWER, lambda filing_id: [])
+    saved["cases"][0]["sources"] += 1  # as if answered from another index
+    path.write_text(json.dumps(saved))
+
+    with pytest.raises(ValueError, match="risk-aapl-tsla-jpm"):
+        main(
+            ["--rescore", str(path), "--index", str(index)],
+            fact_values=lambda filing_id: [],
+            out=io.StringIO(),
+        )
+    assert json.loads(path.read_text()) == saved
 
 
 def test_the_jev_keys_placeholder_is_in_the_backends_env_example():
