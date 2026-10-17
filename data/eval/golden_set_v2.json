@@ -2216,6 +2216,1195 @@
         }
       ],
       "expected_coverage_gaps": []
+    },
+    {
+      "id": "stale-gecc-eni-2014",
+      "question": "What did GE Capital's 2014 annual report say about reducing the size of its balance sheet?",
+      "history": [],
+      "question_type": "stale_filing",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "Asks about GE Capital's 2014 report by name, so the stale Filing may be cited, but the answer still says it is GE Capital's 2014 report and not General Electric today. Rewritten for version 2 from the whole MD&A of GE Capital's FY2014 10-K: the reduction in ending net investment, the target for it and the strategy of exiting non-core businesses are must-state; the expected effects of that strategy and the year's exits are details. GE Capital is not in the SEC company-facts reference, so no fact states an amount; the $363 billion balance and the target of less than $300 billion stay in the evidence quotes.",
+      "expected_sources": [
+        {
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "GE Capital reduced its ending net investment, excluding liquidity, in 2014.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "MD&A",
+          "evidence": "GE Capital reduced its ending net investment (ENI), excluding liquidity, to $363 billion at December 31, 2014.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "GE Capital gives a target for reducing its ending net investment, excluding liquidity.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "MD&A",
+          "evidence": "We have communicated our goal of reducing our ENI, excluding liquidity, most recently targeting a balance of less than $300 billion.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "GE Capital says its strategy is to exit businesses that are non-strategic or underperforming.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "MD&A",
+          "evidence": "We have a strategy of exiting those businesses that are deemed to be non-strategic or that are underperforming.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "GE Capital says it is now a smaller, more focused finance company.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "MD&A",
+          "evidence": "As a result, we are a diversely funded and smaller, more focused finance company",
+          "tier": "detail"
+        },
+        {
+          "fact": "GE Capital says reducing its ending net investment by exiting non-core businesses may reduce its net earnings in the short term.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "MD&A",
+          "evidence": "in the short-term, as we reduce our ENI through exiting non-core businesses, the overall level of our net earnings may be reduced",
+          "tier": "detail"
+        },
+        {
+          "fact": "GE Capital says the strategy will reduce its liquidity risk as it pays down outstanding debt and diversifies its sources of funding.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "MD&A",
+          "evidence": "reduce liquidity risk as we pay down outstanding debt and diversify our sources of funding",
+          "tier": "detail"
+        },
+        {
+          "fact": "GE Capital says the strategy will reduce its capital requirements while strengthening its capital ratios.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "MD&A",
+          "evidence": "reduce capital requirements while strengthening capital ratios",
+          "tier": "detail"
+        },
+        {
+          "fact": "GE Capital completed the initial public offering of Synchrony Financial in August 2014 as the first step in a staged exit from that business.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "MD&A",
+          "evidence": "On August 5, 2014, we completed the initial public offering (IPO) of our North American Retail Finance business, Synchrony Financial, as a first step in a planned, staged exit from that business.",
+          "tier": "detail"
+        },
+        {
+          "fact": "GE Capital says it is targeting to complete its exit from Synchrony Financial through a split-off transaction.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "MD&A",
+          "evidence": "We are targeting to complete our exit from Synchrony Financial through a split-off transaction",
+          "tier": "detail"
+        },
+        {
+          "fact": "GE Capital sold GE Money Bank AB, its Nordic consumer finance business, in the fourth quarter of 2014.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "MD&A",
+          "evidence": "During the fourth quarter of 2014, we completed the sale of GE Money Bank AB, our consumer finance business in Sweden, Denmark and Norway",
+          "tier": "detail"
+        },
+        {
+          "fact": "GE Capital's borrowings decreased in 2014.",
+          "filing_id": "GE_10-K_2014-12-31",
+          "section": "MD&A",
+          "evidence": "Borrowings decreased $31.0 billion.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "stale_filing",
+          "companies": [
+            "GE"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "missing-citigroup",
+      "question": "What are Citigroup's main risk factors?",
+      "history": [],
+      "question_type": "missing_company",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "Citigroup is not in the Corpus. Nothing should be retrieved and nothing answered from general knowledge. Rewritten for version 2 unchanged: a case that expects only a Coverage Gap has no Required Facts.",
+      "expected_sources": [],
+      "required_facts": [],
+      "expected_coverage_gaps": [
+        {
+          "kind": "missing_company",
+          "companies": [
+            "Citigroup"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "missing-bms-with-merck",
+      "question": "What regulatory risks do Merck and Bristol Myers Squibb face?",
+      "history": [],
+      "question_type": "missing_company",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "Bristol Myers Squibb is not in the Corpus; Merck is (FY2024 10-K). The answer covers Merck only and names Bristol Myers Squibb as missing. Rewritten for version 2 from Merck's whole Risk Factors Section: pricing pressure from U.S. Medicare and Medicaid law, the expected Keytruda decline under IRA price setting, increasing U.S. regulation and the need for regulatory approval are must-state; the products selected for price setting, other U.S. and international pricing measures, and other laws are details.",
+      "expected_sources": [
+        {
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Merck says U.S. federal laws on Medicare and Medicaid, including the Inflation Reduction Act, put pricing pressure on its products.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "In the U.S., these include (i) U.S. federal laws and regulations related to Medicare and Medicaid, including the Medicare Prescription Drug Improvement and Modernization Act of 2003, the ACA, and the IRA",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Merck expects U.S. sales of Keytruda to decline beginning in January 2028 when government pricing under the Inflation Reduction Act takes effect.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "the Company expects U.S. sales of Keytruda to decline beginning in January 2028 upon implementation of government pricing under the IRA",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Merck says the U.S. health care industry will continue to be subject to increasing regulation and political action.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "The health care industry in the U.S. has been, and will continue to be, subject to increasing regulation and political action.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Merck says its products cannot be marketed unless it obtains and maintains regulatory approval.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "The Company’s products, including products in development, cannot be marketed unless the Company obtains and maintains regulatory approval.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Merck says HHS selected Januvia for the first year of the IRA's price setting program, with a government set price effective January 1, 2026.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "HHS selected Januvia for the first year of the IRA’s price setting program, which will result in a government set price becoming effective on January 1, 2026",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says HHS selected Janumet and Janumet XR for government price setting effective January 1, 2027.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "HHS announced that Janumet and Janumet XR have been selected for government price setting, which will become effective on January 1, 2027",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says the IRA's redesign of Medicare Part D requires manufacturers to bear more of the liability for certain drug benefits from 2025.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "redesign of the Medicare Part D program to require manufacturers to bear more of the liability for certain drug benefits, which has taken effect in 2025",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says the American Rescue Plan Act eliminated the statutory cap on the rebates drug manufacturers pay to Medicaid beginning in January 2024.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Congress passed the American Rescue Plan Act, which included a provision that eliminates the statutory cap on rebates drug manufacturers pay to Medicaid beginning in January 2024",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says increased utilization of the 340B program is having a negative impact on its performance.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "increased utilization of the 340B Federal Drug Discount Program and restrictions on the Company’s ability to identify inappropriate discounts are having a negative impact on the Company’s performance",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck expects states to shift to more aggressive price control tools such as Prescription Drug Affordability Boards.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "the Company expects that states will continue their focus on pharmaceutical pricing and will increasingly shift to more aggressive price control tools such as Prescription Drug Affordability Boards",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says changes at HHS could make it more difficult for the FDA to grant regulatory approvals for drugs and vaccines.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "HHS could undergo changes that could make it more difficult for the FDA to grant regulatory approvals for drugs and vaccines",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says governments in major markets including the EU, Japan and China fix the pricing and reimbursement of pharmaceutical and vaccine products.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "numerous major markets, including the EU, Japan and China have pervasive government involvement in funding health care and, in that regard, fix the pricing and reimbursement of pharmaceutical and vaccine products",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says the pharmaceutical industry in Japan is subject to government-mandated annual price reductions.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "In Japan, the pharmaceutical industry is subject to government-mandated annual price reductions of pharmaceutical products and certain vaccines.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck lists the U.S. Foreign Corrupt Practices Act and other anti-bribery laws among the laws whose compliance costs or violation could hurt its business.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "(ii) the U.S. Foreign Corrupt Practices Act (FCPA) or other anti-bribery and corruption laws",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says it is subject to evolving and complex tax laws, which may result in additional liabilities.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "The Company is subject to evolving and complex tax laws, which may result in additional liabilities that may affect results of operations and financial condition.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says legal or regulatory measures to address climate change may negatively affect its business.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Climate change or legal, regulatory or market measures to address climate change may negatively affect the Company’s business, results of operations, cash flows and prospects.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "missing_company",
+          "companies": [
+            "Bristol Myers Squibb"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "followup-regulatory-exposure",
+      "question": "Which of them has the most regulatory exposure?",
+      "history": [
+        {
+          "role": "user",
+          "content": "What are the primary risk factors facing Apple, Tesla, and JPMorgan?"
+        },
+        {
+          "role": "assistant",
+          "content": "Apple's main risks centre on manufacturing outsourced mostly to partners in Asia and on new U.S. tariffs (AAPL_10-K_2025-09-27, Risk Factors). Tesla's centre on ramping new products such as Cybercab and on its dependence on Elon Musk (TSLA_10-K_2025-12-31, Risk Factors). JPMorgan's principal risks are legal and regulatory, political, market, credit, liquidity and capital risks (JPM_10-K_2025-12-31, Risk Factors). Apple's fiscal year ended on 27 September 2025; Tesla's and JPMorgan's ended on 31 December 2025."
+        }
+      ],
+      "question_type": "risk",
+      "split": "dev",
+      "starter": null,
+      "tags": [
+        "inherits_companies"
+      ],
+      "notes": "Names no Company, so it inherits Apple, Tesla and JPMorgan and the Risk Factors Section (ADR 0003). Rewritten for version 2 from each Company's whole Risk Factors Section, its legal and regulatory risk factors in particular. The Filings do not rank the three, so no fact names one as most exposed: the must-state facts are each Company's main regulatory exposure (Apple's worldwide laws, regulatory scrutiny, the Digital Markets Act and antitrust; Tesla's scrutiny and regulation of driver assistance and autonomy and its lost tax credits; JPMorgan's extensive supervision, stricter for a larger firm, and heightened scrutiny and enforcement), and the rest are details.",
+      "expected_sources": [
+        {
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Apple says it is subject to complex and changing laws and regulations worldwide, which expose it to potential liabilities and increased costs.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "The Company is subject to complex and changing laws and regulations worldwide, which exposes the Company to potential liabilities, increased costs and other adverse effects on the Company’s business.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple says the technology industry, including in some instances Apple, is subject to intense media, political and regulatory scrutiny.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "The technology industry, including, in some instances, the Company, is subject to intense media, political and regulatory scrutiny, which exposes the Company to increasing regulation, government investigations, legal actions and penalties.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple says the EU Digital Markets Act provides for significant fines and penalties for noncompliance.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "The DMA provides for significant fines and penalties for noncompliance.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple says it is subject to antitrust investigations and litigation in various jurisdictions around the world.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "The Company is also currently subject to antitrust investigations and litigation in various jurisdictions around the world",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple says its compliance plan for the Digital Markets Act has been challenged by the European Commission.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Although the Company’s compliance plan is intended to address the DMA’s obligations, it has been challenged by the Commission and may be challenged further by private litigants.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says it is subject to a U.S. court order preventing it from imposing any commission or fee on certain App Store purchases.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "is currently subject to a court order preventing it from imposing any commission or fee on certain purchases that consumers make",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says it faces civil antitrust lawsuits in the U.S. alleging monopolization of smartphone markets.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "the Company is subject to civil antitrust lawsuits in the U.S. alleging monopolization or attempted monopolization",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says a reversal on appeal of the remedies ordered against Google could prohibit Google from offering Apple commercial terms for search distribution.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "A reversal of the order on appeal could result in imposition of certain remedies initially proposed by the DOJ, such as those prohibiting Google from offering the Company commercial terms for search distribution.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says compliance with the laws and regulations it is subject to is onerous and expensive.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Compliance with these laws and regulations is onerous and expensive.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says regulatory changes that harm its business may be announced with little or no advance notice.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Regulatory changes and other actions that materially adversely affect the Company’s business may be announced with little or no advance notice",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says changing export and import regulations could lead to its products being banned, delayed or prohibited from importation.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "the Company’s products could be banned, delayed or prohibited from importation",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says it is subject to new laws on online safety, including protections for minors and mandatory age verification.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "subject to new and changing laws and regulations regarding online safety, including enhanced protections for minors and mandatory age verification requirements",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says it has faced, and expects to continue to face, claims and regulatory scrutiny related to its driver assistance and autonomous driving features.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We have experienced, and we expect to continue to face, claims and regulatory scrutiny arising from or related to misuse or claimed failures",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla says changing regulations on driver assistance and autonomous driving may delay, restrict or prohibit certain functionalities and vehicle designs.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "may delay, restrict or prohibit the availability of certain functionalities and vehicle designs, or affect the pace at which we expand our Robotaxi business",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla says recent government actions have repealed or restricted consumer, manufacturing and charging infrastructure tax credits.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "recent governmental and regulatory actions have repealed and/or restricted consumer, manufacturing and charging infrastructure tax credits",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla says it is subject to evolving laws and regulations that could impose substantial costs or legal prohibitions on its operations or products.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We are subject to evolving laws and regulations that could impose substantial costs, legal prohibitions or unfavorable changes upon our operations or products.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says many existing vehicle standards were drafted assuming the presence of a human driver.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "This includes many existing vehicle standards that were drafted assuming the presence of a human driver.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says NHTSA's Standing General Order requires reports on certain crashes involving vehicles with driver assistance or autonomous driving systems.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "NHTSA’s Standing General Order requiring reports regarding certain crashes involving vehicles with advanced driver assistance or autonomous driving systems",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says it could face liability or penalties if the SEC, the Department of Justice or another government agency pursued legal action against it.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "there exists the possibility that we could be subject to liability, penalties and other restrictive sanctions and adverse consequences if the SEC, the U.S. Department of Justice or any other government agency were to pursue legal action in the future",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says it may face regulatory challenges to or limitations on its ability to sell vehicles directly.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We may face regulatory challenges to or limitations on our ability to sell vehicles directly.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says it must meet vehicle safety, fuel economy and emissions standards outside the U.S. that often differ materially from U.S. requirements.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "we are required to meet standards relating to vehicle safety, fuel economy and emissions that are often materially different from equivalent requirements in the U.S.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says legislation such as the OBBBA requires rigorous traceability of raw materials.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Compliance with evolving legislation, such as the OBBBA, also requires rigorous traceability of raw materials.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says the EU's General Data Protection Regulation carries a significant risk of fines for noncompliance.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "the General Data Protection Regulation applies to the processing of personal information collected from individuals located in the European Union requiring certain data protection measures when handling, with a significant risk of fines for noncompliance",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan lists legal and regulatory risks, including the impact of extensive supervision and regulation, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Legal and Regulatory risks, including the impact of extensive supervision and regulation",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan says larger firms such as itself often face more stringent supervision and regulation.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "larger firms such as JPMorganChase often face more stringent supervision and regulation",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan expects to remain subject to heightened regulatory scrutiny and pervasive investigations and enforcement actions by governmental authorities.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "it will be subject to heightened regulatory scrutiny and pervasive investigations and enforcement actions by governmental authorities",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan says it has had to modify its business in the past in response to changes in law, regulatory decisions or supervisory expectations.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "JPMorganChase has in the past and could in the future be required to modify its business and operations in response to changes in applicable law, regulatory decisions or supervisory expectations",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says it has in the past incurred significant penalties in resolving investigations and enforcement actions by governmental authorities.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "JPMorganChase has in the past incurred significant penalties and experienced collateral consequences and other repercussions in connection with resolving investigations and enforcement actions by governmental authorities",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says it faces significant legal risks from civil and governmental proceedings, including investigations and enforcement actions.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "JPMorganChase faces significant legal risks from civil and governmental proceedings, including litigation, investigations and enforcement actions.",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says its ability to distribute capital to shareholders could be limited if it does not satisfy regulatory capital requirements.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Capital risks, including the risk that JPMorganChase’s ability to distribute capital to shareholders or to support its business activities could be limited if it does not satisfy applicable regulatory capital requirements.",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says the Federal Reserve and the FDIC could impose more stringent capital, leverage or liquidity requirements if they found its resolution plan deficient.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "If the Federal Reserve and the FDIC were both to determine that a resolution plan submitted by JPMorganChase has deficiencies, they could jointly impose more stringent capital, leverage or liquidity requirements",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says regulatory initiatives outside the U.S. could require it to significantly modify its operations or legal entity structure.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Regulatory initiatives outside the U.S. have required and could in the future require JPMorganChase to significantly modify its operations or legal entity structure",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says executive orders or other executive branch actions that seek to regulate financial services firms may negatively affect its business.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "the business or operations of financial services firms such as JPMorganChase may be negatively affected by executive orders or other executive branch actions that seek to regulate those businesses or operations",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says some competitors, such as financial technology companies, may not be subject to banking regulation or may face less stringent oversight.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "certain competitors, such as financial technology companies, may not be subject to banking regulation, or may be subject to less stringent oversight",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "AAPL",
+            "TSLA",
+            "JPM"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "followup-switch-to-msft",
+      "question": "And what about Microsoft?",
+      "history": [
+        {
+          "role": "user",
+          "content": "How has NVIDIA's revenue changed over the last two years?"
+        },
+        {
+          "role": "assistant",
+          "content": "NVIDIA's revenue grew from $60.9 billion in fiscal 2024 (NVDA_10-K_2024-01-28, MD&A) to $130.5 billion in fiscal 2025 (NVDA_10-K_2025-01-26, MD&A). Revenue for the third quarter of fiscal 2026 was $57.0 billion, up 62% from a year earlier (NVDA_10-Q_2025-10-26, MD&A)."
+        }
+      ],
+      "question_type": "figure_trend",
+      "split": "dev",
+      "starter": null,
+      "tags": [
+        "switches_company"
+      ],
+      "notes": "Names a new Company, so Microsoft replaces NVIDIA while the metric (revenue) and time window (last two years) are inherited (ADR 0003). Rewritten for version 2 from the whole MD&A of Microsoft's FY2024 and FY2025 10-Ks and, new, of its Q1 FY2026 10-Q beside the Q2 FY2026 10-Q, both in the window. Each period's revenue and its growth are separate facts. The totals match the SEC company-facts reference (RevenueFromContractWithCustomerExcludingAssessedTax: $245,122 million for FY2024, $281,724 million for FY2025, $77,673 million for Q1 FY2026, $81,273 million for Q2 FY2026), and the growth rates agree with it. The drivers, Azure and Microsoft Cloud growth and the six-month figure are details; the Microsoft Cloud amounts have no company-facts value, so those facts state the growth rate only.",
+      "expected_sources": [
+        {
+          "filing_id": "MSFT_10-K_2024-06-30",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "MSFT_10-Q_2025-09-30",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Microsoft's revenue for fiscal year 2024 was $245.1 billion.",
+          "filing_id": "MSFT_10-K_2024-06-30",
+          "section": "MD&A",
+          "evidence": "Revenue | | $ | 245,122 | | | $ | 211,915 | | | | 16%",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft's revenue increased 16% in fiscal year 2024.",
+          "filing_id": "MSFT_10-K_2024-06-30",
+          "section": "MD&A",
+          "evidence": "Revenue increased $33.2 billion or 16% driven by growth across each of our segments.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft says its fiscal year 2024 Intelligent Cloud revenue increase was driven by Azure.",
+          "filing_id": "MSFT_10-K_2024-06-30",
+          "section": "MD&A",
+          "evidence": "Intelligent Cloud revenue increased driven by Azure.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft's Azure and other cloud services revenue grew 30% in fiscal year 2024.",
+          "filing_id": "MSFT_10-K_2024-06-30",
+          "section": "MD&A",
+          "evidence": "Server products and cloud services revenue increased 22% driven by Azure and other cloud services growth of 30%.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft Cloud revenue increased 23% in fiscal year 2024.",
+          "filing_id": "MSFT_10-K_2024-06-30",
+          "section": "MD&A",
+          "evidence": "Microsoft Cloud revenue increased 23% to $137.4 billion.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft's revenue for fiscal year 2025 was $281.7 billion.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "MD&A",
+          "evidence": "Revenue | | $ | 281,724 | | | $ | 245,122 | | | | 15%",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft's revenue increased 15% in fiscal year 2025.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "MD&A",
+          "evidence": "Revenue increased $36.6 billion or 15% with growth across each of our segments.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft's revenue grew across each of its segments in fiscal year 2025.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "MD&A",
+          "evidence": "Revenue increased $36.6 billion or 15% with growth across each of our segments.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft's Azure and other cloud services revenue grew 34% in fiscal year 2025.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "MD&A",
+          "evidence": "Server products and cloud services revenue increased 23% driven by Azure and other cloud services revenue growth of 34%.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft Cloud revenue increased 23% in fiscal year 2025.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "MD&A",
+          "evidence": "Microsoft Cloud revenue increased 23% to $168.9 billion.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft's revenue for the quarter ended September 30, 2025 was $77.7 billion.",
+          "filing_id": "MSFT_10-Q_2025-09-30",
+          "section": "MD&A",
+          "evidence": "Revenue | | $ | 77,673 | | | $ | 65,585 | | | | 18%",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft's revenue for the quarter ended September 30, 2025 increased 18% from a year earlier.",
+          "filing_id": "MSFT_10-Q_2025-09-30",
+          "section": "MD&A",
+          "evidence": "Revenue increased $12.1 billion or 18% with growth across each of our segments.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft's revenue for the quarter ended December 31, 2025 was $81.3 billion.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Revenue | | $ | 81,273 | | | $ | 69,632 | | | | 17%",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft's revenue for the quarter ended December 31, 2025 increased 17% from a year earlier.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Revenue increased $11.6 billion or 17% driven by Intelligent Cloud and Productivity and Business Processes",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft's revenue for the six months ended December 31, 2025 increased 18% from a year earlier.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Revenue increased $23.7 billion or 18% with growth across each of our segments.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft's Azure and other cloud services revenue increased 39% in the quarter ended December 31, 2025.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Azure and other cloud services revenue increased 39%.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft's More Personal Computing revenue decreased in the quarter ended December 31, 2025, driven by Gaming.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "MD&A",
+          "evidence": "More Personal Computing revenue decreased driven by Gaming",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "followup-tsla-risk-change",
+      "question": "How did that change over the last two years?",
+      "history": [
+        {
+          "role": "user",
+          "content": "What are Tesla's main risk factors?"
+        },
+        {
+          "role": "assistant",
+          "content": "Tesla's main risks are delays in developing and ramping new products such as Cybercab and its AI-based services, supplier failures, and its dependence on Elon Musk (TSLA_10-K_2025-12-31, Risk Factors)."
+        }
+      ],
+      "question_type": "risk",
+      "split": "dev",
+      "starter": null,
+      "tags": [
+        "inherits_companies"
+      ],
+      "notes": "Names no Company and refers back with \"that\": inherits Tesla and Risk Factors, and adds a two-year window. Rewritten for version 2 from the Risk Factors of every Tesla Filing in the window: the 2024 10-Qs report no change from the FY2023 10-K, the Q1 and Q2 2025 10-Qs add risk factors on tariffs, protests and lost tax credits, and the Q3 2025 10-Q adds none. New in version 2, the FY2024 and FY2025 10-Ks are compared: the FY2025 10-K puts autonomy first and adds Optimus, Robotaxi and the 2025 CEO Performance Award. The 10-Q additions, autonomy and Optimus are must-state; the rest are details.",
+      "expected_sources": [
+        {
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "TSLA_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "TSLA_10-Q_2025-03-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "TSLA_10-Q_2025-06-30",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "In its Q1 2025 10-Q, Tesla added a risk factor on U.S. trade policy changes, including significantly higher tariffs on imports.",
+          "filing_id": "TSLA_10-Q_2025-03-31",
+          "section": "Risk Factors",
+          "evidence": "the United States has recently announced changes to U.S. trade policy, including increasing tariffs on imports, in many cases significantly",
+          "tier": "must_state"
+        },
+        {
+          "fact": "In its Q1 2025 10-Q, Tesla said commentary about the company has incited protests, some escalating to violence targeting its operations, products and personnel.",
+          "filing_id": "TSLA_10-Q_2025-03-31",
+          "section": "Risk Factors",
+          "evidence": "has incited protests, some escalating to violence targeting our operations, products and personnel",
+          "tier": "must_state"
+        },
+        {
+          "fact": "In its Q2 2025 10-Q, Tesla said recent government actions have repealed or restricted consumer, manufacturing and charging infrastructure tax credits.",
+          "filing_id": "TSLA_10-Q_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "recent governmental and regulatory actions have repealed and/or restricted consumer, manufacturing and charging infrastructure tax credits",
+          "tier": "must_state"
+        },
+        {
+          "fact": "In its FY2025 10-K, Tesla says its future business depends on developing its driver assistance systems and autonomous driving solutions.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In particular, our future business depends on development of our driver assistance systems and autonomous driving solutions",
+          "tier": "must_state"
+        },
+        {
+          "fact": "In its FY2025 10-K, Tesla says the growth of its business also depends on developing and commercializing Bots, including Optimus.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Growth of our business is also dependent upon our ability to develop and commercialize Bots, including Optimus, which is in a nascent industry that has yet to develop commercially.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "In its FY2024 10-K, Tesla said its future business depended in large part on increasing the production of mass-market vehicles.",
+          "filing_id": "TSLA_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "our future business depends in large part on increasing the production of mass-market vehicles",
+          "tier": "detail"
+        },
+        {
+          "fact": "In its Q1 2025 10-Q, Tesla said retaliatory tariffs and uncertainty about tariffs could adversely impact demand for its products.",
+          "filing_id": "TSLA_10-Q_2025-03-31",
+          "section": "Risk Factors",
+          "evidence": "Retaliatory tariffs imposed by other countries on U.S. exports, further increases in U.S. tariffs, and the uncertainties surrounding domestic and foreign tariffs could also adversely impact demand for our products.",
+          "tier": "detail"
+        },
+        {
+          "fact": "In its FY2025 10-K, Tesla says trade policy changes in 2025, including higher import tariffs, have impacted its supply chain costs.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "trade policy alterations in 2025, including heightened import tariffs and subsequent retaliatory measures, have impacted our supply chain costs",
+          "tier": "detail"
+        },
+        {
+          "fact": "In its FY2025 10-K, Tesla says that by launching Robotaxi in June 2025 it entered the autonomous ride-hailing market.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Upon launching our Robotaxi service in June 2025, we also entered into the autonomous ride-hailing service market",
+          "tier": "detail"
+        },
+        {
+          "fact": "In its FY2025 10-K, Tesla adds a risk that the technologies tied to the 2025 CEO Performance Award are misaligned with consumer demand.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "There is a risk that the technologies and initiatives associated with the 2025 CEO Performance Award, including the product goals, are misaligned with current or future consumer demand",
+          "tier": "detail"
+        },
+        {
+          "fact": "In its FY2025 10-K, Tesla says legislation such as the OBBBA requires rigorous traceability of raw materials.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Compliance with evolving legislation, such as the OBBBA, also requires rigorous traceability of raw materials.",
+          "tier": "detail"
+        },
+        {
+          "fact": "In its FY2025 10-K, Tesla says the compute, memory, energy and thermal resources its AI work demands may prove insufficient in scale or affordability.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "such innovation demands exponentially greater compute, memory, energy and thermal resources, which may prove insufficient in scale or affordability to meet our requirements",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "followup-topic-change-export-controls",
+      "question": "Which companies took charges because of new U.S. export controls on products sold to China?",
+      "history": [
+        {
+          "role": "user",
+          "content": "What are Apple's main risk factors?"
+        },
+        {
+          "role": "assistant",
+          "content": "Apple's main risks centre on manufacturing outsourced mostly to partners in China mainland, India and other Asian countries, new U.S. tariffs announced from the second quarter of fiscal 2025, and compliance with the EU Digital Markets Act (AAPL_10-K_2025-09-27, Risk Factors)."
+        }
+      ],
+      "question_type": "risk",
+      "split": "dev",
+      "starter": null,
+      "tags": [
+        "topic_change_without_company"
+      ],
+      "notes": "The known weakness of ADR 0003: the question changes topic but names no Company or Sector phrase, so the rules inherit Apple. The intended scope is the whole Corpus; the Companies that report such charges are NVIDIA and AMD. Rewritten for version 2 from the whole MD&A of NVIDIA's Q1 FY2026 10-Q (new: it reports the charge first) and Q3 FY2026 10-Q and of AMD's FY2025 10-K, after searching every 2025 and 2026 Filing for export control charges: only these two Companies report one. Each Company's charge is must-state; its effects and the later licences are details. Neither charge has an SEC company-facts value and AMD is not cached, so no fact states an amount; the amounts stay in the evidence quotes.",
+      "expected_sources": [
+        {
+          "filing_id": "NVDA_10-Q_2025-04-27",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "NVIDIA took a charge in the first quarter of fiscal 2026 for H20 excess inventory and purchase obligations after the U.S. government required a license to export its H20 product to China.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "In April 2025, the U.S. government, or USG, informed us that a license is required for exports of our H20 product into the China market. As a result of these new requirements, we incurred a $4.5 billion charge in the first quarter of fiscal year 2026",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA says its H20 charge was less than it initially anticipated because it was able to re-use certain materials.",
+          "filing_id": "NVDA_10-Q_2025-04-27",
+          "section": "MD&A",
+          "evidence": "The $4.5 billion charge was less than what we initially anticipated as we were able to re-use certain materials.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says the H20 export licensing requirements will negatively affect its future revenue.",
+          "filing_id": "NVDA_10-Q_2025-04-27",
+          "section": "MD&A",
+          "evidence": "The H20 export licensing requirements have impacted our current revenue and will also negatively affect our future revenue.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says its gross margin for the first quarter of fiscal 2026 decreased primarily because of the H20 charge.",
+          "filing_id": "NVDA_10-Q_2025-04-27",
+          "section": "MD&A",
+          "evidence": "Gross margin decreased from a year ago and sequentially, primarily due to a $4.5 billion charge associated with H20 excess inventory and purchase obligations",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says the U.S. government granted licenses in August 2025 allowing it to ship certain H20 products to certain China-based customers.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "In August 2025, the USG granted licenses that would allow us to ship certain H20 products to certain China-based customers",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says its H20 sales were insignificant in the third quarter of fiscal 2026.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "MD&A",
+          "evidence": "H20 sales were insignificant in the third quarter of fiscal year 2026.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AMD recorded inventory and related charges on its MI308 GPUs in the second quarter of fiscal 2025 because of new U.S. export restrictions to China.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "MD&A",
+          "evidence": "During the second quarter of fiscal year 2025, the Company recorded approximately $800 million of inventory and related charges on AMD Instinct MI308 Data Center GPU products due to new U.S. export restrictions on certain semiconductors to China.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AMD says it was granted some U.S. government licenses to ship MI308 products to certain China-based customers.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "MD&A",
+          "evidence": "We applied for and were granted some licenses by the U.S. government that allow us to ship MI308 products to certain China-based customers.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AMD reversed part of its MI308 inventory and related charges in the fourth quarter of fiscal 2025 after it began shipping the products.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "MD&A",
+          "evidence": "During the fourth quarter of fiscal year 2025, we began shipping products and reversed approximately $360 million of the inventory and related charges recorded earlier in the year.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AMD says the net MI308 export control charges partly offset the increase in its 2025 gross margin.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "MD&A",
+          "evidence": "Gross margin of 50% increased by 1% compared to 49% in 2024, primarily due to product mix partially offset by approximately $440 million of net inventory and related charges associated with the U.S. government export control on AMD Instinct",
+          "tier": "detail"
+        },
+        {
+          "fact": "AMD says U.S. government officials expect the government to receive 15% of the revenue from licensed MI308 sales to China.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "MD&A",
+          "evidence": "U.S. government officials have expressed an expectation that the U.S. government will receive 15% of the revenue generated from licensed MI308 sales to China",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "followup-pharma-to-oil-majors",
+      "question": "And the oil majors?",
+      "history": [
+        {
+          "role": "user",
+          "content": "What regulatory risks do the major pharmaceutical companies face, and how are they addressing them?"
+        },
+        {
+          "role": "assistant",
+          "content": "The major pharmaceutical companies (AbbVie, Johnson & Johnson, Eli Lilly, Merck and Pfizer, from the Sector table's Pharmaceuticals and Biotechnology industries) all describe drug pricing pressure from the Inflation Reduction Act. Merck expects U.S. Keytruda sales to decline from January 2028 under government pricing (MRK_10-K_2024-12-31, Risk Factors), and Eli Lilly announced preliminary voluntary pricing agreements with the U.S. government in November 2025 (LLY_10-K_2025-12-31, Risk Factors). AbbVie's, Merck's and Pfizer's latest 10-Ks are for FY2024; J&J's and Lilly's are for FY2025."
+        }
+      ],
+      "question_type": "sector",
+      "split": "dev",
+      "starter": null,
+      "tags": [
+        "switches_company"
+      ],
+      "notes": "EDA variant V4 as a follow-up. A new Sector phrase replaces the pharma Companies with Chevron and ExxonMobil; the regulatory topic, its \"how are they addressing them\" half and the Section are inherited. Chevron's latest 10-K is FY2024, ExxonMobil's FY2025. Rewritten for version 2 from each whole Risk Factors Section, which answers both halves: greenhouse gas and other regulation are the risks, and each Company's net zero ambition and, for ExxonMobil, its Low Carbon Solutions business are how it addresses them. Those are must-state; particular taxes, sanctions, programs, investigations and targets are details. Version 1's holdout case, now dev.",
+      "expected_sources": [
+        {
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Chevron says legislation and regulation related to greenhouse gas emissions and climate change could reduce demand for its hydrocarbon products.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Legislation, regulation, and other government actions related to GHG emissions and climate change could reduce demand for Chevron’s hydrocarbon and other products",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Chevron says political instability and significant changes in the legal and regulatory environment could harm its business.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Political instability and significant changes in the legal and regulatory environment could harm Chevron’s business",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Chevron has announced an aspiration to achieve net zero Scope 1 and 2 emissions in upstream by 2050.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Chevron has announced an aspiration to achieve net zero Scope 1 and 2 emissions in upstream by 2050.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Chevron says greenhouse gas legislation and regulation could continue to increase its operational costs.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "continue to increase Chevron’s operational costs and reduce its return on investment",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron says international agreements and legislation aiming to limit or reduce greenhouse gas emissions are in various stages of implementation.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "International agreements and national, regional, and state legislation and regulatory measures that aim to directly or indirectly limit or reduce GHG emissions are in various stages of implementation.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron says it operates under programs such as the U.S. Renewable Fuel Standard and California's Cap-and-Trade Program and Low Carbon Fuel Standard.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "such as the Renewable Fuel Standard program in the U.S., California’s Cap-and-Trade Program and Low Carbon Fuel Standard",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron says some jurisdictions are enacting legislation that imposes retroactive liability on past greenhouse gas emissions by energy producers.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "some jurisdictions are in various stages of enacting or implementing legislation that imposes retroactive liability on estimated past GHG emissions by certain energy producers and refiners",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron says governments including California and Australia have announced, proposed or implemented windfall profit taxes on energy companies.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Governments in various jurisdictions, including California and Australia, have announced, proposed, or implemented windfall profit taxes for companies operating in the energy and oil and gas sectors.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron says sanctions such as those imposed in Venezuela and Russia could adversely impact its operations there.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "such as sanctions imposed in Venezuela and Russia",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron says regulations designed to stop oil and gas development, such as limits on hydraulic fracturing or drilling bans, could hurt its operations.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "such as those related to the use of hydraulic fracturing or bans on drilling",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron says it has received investigative requests from the U.S. Congress on climate change and methane leak detection.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "we have received investigative requests and demands from the U.S. Congress for information relating to climate change, methane leak detection and repair, and other topics",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron has set nearer-term targets for upstream carbon intensity and portfolio carbon intensity.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "The company also has set nearer-term GHG emission-related targets for upstream carbon intensity and portfolio carbon intensity.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron says it expects to change or eliminate some of its lower carbon aspirations and targets.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Chevron regularly evaluates its ambitions and expects to change or eliminate some of these aspirations, targets, and other ambitions",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says a number of countries have adopted or are considering broad regulatory frameworks to report on or reduce greenhouse gas emissions, including from oil and gas.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "a number of countries have adopted, or are considering the adoption of, broad-reaching regulatory frameworks seeking to report on or reduce greenhouse gas emissions, including emissions from the production and use of oil and gas and their products",
+          "tier": "must_state"
+        },
+        {
+          "fact": "ExxonMobil says its results can be adversely affected by political or regulatory developments affecting its businesses or operations.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "ExxonMobil’s results can be adversely affected by political or regulatory developments affecting our businesses or operations.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "ExxonMobil has announced an ambition to achieve net zero Scope 1 and 2 emissions from its operated assets.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "the Company’s announced ambition ultimately to achieve net zero with respect to Scope 1 and 2 emissions from our operated assets",
+          "tier": "must_state"
+        },
+        {
+          "fact": "ExxonMobil has established a Low Carbon Solutions business unit to develop technologies such as carbon capture and storage.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "ExxonMobil has established a Low Carbon Solutions (LCS) business unit and is continuing efforts in our existing businesses to advance the development and deployment of these technologies and projects, including CCS",
+          "tier": "must_state"
+        },
+        {
+          "fact": "ExxonMobil says current and potential greenhouse gas regulations may increase its compliance costs.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Current, pending, and potential greenhouse gas regulations or policies may also increase our compliance costs",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says net zero will remain out of reach without supportive policies.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Without supportive policies and the innovations they drive, net zero will remain out of reach",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says it is implementing new technologies and operating practices to reduce emissions in response to government requirements.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "we are implementing cost-effective new technologies and adopting new operating practices to reduce emissions, not only in response to government requirements but also to address community priorities",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says a number of countries limit access to their oil and gas resources by restricting leasing, licensing or permitting.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "A number of countries limit access to their oil and gas resources, including by restricting leasing, licensing, or permitting activities",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says sanctions imposed by the United States and other jurisdictions may prohibit it from doing business in certain countries.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "ExxonMobil is subject to laws and sanctions imposed by the United States and by other jurisdictions where we do business that may prohibit ExxonMobil or its affiliates from doing business in certain countries or with certain counterparties",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil lists punitive and windfall profit taxes on oil, gas and petrochemical operations among the government policy changes that could hurt its results.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "punitive taxes on oil, gas and petrochemical operations, windfall profit taxes, or global minimum taxes",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says state and local governments and private plaintiffs use litigation to promote policy agendas, including reducing the production of hydrocarbons.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "state and local government actors as well as private plaintiffs acting in parallel that attempt to use the legal system to promote public policy agendas",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "CVX",
+            "XOM"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "followup-ge-to-honeywell",
+      "question": "What about Honeywell?",
+      "history": [
+        {
+          "role": "user",
+          "content": "How has General Electric performed recently?"
+        },
+        {
+          "role": "assistant",
+          "content": "The only General Electric Filing is GE Capital's 10-K for 2014; it does not describe General Electric today. The Filings provided cannot say how General Electric has performed recently."
+        }
+      ],
+      "question_type": "missing_company",
+      "split": "dev",
+      "starter": null,
+      "tags": [
+        "switches_company"
+      ],
+      "notes": "Honeywell is not in the Corpus. It replaces General Electric in the Query Scope, so the stale GE Filing must not come back either. Rewritten for version 2 unchanged: a case that expects only a Coverage Gap has no Required Facts.",
+      "expected_sources": [],
+      "required_facts": [],
+      "expected_coverage_gaps": [
+        {
+          "kind": "missing_company",
+          "companies": [
+            "Honeywell"
+          ]
+        }
+      ]
     }
   ]
 }

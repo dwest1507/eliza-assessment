@@ -551,32 +551,15 @@ def test_the_version_2_file_sits_beside_version_1_and_loads(golden_set_v2):
     assert all(case.split in ("dev", "holdout", "pending") for case in golden_set_v2.cases)
 
 
-REWRITTEN_VERSION_1_CASES = (
-    "risk-aapl-legal-proceedings",
-    "risk-ko-market-risk",
-    "risk-unh-cybersecurity",
-    "risk-aapl-nvda-supply-chain",
-    "sector-banks-risks",
-    "sector-software-ai-risks",
-    "sector-aerospace-government",
-    "risk-bac-change-snapshot",
-    "missing-wells-fargo-vs-jpm",
-    "trend-jpm-revenue-snapshot",
-    "trend-meta-revenue-two-years",
-    "trend-aapl-revenue-fy2025",
-    "trend-tsla-net-income-three-years",
-    "trend-amzn-aws-two-years",
-    "outlook-tsla-2026",
-    "outlook-msft-cloud",
-    "outlook-meta-capex-2026",
-    "stale-ge-recent-performance",
-)
-"""Version 1 cases rewritten into version 2 so far, batch by batch, until all 27 of version
-1's cases other than the brief's are in it (ADR 0012)."""
+def test_version_2_holds_all_27_of_version_1s_cases_other_than_the_briefs(
+    golden_set, golden_set_v2
+):
+    """Version 1's cases other than the brief's were rewritten into version 2 in three
+    batches of nine (ADR 0012); the brief's are in the Brief Suite."""
+    not_brief = {case.id for case in golden_set.cases if "brief_example" not in case.tags}
 
-
-def test_the_rewritten_version_1_cases_are_in_version_2(golden_set_v2):
-    assert set(REWRITTEN_VERSION_1_CASES) <= {case.id for case in golden_set_v2.cases}
+    assert len(not_brief) == 27
+    assert not_brief <= {case.id for case in golden_set_v2.cases}
 
 
 def test_a_rewritten_version_1_case_keeps_its_question_and_history_and_is_dev(
