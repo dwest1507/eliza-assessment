@@ -551,6 +551,41 @@ def test_the_version_2_file_sits_beside_version_1_and_loads(golden_set_v2):
     assert all(case.split in ("dev", "holdout", "pending") for case in golden_set_v2.cases)
 
 
+REWRITTEN_VERSION_1_CASES = (
+    "risk-aapl-legal-proceedings",
+    "risk-ko-market-risk",
+    "risk-unh-cybersecurity",
+    "risk-aapl-nvda-supply-chain",
+    "sector-banks-risks",
+    "sector-software-ai-risks",
+    "sector-aerospace-government",
+    "risk-bac-change-snapshot",
+    "missing-wells-fargo-vs-jpm",
+)
+"""Version 1 cases rewritten into version 2 so far, batch by batch, until all 27 of version
+1's cases other than the brief's are in it (ADR 0012)."""
+
+
+def test_the_rewritten_version_1_cases_are_in_version_2(golden_set_v2):
+    assert set(REWRITTEN_VERSION_1_CASES) <= {case.id for case in golden_set_v2.cases}
+
+
+def test_a_rewritten_version_1_case_keeps_its_question_and_history_and_is_dev(
+    golden_set, golden_set_v2
+):
+    version_1 = {case.id: case for case in golden_set.cases}
+
+    rewritten = [case for case in golden_set_v2.cases if case.id in version_1]
+    for case in rewritten:
+        old = version_1[case.id]
+        assert case.split == "dev", case.id
+        assert case.question == old.question, case.id
+        assert case.history == old.history, case.id
+        assert case.question_type == old.question_type, case.id
+        assert case.starter == old.starter, case.id
+        assert "brief_example" not in old.tags, case.id  # the brief's are in the Brief Suite
+
+
 def test_a_missing_evidence_quote_or_section_fails_the_label_checks(tmp_path, filings_by_id):
     case = _v2_case("risk-unh-cybersecurity")
     case["required_facts"][0]["evidence"] = "UnitedHealth sells ice cream on the moon."

@@ -2,5 +2,1394 @@
   "version": 2,
   "about": "Golden Set version 2 (ADR 0012, docs/golden-set.md): version 1's cases other than the brief's, rewritten with one-claim Required Facts in two tiers, and new cases, each recording its split. Version 1 (golden_set.json) stays unchanged as a record.",
   "split_rule": "Each case records its split, and no case ever moves. Version 1's cases rewritten here keep their ids and are dev. New cases are pending until all of them exist; then the 20 whose ids have the lowest SHA-256 hex digests (UTF-8) are holdout and the rest dev. A run refuses while any case is pending.",
-  "cases": []
+  "cases": [
+    {
+      "id": "risk-aapl-legal-proceedings",
+      "question": "What legal proceedings does Apple disclose in its latest Filings?",
+      "history": [],
+      "question_type": "risk",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "Section hint: Legal Proceedings. \"Latest\" is the FY2025 10-K plus the Q1 FY2026 10-Q, which adds the Ninth Circuit ruling. Rewritten for version 2 from the whole Legal Proceedings Section of both Filings: the European Commission's DMA investigations, the DOJ lawsuit and Epic Games are must-state; the Article 6(4) investigation, the appeals, the contempt referral and the other proceedings are details. The EUR 500 million fine is in euros, so the figure check does not apply.",
+      "expected_sources": [
+        {
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Legal Proceedings"
+        },
+        {
+          "filing_id": "AAPL_10-Q_2025-12-27",
+          "section": "Legal Proceedings"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Apple was fined €500 million by the European Commission on April 23, 2025 in its Digital Markets Act Article 5(4) investigation.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Legal Proceedings",
+          "evidence": "On April 23, 2025, the Commission fined the Company €500 million in the Article 5(4) Investigation",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple has appealed the European Commission's Article 5(4) decision under the Digital Markets Act.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Legal Proceedings",
+          "evidence": "The Company has appealed the Commission’s Article 5(4) decision.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says the European Commission's Article 5(4) decision included a cease and desist order requiring it to remove restrictions that prevent developers from steering users outside the App Store.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Legal Proceedings",
+          "evidence": "issued a cease and desist order requiring the Company to remove technical and commercial restrictions that prevent developers from steering users to alternative distribution channels outside the App Store",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says the European Commission issued preliminary findings in its Digital Markets Act Article 6(4) investigation on April 23, 2025.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Legal Proceedings",
+          "evidence": "Also on April 23, 2025, the Commission issued preliminary findings in the Article 6(4) Investigation.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says a final finding of violation in the Article 6(4) investigation could bring fines of up to 10% of its annual worldwide net sales.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Legal Proceedings",
+          "evidence": "may impose fines up to 10% of the Company’s annual worldwide net sales",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple faces a civil antitrust lawsuit filed by the DOJ and state attorneys general on March 21, 2024.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Legal Proceedings",
+          "evidence": "On March 21, 2024, the DOJ and a number of state and district attorneys general filed a civil antitrust lawsuit",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple says the DOJ lawsuit alleges monopolization or attempted monopolization of the markets for performance smartphones and smartphones.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Legal Proceedings",
+          "evidence": "alleging monopolization or attempted monopolization in the markets for “performance smartphones” and “smartphones” in violation of U.S. antitrust laws",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says it believes it has substantial defenses against the DOJ lawsuit and intends to vigorously defend itself.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Legal Proceedings",
+          "evidence": "The Company believes it has substantial defenses and intends to vigorously defend itself.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple faces various civil lawsuits in U.S. state and federal courts alleging antitrust violations similar to the DOJ's and seeking monetary damages.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Legal Proceedings",
+          "evidence": "various civil litigation matters have been filed in state and federal courts in the U.S. alleging similar violations of U.S. antitrust laws and seeking monetary damages and other nonmonetary relief",
+          "tier": "detail"
+        },
+        {
+          "fact": "In the Epic Games case, a California court found on April 30, 2025 that Apple had violated the 2021 Injunction.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Legal Proceedings",
+          "evidence": "On April 30, 2025, the California District Court found the Company to be in violation of the 2021 Injunction",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple says the California District Court referred it to the U.S. Attorney to determine whether criminal contempt proceedings are appropriate.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Legal Proceedings",
+          "evidence": "referred the Company to the U.S. Attorney for the Northern District of California for a determination whether criminal contempt proceedings are appropriate",
+          "tier": "detail"
+        },
+        {
+          "fact": "On December 11, 2025 the Ninth Circuit upheld in part the 2025 Injunction against Apple in the Epic Games case.",
+          "filing_id": "AAPL_10-Q_2025-12-27",
+          "section": "Legal Proceedings",
+          "evidence": "On December 11, 2025, the Ninth Circuit Court issued an order upholding the 2025 Injunction in part",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple says the Ninth Circuit held that it can charge a commission on link-out purchases.",
+          "filing_id": "AAPL_10-Q_2025-12-27",
+          "section": "Legal Proceedings",
+          "evidence": "The Ninth Circuit Court also held that the Company can charge a commission on link-out purchases",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says the Ninth Circuit's order allows it to require parity in size, form and placement between its in-app purchase and links to outside purchases.",
+          "filing_id": "AAPL_10-Q_2025-12-27",
+          "section": "Legal Proceedings",
+          "evidence": "modifying certain aspects to allow the Company to require parity in size, form and placement between the Company’s in-app purchase and any links for consumers to make purchases outside an app",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's deadline to petition for rehearing of the Ninth Circuit's order is March 2, 2026.",
+          "filing_id": "AAPL_10-Q_2025-12-27",
+          "section": "Legal Proceedings",
+          "evidence": "The deadline for the Company to file a petition for rehearing is March 2, 2026.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says it settled certain other matters in the first quarter of fiscal 2026 that were not material individually or in the aggregate.",
+          "filing_id": "AAPL_10-Q_2025-12-27",
+          "section": "Legal Proceedings",
+          "evidence": "The Company settled certain matters during the first quarter of 2026 that did not individually or in the aggregate have a material impact on the Company’s financial condition or operating results.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "risk-ko-market-risk",
+      "question": "What foreign currency and interest rate risks does Coca-Cola disclose in its latest annual report?",
+      "history": [],
+      "question_type": "risk",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "Section hint: Market Risk (10-K Item 7A). Coca-Cola's latest 10-K is FY2024. Rewritten for version 2 from the whole Market Risk Section's foreign currency and interest rate passages; the commodity price passage is outside the question. The Section's dollar amounts ($28.7 billion of revenue outside the U.S., $18,442 million of notional value, the sensitivity estimates) have no SEC company-facts value, so the facts that rest on them state no amount; the amounts stay in the evidence.",
+      "expected_sources": [
+        {
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Market Risk"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Coca-Cola uses derivative financial instruments primarily to reduce its exposure to adverse fluctuations in foreign currency exchange rates, interest rates and other market risks.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Market Risk",
+          "evidence": "Our Company uses derivative financial instruments primarily to reduce our exposure to adverse fluctuations in foreign currency exchange rates, interest rates, commodity prices and other market risks.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Coca-Cola says it does not enter into derivative financial instruments for trading purposes.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Market Risk",
+          "evidence": "We do not enter into derivative financial instruments for trading purposes.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Coca-Cola manages most of its foreign currency exposures on a consolidated basis, which lets it net certain exposures and use natural offsets.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Market Risk",
+          "evidence": "We manage most of our foreign currency exposures on a consolidated basis, which allows us to net certain exposures and take advantage of any natural offsets.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Coca-Cola generated part of its 2024 net operating revenues from operations outside the United States.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Market Risk",
+          "evidence": "In 2024, we generated $28.7 billion of our net operating revenues from operations outside the United States.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Coca-Cola says the geographic diversity of its operations means weakness in some currencies may be offset by strength in others over time.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Market Risk",
+          "evidence": "Due to the geographic diversity of our operations, weakness in some currencies may be offset by strength in other currencies over time.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Coca-Cola hedges portions of its forecasted foreign currency cash flows with forward exchange contracts and foreign currency options and collars.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Market Risk",
+          "evidence": "Our Company enters into forward exchange contracts and purchases foreign currency options and collars (principally euro, British pound and Japanese yen) to hedge certain portions of forecasted cash flows denominated in foreign currencies.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Coca-Cola's foreign currency hedges are principally in the euro, British pound and Japanese yen.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Market Risk",
+          "evidence": "(principally euro, British pound and Japanese yen)",
+          "tier": "detail"
+        },
+        {
+          "fact": "Coca-Cola also uses forward exchange contracts to hedge its net investments in foreign operations.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Market Risk",
+          "evidence": "We also enter into forward exchange contracts as hedges of net investments in foreign operations.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Coca-Cola discloses the total notional value of its foreign currency derivatives as of December 31, 2024.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Market Risk",
+          "evidence": "The total notional values of our foreign currency derivatives were $18,442 million and $17,505 million as of December 31, 2024 and 2023, respectively.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Coca-Cola estimates that a 10% weakening of the U.S. dollar would have decreased the fair value of its foreign currency derivatives that qualified for hedge accounting.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Market Risk",
+          "evidence": "The fair value of foreign currency derivatives that qualified for hedge accounting resulted in a net unrealized gain of $366 million as of December 31, 2024, and we estimate that a 10% weakening of the U.S. dollar would have resulted in a $511 million decrease in fair value.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Coca-Cola says it is subject to interest rate volatility on its existing and future issuances of debt.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Market Risk",
+          "evidence": "The Company is subject to interest rate volatility with regard to existing and future issuances of debt.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Coca-Cola enters into interest rate swap agreements from time to time to manage its exposure to interest rate fluctuations.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Market Risk",
+          "evidence": "From time to time, we enter into interest rate swap agreements to manage our exposure to interest rate fluctuations.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Coca-Cola monitors its mix of fixed-rate and variable-rate debt.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Market Risk",
+          "evidence": "We monitor our mix of fixed-rate and variable-rate debt as well as our mix of short-term debt and long-term debt.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Coca-Cola estimates that a 1 percentage point increase in interest rates would have increased its 2024 interest expense.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Market Risk",
+          "evidence": "we estimate that a 1 percentage point increase in interest rates would have increased interest expense by $127 million in 2024",
+          "tier": "detail"
+        },
+        {
+          "fact": "Coca-Cola says it is subject to interest rate risk on its investments in highly liquid debt securities.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Market Risk",
+          "evidence": "The Company is subject to interest rate risk related to its investments in highly liquid debt securities.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Coca-Cola's policy requires its investments in highly liquid debt securities to be investment grade.",
+          "filing_id": "KO_10-K_2024-12-31",
+          "section": "Market Risk",
+          "evidence": "Our policy requires these investments to be investment grade, with the primary objective of minimizing the risk of principal loss.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "risk-unh-cybersecurity",
+      "question": "What cybersecurity risks does UnitedHealth describe in its latest annual report?",
+      "history": [],
+      "question_type": "risk",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "UnitedHealth's latest 10-K is FY2024; the Change Healthcare cyberattack is in both Risk Factors and MD&A. Rewritten for version 2 from the whole cyber passages of Risk Factors and MD&A, plus the Cybersecurity Section (Item 1C), which version 1 left out. The cyberattack's cost figures (direct response costs, business disruption, loans to care providers) have no SEC company-facts value, so their facts state no amount.",
+      "expected_sources": [
+        {
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Cybersecurity"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "UnitedHealth says its Change Healthcare business was subject to a cyberattack in 2024.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "we previously reported our Change Healthcare business, which we had recently acquired, was subject to a cyberattack in 2024",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UnitedHealth says the data involved in the Change Healthcare cyberattack contained protected health information or personally identifiable information.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "in which the data involved contained protected health information or personally identifiable information.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says it is regularly the target of attempted cyberattacks and other security threats.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "We are regularly the target of attempted cyberattacks  and other security threats",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UnitedHealth says cyberattacks or data security incidents at it or at third parties it relies on could cause lost revenue, increased costs, significant liability and reputational harm.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "If we or third parties we rely on sustain cyberattacks or other privacy or data security incidents resulting in disruption to our operations or the disclosure of protected personal information or proprietary or confidential information, we could suffer a loss of revenue and increased costs, negative operational effects, exposure to significant liability, reputational harm and other serious negative consequences.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UnitedHealth expects to continue to experience data security incidents despite its programs to detect, contain and respond to them.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "we expect that we will continue to experience these incidents, some of which may negatively affect our business",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says techniques used to obtain unauthorized access are increasing in sophistication, in part due to evolving AI technologies.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "because the techniques used to obtain unauthorized access, disable or degrade service, or sabotage systems change frequently and are increasing in sophistication, in part due to use of evolving AI/ML technologies (including generative AI)",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says recently acquired or non-integrated businesses have brought heightened cybersecurity vulnerabilities.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "There have previously been and may be in the future heightened vulnerabilities due to recently-acquired or non-integrated businesses.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says the third-party vendors it relies on to process its data face similar risks outside its direct oversight and control.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "The operations of these vendors are subject to similar risks, but are outside our direct oversight and control.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says the costs to eliminate or address security threats and vulnerabilities could be material.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "The costs to eliminate or address the foregoing security threats and vulnerabilities before or after a cybersecurity incident could be material.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says a privacy or security breach could result in significant fines, penalties and litigation awards.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "could also result in significant fines, penalties and litigation awards",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth identified on February 21, 2024 that cybercrime threat actors had gained access to certain Change Healthcare systems.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "on February 21, 2024, we identified that cybercrime threat actors had gained access to certain Change Healthcare information technology systems.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth estimates that approximately 190 million individuals were impacted by the Change Healthcare cyberattack.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "We have determined the estimated total number of individuals impacted by the Change Healthcare cyberattack is approximately 190 million.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UnitedHealth provided interest-free loans to care providers in response to the Change Healthcare cyberattack.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "To support care providers we provided interest-free loans of more than $9 billion through December 31, 2024.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth incurred direct response costs for the Change Healthcare cyberattack in 2024.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "For the year ended December 31, 2024, we incurred $2.2 billion of direct response costs",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth's Optum Insight lost revenue from business disruption caused by the Change Healthcare cyberattack in 2024.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Optum Insight also experienced estimated business disruption impacts of $867 million for the year ended December 31, 2024, reflecting lost revenue",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says future risks from the Change Healthcare cyberattack, including litigation, reputational harm and regulatory actions, could adversely affect its financial condition or results.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "It is possible that future risks and uncertainties resulting from the Change Healthcare cyberattack, including risks related to impacted data, litigation, reputational harm, and regulatory actions could adversely affect our financial condition or results of operations.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says that as of December 31, 2024 it had not identified any risks from cybersecurity threats that have materially affected or are reasonably likely to materially affect it.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Cybersecurity",
+          "evidence": "As of December 31, 2024, the Company has not identified any risks from cybersecurity threats that have materially affected or are reasonably likely to materially affect the Company",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth's cybersecurity program is overseen by the Audit and Finance Committee of its Board of Directors.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Cybersecurity",
+          "evidence": "The Audit and Finance Committee of the Board of Directors has oversight of our cybersecurity program",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "risk-aapl-nvda-supply-chain",
+      "question": "Compare the supply chain risks of Apple and NVIDIA.",
+      "history": [],
+      "question_type": "risk",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "Apple's latest 10-K is FY2025 (year to September 2025), followed by a Q1 FY2026 10-Q reporting no material changes; NVIDIA's is FY2025 (year to January 2025), followed by three 10-Qs, the latest of which restates every updated risk factor. Rewritten for version 2 from the whole supply passages of each Risk Factors Section. The comparison rests on what both name: outsourced manufacturing concentrated in Asia and trade restrictions.",
+      "expected_sources": [
+        {
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "AAPL_10-Q_2025-12-27",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Apple says a significant majority of its manufacturing is performed by outsourcing partners located primarily in China mainland, India, Japan, South Korea, Taiwan and Vietnam.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "A significant majority of the Company’s manufacturing is performed in whole or in part by outsourcing partners located primarily in China mainland, India, Japan, South Korea, Taiwan and Vietnam",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple says obtaining certain components from single or limited sources subjects it to significant supply and pricing risks.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Because the Company currently obtains certain components from single or limited sources, the Company is subject to significant supply and pricing risks.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple says restrictions on international trade, such as tariffs, can materially adversely affect its business and supply chain.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Restrictions on international trade, such as tariffs and other controls on imports or exports of goods, technology or data, can materially adversely affect the Company’s business and supply chain.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple relies on partners primarily located in Asia for final assembly of substantially all of its hardware products.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "on partners primarily located in Asia, for final assembly of substantially all of the Company’s hardware products",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says its outsourcing arrangements reduce its direct control over production and distribution.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "they also reduce the Company’s direct control over production and distribution",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says its new products often use custom components available from only one source.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "the Company’s new products often utilize custom components available from only one source",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says many of its components are at times subject to industry-wide shortages and significant commodity pricing fluctuations.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Many components, including those that are available from multiple sources, are at times subject to industry-wide shortages and significant commodity pricing fluctuations",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says global supply chains can be highly concentrated, so an escalation of geopolitical tensions could cause significant disruptions.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Global supply chains can be highly concentrated, and an escalation of geopolitical tensions or conflict could result in significant disruptions.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says trade restrictions can increase the cost or limit the availability of its products, components, rare earths and other raw materials.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Restrictive measures can increase the cost or limit the availability of the Company’s products and the components and rare earths and other raw materials that go into them.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple reports that new U.S. tariffs, including on imports from China and India, were announced beginning in the second quarter of fiscal 2025.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Beginning in the second quarter of 2025, new tariffs were announced on imports to the U.S. (“U.S. Tariffs”), including additional tariffs on imports from China, India, Japan, South Korea, Taiwan, Vietnam and the European Union (“EU”), among others.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's first-quarter fiscal 2026 10-Q reports no material changes to its risk factors since its 2025 Form 10-K.",
+          "filing_id": "AAPL_10-Q_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "There have been no material changes to the Company’s risk factors since the 2025 Form 10-K.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says its business depends on consistent and reliable supply from overseas partners, especially in Taiwan and South Korea.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Risk Factors",
+          "evidence": "Finally, our business depends on our ability to receive consistent and reliable supply from our overseas partners, especially in Taiwan and South Korea.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA depends on foundries to manufacture its semiconductor wafers.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Risk Factors",
+          "evidence": "We depend on foundries to manufacture our semiconductor wafers using their fabrication equipment and techniques.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA does not assemble, test or package its products itself but contracts with independent subcontractors.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Risk Factors",
+          "evidence": "We do not assemble, test, or package our products, but instead contract with independent subcontractors.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA lists the limited number and geographic concentration of its suppliers, foundries and contract manufacturers among its supply risks.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Risk Factors",
+          "evidence": "limited number and geographic concentration of global suppliers, foundries, contract manufacturers, assembly and test providers and memory manufacturers",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says geopolitical tensions involving Taiwan and China, where it has suppliers critical to its supply continuity, could have a material adverse impact on it.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Risk Factors",
+          "evidence": "geopolitical tensions, such as those involving Taiwan and China, which comprise a significant portion of our revenue and where we have suppliers, contract manufacturers, and assembly partners who are critical to our supply continuity, could have a material adverse impact on us",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says export controls have disrupted and could in the future disrupt its supply chain and distribution channels.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "Risk Factors",
+          "evidence": "Export controls have and could in the future disrupt our supply chain and distribution channels, negatively impacting our ability to serve demand",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA says long manufacturing lead times and uncertain supply, combined with inaccurate demand estimates, have led and could lead to mismatches between supply and demand.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "Risk Factors",
+          "evidence": "Long manufacturing lead times and uncertain supply and capacity availability, combined with a failure to estimate customer demand accurately, has led and could lead to mismatches between supply and demand.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA says it has experienced extended lead times of more than 12 months.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "Risk Factors",
+          "evidence": "We have previously experienced and may continue to experience extended lead times of more than 12 months.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA has paid premiums, provided deposits and entered into long-term supply agreements to secure future supply and capacity.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "Risk Factors",
+          "evidence": "To secure future supply and capacity, we have paid premiums, provided deposits, and entered into long-term supply agreements and capacity commitments, which have increased our product costs",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA is increasing its U.S.-based manufacturing to support domestic production.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "Risk Factors",
+          "evidence": "We are increasing our U.S.-based manufacturing and investing in specialized equipment and processes to support domestic production.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says new export controls can leave it with excess inventory and purchase obligations, as it recently experienced with the H20.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "Risk Factors",
+          "evidence": "resulting in excess inventory and purchase obligations as we recently experienced with the H20",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA's gross margins in the second quarter of fiscal 2025 were hurt by inventory provisions for low-yielding Blackwell material.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "Risk Factors",
+          "evidence": "our gross margins in the second quarter of fiscal year 2025 were negatively impacted by inventory provisions for low-yielding Blackwell material",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "AAPL",
+            "NVDA"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sector-banks-risks",
+      "question": "What are the main risks facing the major banks?",
+      "history": [],
+      "question_type": "sector",
+      "split": "dev",
+      "starter": {
+        "order": 4,
+        "label": "What are the main risks facing the major banks?"
+      },
+      "tags": [],
+      "notes": "EDA variant V3. The Sector table's Banks industry is Bank of America and JPMorgan; Goldman Sachs and Morgan Stanley are Capital Markets. Bank of America's latest 10-K is FY2024 and its 2025 10-Qs report no material changes. Rewritten for version 2 from each whole Risk Factors Section: each bank's market and economic, regulatory, credit, liquidity and operational risks are must-state, its other risk categories details.",
+      "expected_sources": [
+        {
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "BAC_10-Q_2025-09-30",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Bank of America says it may be adversely affected by the financial markets, fiscal, monetary and regulatory policies, and economic conditions.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "We may be adversely affected by the financial markets, fiscal, monetary, and regulatory policies, and economic conditions.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Bank of America says it is highly regulated and subject to evolving government legislation and regulations.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "We are highly regulated and subject to evolving government legislation and regulations and certain settlements, orders and agreements with government authorities from time to time.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Bank of America says economic or market disruptions and insufficient credit loss reserves may result in a higher provision for credit losses.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Economic or market disruptions and insufficient credit loss reserves may result in a higher provision for credit losses.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Bank of America says a failure in or breach of its operations or information systems, or those of third parties, could disrupt its businesses and cause legal or reputational harm.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "A failure in or breach of our operations or information systems, or those of third parties or the financial services industry, could cause disruptions, adversely impact our businesses, results of operations and financial condition, and cause legal or reputational harm.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Bank of America says the Federal Reserve could limit or prohibit its capital actions, such as dividends and share repurchases.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "The Federal Reserve could also limit or prohibit capital actions (e.g., impacts to dividends and common stock repurchases) as a result of economic disruptions or events.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Bank of America says a reduction in its credit ratings could limit its access to funding or the capital markets.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Reduction in our credit ratings could limit our access to funding or the capital markets, increase borrowing costs or trigger additional collateral or funding requirements.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Bank of America says it and its customers are ongoing targets of an increasing number of cybersecurity threats and cyberattacks.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "We, our employees, customers, regulators and third parties are ongoing targets of an increasing number of cybersecurity threats and cyberattacks.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Bank of America says changes to international trade and investment policies could negatively impact financial markets globally.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Changes to international trade and investment policies by the U.S. or other countries, and the uncertainty about potential changes, could negatively impact financial markets globally.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Bank of America says it faces significant financial and reputational risks from lawsuits and regulatory and government action.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "We are subject to significant financial and reputational risks from potential liability arising from lawsuits and regulatory and government action.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Bank of America says it faces significant and increasing competition in the financial services industry.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "We face significant and increasing competition in the financial services industry.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Bank of America's Q3 2025 10-Q reports no material changes from the risk factors in its 2024 Form 10-K.",
+          "filing_id": "BAC_10-Q_2025-09-30",
+          "section": "Risk Factors",
+          "evidence": "There are no material changes from the risk factors set forth under Part 1, Item 1A. Risk Factors of the Corporation’s 2024 Annual Report on Form 10-K.",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan lists legal and regulatory risks, including the impact of extensive supervision and regulation, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Legal and Regulatory risks, including the impact of extensive supervision and regulation",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan lists credit risks, including adverse changes in the financial condition of clients and counterparties, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Credit risks, including the effects from adverse changes in the financial condition of clients, customers, counterparties, central counterparties and other market participants",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan lists liquidity risks, including the potential effect of credit rating downgrades on its liquidity and cost of funding.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "the potential adverse effects that any downgrades of JPMorganChase’s credit ratings could have on its liquidity and cost of funding",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan lists market risks, including the effects of changes in interest rates and credit spreads, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Market risks, including the effects that unfavorable economic and market events and conditions, political developments, changes in interest rates and credit spreads, and market fluctuations could have on JPMorganChase’s businesses",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says its ability to distribute capital to shareholders could be limited if it does not satisfy regulatory capital requirements.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Capital risks, including the risk that JPMorganChase’s ability to distribute capital to shareholders or to support its business activities could be limited if it does not satisfy applicable regulatory capital requirements.",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says future security breaches due to cyber attacks are inevitable.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "JPMorganChase has experienced security breaches due to cyber attacks in the past, and future breaches are inevitable.",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says its businesses could be negatively affected by economic uncertainty resulting from political and geopolitical developments.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "JPMorganChase’s businesses could be negatively affected by economic uncertainty resulting from political and geopolitical developments.",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says it can be vulnerable to competition from firms that are less regulated or unregulated.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "A highly-regulated financial services firm such as JPMorganChase can be vulnerable to competition from firms that are less regulated or unregulated.",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says its operations and competitive standing could be adversely affected by the development of advanced technologies such as AI.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "JPMorganChase’s operations, results, and competitive standing could be adversely affected by the development of advanced technologies such as AI.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "BAC",
+            "JPM"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sector-software-ai-risks",
+      "question": "What AI-related risks do the major software companies describe?",
+      "history": [],
+      "question_type": "sector",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "The Sector table's Software industry is Adobe, Microsoft, Oracle and Salesforce. Their latest fiscal years end in November 2025, June 2025, May 2025 and January 2025; Microsoft alone has later 10-Qs, the latest of which (Q2 FY2026) restates its risk factors with new AI passages. Rewritten for version 2 from every AI passage in each Risk Factors Section: each Company's headline AI risk is must-state, its competition, regulation, cost and intellectual property risks details.",
+      "expected_sources": [
+        {
+          "filing_id": "ADBE_10-K_2025-11-28",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "CRM_10-K_2025-01-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "ORCL_10-K_2025-05-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Adobe says there can be no assurance that its new or enhanced AI solutions will be successful, adopted or monetizable.",
+          "filing_id": "ADBE_10-K_2025-11-28",
+          "section": "Risk Factors",
+          "evidence": "there can be no assurance that our new or enhanced solutions and AI innovations will be successful, adopted or monetizable",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Adobe says issues relating to the development and use of AI in its solutions may result in reputational harm and liability.",
+          "filing_id": "ADBE_10-K_2025-11-28",
+          "section": "Risk Factors",
+          "evidence": "Issues relating to the development and use of AI in our solutions may result in reputational harm, liability and adverse business and financial results.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Adobe says it faces increasing competition from companies offering generative and agentic AI solutions.",
+          "filing_id": "ADBE_10-K_2025-11-28",
+          "section": "Risk Factors",
+          "evidence": "we face increasing competition from companies offering generative and agentic AI solutions",
+          "tier": "detail"
+        },
+        {
+          "fact": "Adobe says some of its operations are subject to the EU AI Act.",
+          "filing_id": "ADBE_10-K_2025-11-28",
+          "section": "Risk Factors",
+          "evidence": "Some of our operations are subject to the EU AI Act",
+          "tier": "detail"
+        },
+        {
+          "fact": "Adobe says the third-party AI models in its solutions could result in scrutiny and legal liability, including intellectual property infringement claims.",
+          "filing_id": "ADBE_10-K_2025-11-28",
+          "section": "Risk Factors",
+          "evidence": "The use and availability of third-party AI models in our solutions could result in scrutiny and legal liability, including intellectual property infringement claims.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Adobe says the costs of developing and deploying AI could adversely impact its margins.",
+          "filing_id": "ADBE_10-K_2025-11-28",
+          "section": "Risk Factors",
+          "evidence": "These costs could adversely impact our margins as we continue to make significant investments in AI development",
+          "tier": "detail"
+        },
+        {
+          "fact": "Adobe says other companies have prevented, limited or interfered with its ability to use third-party models in its solutions.",
+          "filing_id": "ADBE_10-K_2025-11-28",
+          "section": "Risk Factors",
+          "evidence": "Other companies have in the past, and may in the future prevent, limit or interfere with our ability to use third-party models in our solutions.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Adobe says it may be more difficult to protect its generative AI innovations with patents.",
+          "filing_id": "ADBE_10-K_2025-11-28",
+          "section": "Risk Factors",
+          "evidence": "it may be more difficult to protect our generative AI and related innovations with patents",
+          "tier": "detail"
+        },
+        {
+          "fact": "Salesforce says the markets and monetization strategies for Agentforce and Data Cloud remain relatively new and uncertain.",
+          "filing_id": "CRM_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "the markets and monetization strategies for certain offerings, including Agentforce and Data Cloud, remain relatively new and uncertain",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Salesforce offers Agentforce and Data Cloud through a consumption-based business model.",
+          "filing_id": "CRM_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "we offer certain products, including Agentforce and Data Cloud, through a consumption-based business model",
+          "tier": "detail"
+        },
+        {
+          "fact": "Salesforce says it has limited experience determining optimal pricing for its consumption-based contracts.",
+          "filing_id": "CRM_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "We have limited experience with determining optimal pricing for our consumption-based contracts.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Salesforce says social and ethical issues, including the use or capabilities of AI in its offerings, may result in reputational harm and liability.",
+          "filing_id": "CRM_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "Social and ethical issues, including the use or capabilities of AI in our offerings, may result in reputational harm and liability.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Salesforce says the known risks of generative AI include accuracy, bias, toxicity, privacy and security, and data provenance.",
+          "filing_id": "CRM_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "Known risks of generative AI currently include risks related to accuracy, bias, toxicity, privacy and security and data provenance.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Salesforce says competitors may incorporate AI into their offerings more efficiently or successfully than it can.",
+          "filing_id": "CRM_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "our competitors may be able to incorporate AI into their offerings more efficiently or successfully than we are able to and achieve greater and faster adoption",
+          "tier": "detail"
+        },
+        {
+          "fact": "Salesforce says the large language models used in its AI offerings may not remain available at reasonable prices or on commercially reasonable terms.",
+          "filing_id": "CRM_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "The hardware, software, data and cloud computing platforms that we rely on, including, for example, the large language models leveraged in our AI offerings, may not continue to be available at reasonable prices, on commercially reasonable terms or at all.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Salesforce says its use of AI may expose it to copyright infringement claims related to AI training or output.",
+          "filing_id": "CRM_10-K_2025-01-31",
+          "section": "Risk Factors",
+          "evidence": "the use or adoption of AI technologies in our products and services may expose us to copyright infringement or other intellectual property misappropriation claims related to AI training or output",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says issues in the development, deployment and use of AI may result in reputational or competitive harm or liability.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "Issues in the development, deployment, and use of AI may result in reputational or competitive harm or liability.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft says it is incurring significant costs to build and maintain infrastructure for cloud-based and AI services, reducing its operating margins.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "We are incurring significant costs to build and maintain infrastructure to support cloud-based and AI services, reducing operating margins.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft says AI technology and services are a highly competitive and rapidly evolving market.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "AI technology and services are a highly competitive and rapidly evolving market, and new competitors continue to enter the market.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says content generated by AI systems may be offensive, illegal, inaccurate or otherwise harmful.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "Content generated by AI systems may be offensive, illegal, inaccurate, or otherwise harmful.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says the EU's AI Act may increase costs or affect the operation of its AI models and services in the European market.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "the EU’s AI Act may increase costs or impact the provision or operation of our AI models and services in the European market",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft faces copyright infringement claims arising from AI training and output.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "including current copyright infringement and other claims arising from AI training and output",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says some of the AI in its offerings is developed by others, including its strategic partner OpenAI.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "This AI may be developed by Microsoft or others, including our strategic partner, OpenAI.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says companion or highly personalized AI systems may result in harmful over-reliance or dependence by users.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Companion or highly-personalized AI systems may result in over-reliance or dependence by users that is harmful.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says AI development and deployment has raised its energy use and emissions.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "AI development and deployment has and may continue to raise energy use and emissions, making it harder to meet these goals.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Oracle says its AI products may not operate as anticipated, which could hurt its reputation, revenues and profitability.",
+          "filing_id": "ORCL_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "Our AI products may not operate as anticipated, which could adversely affect our reputation, revenues and profitability.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Oracle says AI technologies present evolving legal, regulatory and ethical issues, including claims of bias and discrimination.",
+          "filing_id": "ORCL_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "AI technologies are rapidly changing and present evolving legal, regulatory and ethical issues, including claims of bias, discrimination",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Oracle says it may fail to recoup its investments in AI if its AI products fall short.",
+          "filing_id": "ORCL_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "recoup our investments in AI and our business and reputation may be harmed",
+          "tier": "detail"
+        },
+        {
+          "fact": "Oracle relies on partners and suppliers to produce some of its AI products.",
+          "filing_id": "ORCL_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "we rely on partners and suppliers to produce some of our AI products",
+          "tier": "detail"
+        },
+        {
+          "fact": "Oracle says it at times accepts less favorable terms with suppliers to avoid supply constraints on AI accelerators.",
+          "filing_id": "ORCL_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "industry supply capacity for AI accelerators, including graphics processing units, is competitive, and we at times have to accept less favorable terms with suppliers to avoid supply constraints",
+          "tier": "detail"
+        },
+        {
+          "fact": "Oracle says AI laws and regulations, including the EU's, could require it to adjust or limit its product offerings.",
+          "filing_id": "ORCL_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "numerous jurisdictions, including the EU, have passed or are considering laws and regulations that would impose additional data privacy and other compliance requirements on the use of AI and could require us to adjust or limit our product offerings in such jurisdictions",
+          "tier": "detail"
+        },
+        {
+          "fact": "Oracle says competition for highly skilled personnel in the AI field is intense.",
+          "filing_id": "ORCL_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "especially in the AI field, competition for highly skilled business, product development and technical personnel is intense and ongoing",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "ADBE",
+            "CRM",
+            "MSFT",
+            "ORCL"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sector-aerospace-government",
+      "question": "How dependent are the aerospace and defense companies on U.S. government contracts?",
+      "history": [],
+      "question_type": "sector",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "The Sector table's Aerospace & Defense industry is Boeing, Lockheed Martin and RTX, all with FY2025 10-Ks. Rewritten for version 2 from each Risk Factors Section's government contract passages, plus RTX's Business Section, which gives the share of its sales made to the U.S. government (version 1 left it out). The dollar amounts have no SEC company-facts value for these Companies, so the facts state shares, not amounts.",
+      "expected_sources": [
+        {
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "LMT_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Business"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Boeing earned 35% of its 2025 revenues under U.S. government contracts, including Foreign Military Sales.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In 2025, 35% of our revenues were earned pursuant to U.S. government contracts, which include FMS.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Boeing says the U.S. government may modify, curtail or terminate its contracts without prior notice, at its convenience or for default.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "The U.S. government contracting party may modify, curtail or terminate its contracts and subcontracts with us, without prior notice and either at its convenience or for default based on performance.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Boeing says funding under its U.S. government contracts may be reduced or withheld in the Congressional appropriations process.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "funding pursuant to our U.S. government contracts may be reduced or withheld as part of the U.S. Congressional appropriations process",
+          "tier": "detail"
+        },
+        {
+          "fact": "Boeing's BDS and BGS defense businesses each generated approximately 60% of their 2025 revenues from fixed-price contracts.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our BDS and BGS defense businesses each generated approximately 60% of their 2025 revenues from fixed-price contracts.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Boeing's non-U.S. customers, including Foreign Military Sales through the U.S. government, accounted for 46% of its 2025 total revenues.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In 2025, non-U.S. customers, which include Foreign Military Sales through the U.S. government (FMS), accounted for 46% of our total revenues",
+          "tier": "detail"
+        },
+        {
+          "fact": "Lockheed Martin derived 72% of its 2025 consolidated sales from the U.S. Government.",
+          "filing_id": "LMT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We derived 72% of our total consolidated sales from the U.S. Government in 2025",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Lockheed Martin derived 63% of its 2025 total consolidated sales from the Department of War, also known as the Department of Defense.",
+          "filing_id": "LMT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "including 63% from the Department of War (DoW), also known as the Department of Defense",
+          "tier": "detail"
+        },
+        {
+          "fact": "Lockheed Martin expects to continue to derive most of its sales from U.S. Government contracts.",
+          "filing_id": "LMT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We expect to continue to derive most of our sales from work performed under U.S. Government contracts.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Lockheed Martin says government shutdowns and continuing resolutions can affect the amount and timing of funding for its programs.",
+          "filing_id": "LMT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Budget uncertainty, extended or repeated U.S. Government shutdowns, the use of continuing resolutions, and the federal debt ceiling can adversely affect our industry and both the quantum and timing of funding for our programs.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Lockheed Martin's F-35 program, its largest, represented 27% of its 2025 total consolidated sales.",
+          "filing_id": "LMT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "is our largest program and represented 27% of our total consolidated sales in 2025",
+          "tier": "detail"
+        },
+        {
+          "fact": "Lockheed Martin says 28% of its 2025 total sales were associated with international customers.",
+          "filing_id": "LMT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In 2025, 28% of our total sales were associated with international customers.",
+          "tier": "detail"
+        },
+        {
+          "fact": "RTX says U.S. government sales constitute a significant portion of its consolidated sales.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "U.S. government sales constitute a significant portion of our consolidated sales.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "RTX's sales to the U.S. government, excluding foreign military sales, were 38% of its total net sales in 2025.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Business",
+          "evidence": "Sales to the U.S. government as a percentage of total net sales(1) (2) |  | 38 | % |  | 40 | % |  | 46 | % (1)    Excludes foreign military sales through the U.S. government.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "RTX's sales to the U.S. government fell from 46% of its total net sales in 2023 to 38% in 2025.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Business",
+          "evidence": "Sales to the U.S. government as a percentage of total net sales(1) (2) |  | 38 | % |  | 40 | % |  | 46 | %",
+          "tier": "detail"
+        },
+        {
+          "fact": "RTX says the U.S. government is its largest customer, representing a substantial majority of its total defense sales.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Business",
+          "evidence": "The U.S. government is our largest customer, representing a substantial majority of our total defense sales.",
+          "tier": "detail"
+        },
+        {
+          "fact": "RTX says changes in U.S. government defense spending could negatively impact its financial position and results of operations.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Changes in U.S. government defense spending could negatively impact our financial position, results of operations, liquidity, and overall business.",
+          "tier": "detail"
+        },
+        {
+          "fact": "RTX says its U.S. government contracts generally permit the government to terminate them at its convenience or for default.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "U.S. government contracts with prime contractors generally permit the government to terminate the contract, in whole or in part, without prior notice, at the U.S. government’s convenience or for default based on performance.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "risk-bac-change-snapshot",
+      "question": "How have Bank of America's risk factors changed over the last two years?",
+      "history": [],
+      "question_type": "risk",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "A trend asked of a Snapshot Company: one FY2024 10-K and three 2025 10-Qs, each reporting no material changes. Rewritten for version 2 from the Risk Factors Section of all four Filings: version 1 named only the latest 10-Q, and the first two 10-Qs say the same.",
+      "expected_sources": [
+        {
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "BAC_10-Q_2025-03-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "BAC_10-Q_2025-06-30",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "BAC_10-Q_2025-09-30",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Bank of America's Q3 2025 10-Q reports no material changes from the risk factors in its 2024 Form 10-K.",
+          "filing_id": "BAC_10-Q_2025-09-30",
+          "section": "Risk Factors",
+          "evidence": "There are no material changes from the risk factors set forth under Part 1, Item 1A. Risk Factors of the Corporation’s 2024 Annual Report on Form 10-K.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Bank of America's Q1 2025 10-Q reports no material changes from the risk factors in its 2024 Form 10-K.",
+          "filing_id": "BAC_10-Q_2025-03-31",
+          "section": "Risk Factors",
+          "evidence": "There are no material changes from the risk factors set forth under Part 1, Item 1A. Risk Factors of the Corporation’s 2024 Annual Report on Form 10-K.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Bank of America's Q2 2025 10-Q reports no material changes from the risk factors in its 2024 Form 10-K.",
+          "filing_id": "BAC_10-Q_2025-06-30",
+          "section": "Risk Factors",
+          "evidence": "There are no material changes from the risk factors set forth under Part 1, Item 1A. Risk Factors of the Corporation’s 2024 Annual Report on Form 10-K.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "snapshot_trend",
+          "companies": [
+            "BAC"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "missing-wells-fargo-vs-jpm",
+      "question": "Compare the risk factors of JPMorgan and Wells Fargo.",
+      "history": [],
+      "question_type": "missing_company",
+      "split": "dev",
+      "starter": {
+        "order": 6,
+        "label": "Compare JPMorgan and Wells Fargo"
+      },
+      "tags": [],
+      "notes": "Wells Fargo is not in the Corpus (assumption 9). The answer covers JPMorgan only and names Wells Fargo as missing. Rewritten for version 2 from JPMorgan's whole Risk Factors Section: its legal and regulatory, credit and capital risks are must-state, its other principal risk categories details.",
+      "expected_sources": [
+        {
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "JPMorgan lists legal and regulatory risks, including the impact of extensive supervision and regulation, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Legal and Regulatory risks, including the impact of extensive supervision and regulation",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan lists credit risks, including adverse changes in the financial condition of clients and counterparties, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Credit risks, including the effects from adverse changes in the financial condition of clients, customers, counterparties, central counterparties and other market participants",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan says its ability to distribute capital to shareholders could be limited if it does not satisfy regulatory capital requirements.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Capital risks, including the risk that JPMorganChase’s ability to distribute capital to shareholders or to support its business activities could be limited if it does not satisfy applicable regulatory capital requirements.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan lists market risks, including the effects of changes in interest rates and credit spreads, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Market risks, including the effects that unfavorable economic and market events and conditions, political developments, changes in interest rates and credit spreads, and market fluctuations could have on JPMorganChase’s businesses",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan lists liquidity risks, including the potential effect of credit rating downgrades on its liquidity and cost of funding.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "the potential adverse effects that any downgrades of JPMorganChase’s credit ratings could have on its liquidity and cost of funding",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan lists operational risks, including its dependence on its operational systems and employees, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Operational risks, including risks associated with JPMorganChase’s dependence on its operational systems and its employees",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says future security breaches due to cyber attacks are inevitable.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "JPMorganChase has experienced security breaches due to cyber attacks in the past, and future breaches are inevitable.",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan lists strategic risks, including damage to its competitive standing from ineffective business strategies, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Strategic risks, including the damage to JPMorganChase’s competitive standing that could result from ineffective business strategies",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan lists political risks, including economic uncertainty resulting from political developments, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Political risks, including the potential negative effects on JPMorganChase’s businesses due to economic uncertainty resulting from political developments.",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan lists country risks, including the outbreak or escalation of hostilities between countries, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Country risks, including potential impacts on JPMorganChase’s businesses from an outbreak or escalation of hostilities between countries or within a country or region",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan lists conduct risks, including misconduct by its employees, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Conduct risks, including the negative impact that could result from misconduct of JPMorganChase’s employees.",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan lists people risks, including attracting and retaining qualified employees, among its principal risk factors.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "People risks, including the criticality of attracting and retaining qualified employees.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "missing_company",
+          "companies": [
+            "Wells Fargo"
+          ]
+        }
+      ]
+    }
+  ]
 }

@@ -2,7 +2,7 @@
 
 The Golden Set is the evaluation's ground truth: 30 labelled questions that the retrieval and generation harnesses score the system against. It lives in [`data/eval/golden_set.json`](../data/eval/golden_set.json) and is read by `edgar_rag.golden_set.load_golden_set()`, which checks the schema. It was written before any retrieval Arm or prompt ran, so no label was written with results in view.
 
-This page describes version 1, the set every result so far was measured on, the Required Fact tiers that version 2 adds, and the [Brief Suite](#the-brief-suite), the brief's questions in a file of their own. Version 2's [file](#the-file) is built and empty until its cases are drafted; the rest of version 2 is decided but not built yet: see [Version 2](#version-2). Version 1's file stays unchanged as a record, and a test pins its digest.
+This page describes version 1, the set every result so far was measured on, the Required Fact tiers that version 2 adds, and the [Brief Suite](#the-brief-suite), the brief's questions in a file of their own. Version 2's [file](#the-file) is built and holds the first nine of version 1's cases [rewritten](#the-rewritten-version-1-cases); the rest of version 2 is decided but not built yet: see [Version 2](#version-2). Version 1's file stays unchanged as a record, and a test pins its digest.
 
 ## What it covers
 
@@ -131,7 +131,7 @@ No id is in both files: the loader rejects one that is.
 
 ## Version 2
 
-Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions and four variants of each, and version 2's file, still empty, are built so far.
+Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions and four variants of each, and version 2's file, with the first nine of version 1's 27 other cases rewritten, are built so far.
 
 ### The file
 
@@ -149,6 +149,27 @@ Version 2 lives in [`data/eval/golden_set_v2.json`](../data/eval/golden_set_v2.j
 - **No shared id** between version 2 and the Brief Suite; the Brief Suite's loader checks both versions.
 - **Figures from the reference.** Every dollar amount a version 2 or Brief Suite Required Fact states must match a USD value that the SEC company-facts reference records for the fact's own Filing (matched on the accession number in its source URL), at the amount's printed precision: "$60.9 billion" matches 60.85 to 60.95 billion. A figure about a Company the reference does not cache fails. The test is skipped when the cache is absent (`make sec-facts`). Percentages are not checked against it.
 - **The mix by kind of question**, counted per split against ADR 0012's table below and printed with the test run, not yet enforced. A follow-up counts as one whatever it asks; a Coverage Gap case asks about a missing Company or a stale Filing, or for a trend or outlook the Filings cannot give (a `snapshot_trend` or `no_guidance` gap); the rest count by question type (`risk`; `figure_trend` and `outlook` as trends; `sector`).
+
+### The rewritten version 1 cases
+
+Version 1's 27 cases other than the brief's are rewritten into version 2 in three batches of nine, all `dev`. Each keeps its id, question, history, question type and starter, and a test checks that a version 2 case with a version 1 id keeps them and is `dev`. Its labels are drafted again from the whole of each relevant Section, never from what retrieval returns: compound facts split into one-claim facts, every fact tiered, and facts added for anything the version 1 labels left out. The first batch:
+
+| Case | Required Facts (must-state / detail) | Sections drafted from |
+|---|---|---|
+| `risk-aapl-legal-proceedings` | 4 / 12 | Legal Proceedings of Apple's FY2025 10-K and Q1 FY2026 10-Q |
+| `risk-ko-market-risk` | 5 / 11 | Market Risk of Coca-Cola's FY2024 10-K, its foreign currency and interest rate passages |
+| `risk-unh-cybersecurity` | 4 / 14 | Risk Factors, MD&A and, new in version 2, Cybersecurity (Item 1C) of UnitedHealth's FY2024 10-K |
+| `risk-aapl-nvda-supply-chain` | 7 / 16 | Risk Factors of Apple's FY2025 10-K and, new, its Q1 FY2026 10-Q; of NVIDIA's FY2025 10-K and Q3 FY2026 10-Q |
+| `sector-banks-risks` | 7 / 13 | Risk Factors of Bank of America's FY2024 10-K and Q3 2025 10-Q, and of JPMorgan's FY2025 10-K |
+| `sector-software-ai-risks` | 8 / 24 | Risk Factors of Adobe's, Salesforce's, Microsoft's and Oracle's latest 10-Ks and, new, Microsoft's Q2 FY2026 10-Q |
+| `sector-aerospace-government` | 4 / 13 | Risk Factors of Boeing's, Lockheed Martin's and RTX's FY2025 10-Ks and, new, RTX's Business Section |
+| `risk-bac-change-snapshot` | 1 / 2 | Risk Factors of Bank of America's FY2024 10-K and, new, all three of its 2025 10-Qs |
+| `missing-wells-fargo-vs-jpm` | 3 / 9 | Risk Factors of JPMorgan's FY2025 10-K |
+
+- **New Sources.** Five cases gain an expected Source that version 1 left out because a passage answering the question sits there: UnitedHealth's Cybersecurity Section, Apple's later 10-Q, Microsoft's latest 10-Q (which restates its risk factors with new AI passages), RTX's Business Section (the share of its sales made to the U.S. government) and Bank of America's first two 2025 10-Qs.
+- **Must-state or detail.** The must-state facts are what any good answer gives: each Company's defining risks, its headline figure (Boeing's 35%, Lockheed Martin's 72%, RTX's 38% of sales to the U.S. government), and, for a comparison, each side's. Dates, the second half of a split fact, risk categories beyond the main ones and remediation steps are details.
+- **No amount without a reference value.** None of this batch's dollar amounts has an SEC company-facts value: Coca-Cola's $28.7 billion of revenue outside the U.S. and $18,442 million of foreign currency notional value, UnitedHealth's Change Healthcare costs, and every amount for Companies the reference does not cache (Boeing, Lockheed Martin, RTX). Their facts state no amount, as in the Brief Suite; the amount stays in the evidence quote. Version 1's Coca-Cola facts stated two of these amounts.
+- **Review.** The developer waived the review of drafted labels on 2026-10-17 (spec #43), so the label tests and the read-back of each case against its notes are the review.
 
 ### What is decided
 
