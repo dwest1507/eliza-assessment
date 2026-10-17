@@ -24,9 +24,17 @@ but never decided on.
   the Arm rule. Each setting's report is named by its setting (`chunks-600-budget-32000`).
 
 Under any rule, when several challengers qualify, the **cheapest** wins: the lowest
-mean answer cost, then the earliest listed. `RULES` states the rules, and is the only
-place they differ. Choice files written under version 1's two-sided p < 0.05 rule are
-records and are not recomputed.
+mean answer cost, then the earliest listed.
+
+**The one-call rule** (2026-10-17): the Answer Call is a question's only API call, so a
+challenger whose Arm makes another at query time (`Arm.query_api_call` in
+`edgar_eval.retrieval`: the hosted `dense` and `hybrid`) is never chosen and never
+answers a paid run. It is still compared when its report is given, unconstrained: its
+comparison says whether it would qualify, and is labelled `UNCONSTRAINED`, "available if
+the one-call limit is lifted".
+
+`RULES` states the rules, and is the only place they differ. Choice files written under
+version 1's two-sided p < 0.05 rule are records and are not recomputed.
 
 **The Control Run** (ADR 0011). Every comparison also takes a Control Run: the shipped
 choice run again, compared with the shipped run under the same rule. If it comes out
@@ -98,6 +106,7 @@ __all__ = [
     "AHEAD_P",
     "BEHIND_P",
     "RULES",
+    "UNCONSTRAINED",
     "Candidate",
     "Choice",
     "Comparison",
@@ -117,6 +126,11 @@ the name `make eval-generation CHUNK_TOKENS=<N>` uses."""
 
 RuleName = Literal["arms", "generators", "settings"]
 Score = Literal["fact_recall", "faithfulness", "coverage_gaps", "contradicted_claims"]
+
+UNCONSTRAINED = "available if the one-call limit is lifted"
+"""How a report labels an Arm that makes an API call at query time: it can't ship, but
+it shows what lifting the one-call limit would offer. The retrieval harness's screen
+uses it too."""
 
 AHEAD_P = 0.10
 """A challenger is ahead on a score when the one-sided sign test gives p below this."""
@@ -153,7 +167,8 @@ def _run_arms(split: str, reuse: bool, out: TextIO) -> tuple[list[Path], dict | 
     screen = report["screen"]
     kept = set(screen["kept"])
     paths = []
-    for arm in (a for a in ARMS if not a.shipped and a.name in kept):
+    # A screen saved before the one-call rule may keep an Arm that can't ship: never paid.
+    for arm in (a for a in ARMS if not a.shipped and a.shippable and a.name in kept):
         path = _EVAL_DIR / f"generation-arms-{split}-{arm.name}.json"
         if not (reuse and path.exists()):
             print(f"\n== Arm {arm.name} ==", file=out, flush=True)
@@ -362,6 +377,9 @@ class Candidate:
     contradicted_claims: Mapping[str, bool | None] = field(default_factory=dict)
     """Whether each case's answer has no Contradicted Claim; None when that is unknown
     (its Faithfulness judgment failed, or a version 1 report, which did not record it)."""
+    query_api_call: bool = False
+    """Whether the candidate's Arm makes an API call at query time: if so it is never
+    chosen (the one-call rule)."""
 
     @classmethod
     def from_report(cls, report: Mapping[str, Any], rule: RuleName = "arms") -> Candidate:
@@ -382,7 +400,18 @@ class Candidate:
             },
             cost_usd=fmean(costs) if costs and None not in costs else None,
             contradicted_claims={c["case_id"]: _no_contradiction(c) for c in cases},
+            query_api_call=_query_api_call(report),
         )
+
+
+def _query_api_call(report: Mapping[str, Any]) -> bool:
+    """Whether a generation report's Arm makes an API call at query time: as the report
+    records it, or, for a report saved before the one-call rule, as the Arm table says."""
+    if "query_api_call" in report:
+        return bool(report["query_api_call"])
+    from edgar_eval.arms import ARMS
+
+    return any(a.query_api_call for a in ARMS if a.name == report.get("arm"))
 
 
 def _no_contradiction(case: Mapping[str, Any]) -> bool | None:
@@ -436,7 +465,11 @@ class Comparison:
     contradicted_claims: ScoreComparison
     """Paired per case on "has no Contradicted Claim"."""
     qualifies: bool
-    """Whether the challenger qualifies under the rule it was compared by."""
+    """Whether the challenger qualifies under the rule it was compared by, on its scores
+    alone: unconstrained by the one-call rule."""
+    shippable: bool = True
+    """False for a challenger whose Arm makes an API call at query time: never chosen,
+    whether or not it qualifies."""
 
 
 @dataclass(frozen=True)
@@ -491,6 +524,7 @@ def compare(challenger: Candidate, shipped: Candidate, rule: RuleName = "arms") 
         **scores,
         qualifies=any(scores[f].verdict == "ahead" for f in spec.ahead_on_any)
         and all(scores[f].verdict != "behind" for f in spec.behind_on_none),
+        shippable=not challenger.query_api_call,
     )
 
 
@@ -511,7 +545,8 @@ def choose(
 ) -> Choice:
     """Apply a selection rule. With a `control` (the shipped choice run again, ADR
     0011), the choice is inconclusive, and the shipped choice stands, when the Control
-    Run is ahead of the shipped run on any of the rule's ahead metrics."""
+    Run is ahead of the shipped run on any of the rule's ahead metrics. A challenger
+    that makes an API call at query time is never chosen (the one-call rule)."""
     comparisons = {c.name: compare(c, shipped, rule) for c in challengers}
     checked = compare(control, shipped, rule) if control is not None else None
     noisy = [
@@ -529,7 +564,7 @@ def choose(
     qualifying = [
         (c.cost_usd if c.cost_usd is not None else float("inf"), n, c.name)
         for n, c in enumerate(challengers)
-        if comparisons[c.name].qualifies
+        if comparisons[c.name].qualifies and comparisons[c.name].shippable
     ]
     return Choice(
         rule=rule,
@@ -655,6 +690,11 @@ def _print(choice: Choice, out: TextIO) -> None:
         print(f"\n{name} ({c.cases} cases, ${cost or 0:.4f} per answer)", file=out)
         _print_scores(c, out)
         print(f"  Qualifies: {'yes' if c.qualifies else 'no'}", file=out)
+        if not c.shippable:
+            print(
+                f"  Can't ship: its Arm makes an API call at query time ({UNCONSTRAINED})",
+                file=out,
+            )
     if choice.inconclusive:
         print(f"\nInconclusive: {choice.reason}.", file=out)
     print(f"\nChosen: {choice.chosen}", file=out)

@@ -132,14 +132,60 @@ def test_the_command_compares_generation_reports_and_writes_the_choice(tmp_path,
         return str(path)
 
     out = tmp_path / "arm-choice-dev.json"
-    code = main(
-        ["compare", report("fts5", [0.0] * 8), report("dense", [0.5] * 8), "--json", str(out)]
-    )
+    challenger = report("dense-local", [0.5] * 8)
+    code = main(["compare", report("fts5", [0.0] * 8), challenger, "--json", str(out)])
 
     assert code == 0
     printed = capsys.readouterr().out
-    assert "dense" in printed and "Fact Recall" in printed and "Chosen: dense" in printed
-    assert json.loads(out.read_text())["chosen"] == "dense"
+    assert "dense-local" in printed and "Fact Recall" in printed
+    assert "Chosen: dense-local" in printed
+    assert json.loads(out.read_text())["chosen"] == "dense-local"
+
+
+# --- The one-call rule (2026-10-17) ------------------------------------------------------
+# The Answer Call is a question's only API call: an Arm that makes another at query time
+# is compared and reported, unconstrained, but never chosen.
+
+
+def test_a_challenger_that_makes_an_api_call_at_query_time_is_never_chosen():
+    hosted = _candidate("dense", [1.0] * 8, cost=0.001)
+    hosted = Candidate(**{**hosted.__dict__, "query_api_call": True})
+    local = _candidate("dense-local", [1.0] * 6 + [0.0] * 2, cost=0.003)
+
+    assert choose(SHIPPED, [hosted]).chosen == "fts5"
+    choice = choose(SHIPPED, [hosted, local])
+    assert choice.chosen == "dense-local"  # though the hosted Arm is cheaper and further ahead
+    assert choice.comparisons["dense"].qualifies  # unconstrained, it would qualify
+    assert not choice.comparisons["dense"].shippable
+    assert choice.comparisons["dense-local"].shippable
+
+
+def test_a_report_says_whether_its_arm_makes_an_api_call_at_query_time(tmp_path):
+    cases = [{"case_id": "c0", "fact_recall": 1.0, "faithfulness": 1.0}]
+
+    recorded = {"arm": "rerank", "query_api_call": True, "cases": cases}
+    assert Candidate.from_report(recorded).query_api_call
+    # A report saved before the rule: the Arm table says.
+    assert Candidate.from_report({"arm": "hybrid", "cases": cases}).query_api_call
+    assert not Candidate.from_report({"arm": "hybrid-local", "cases": cases}).query_api_call
+    assert not Candidate.from_report({"model": "gpt-6-luna", "cases": cases}).query_api_call
+
+
+def test_the_compare_command_labels_an_arm_that_cannot_ship(tmp_path, capsys):
+    from edgar_eval.selection import main
+
+    shipped = _report(tmp_path / "generation-dev.json", "fts5", [0.0] * 8)
+    hosted = _report(tmp_path / "generation-arms-dev-hybrid.json", "hybrid", [1.0] * 8)
+    out = tmp_path / "arm-choice-dev.json"
+
+    main(["compare", shipped, hosted, "--json", str(out)])
+
+    printed = capsys.readouterr().out
+    assert "available if the one-call limit is lifted" in printed
+    assert "Chosen: fts5" in printed
+    saved = json.loads(out.read_text())
+    assert saved["comparisons"]["hybrid"]["qualifies"]
+    assert saved["comparisons"]["hybrid"]["shippable"] is False
 
 
 # --- The one-sided thresholds (ADR 0011) -------------------------------------------------
@@ -790,7 +836,8 @@ def test_the_arm_comparison_answers_only_the_arms_the_screen_keeps(
 
     def fake_retrieval(argv, *, arms=None, out=None):
         screened.append(argv)
-        _retrieval_report(Path(argv[argv.index("--json") + 1]), [[True]], 9_000, kept=["hybrid"])
+        path = Path(argv[argv.index("--json") + 1])
+        _retrieval_report(path, [[True]], 9_000, kept=["hybrid-local"])
         return 0
 
     monkeypatch.setattr(retrieval, "main", fake_retrieval)
@@ -801,10 +848,32 @@ def test_the_arm_comparison_answers_only_the_arms_the_screen_keeps(
     assert runs == [  # then the round's two runs and the one Arm the screen kept
         "generation-dev.json",
         "generation-control-dev.json",
-        "generation-arms-dev-hybrid.json",
+        "generation-arms-dev-hybrid-local.json",
     ]
-    assert list(choice["comparisons"]) == ["hybrid"]
-    assert choice["screen"]["kept"] == ["hybrid"]
+    assert list(choice["comparisons"]) == ["hybrid-local"]
+    assert choice["screen"]["kept"] == ["hybrid-local"]
+
+
+def test_the_arm_comparison_never_answers_through_an_arm_that_makes_an_api_call(
+    harness_runs, monkeypatch, tmp_path
+):
+    """Even a screen saved before the one-call rule, which kept the hosted Arms, sends
+    none of them to a paid run."""
+    from edgar_eval import retrieval
+
+    runs, _ = harness_runs
+
+    def fake_retrieval(argv, *, arms=None, out=None):
+        path = Path(argv[argv.index("--json") + 1])
+        _retrieval_report(path, [[True]], 9_000, kept=["dense", "hybrid", "rerank"])
+        return 0
+
+    monkeypatch.setattr(retrieval, "main", fake_retrieval)
+
+    _, choice = _command("arms", tmp_path=tmp_path)
+
+    assert runs[2:] == ["generation-arms-dev-rerank.json"]
+    assert list(choice["comparisons"]) == ["rerank"]
 
 
 def test_the_settings_command_answers_only_the_settings_the_screen_keeps(

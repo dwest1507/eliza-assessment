@@ -810,17 +810,24 @@ def test_the_command_answers_through_a_chosen_arm_and_records_it(index, tmp_path
 
     used = []
 
-    def arm(name, shipped=False):
+    def arm(name, shipped=False, query_api_call=False):
         def prepare(messages, path, **settings):
             used.append(name)
             return prepare_answer_context(messages, path, **settings)
 
-        return Arm(name, name, lambda m, i, **settings: [], shipped=shipped, prepare=prepare)
+        return Arm(
+            name,
+            name,
+            lambda m, i, **settings: [],
+            shipped=shipped,
+            prepare=prepare,
+            query_api_call=query_api_call,
+        )
 
     path = tmp_path / "generation-arms-dev-dense.json"
     argv = ["--case", "risk-aapl-tsla-jpm", "--index", str(index), "--log", str(tmp_path / "l")]
     common = dict(judge=FakeJudge(), fact_values=lambda tickers: [], out=io.StringIO())
-    arms = [arm("fts5", shipped=True), arm("dense")]
+    arms = [arm("fts5", shipped=True), arm("dense", query_api_call=True)]
 
     main(
         [*argv, "--arm", "dense", "--json", str(path)], model=FakeModel(ANSWER), arms=arms, **common
@@ -828,7 +835,9 @@ def test_the_command_answers_through_a_chosen_arm_and_records_it(index, tmp_path
     main([*argv], model=FakeModel(ANSWER), arms=arms, **common)
 
     assert used == ["dense", "fts5"]  # the shipped Arm by default
-    assert json.loads(path.read_text())["arm"] == "dense"
+    saved = json.loads(path.read_text())
+    assert saved["arm"] == "dense"
+    assert saved["query_api_call"] is True  # so the selection rule never chooses it
 
 
 def _saved_report(index, tmp_path, answer, fact_values):

@@ -28,6 +28,13 @@ Answer Call's input), then the earliest listed. The report lists every candidate
 and why it was kept or dropped. `evaluate` screens the Arms it scores; `screen` takes any
 candidates, such as each chunk size and context budget's report (`make eval-settings`).
 
+**The one-call rule** (2026-10-17, `docs/assumptions.md` #1): the Answer Call is the only
+API call a question may make. Every Arm records whether it makes another at query time
+(`Arm.query_api_call`), such as a hosted embedding of the question. Such an Arm is scored
+and gated like any other, unconstrained, but the screen never sends it to a paid run, and
+its reports label it "available if the one-call limit is lifted"
+(`edgar_eval.selection.UNCONSTRAINED`).
+
 `make eval-retrieval` runs every Arm in `edgar_eval.arms.ARMS` on the dev split, prints
 the scores and writes them as JSON under `data/derived/eval/`. The index (and so its
 chunk size) and the context budget can be chosen per run, and the report records both:
@@ -58,7 +65,7 @@ from edgar_eval.metrics import (
     recall_at_k,
     reciprocal_rank,
 )
-from edgar_eval.selection import BEHIND_P, one_sided_verdict
+from edgar_eval.selection import BEHIND_P, UNCONSTRAINED, one_sided_verdict
 from edgar_rag.golden_set import DEFAULT_GOLDEN_SET, GoldenCase, load_golden_set
 from edgar_rag.retrieval import (
     CONTEXT_BUDGET_TOKENS,
@@ -98,6 +105,15 @@ class Arm:
     """The Answer Context the Arm gives the Answer Call, from the same arguments as
     `retrieve`; None for an Arm measured by retrieval only. When there is one, the
     retrieval harness scores the Sources of the context it prepares."""
+    query_api_call: bool = False
+    """True for an Arm that makes an API call at query time besides the Answer Call,
+    such as embedding the question with a hosted model. Under the one-call rule it can't
+    ship: it is reported, but never screened on to a paid run nor chosen."""
+
+    @property
+    def shippable(self) -> bool:
+        """Whether the Arm could ship under the one-call rule."""
+        return not self.query_api_call
 
 
 @dataclass(frozen=True)
@@ -153,6 +169,10 @@ class ArmScores:
     overall: Summary
     by_type: dict[str, Summary]
     cases: tuple[CaseScore, ...]
+    query_api_call: bool = False
+    """Whether the Arm makes an API call at query time (`Arm.query_api_call`)."""
+    shippable: bool = True
+    """Whether it could ship under the one-call rule."""
 
     def evidence(self) -> EvidenceRun | None:
         """The Arm's Evidence Reached, for the gate and the screen; None for an Arm
@@ -163,6 +183,7 @@ class ArmScores:
             name=self.name,
             evidence={c.case_id: c.evidence_reached or () for c in self.cases},
             mean_source_tokens=self.overall.mean_source_tokens,
+            shippable=self.shippable,
         )
 
 
@@ -176,6 +197,9 @@ class EvidenceRun:
     """Per case id, Evidence Reached per Required Fact, in the case's fact order."""
     mean_source_tokens: float | None = None
     """Mean tokens of Source text per Answer Context: the screen's cost."""
+    shippable: bool = True
+    """False for a candidate that makes an API call at query time: the screen never
+    sends it on."""
 
     @property
     def facts(self) -> int:
@@ -254,6 +278,9 @@ class Screened:
     """One-sided exact p-value that the candidate is behind on Evidence Reached."""
     kept: bool
     reason: str
+    shippable: bool = True
+    """False for a candidate that makes an API call at query time, dropped whatever it
+    reached."""
 
 
 @dataclass(frozen=True)
@@ -271,9 +298,11 @@ class Screen:
 def screen(
     shipped: EvidenceRun, candidates: Sequence[EvidenceRun], limit: int = MAX_CHALLENGERS
 ) -> Screen:
-    """Screen candidates on Evidence Reached before any paid Answer Call (ADR 0011)."""
+    """Screen candidates on Evidence Reached before any paid Answer Call (ADR 0011). A
+    candidate that makes an API call at query time is gated like the others but never
+    goes on, nor takes a place among those that do (the one-call rule)."""
     gates = {c.name: compare_evidence(c, shipped) for c in candidates}
-    passing = [c for c in candidates if gates[c.name].result.p_behind >= BEHIND_P]
+    passing = [c for c in candidates if c.shippable and gates[c.name].result.p_behind >= BEHIND_P]
     ranked = sorted(
         passing,
         key=lambda c: (
@@ -287,6 +316,12 @@ def screen(
 
     def reason(c: EvidenceRun) -> str:
         p = gates[c.name].result.p_behind
+        if not c.shippable:
+            verdict = gates[c.name].verdict
+            return (
+                f"dropped: makes an API call at query time, so it can't ship ({verdict} "
+                f"on Evidence Reached, p behind = {p:.3f}; {UNCONSTRAINED})"
+            )
         if c.name not in rank:
             return f"dropped: behind on Evidence Reached (p behind = {p:.3f} < {BEHIND_P:.2f})"
         place = f"{rank[c.name]} of {len(ranked)} not behind on Evidence Reached"
@@ -309,6 +344,7 @@ def screen(
                 p_behind=gates[c.name].result.p_behind,
                 kept=c.name in kept,
                 reason=reason(c),
+                shippable=c.shippable,
             )
             for c in candidates
         ),
@@ -415,6 +451,8 @@ def _score_arm(
     return ArmScores(
         name=arm.name,
         shipped=arm.shipped,
+        query_api_call=arm.query_api_call,
+        shippable=arm.shippable,
         overall=_summarise(case_scores, ks),
         by_type={kind: _summarise(group, ks) for kind, group in by_type.items()},
         cases=case_scores,
@@ -550,7 +588,10 @@ def _print_report(report: RetrievalReport, split: str, out: TextIO) -> None:
         + ["recall@all", "MRR", "Sources", "tokens", "evidence"]
     )
     for scores in report.arms.values():
-        print(f"\nArm {scores.name}{' (shipped)' if scores.shipped else ''}", file=out)
+        label = " (shipped)" if scores.shipped else ""
+        if not scores.shippable:
+            label = f" (makes an API call at query time: {UNCONSTRAINED})"
+        print(f"\nArm {scores.name}{label}", file=out)
         rows = [("overall", scores.overall)] + sorted(scores.by_type.items())
         table = [headers] + [_row(name, summary, report.ks) for name, summary in rows]
         widths = [max(len(row[i]) for row in table) for i in range(len(headers))]

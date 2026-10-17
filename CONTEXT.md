@@ -63,11 +63,11 @@ The shipped choice run again beside its challengers in a comparison, so the comp
 _Avoid_: Baseline, rerun
 
 **Arm**:
-One way of ranking the chunks that become an Answer Call's Sources (FTS5, dense embeddings, a hybrid, a re-ranker), scored by the retrieval and generation harnesses on the Golden Set.
+One way of ranking the chunks that become an Answer Call's Sources (FTS5, dense embeddings, a hybrid, a re-ranker), scored by the retrieval and generation harnesses on the Golden Set. Each Arm records whether it makes an API call at query time, such as a hosted embedding of the question; under the one-call rule (the Answer Call is a question's only API call) such an Arm can't ship, and is reported as available if the one-call limit is lifted.
 _Avoid_: Retriever, strategy, variant
 
 **Shipped Arm**:
-The Arm the product uses, which every other Arm is compared with question by question. FTS5 unless a challenger is shown to be better.
+The Arm the product uses, which every other Arm is compared with question by question. FTS5 unless a challenger that makes no API call at query time is shown to be better.
 _Avoid_: Baseline, default retriever
 
 ### Filings

@@ -116,7 +116,7 @@ def _arm(name, rankings, shipped=False):
     )
 
 
-def _evidence_arm(name, reached, shipped=False, padding=0):
+def _evidence_arm(name, reached, shipped=False, padding=0, query_api_call=False):
     """An Arm that prepares an Answer Context whose one Source, Apple's Risk Factors,
     holds the evidence quotes `reached[question]` (and `padding` words of other text)."""
 
@@ -131,7 +131,14 @@ def _evidence_arm(name, reached, shipped=False, padding=0):
     def retrieve(messages, index, **settings):
         return [A]
 
-    return Arm(name, f"fixed evidence for {name}", retrieve, shipped=shipped, prepare=prepare)
+    return Arm(
+        name,
+        f"fixed evidence for {name}",
+        retrieve,
+        shipped=shipped,
+        prepare=prepare,
+        query_api_call=query_api_call,
+    )
 
 
 def _two_fact_cases(n):
@@ -232,6 +239,46 @@ def test_the_screen_keeps_the_top_three_of_five_ties_going_to_the_cheapest():
     for name in screened:  # every candidate screened, and why
         assert f"{name}: " in printed
     assert "Go on: most, cheaper, cheaper-later" in printed
+
+
+def test_the_screen_never_sends_an_arm_that_makes_an_api_call_to_a_paid_run():
+    """The one-call rule (2026-10-17): an Arm that makes an API call at query time, such
+    as a hosted embedding of the question, can't ship. It is still scored and gated,
+    unconstrained, and labelled as available if the one-call limit is lifted."""
+    cases = _two_fact_cases(6)
+    shipped = _evidence_arm("fts5", _reaching(ALL, NONE), shipped=True)
+    hosted = _evidence_arm("hosted", _reaching(ALL, ALL), query_api_call=True)  # far ahead
+    local = _evidence_arm("local", _reaching(ALL, NONE))
+
+    report = evaluate(cases, [shipped, hosted, local], index="unused")
+
+    assert report.screen.kept == ("local",)
+    screened = {c.name: c for c in report.screen.candidates}
+    assert not screened["hosted"].kept and not screened["hosted"].shippable
+    assert "available if the one-call limit is lifted" in screened["hosted"].reason
+    assert screened["hosted"].gained == 6  # its scores are still shown, unconstrained
+    assert screened["local"].shippable
+    gate = {c.arm: c for c in report.comparisons}
+    assert gate["hosted"].verdict == "ahead"
+    saved = json.loads(json.dumps(report.to_dict()))
+    assert saved["arms"]["hosted"]["query_api_call"] is True
+    assert saved["arms"]["hosted"]["shippable"] is False
+    assert saved["arms"]["local"]["shippable"] is True
+
+    printed = io.StringIO()
+    print_screen(report.screen, printed)
+    assert "available if the one-call limit is lifted" in printed.getvalue()
+
+
+def test_an_arm_that_makes_an_api_call_does_not_take_a_place_in_the_screen():
+    cases = _two_fact_cases(6)
+    shipped = _evidence_arm("fts5", _reaching(ALL, NONE), shipped=True)
+    hosted = [_evidence_arm(f"hosted-{n}", _reaching(ALL, ALL), query_api_call=True) for n in "abc"]
+    local = [_evidence_arm(f"local-{n}", _reaching(ALL, NONE)) for n in "abc"]
+
+    report = evaluate(cases, [shipped, *hosted, *local], index="unused")
+
+    assert report.screen.kept == ("local-a", "local-b", "local-c")
 
 
 def test_multi_turn_cases_are_scored_on_their_final_turn():
@@ -462,14 +509,30 @@ def test_the_command_scores_a_chosen_split(tmp_path, index):
 # --- The challenger Arms -----------------------------------------------------------------
 
 
-def test_the_arms_are_fts5_shipped_and_the_three_challengers_of_the_spec():
+def test_the_arms_are_fts5_shipped_and_the_challengers():
     assert {arm.name: arm.shipped for arm in ARMS} == {
         "fts5": True,
         "dense": False,
         "hybrid": False,
         "rerank": False,
+        "dense-local": False,
+        "hybrid-local": False,
     }
     assert all(arm.prepare is not None for arm in ARMS)
+
+
+def test_every_arm_records_whether_it_makes_an_api_call_at_query_time():
+    """One API call per question, the Answer Call (2026-10-17): the hosted embedding
+    Arms embed each question with OpenAI, so they can't ship; local models are fine."""
+    assert {arm.name: arm.query_api_call for arm in ARMS} == {
+        "fts5": False,
+        "dense": True,
+        "hybrid": True,
+        "rerank": False,
+        "dense-local": False,
+        "hybrid-local": False,
+    }
+    assert all(arm.shippable is not arm.query_api_call for arm in ARMS)
 
 
 def test_a_seam_arm_ranks_the_sources_its_ranker_gives_the_answer_call(index):

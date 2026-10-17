@@ -744,12 +744,15 @@ def main(
         context_budget=args.context_budget,
         chunk_tokens=index_chunk_tokens(args.index) if args.index.exists() else None,
     )
+    # Whether the Arm makes an API call at query time: if so, it can't ship (the one-call
+    # rule), and the selection rule never chooses it.
+    one_call = {"query_api_call": arm.query_api_call}
     if suite is not None:
         brief = evaluate_brief_suite(cases, model, judge, args.index, runs=runs, **settings)
         print_brief_suite_report(brief, out)
         if args.json:
             args.json.parent.mkdir(parents=True, exist_ok=True)
-            data = {"brief_suite_version": suite.version} | brief.to_dict()
+            data = {"brief_suite_version": suite.version} | brief.to_dict() | one_call
             args.json.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
             print(f"\nWritten to {args.json.resolve()}", file=out)
         return 1 if any(r.errors for r in brief.run_reports) else 0
@@ -759,6 +762,7 @@ def main(
     if args.json:
         args.json.parent.mkdir(parents=True, exist_ok=True)
         data = {"split": args.split} | current_round(args.golden_set) | report.to_dict()
+        data |= one_call
         args.json.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
         print(f"\nWritten to {args.json.resolve()}", file=out)
     return 1 if report.errors else 0

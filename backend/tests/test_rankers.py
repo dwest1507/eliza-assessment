@@ -1,7 +1,8 @@
 """The challenger Arms' rankers: reciprocal-rank fusion, dense search over chunk
-embeddings and cross-encoder re-ranking, each with a fake model, and the chunk
-embeddings store they read."""
+embeddings and cross-encoder re-ranking, each with a fake model, the chunk embeddings
+store they read, and the local embedding model, which makes no network call."""
 
+import socket
 import sqlite3
 
 import numpy as np
@@ -185,3 +186,102 @@ def test_the_cross_encoder_reorders_the_top_of_the_lexical_ranking_only(index):
         == expected
     )
     assert {s.ticker for s in reranked.sources} == {s.ticker for s in shipped.sources}
+
+
+# --- The local embedding model --------------------------------------------------------------
+# The dense-local and hybrid-local Arms embed the question on this machine: under the
+# one-call rule, ranking a question makes no network call. Skipped until the pinned model
+# is downloaded (`make local-embeddings` downloads it).
+
+
+@pytest.fixture
+def no_network(monkeypatch):
+    """Every socket connection and name lookup fails, as with the network unplugged."""
+
+    def refuse(*args, **kwargs):
+        raise AssertionError("a network call was made")
+
+    monkeypatch.setattr(socket.socket, "connect", refuse)
+    monkeypatch.setattr(socket.socket, "connect_ex", refuse)
+    monkeypatch.setattr(socket, "create_connection", refuse)
+    monkeypatch.setattr(socket, "getaddrinfo", refuse)
+
+
+@pytest.fixture(scope="module")
+def local_model_cached():
+    from huggingface_hub import try_to_load_from_cache
+
+    from edgar_eval.embeddings import LOCAL_EMBEDDING_REPO, LOCAL_EMBEDDING_REVISION
+
+    for filename in ("tokenizer.json", "onnx/model.onnx"):
+        cached = try_to_load_from_cache(
+            LOCAL_EMBEDDING_REPO, filename, revision=LOCAL_EMBEDDING_REVISION
+        )
+        if not isinstance(cached, str):
+            pytest.skip("the local embedding model is not downloaded: run `make local-embeddings`")
+
+
+def _chunk(index, ticker, phrase):
+    db = sqlite3.connect(index)
+    return db.execute(
+        "SELECT id, text FROM chunks WHERE ticker = ? AND text LIKE ? ORDER BY id LIMIT 1",
+        (ticker, f"%{phrase}%"),
+    ).fetchone()
+
+
+def test_ranking_a_question_with_the_local_model_makes_no_network_call(
+    local_model_cached, index, no_network
+):
+    from edgar_eval.embeddings import LOCAL_EMBEDDING_MODEL, OnnxEmbedder, _unit
+
+    chunks = [
+        _chunk(index, "AAPL", "iPhone"),
+        _chunk(index, "TSLA", "Gigafactory Texas"),
+        _chunk(index, "JPM", "deposits"),
+    ]
+    embedder = OnnxEmbedder()  # loaded from the local cache, with the network refused
+    store = ChunkEmbeddings(
+        ids=np.array([i for i, _ in chunks]),
+        matrix=_unit(np.array(embedder([t for _, t in chunks]))),
+        model=LOCAL_EMBEDDING_MODEL,
+    )
+    dense = DenseRanker(store, QueryEmbeddings(embedder.for_queries()))
+    request = _request(
+        eligible=tuple(i for i, _ in chunks),
+        lexical=(chunks[0][0],),
+        question="Where does Tesla build vehicles at Gigafactory Texas?",
+    )
+
+    assert dense(request)[0] == chunks[1][0]
+    assert set(HybridRanker(dense)(request)) == {i for i, _ in chunks}
+
+
+def test_the_local_model_embeds_questions_with_its_query_instruction(local_model_cached):
+    from edgar_eval.embeddings import LOCAL_QUERY_PREFIX, OnnxEmbedder
+
+    passages = OnnxEmbedder()
+    queries = passages.for_queries()
+    question = "What are Apple's main risk factors?"
+
+    (as_passage,), (as_query,) = passages([question]), queries([question])
+
+    assert queries.session is passages.session  # one model in memory
+    assert queries.prefix == LOCAL_QUERY_PREFIX and passages.prefix == ""
+    assert as_passage != as_query
+    assert np.linalg.norm(as_query) == pytest.approx(1.0, abs=1e-5)
+
+
+def test_the_local_chunk_embeddings_are_built_with_no_network_call(
+    local_model_cached, tmp_path, indexed_filings, no_network
+):
+    from edgar_eval.embeddings import LOCAL_EMBEDDING_MODEL, embeddings_dir, main
+    from edgar_rag.retrieval import build_index
+
+    filing = min((f for f in indexed_filings if f.ticker == "TSLA"), key=lambda f: len(f.body))
+    small = build_index([filing], tmp_path / "edgar_rag.sqlite")
+
+    assert main(["--local", "--index", str(small)]) == 0
+
+    store = ChunkEmbeddings.load(embeddings_dir(small), LOCAL_EMBEDDING_MODEL, small)
+    (count,) = sqlite3.connect(small).execute("SELECT COUNT(*) FROM chunks").fetchone()
+    assert len(store.ids) == count and store.matrix.shape[1] == 384

@@ -13,7 +13,7 @@ make eval-retrieval ARMS=fts5    # only some Arms (the Shipped Arm always runs)
 make eval-retrieval ARMS=fts5 CHUNK_TOKENS=450 CONTEXT_BUDGET=24000   # another chunk size and context budget
 ```
 
-It needs the index (`make index`, built automatically when missing) and no LLM call. The dense and hybrid Arms also need the chunk embeddings (`make embeddings`, built automatically when missing; see [Arm comparison](#arm-comparison)), and embed each question once, caching the vector, so a rerun makes no network call. It prints the scores and writes them as JSON to `data/derived/eval/retrieval-<split>.json`, for the evaluation export. `CHUNK_TOKENS` and `CONTEXT_BUDGET` score another chunk size or context budget without editing code ([ADR 0010](adr/0010-chunk-size-and-context-budget.md)): `CHUNK_TOKENS=450` reads `data/derived/edgar_rag-chunks450.sqlite`, built from the Corpus when missing (about 40 seconds), and the report goes to `retrieval-<split>-chunks450-budget24000.json`, so the shipped report is kept. Every report records its chunk size and context budget. The dense and hybrid Arms' embeddings belong to the shipped index, so use `ARMS=fts5` with `CHUNK_TOKENS`. The code is [`backend/src/edgar_eval/retrieval.py`](../backend/src/edgar_eval/retrieval.py); the Arms are in [`backend/src/edgar_eval/arms.py`](../backend/src/edgar_eval/arms.py).
+It needs the index (`make index`, built automatically when missing) and no LLM call. The dense and hybrid Arms also need the chunk embeddings (`make embeddings`, built automatically when missing; see [Arm comparison](#arm-comparison)), and embed each question once, caching the vector, so a rerun makes no network call. The `dense-local` and `hybrid-local` Arms need local chunk embeddings (`make local-embeddings`, free, built automatically when missing; see [The one-call rule and the local Arms](#the-one-call-rule-and-the-local-arms)), and embed each question on the machine, with no network call at all. It prints the scores and writes them as JSON to `data/derived/eval/retrieval-<split>.json`, for the evaluation export. `CHUNK_TOKENS` and `CONTEXT_BUDGET` score another chunk size or context budget without editing code ([ADR 0010](adr/0010-chunk-size-and-context-budget.md)): `CHUNK_TOKENS=450` reads `data/derived/edgar_rag-chunks450.sqlite`, built from the Corpus when missing (about 40 seconds), and the report goes to `retrieval-<split>-chunks450-budget24000.json`, so the shipped report is kept. Every report records its chunk size and context budget. The embedding Arms' embeddings belong to the shipped index, so use `ARMS=fts5` with `CHUNK_TOKENS`. The code is [`backend/src/edgar_eval/retrieval.py`](../backend/src/edgar_eval/retrieval.py); the Arms are in [`backend/src/edgar_eval/arms.py`](../backend/src/edgar_eval/arms.py).
 
 ### Method
 
@@ -33,14 +33,18 @@ It needs the index (`make index`, built automatically when missing) and no LLM c
 
 All Arms are defined in one tuple, `ARMS`, and the harness requires exactly one to be marked shipped. Each Arm runs inside the Query Scope's hard filters.
 
-| Arm | What it does | Status |
-|---|---|---|
-| `fts5` | The retrieval seam as shipped: `bm25()` over the FTS5 index within each Company's hard filter ([ADR 0002](adr/0002-fts5-retrieval-in-one-derived-sqlite-file.md)) | **Shipped** |
-| `dense` | OpenAI `text-embedding-3-small` embeddings of every chunk inside the hard filters, ranked by exact inner product with the question's embedding | Challenger |
-| `hybrid` | Weighted reciprocal-rank fusion of the `bm25()` and dense rankings: each chunk scores `w / (1 + rank)` in each, with equal weights | Challenger |
-| `rerank` | The first 20 chunks of the `bm25()` ranking re-ordered by the cross-encoder `cross-encoder/ms-marco-MiniLM-L6-v2` (ONNX, CPU, pinned to a Hugging Face commit); the rest follow in `bm25()` order | Challenger |
+| Arm | What it does | API call at query time | Status |
+|---|---|---|---|
+| `fts5` | The retrieval seam as shipped: `bm25()` over the FTS5 index within each Company's hard filter ([ADR 0002](adr/0002-fts5-retrieval-in-one-derived-sqlite-file.md)) | No | **Shipped** |
+| `dense` | OpenAI `text-embedding-3-small` embeddings of every chunk inside the hard filters, ranked by exact inner product with the question's embedding | Yes: embeds the question with OpenAI | Challenger, can't ship |
+| `hybrid` | Weighted reciprocal-rank fusion of the `bm25()` and dense rankings: each chunk scores `w / (1 + rank)` in each, with equal weights | Yes, as `dense` | Challenger, can't ship |
+| `rerank` | The first 20 chunks of the `bm25()` ranking re-ordered by the cross-encoder `cross-encoder/ms-marco-MiniLM-L6-v2` (ONNX, CPU, pinned to a Hugging Face commit); the rest follow in `bm25()` order | No | Challenger |
+| `dense-local` | As `dense`, with the chunks and the question embedded by the local `BAAI/bge-small-en-v1.5` (ONNX, CPU, pinned to a Hugging Face commit) | No | Challenger |
+| `hybrid-local` | As `hybrid`, fusing `bm25()` with `dense-local` | No | Challenger |
 
-Every Arm is the shipped retrieval seam with its own ranker in place of `bm25()` (the `Ranker` hook of `prepare_answer_context`), so the Query Scope, hard filters, Section plan, per-Company budget, deduplication and change routing are the same for all four, and only the ranking differs. A ranker can return only chunks inside the hard filters. [ADR 0008](adr/0008-fts5-stays-the-shipped-arm.md) records the comparison and its result: FTS5 stays shipped.
+Every Arm is the shipped retrieval seam with its own ranker in place of `bm25()` (the `Ranker` hook of `prepare_answer_context`), so the Query Scope, hard filters, Section plan, per-Company budget, deduplication and change routing are the same for all of them, and only the ranking differs.
+
+**Which Arms can ship.** The Answer Call is a question's only API call ([assumption 1](assumptions.md#1-one-api-call-per-question), the stricter reading accepted on 2026-10-17). Each Arm records whether it makes another API call at query time (`query_api_call` in `arms.py`, and in each Arm's scores in `retrieval-<split>.json` and in each generation report). `dense` and `hybrid` do, so they can't ship: they are still scored and gated, unconstrained, and reported as "available if the one-call limit is lifted", but the screen never sends them to a paid run and the Arm rule never chooses them ([The one-call rule and the local Arms](#the-one-call-rule-and-the-local-arms)). `fts5`, `rerank`, `dense-local` and `hybrid-local` run locally and can ship. A ranker can return only chunks inside the hard filters. [ADR 0008](adr/0008-fts5-stays-the-shipped-arm.md) records the comparison and its result: FTS5 stays shipped.
 
 **How the FTS5 ranking is read.** The retrieval seam retrieves each Company separately, with its own share of the context budget, and numbers each Company's Sources after the previous Company's. Ranking by Source number would put the last-named Company's best Source behind every other Company's worst, which would penalise multi-Company questions for the order the Companies were named in. The `fts5` Arm instead takes each Company's next-best Source in turn.
 
@@ -175,6 +179,7 @@ Golden Set version 1, dev split, prompt v5, `gpt-6-luna`, judged by `jev-1.13.0`
 
 ```sh
 make embeddings      # once: the dense and hybrid Arms' chunk embeddings (about 35 cents, about 25 minutes)
+make local-embeddings  # once: the dense-local and hybrid-local Arms' chunk embeddings (free, about 30 minutes)
 make eval-retrieval  # every Arm, no LLM call
 make eval-arms       # every Arm through the generation harness, then the selection rule (about $0.07 per Arm)
 ```
@@ -591,6 +596,7 @@ The saved reports of version 1 (28 generation runs) were read case by case.
   - any Contradicted Claim fails the answer (built: see [Method](#method-1), step 3);
   - each sentence goes to the judge with its heading and table header, so a table row or an "it" keeps its meaning (built: [Method](#method-1), step 3);
   - the Brief Suite's cases are reported one by one (built: [The Brief Suite run](#the-brief-suite-run)).
+- **The one-call rule and the local Arms:** the Answer Call is a question's only API call (decided 2026-10-17), so an Arm that embeds the question with OpenAI can't ship; two local embedding Arms join the comparison (built: see [The one-call rule and the local Arms](#the-one-call-rule-and-the-local-arms)).
 - **Another generator:** `claude-haiku-5-5`, listed at `gpt-6-luna`'s price ($0.10 in, $0.50 out per million tokens, for prompts under 100k tokens, on 2026-10-17), is the one challenger to `gpt-6-luna` on version 2. It is in the table of compared generators, so `make eval-generation MODEL=claude-haiku-5-5` answers with it, and `make eval-generators` runs the comparison by default, for about $0.15 on dev. The version 1 generators stay in the table, so their reports still price.
 
 #### The one-sided thresholds
@@ -619,6 +625,31 @@ Built for version 2 (issue #57), in `backend/src/edgar_eval/retrieval.py`, with 
   - **Arms:** `make eval-retrieval` screens the challenger Arms it scores (the report's `screen`), and `make eval-arms` runs the retrieval harness first, writing `retrieval-<split>.json`, then answers only through the Arms the screen keeps, beside the round's shipped run and Control Run. Its choice file records the screen.
   - **Settings:** `make eval-settings CANDIDATES="450:32000 600:48000"` runs the retrieval harness on the Shipped Arm for the shipped setting and each named one first, writing `retrieval-<split>-chunks<N>-budget<B>.json`, names each as the settings rule does (`chunks-600-budget-48000`), and answers only the settings the screen keeps. Its choice file records the screen.
 - **The "How it works" page** still shows version 1's retrieval view, gated on hit@10, until a later spec moves it to version 2: for a report gated on Evidence Reached, the export pairs the Arms' cases on hit@10 itself, as version 1's harness did.
+
+#### The one-call rule and the local Arms
+
+Built for version 2 (issue #84), in `backend/src/edgar_eval/arms.py`, `retrieval.py`, `selection.py` and `embeddings.py`. On 2026-10-17 the developer set the rule at one API call of any kind per question: the Answer Call ([assumption 1](assumptions.md#1-one-api-call-per-question)). Local models inside retrieval are fine. The `dense` and `hybrid` Arms embed each question with OpenAI `text-embedding-3-small`, a second API call, and version 1's evaluation hid it, because it caches question embeddings.
+
+- **Every Arm records whether it makes an API call at query time** (`query_api_call`; see the table in [The Arms](#the-arms)). The retrieval report records it per Arm (`query_api_call` and `shippable`), and so does each generation report (`query_api_call`). For a generation report saved before the rule, the selection rule reads it from the Arm table.
+- **An Arm that does is never sent to a paid run by the screen**, and doesn't take one of its three places: its reason says it makes an API call at query time and can't ship. **It is never chosen by the Arm rule** either, and `make eval-arms` skips it even if a screen saved earlier kept it.
+- **It is still reported, unconstrained.** It is scored and gated like any other Arm, and its comparison still says whether it would qualify (`qualifies`, with `shippable` false). Reports label it "available if the one-call limit is lifted".
+- **Two local Arms**, `dense-local` and `hybrid-local`, embed both the chunks and the question with `BAAI/bge-small-en-v1.5`, pinned to Hugging Face commit `5c38ec7c`, run by ONNX Runtime on the CPU with the `tokenizers` stack the `rerank` Arm already uses. A question gets the model's query instruction. A text is embedded as its CLS token, truncated to the model's 512 tokens, so a 600-token chunk is embedded on its opening. A query embedding only matches chunk embeddings from the same model, so `make local-embeddings` embeds the whole index again, locally and for free, into `data/derived/embeddings/bge-small-en-v1.5.npy` (48,448 chunks, about 30 minutes on 16 CPU threads). The model downloads once, then loads from the local cache with no network call, and a test refuses every socket while the model loads and ranks a question. `hybrid-local` fuses with FTS5 as `hybrid` does (weighted reciprocal-rank fusion, k = 1, equal weights).
+- **If a local Arm ships** (decided by the version 2 comparisons, #73), its embeddings join `make index` and its ranker and packages move from `edgar_eval` into the product. Until then they stay in the dev dependency group.
+
+**First numbers on dev**, free (`make eval-retrieval`, no LLM call and no API call for the local Arms): Golden Set version 1, dev split, 17 scored cases with 44 Required Facts, 600-token chunks and the 32k budget, 2026-10-17.
+
+| Arm | API call at query time | hit@10 | recall@10 | MRR | Evidence Reached | gained / lost vs `fts5` | gate (one-sided) | screen |
+|---|---|---|---|---|---|---|---|---|
+| `fts5` (shipped) | No | 0.88 | 0.82 | 0.73 | 30 of 44 | – | – | – |
+| `dense` | Yes | 0.88 | 0.82 | 0.76 | 30 of 44 | 5 / 5, p behind = 0.623 | indistinguishable | dropped: can't ship (available if the one-call limit is lifted) |
+| `hybrid` | Yes | 0.88 | 0.82 | 0.80 | 31 of 44 | 4 / 3, p behind = 0.773 | indistinguishable | dropped: can't ship (available if the one-call limit is lifted) |
+| `rerank` | No | 0.88 | 0.82 | 0.68 | 30 of 44 | 0 / 0, p behind = 1.000 | indistinguishable | kept, 1st |
+| `dense-local` | No | 0.82 | 0.75 | 0.71 | 27 of 44 | 2 / 5, p behind = 0.227 | indistinguishable | kept, 3rd |
+| `hybrid-local` | No | 0.88 | 0.82 | 0.72 | 28 of 44 | 1 / 3, p behind = 0.312 | indistinguishable | kept, 2nd |
+
+- **No Arm is distinguishable from FTS5 on Evidence Reached.** The local Arms reach a few facts fewer, but not enough to be behind at p < 0.20, so the screen keeps all three shippable challengers: `rerank`, `hybrid-local` and `dense-local`, in that order. Under the old screen the two hosted Arms would have taken places.
+- **The local model is weaker than OpenAI's here.** `dense-local` reaches 27 facts against `dense`'s 30 and drops to hit@10 0.82: it ranks `outlook-meta-capex-2026`'s expected MD&A 12th, outside the top 10, and leaves one of `sector-aerospace-government`'s three expected Sections out of its top 10. Fusing it with FTS5 brings hit@10 back to 0.88. Both local Arms lose `risk-aapl-tsla-jpm`'s one fact that FTS5 reaches, and `followup-regulatory-exposure`'s one.
+- These are version 1 dev numbers, recorded to show the Arms run. The choice between them is made on version 2 dev, by the version 2 comparisons (#73).
 
 #### The judge study's sample
 
