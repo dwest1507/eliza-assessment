@@ -14,6 +14,7 @@ import {
   type ResearchMessage,
 } from '@/lib/chat'
 import { loadConversation, saveConversation } from '@/lib/conversation'
+import { WHATS_COVERED_ID, type CoverageSummary } from '@/lib/coverage'
 import { STARTERS } from '@/lib/starters'
 
 /** Which answer's Sources the panel shows, and which of them is open. */
@@ -26,9 +27,10 @@ interface OpenSource {
  * The research workspace: a conversation thread, starter prompts on an empty
  * conversation, and a Sources panel that opens on a citation click. The conversation is
  * kept in session storage, so it survives a page refresh, and "New conversation" clears
- * it, so an old Query Scope can't leak into a new topic.
+ * it, so an old Query Scope can't leak into a new topic. With a Corpus coverage summary,
+ * the empty conversation also says how many Companies are covered.
  */
-export default function Workspace() {
+export default function Workspace({ coverage }: { coverage?: CoverageSummary }) {
   const [transport] = useState(
     () => new DefaultChatTransport<ResearchMessage>({ api: '/api/chat' })
   )
@@ -115,7 +117,7 @@ export default function Workspace() {
           <div className="min-h-0 flex-1 overflow-y-auto">
             <div className="mx-auto flex max-w-3xl flex-col gap-6 px-5 py-8">
               {messages.length === 0 ? (
-                <EmptyState disabled={busy} onPick={ask} />
+                <EmptyState disabled={busy} onPick={ask} coverage={coverage} />
               ) : (
                 messages.map((message) =>
                   message.role === 'user' ? (
@@ -201,7 +203,15 @@ export default function Workspace() {
   )
 }
 
-function EmptyState({ disabled, onPick }: { disabled: boolean; onPick: (q: string) => void }) {
+function EmptyState({
+  disabled,
+  onPick,
+  coverage,
+}: {
+  disabled: boolean
+  onPick: (q: string) => void
+  coverage?: CoverageSummary
+}) {
   return (
     <section className="flex flex-col gap-6 pt-10">
       <div>
@@ -234,7 +244,25 @@ function EmptyState({ disabled, onPick }: { disabled: boolean; onPick: (q: strin
           </li>
         ))}
       </ul>
+      {coverage && <CoverageLine coverage={coverage} />}
     </section>
+  )
+}
+
+/** How many Companies are covered and how many have a trend's worth of history, in plain words. */
+function CoverageLine({ coverage }: { coverage: CoverageSummary }) {
+  const count = coverage.companies.length
+  return (
+    <p className="text-[13.5px] text-muted">
+      {count} {count === 1 ? 'company' : 'companies'} covered · {coverage.tracked} with two or more
+      years of quarterly filings ·{' '}
+      <Link
+        href={`/how-it-works#${WHATS_COVERED_ID}`}
+        className="text-accent underline-offset-2 transition-colors duration-200 hover:underline"
+      >
+        See what’s covered
+      </Link>
+    </p>
   )
 }
 

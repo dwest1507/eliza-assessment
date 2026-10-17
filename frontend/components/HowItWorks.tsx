@@ -1,5 +1,7 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import WhatsCovered from '@/components/WhatsCovered'
+import { coverageSummary } from '@/lib/coverage'
 import {
   type BriefSuiteResults,
   type CoverageCompany,
@@ -49,6 +51,7 @@ export default function HowItWorks({ data }: { data: EvalExport }) {
       </header>
 
       <main className="mx-auto flex max-w-5xl flex-col gap-20 px-5 py-14">
+        <WhatsCovered summary={coverageSummary(data.coverage)} />
         <Architecture data={data} />
         <Scoreboard data={data} />
         {data.briefSuite && <BriefSuite brief={data.briefSuite} />}

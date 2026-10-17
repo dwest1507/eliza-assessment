@@ -2,6 +2,7 @@ import { render, screen, within } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 import HowItWorks from '@/components/HowItWorks'
 import Workspace from '@/components/Workspace'
+import { coverageSummary } from '@/lib/coverage'
 import type { EvalExport } from '@/lib/evalExport'
 import fixture from './fixtures/eval-export.json'
 
@@ -240,6 +241,35 @@ describe('the "How it works" page', () => {
     ).toHaveLength(1)
   })
 
+  it('lists what’s covered, grouped by how much history each Company has', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const covered = section('What’s covered')
+    expect(covered).toHaveAttribute('id', 'whats-covered')
+    const tracked = within(covered).getByRole('list', { name: /two or more years/i })
+    expect(
+      within(tracked)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent)
+    ).toEqual(['Apple Inc. (AAPL)'])
+    const snapshot = within(covered).getByRole('list', { name: /only a few filings/i })
+    expect(
+      within(snapshot)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent)
+    ).toEqual(['JPMorgan Chase & Co. (JPM)'])
+    // Plain words by default, the domain terms on hover.
+    expect(within(covered).getByTitle('Tracked Companies')).toBeInTheDocument()
+    expect(within(covered).getByTitle('Snapshot Companies')).toBeInTheDocument()
+  })
+
+  it('lists every Company of the export in what’s covered', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const covered = section('What’s covered')
+    expect(within(covered).getAllByRole('listitem')).toHaveLength(EXPORT.coverage.companies.length)
+  })
+
   it('links back to the workspace', () => {
     render(<HowItWorks data={EXPORT} />)
 
@@ -255,5 +285,22 @@ describe('the workspace', () => {
       'href',
       '/how-it-works'
     )
+  })
+
+  it('says on the empty screen how many Companies are covered, linking to the list', () => {
+    render(<Workspace coverage={coverageSummary(EXPORT.coverage)} />)
+
+    const line = screen.getByText(/companies covered/)
+    expect(line).toHaveTextContent(
+      '2 companies covered · 1 with two or more years of quarterly filings'
+    )
+    expect(within(line).getByRole('link')).toHaveAttribute('href', '/how-it-works#whats-covered')
+  })
+
+  it('shows no coverage line without the coverage summary', () => {
+    render(<Workspace />)
+
+    expect(screen.queryByText(/companies covered/)).not.toBeInTheDocument()
+    expect(screen.getByRole('list', { name: 'Starter prompts' })).toBeInTheDocument()
   })
 })
