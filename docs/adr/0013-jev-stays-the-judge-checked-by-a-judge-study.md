@@ -2,7 +2,7 @@
 status: accepted
 ---
 
-# Jev stays the judge, checked against the developer's labels before any Golden Set version 2 comparison
+# Jev stays the judge, checked against Claude's blind labels before any Golden Set version 2 comparison
 
 Jev (`jev-1.13.0`) judges Fact Recall and Faithfulness, for about $0.0015 per case. Its verdicts have never been checked against a human's. The evaluation review of 2026-10-17 found that:
 
@@ -15,7 +15,7 @@ A Claude or OpenAI judge that quotes its evidence would be auditable. With Claud
 ## The judge study
 
 1. **Sample from the saved reports.** About 150 (answer, Required Fact) items and 200 (claim, cited Sources) items, over-sampling uncertain probabilities, unsupported and contradicted verdicts, and answers from every generator compared, including a first `claude-haiku-5-5` run. The fact items pair the saved answers with Required Facts rewritten in the one-claim format of ADR 0012, not with version 1's compound facts, so the study measures Jev on the labels it will judge. It therefore runs after version 1's cases are rewritten and before Golden Set version 2's new cases are drafted, so anything it shows about wording can shape them.
-2. **Label by hand.** The developer labels every item without seeing Jev's verdicts, in the sample's shuffled order. Every fact item is labelled, since the cut-off is set from them. Claim items stop after 100 if the share of unsupported or contradicted claims Jev calls supported is decided either way: the upper end of its 95% interval is below one in five, or the lower end is above it. Otherwise all 200 are labelled. This rule is fixed before any item is labelled.
+2. **Label blind.** Every item is labelled without seeing Jev's verdicts, in the sample's shuffled order. The labels were to be the developer's; the developer delegated them to Claude (`claude-opus-5-5`), by the same rules ([Outcome](#outcome-2026-10-17)). Every fact item is labelled, since the cut-off is set from them. Claim items stop after 100 if the share of unsupported or contradicted claims Jev calls supported is decided either way: the upper end of its 95% interval is below one in five, or the lower end is above it. Otherwise all 200 are labelled. This rule is fixed before any item is labelled.
 3. **Judge twice.** Jev judges every item twice. Claude Haiku 5.5 may be run once as a reference judge, for under $1. It is a reference, not a candidate.
 4. **Measure:**
    - Jev's agreement with the labels, as accuracy and Cohen's kappa;
@@ -26,7 +26,7 @@ A Claude or OpenAI judge that quotes its evidence would be auditable. With Claud
 The study decides three things:
 
 - **The probability from which a Required Fact counts as stated** (0.5 today), or whether Fact Recall averages the probabilities instead.
-- **Whether claims are split by an LLM** into one-claim, self-contained statements instead of into sentences in code. This is adopted only if it agrees with the developer's labels better. It would run as a pinned API call costing about $0.15 per 150-case run.
+- **Whether claims are split by an LLM** into one-claim, self-contained statements instead of into sentences in code. This is adopted only if it agrees with the labels better. It would run as a pinned API call costing about $0.15 per 150-case run.
 - **Whether Jev stays.** This ADR is revisited if Jev calls more than one in five unsupported or contradicted claims supported, or if its error differs by generator.
 
 ## Considered options
@@ -37,7 +37,8 @@ The study decides three things:
 
 ## Consequences
 
-- Judging stays at about $0.25 per 150-case run. The study's cost is the developer's time, about 5 to 7 hours of labelling, or about 4 to 5 hours if the claim items stop at 100.
+- Judging stays at about $0.25 per 150-case run. The study was to cost the developer about 5 to 7 hours of labelling, or about 4 to 5 hours if the claim items stopped at 100. Claude labelled instead, so it cost the developer no labelling time.
+- **No human is in the loop.** Claude made the study's labels, and the developer did not review the drafted Golden Set and Brief Suite labels ([ADR 0012's note](0012-golden-set-version-2-and-the-brief-suite.md#note-2026-10-17-no-developer-review-of-drafted-labels)). The developer accepted this as a limitation of the demo (decided 2026-10-17, recorded on #43). In production, hand-labelled data would ideally be used.
 - A Jev failure is recorded against the judgment it affects, not against the whole case, so the code checks still count.
 - An LLM claim split, if adopted, is its own follow-up, with its output cached per answer so every judge and every rescore sees the same claims.
 
