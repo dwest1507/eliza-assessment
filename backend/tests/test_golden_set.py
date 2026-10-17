@@ -205,9 +205,11 @@ def test_every_required_fact_is_a_sentence_naming_its_company(
     for case in labelled_cases:
         for fact in case.required_facts:
             names = company_names[filings_by_id[fact.filing_id].ticker]
+            # The Sector table writes "McDonalds Corporation"; a sentence writes "McDonald's".
+            unquoted = re.sub(r"['’]", "", fact.fact)
             assert fact.fact.endswith("."), (case.id, fact.fact)
             assert fact.evidence.strip(), (case.id, fact.fact)
-            assert any(re.search(rf"\b{re.escape(n)}", fact.fact) for n in names), (
+            assert any(re.search(rf"\b{re.escape(n)}", unquoted) for n in names), (
                 case.id,
                 fact.fact,
                 names,
@@ -725,6 +727,64 @@ def test_new_slice_3_holds_nine_figure_trends_on_tracked_companies(golden_set_v2
     assert set(NEW_SLICE_3.values()) == {"revenue", "net income", "segment revenue"}
     assert sizes == {1, 2}  # single-Company and two-Company questions
     assert windows == {"two years", "named"}  # "the last two years" and named fiscal years
+
+
+NEW_SLICE_4_OUTLOOK = {
+    "outlook-amzn-q1-2026-guidance": "guidance",
+    "outlook-mcd-2025": "guidance",
+    "outlook-intc-2026": "no_guidance",
+    "outlook-nflx-growth": "no_guidance",
+}
+NEW_SLICE_4_SECTOR = {
+    "sector-aerospace-supply-chain": ("aerospace and defense companies", "Aerospace & Defense"),
+    "sector-industrials-tariffs": ("industrial companies", "Industrials"),
+    "sector-energy-operational-risks": ("energy companies", "Energy"),
+    "sector-banks-capital-liquidity": ("major banks", "Banks"),
+    "sector-financials-digital-assets": ("financial companies", "Financials"),
+}
+"""Version 2's fourth slice of new cases (issue #69): four outlook questions, each by
+whether its guidance is in the Filings, and five sector questions, each by its Sector
+phrase and the Sector table value (sector or industry) the phrase resolves to."""
+
+
+def test_new_slice_4_holds_two_guided_and_two_unguided_outlook_questions(
+    golden_set_v2, filings_by_id
+):
+    cases = {c.id: c for c in golden_set_v2.cases if c.id in NEW_SLICE_4_OUTLOOK}
+
+    assert set(cases) == set(NEW_SLICE_4_OUTLOOK)
+    for case in cases.values():
+        [ticker] = {filings_by_id[s.filing_id].ticker for s in case.expected_sources}
+        assert case.question_type == "outlook", case.id
+        assert not case.history and case.starter is None, case.id
+        assert {filings_by_id[f.filing_id].ticker for f in case.required_facts} == {ticker}
+        gaps = [(g.kind, tuple(g.companies)) for g in case.expected_coverage_gaps]
+        if NEW_SLICE_4_OUTLOOK[case.id] == "guidance":
+            assert gaps == [], case.id  # the guidance is in the Filing
+        else:
+            assert gaps == [("no_guidance", (ticker,))], case.id
+
+
+def test_new_slice_4_holds_five_sector_questions_on_industrials_energy_and_financials(
+    golden_set_v2, filings_by_id
+):
+    cases = {c.id: c for c in golden_set_v2.cases if c.id in NEW_SLICE_4_SECTOR}
+    rows = {row.ticker: row for row in load_sector_table()}
+
+    assert set(cases) == set(NEW_SLICE_4_SECTOR)
+    covered = set()
+    for case in cases.values():
+        phrase, value = NEW_SLICE_4_SECTOR[case.id]
+        resolved = {t for t, row in rows.items() if value in (row.sector, row.industry)}
+        sources = {filings_by_id[s.filing_id].ticker for s in case.expected_sources}
+        facts = {filings_by_id[f.filing_id].ticker for f in case.required_facts}
+        assert case.question_type == "sector", case.id
+        assert not case.history and case.starter is None, case.id
+        assert phrase in case.question, case.id
+        assert sources <= resolved and facts == sources, case.id
+        assert len(facts) >= 2, case.id  # facts from several of the resolved Companies
+        covered |= {rows[t].sector for t in facts}
+    assert covered == {"Industrials", "Energy", "Financials"}
 
 
 def test_a_missing_evidence_quote_or_section_fails_the_label_checks(tmp_path, filings_by_id):

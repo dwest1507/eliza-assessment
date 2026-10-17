@@ -7513,6 +7513,1335 @@
         }
       ],
       "expected_coverage_gaps": []
+    },
+    {
+      "id": "outlook-amzn-q1-2026-guidance",
+      "question": "What guidance did Amazon give for the first quarter of 2026?",
+      "history": [],
+      "question_type": "outlook",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "An outlook question the Filings do answer: Amazon's FY2025 10-K repeats, in its MD&A, the first quarter 2026 guidance from its February 5, 2026 earnings release, so no no_guidance gap is expected (the harness checks only the gaps listed, so a system that adds one anyway is not penalised here). Drafted from the whole MD&A of that 10-K: the Guidance section, the capital expenditure plans and the expectations stated beside the results. Not a repeat: Amazon's other cases ask about its legal proceedings, tariffs, AWS revenue and 2025 net sales, not its guidance. The guided amounts (net sales of $173.5 billion to $178.5 billion, operating income of $16.5 billion to $21.5 billion, about $1 billion of higher Amazon Leo costs) are forecasts with no SEC company-facts value, so the facts state the growth range and say that Amazon gives an operating income range, which an answer states by giving it; the amounts stay in the evidence. Must-state: the net sales growth range and the operating income range. What the guidance includes and assumes, when it was given and the 2026 investment plans are details.",
+      "expected_sources": [
+        {
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Amazon expects its first quarter 2026 net sales to grow between 11% and 15% compared with first quarter 2025.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Net sales are expected to be between $173.5 billion and $178.5 billion, or to grow between 11% and 15% compared with first quarter 2025.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Amazon gives a range for the operating income it expects in the first quarter of 2026.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Operating income is expected to be between $16.5 billion and $21.5 billion, compared with $18.4 billion in first quarter 2025.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Amazon's first quarter 2026 net sales guidance anticipates a favorable impact of approximately 180 basis points from foreign exchange rates.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "This guidance anticipates a favorable impact of approximately 180 basis points from foreign exchange rates.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon's first quarter 2026 operating income guidance includes higher year-over-year Amazon Leo costs as it scales in 2026.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "This guidance includes approximately $1 billion of higher year-over-year Amazon Leo costs as we scale in 2026",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon's first quarter 2026 operating income guidance includes investment in quick commerce and even sharper prices in its international stores business.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "This guidance includes approximately $1 billion of higher year-over-year Amazon Leo costs as we scale in 2026, as well as investment in quick commerce and even sharper prices in our international stores business.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon's guidance assumes that no additional business acquisitions, restructurings or legal settlements are concluded.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "This guidance assumes, among other things, that no additional business acquisitions, restructurings, or legal settlements are concluded.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon provided its first quarter 2026 guidance on February 5, 2026, in its earnings release furnished on Form 8-K.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "We provided guidance on February 5, 2026, in our earnings release furnished on Form 8-K as set forth below.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon says its guidance is subject to substantial uncertainty.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "These forward-looking statements reflect Amazon.com’s expectations as of February 5, 2026, and are subject to substantial uncertainty.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon expects its capital expenditures on technology infrastructure and on fulfillment network capacity to increase in 2026.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "which primarily reflect investments in technology infrastructure (the majority of which is to support AWS business growth) and in additional capacity to support our fulfillment network, both of which we expect to increase in 2026.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon expects to continue making additional investments in its artificial intelligence initiatives.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Further, we expect to continue making additional investments in our artificial intelligence initiatives.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "outlook-mcd-2025",
+      "question": "What does McDonald's expect for 2025?",
+      "history": [],
+      "question_type": "outlook",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "An outlook question the Filings do answer: McDonald's only Filing, its FY2024 10-K, has a 2025 Outlook section 'to assist in forecasting the Company's future results for 2025', so no no_guidance gap is expected. The Corpus finds no Item headings in this 10-K, so the whole Filing is one Unsectioned Section and the facts cite it, as JPMorgan's 10-Q facts do. Drafted from the whole MD&A in it: the 2025 Outlook and Long-Term Outlook lists and the restructuring expectations. Not a repeat: no other case asks about McDonald's. McDonald's is a Snapshot Company, not in the SEC company-facts reference, and the expected capital expenditures ($3.0 billion to $3.2 billion) and restructuring charges (about $300 million) are forecasts, so no fact states an amount; the amounts stay in the evidence. Must-state: the contribution of unit expansion to Systemwide sales growth, the operating margin, that a capital expenditure range is given, and the restaurant openings. The expense, interest, tax and cash flow percentages, net additions, long-term targets and restructuring are details.",
+      "expected_sources": [
+        {
+          "filing_id": "MCD_10-K_2024-12-31",
+          "section": "Unsectioned"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "McDonald's expects net restaurant unit expansion to contribute slightly over 2% to its 2025 Systemwide sales growth, in constant currencies.",
+          "filing_id": "MCD_10-K_2024-12-31",
+          "section": "Unsectioned",
+          "evidence": "The Company expects net restaurant unit expansion will contribute slightly over 2% to 2025 Systemwide sales growth, in constant currencies.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "McDonald's expects its 2025 operating margin percent to be in the mid-to-high 40% range.",
+          "filing_id": "MCD_10-K_2024-12-31",
+          "section": "Unsectioned",
+          "evidence": "The Company expects 2025 operating margin percent to be in the mid-to-high 40% range.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "McDonald's gives a range for its expected 2025 capital expenditures.",
+          "filing_id": "MCD_10-K_2024-12-31",
+          "section": "Unsectioned",
+          "evidence": "The Company expects 2025 capital expenditures to be between $3.0 and $3.2 billion",
+          "tier": "must_state"
+        },
+        {
+          "fact": "McDonald's expects to open approximately 2,200 restaurants globally in 2025.",
+          "filing_id": "MCD_10-K_2024-12-31",
+          "section": "Unsectioned",
+          "evidence": "The Company expects 2025 capital expenditures to be between $3.0 and $3.2 billion, with the majority directed towards new restaurant unit expansion across the U.S. and International Operated Markets. Globally, the Company expects to open approximately 2,200 restaurants.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "McDonald's expects the majority of its 2025 capital expenditures to be directed towards new restaurant unit expansion across the U.S. and International Operated Markets.",
+          "filing_id": "MCD_10-K_2024-12-31",
+          "section": "Unsectioned",
+          "evidence": "The Company expects 2025 capital expenditures to be between $3.0 and $3.2 billion, with the majority directed towards new restaurant unit expansion across the U.S. and International Operated Markets.",
+          "tier": "detail"
+        },
+        {
+          "fact": "McDonald's expects nearly 1,800 net restaurant additions in 2025.",
+          "filing_id": "MCD_10-K_2024-12-31",
+          "section": "Unsectioned",
+          "evidence": "The Company expects nearly 1,800 net restaurant additions in 2025.",
+          "tier": "detail"
+        },
+        {
+          "fact": "McDonald's expects full year 2025 selling, general and administrative expenses of about 2.2% of Systemwide sales.",
+          "filing_id": "MCD_10-K_2024-12-31",
+          "section": "Unsectioned",
+          "evidence": "The Company expects full year 2025 Selling, general and administrative expenses of about 2.2% of Systemwide sales.",
+          "tier": "detail"
+        },
+        {
+          "fact": "McDonald's expects its interest expense for the full year 2025 to increase between 4% and 6%.",
+          "filing_id": "MCD_10-K_2024-12-31",
+          "section": "Unsectioned",
+          "evidence": "the Company expects interest expense for the full year 2025 to increase between 4% and 6% driven primarily by higher average debt balances and higher average interest rates.",
+          "tier": "detail"
+        },
+        {
+          "fact": "McDonald's expects its effective income tax rate for the full year 2025 to be between 20% and 22%.",
+          "filing_id": "MCD_10-K_2024-12-31",
+          "section": "Unsectioned",
+          "evidence": "The Company expects the effective income tax rate for the full year 2025 to be between 20% and 22%.",
+          "tier": "detail"
+        },
+        {
+          "fact": "McDonald's 2025 outlook includes a free cash flow conversion rate in the low-to-mid 80% range.",
+          "filing_id": "MCD_10-K_2024-12-31",
+          "section": "Unsectioned",
+          "evidence": "The Company expects to achieve a free cash flow conversion rate in the low-to-mid 80% range.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Over the long term, McDonald's targets between 4% and 5% net new restaurant unit growth, targeting 50,000 global units by 2027.",
+          "filing_id": "MCD_10-K_2024-12-31",
+          "section": "Unsectioned",
+          "evidence": "Between 4% and 5% net new restaurant unit growth, targeting 50,000 global units by 2027",
+          "tier": "detail"
+        },
+        {
+          "fact": "McDonald's expects to incur restructuring charges in 2025, primarily related to professional services costs.",
+          "filing_id": "MCD_10-K_2024-12-31",
+          "section": "Unsectioned",
+          "evidence": "The Company currently expects to incur approximately $300 million of restructuring charges in 2025, primarily related to professional services costs.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "outlook-intc-2026",
+      "question": "What is Intel's outlook for 2026?",
+      "history": [],
+      "question_type": "outlook",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "Intel's latest Filing is its FY2025 10-K. Its commentary speaks to 2026; no guidance is given, so the answer states the no_guidance gap. The Corpus finds no Item headings in this 10-K, so the whole Filing is one Unsectioned Section and the facts cite it. Drafted from every 2026 expectation in it: the industry trends in the business overview, the CCG competition passage, the process node plans, the MD&A's supply, expense and non-controlling interest expectations and the risk factors. Not a repeat: no other case asks about Intel. Intel is a Snapshot Company, not in the SEC company-facts reference, so no fact states an amount ($52.9 billion of 2025 revenue stays in the evidence). Must-state: the AI-driven trends continuing, the supply constraints persisting, R&D and MG&A expenses decreasing and competition intensifying. Component shortages, process nodes, non-controlling interests, the Costa Rica consolidation, 2025 revenue and the industry cycle are details.",
+      "expected_sources": [
+        {
+          "filing_id": "INTC_10-K_2025-12-27",
+          "section": "Unsectioned"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Intel expects the trends driving the semiconductor industry, including rapid adoption of AI technologies, to continue in 2026 and future years.",
+          "filing_id": "INTC_10-K_2025-12-27",
+          "section": "Unsectioned",
+          "evidence": "We expect these trends to continue in 2026 and future years, with continuing rapid adoption of AI technologies across an increasing number of industries and applications",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Intel expects its supply constraints to persist into 2026, with the most severe constraints impacting Q1 2026.",
+          "filing_id": "INTC_10-K_2025-12-27",
+          "section": "Unsectioned",
+          "evidence": "We expect these supply constraints to persist into 2026, with the most severe constraints impactingQ1 2026, limiting our ability to fully meet customer demand.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Intel says industry-wide shortages of substrates, memory and other critical components may further limit its ability to meet CCG and DCAI customer demand in 2026.",
+          "filing_id": "INTC_10-K_2025-12-27",
+          "section": "Unsectioned",
+          "evidence": "We expect these supply constraints to persist into 2026 and industry wide shortages of substrates, memory and other critical components may further limit our ability to meet CCG and DCAI customer demand in 2026.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Intel expects its total R&D and MG&A expenses to decrease in 2026 relative to recent historical periods.",
+          "filing_id": "INTC_10-K_2025-12-27",
+          "section": "Unsectioned",
+          "evidence": "As a result of our 2025 and 2024 Restructuring Plans and other related cost-reduction measures and the divestiture of Altera, we expect total R&D and MG&A expenses to decrease in 2026 relative to recent historical periods.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Intel says its CCG business operates in a highly competitive market that it expects to further intensify in 2026.",
+          "filing_id": "INTC_10-K_2025-12-27",
+          "section": "Unsectioned",
+          "evidence": "CCG's primary competitor is AMD, which like us designs processors based on the x86 architecture. Client CPUs utilizing the x86 architecture remain the foundational computing platform for the majority of PCs, enabling a heterogeneous environment from which a deep and extensive software ecosystem has developed. We also face significant competition from companies that design processors based on the ARM architecture, such as Apple with its M series products, Qualcomm with its Snapdragon products and MediaTek with its Kompanio products. We operate in a highly competitive market and expect this environment to further intensify in 2026.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Intel expects Intel 18A to represent an increasing portion of its processor production and products by revenue in 2026 and subsequent years.",
+          "filing_id": "INTC_10-K_2025-12-27",
+          "section": "Unsectioned",
+          "evidence": "Intel 18A is utilized for our first Intel Core Ultra Series 3 processor, the latest generation of our Intel Core Ultra processor family, and is expected to represent an increasing portion of our processor production and products by revenue in 2026 and subsequent years.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Intel expects net income attributable to non-controlling interests to continue to increase in 2026 as additional tranches of Arizona SCIP's manufacturing assets are placed into service.",
+          "filing_id": "INTC_10-K_2025-12-27",
+          "section": "Unsectioned",
+          "evidence": "We anticipate that net income attributable to non-controlling interests will continue to increase in 2026 as additional tranches of Arizona SCIP’s manufacturing assets are placed into service",
+          "tier": "detail"
+        },
+        {
+          "fact": "Intel expects the consolidation of its Costa Rican assembly and test operations to be completed by the end of 2026.",
+          "filing_id": "INTC_10-K_2025-12-27",
+          "section": "Unsectioned",
+          "evidence": "We initiated the consolidation of our Costa Rican assembly and test operations into our other facilities, which we expect to be completed by the end of 2026",
+          "tier": "detail"
+        },
+        {
+          "fact": "Intel's 2025 revenue was down from 2024.",
+          "filing_id": "INTC_10-K_2025-12-27",
+          "section": "Unsectioned",
+          "evidence": "Our 2025 revenue was $52.9 billion, down $248 million from 2024.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Intel says the semiconductor industry is cyclical and its revenue, cash flows and outlook often fluctuate in accordance with this cycle.",
+          "filing_id": "INTC_10-K_2025-12-27",
+          "section": "Unsectioned",
+          "evidence": "The semiconductor industry is a cyclical business and our revenue, cash flows and outlook often fluctuate in accordance with this cycle",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "no_guidance",
+          "companies": [
+            "INTC"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "outlook-nflx-growth",
+      "question": "What is Netflix's outlook for revenue growth and profitability?",
+      "history": [],
+      "question_type": "outlook",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "Netflix's latest Filing is its FY2025 10-K. Netflix gives guidance in its quarterly letters, not its 10-K, so the answer states the no_guidance gap and draws the outlook from the MD&A and risk factors. Drafted from the whole MD&A (the results, the liquidity and content investment passages and the WBD transaction) and the Risk Factors' growth, advertising and WBD passages. Not a repeat: Netflix's other case asks about competition in streaming, not its growth or margins. Netflix is a Snapshot Company, not in the SEC company-facts reference, so no fact states an amount (revenues of $45,183 million, the $72.0 billion equity value of the WBD transaction); the amounts stay in the evidence. Must-state: 2025 revenue growth and operating margin, the continued content investment and the expected timing of the WBD transaction. Drivers, the metrics it reports, the growth and advertising risks and the WBD debt are details.",
+      "expected_sources": [
+        {
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Netflix's revenues increased 16% in 2025 compared with 2024.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Revenues for the year ended December 31, 2025 increased 16% as compared to the year ended December 31, 2024",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Netflix attributes its 2025 revenue growth primarily to growth in memberships, price increases and increased advertising revenue.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Revenues for the year ended December 31, 2025 increased 16% as compared to the year ended December 31, 2024, primarily due to the growth in memberships, price increases, and increased advertising revenue",
+          "tier": "detail"
+        },
+        {
+          "fact": "Netflix's operating margin increased to 29.5% in 2025 from 26.7% in 2024.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Operating margin | | 29.5 | % | | 26.7 | % |",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Netflix says its 2025 operating margin increase was primarily driven by the growth in revenues outpacing the growth in its costs and expenses.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Operating margin for the year ended December 31, 2025 increased by approximately three percentage points as compared to the prior comparative period, primarily driven by the growth in revenues outpacing the growth in cost of revenues, sales and marketing, and general and administrative expenses.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Netflix discontinued reporting membership numbers in 2025, focusing instead on revenue and operating margin as its primary financial metrics.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "During the year ended December 31, 2025, we discontinued the reporting of membership numbers, including average paying memberships and average monthly revenue per paying membership, focusing instead on revenue and operating margin as the primary financial metrics that we believe best represent our business performance.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Netflix expects to continue to significantly invest in global content, particularly in original content.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "We expect to continue to significantly invest in global content, particularly in original content, which will impact our liquidity.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Netflix expects the WBD transaction to close in 12-18 months from December 4, 2025, subject to regulatory approvals and other closing conditions.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "We expect the WBD transaction to close in 12-18 months from December 4, 2025, subject to receipt of required regulatory approvals",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Netflix says its membership growth is slower in countries where it has been operating for many years or where it is highly penetrated.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In countries where we have been operating for many years or where we are highly penetrated, our membership growth is slower than in newer or less penetrated countries.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Netflix says that if it does not grow as expected, it may not be able to adjust its largely fixed content costs commensurate with the lowered growth rate.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "If we do not grow as expected, given, in particular, that our content costs are largely fixed in nature, we may not be able to adjust our expenditures or increase our revenues, including by adjusting membership pricing, commensurate with the lowered growth rate",
+          "tier": "detail"
+        },
+        {
+          "fact": "Netflix says its advertising revenue may not grow as it expects.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We have limited experience and operating history offering advertising on our service, and our advertising revenue may not grow as we expect.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Netflix expects to incur or assume a substantial amount of additional indebtedness in connection with the WBD transaction.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "we expect to incur and/or assume a substantial amount of additional indebtedness, which will materially increase the amount of our outstanding indebtedness",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "no_guidance",
+          "companies": [
+            "NFLX"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sector-aerospace-supply-chain",
+      "question": "What supply chain risks do the aerospace and defense companies describe?",
+      "history": [],
+      "question_type": "sector",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "The Sector table's Aerospace & Defense industry is Boeing, Lockheed Martin and RTX, all with FY2025 10-Ks, so no periods differ gap. Drafted from every supplier and supply chain passage in the three whole Risk Factors Sections. Not a repeat: sector-aerospace-government asks the same Companies about their dependence on U.S. government contracts, and risk-ba-commercial-production asks Boeing alone about producing its commercial airplanes; this asks all three about their supply chains. Must-state: each Company's dependence on its suppliers and its main supply problem (Boeing's suppliers' inflation, constraints and labor instability; Lockheed Martin's single or sole sourced components; RTX's disruptions in procuring raw materials and its expectation that they continue). Raw materials, single sources, work stoppages, microelectronics, component compliance, how Lockheed Martin manages supply risk and the effect on factories are details. No fact states an amount.",
+      "expected_sources": [
+        {
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "LMT_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Boeing says its ability to deliver products and services that satisfy customer requirements is heavily dependent on the performance and financial stability of its subcontractors and suppliers.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our ability to deliver products and services that satisfy customer requirements is heavily dependent on the performance and financial stability of our subcontractors and suppliers",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Boeing says many of its suppliers are experiencing inflationary pressures, resource constraints and disruptions due to production quality issues, global supply chain constraints and labor instability.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Many of our suppliers are experiencing inflationary pressures, as well as resource constraints and disruptions due to production quality issues, global supply chain constraints, and labor instability.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Boeing says raw materials it depends on, such as aluminum, titanium or composites, could become unavailable or available only at very high prices, including as a result of increased tariffs and trade restrictions.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "if one or more of the raw materials on which we depend (such as aluminum, titanium or composites) becomes unavailable to us or our suppliers, or is available only at very high prices, including as a result of increased tariffs and trade restrictions",
+          "tier": "detail"
+        },
+        {
+          "fact": "Boeing says that in some instances it depends upon a single source of supply.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In some instances, we depend upon a single source of supply.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Boeing says future work stoppages by its suppliers' employees could adversely impact its business.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Future work stoppages by our or our suppliers’ employees could also adversely impact our business.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Lockheed Martin says it is heavily dependent on suppliers, and that if its subcontractors or other suppliers fail to perform their obligations, its performance and ability to win future business could be adversely affected.",
+          "filing_id": "LMT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We are heavily dependent on suppliers and if our subcontractors or other suppliers or teaming agreement or joint venture partners fail to perform their obligations, our performance and ability to win future business could be adversely affected.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Lockheed Martin says a significant number of the components or supplies it uses are currently single or sole sourced.",
+          "filing_id": "LMT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "a significant number of the components or supplies used are currently single or sole sourced.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Lockheed Martin seeks to manage supply risk through long-term contracts, identifying domestic or other U.S. allied alternative sources and maintaining an acceptable level of its key materials in inventories.",
+          "filing_id": "LMT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We seek to manage supply risk through long-term contracts, identifying domestic or other U.S. allied alternative sources of items and maintaining an acceptable level of our key materials in inventories.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Lockheed Martin says global shortages of advanced microelectronics, including semiconductors, could result in increased procurement lead times, increased costs and potential shortages.",
+          "filing_id": "LMT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Advanced microelectronics, including semiconductors, underpin many of our current and future critical technologies and platforms, and global shortages of these products due to increased demand or other supply chain challenges could result in increased procurement lead times and increased costs and potential shortages",
+          "tier": "detail"
+        },
+        {
+          "fact": "Lockheed Martin says its supply chain for sourcing contractually compliant components is outside its direct control and is multi-tiered.",
+          "filing_id": "LMT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We remain heavily dependent on our supply chain for sourcing contractually compliant components, which is outside of our direct control and is multi-tiered.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Lockheed Martin names supplier performance among the challenges and risks of its F-35 program.",
+          "filing_id": "LMT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Challenges and risks associated with this program include supplier performance",
+          "tier": "detail"
+        },
+        {
+          "fact": "RTX says it is dependent on a global supply chain and has experienced supply chain disruptions in recent years that resulted in delays and increased costs.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We are dependent on a global supply chain and subject to risks related to the availability of materials and the performance of our suppliers; in recent years we have experienced supply chain disruptions that resulted in delays and increased costs and adversely affected our performance.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "RTX says global supply chain disruptions have impacted its ability to procure raw materials, including certain rare earth elements, microelectronics and certain commodities.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Global supply chain disruptions have impacted our ability to procure raw materials, including certain rare earth elements, microelectronics, and certain commodities.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "RTX expects the current supply chain, inflation and price issues, and their negative impacts on its business, to continue.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "we expect the current supply chain, inflation, and price issues, and their negative impacts on our business, to continue.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "RTX expects to experience prolonged delays for certain critical component parts and sub-systems.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In particular, we expect to experience prolonged delays for certain critical component parts and sub-systems.",
+          "tier": "detail"
+        },
+        {
+          "fact": "RTX says it is largely dependent upon foreign sources for certain raw materials, such as cobalt, tantalum, chromium, rhenium, nickel and titanium.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "we are largely dependent upon foreign sources for certain raw materials, such as cobalt, tantalum, chromium, rhenium, nickel, and titanium",
+          "tier": "detail"
+        },
+        {
+          "fact": "RTX says that in some instances it depends upon a single source of supply, manufacturing, services support or assembly.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In some instances, we depend upon a single source of supply, manufacturing, services support, or assembly",
+          "tier": "detail"
+        },
+        {
+          "fact": "RTX says procurement issues have negatively impacted the production flow in its factories.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "As a result of these procurement issues, the production flow in our factories has been negatively impacted",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "sector-industrials-tariffs",
+      "question": "How are the industrial companies affected by tariffs?",
+      "history": [],
+      "question_type": "sector",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "The Sector table's Industrials sector is Boeing, Caterpillar, Deere, Lockheed Martin, RTX and UPS. Deere's fiscal 2025 ended November 2, 2025 and the others' on December 31, 2025, so the periods differ. Drafted from every tariff passage in each latest 10-K's whole Risk Factors and MD&A Sections (Deere's MD&A sits in Other, as its Item 7 only refers to it; its risk factors carry the same tariff passages, which the facts cite). Not a repeat: risk-nke-tsla-amzn-tariffs asks other Companies about tariffs, and followup-cat-de-dealers and the aerospace cases ask these Companies about other topics. Must-state: what each Company says tariffs do to it (Boeing's costs, demand and China deliveries; Caterpillar's manufacturing costs and a larger 2026 impact; Deere's sourcing and costs; UPS's trade lane volumes) and, for Lockheed Martin and RTX, which expect no material adverse effect, that view and how they mitigate. Further effects, trade agreements, the Supreme Court case and suppliers' costs are details. The tariff amounts (Caterpillar's $2.6 billion expected for 2026, Deere's approximately $600 million incurred in 2025) have no SEC company-facts value, since the reference does not cache these Snapshot Companies, so no fact states an amount.",
+      "expected_sources": [
+        {
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "DE_10-K_2025-11-02",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "LMT_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "LMT_10-K_2025-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Boeing says tariffs and any retaliatory actions could significantly increase the cost of its products and, particularly for its commercial aircraft, result in lower demand, delivery delays and terminations of orders.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Tariffs and any retaliatory actions could significantly increase the cost of our products and, particularly with respect to our commercial aircraft, result in lower demand for our products, delivery delays, and terminations of orders by customers.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Boeing says certain customers in China temporarily paused accepting delivery of its aircraft during 2025 in response to ongoing tariff negotiations between the U.S. and China.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "During 2025, certain customers in China temporarily paused accepting delivery of our aircraft in response to ongoing tariff negotiations between the U.S. and China.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Boeing says its supply chain is also being impacted by tariffs and export restrictions.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Our supply chain is also being impacted by the tariffs and export restrictions discussed above.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Boeing says the U.S. reached bilateral trade agreements recognizing tariff-free trade of civil aircraft products with countries including the United Kingdom, Japan, South Korea, Malaysia and the European Union.",
+          "filing_id": "BA_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "reached bilateral trade agreements that recognize tariff-free trade of products within the scope of the World Trade Organization Agreement on Trade in Civil Aircraft with countries including the United Kingdom, Japan, South Korea, Malaysia, and the European Union.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Caterpillar says the unfavorable manufacturing costs that mainly drove its lower 2025 profit largely reflected the impact of higher tariffs.",
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "The decrease was mainly due to unfavorable manufacturing costs and unfavorable price realization, partially offset by the profit impact of higher sales volume. Unfavorable manufacturing costs largely reflected the impact of higher tariffs.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Caterpillar expects the impact from tariffs to be higher in 2026 than it was in 2025.",
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Based on the incremental tariffs announced in 2025 and in place by January 29, 2026, we expect the impact from tariffs to be around $2.6 billion in 2026, which is $800 million higher than incurred in 2025.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Caterpillar says the impact from tariffs could be around 20 percent higher if it does not take the mitigating actions it plans to take in 2026.",
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "If we do not take the mitigating actions we plan to take in 2026, the impact from tariffs could be around 20 percent higher.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Caterpillar remains confident that it will manage the impact of tariffs over time.",
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "We remain confident that we will manage the impact of tariffs over time.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Caterpillar says more restrictive trade policies, such as higher tariffs, in countries where it sells large quantities of products and services could negatively impact its business.",
+          "filing_id": "CAT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "The implementation of more restrictive trade policies (such as more detailed inspections, higher tariffs or new barriers to entry) in countries where we sell large quantities of products and services could negatively impact our business, results of operations and financial condition.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Deere says the imposition of tariffs and retaliatory tariffs has impacted, and it expects will continue to impact, its sourcing of parts and components, the cost and profitability of its manufacturing operations and its ability to ship, import and export its products.",
+          "filing_id": "DE_10-K_2025-11-02",
+          "section": "Risk Factors",
+          "evidence": "The imposition of tariffs and retaliatory tariffs has impacted, and we expect will continue to impact, the sourcing of parts and components, the cost and profitability of manufacturing operations, and our ability to ship, import, and export our products.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Deere says incremental import tariffs adversely affected the cost of its products and components during fiscal year 2025 and may continue to do so in 2026.",
+          "filing_id": "DE_10-K_2025-11-02",
+          "section": "Risk Factors",
+          "evidence": "During fiscal year 2025, incremental import tariffs adversely affected the cost of our products and components and may continue to do so in 2026.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Deere says a number of its suppliers are facing higher prices due to inflation, increased tariffs or otherwise.",
+          "filing_id": "DE_10-K_2025-11-02",
+          "section": "Risk Factors",
+          "evidence": "A number of our suppliers are facing higher prices due to inflation, increased tariffs or otherwise.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Deere says the U.S. Supreme Court, which heard oral arguments on tariffs imposed under the International Emergency Economic Powers Act, may provide tariff relief and the potential recovery of amounts previously paid.",
+          "filing_id": "DE_10-K_2025-11-02",
+          "section": "Risk Factors",
+          "evidence": "On November 5, 2025, the United States Supreme Court heard oral arguments on tariffs imposed under the International Emergency Economic Powers Act (IEEPA). The court may provide tariff relief and the potential recovery of amounts previously paid.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Lockheed Martin does not believe, excluding the near-term cash flow impact, that the announced tariffs or other countries' responses to them will have a material adverse effect on its results of operations or financial condition over the long term.",
+          "filing_id": "LMT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "At this time, excluding the near-term cash flow impact, we do not believe that the tariffs announced by the U.S. or actions taken in response to these tariffs by other countries will have a material adverse effect upon our results of operation or financial condition over the long term.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Lockheed Martin is pursuing options to mitigate the impact of tariffs, including seeking exclusions, drawbacks, refunds, recovering the costs in the pricing of its products or securing alternative sources of materials or products.",
+          "filing_id": "LMT_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "We are pursuing available options to fully or substantially mitigate the impact of the increased tariffs or any future tariffs, including seeking exclusions, through drawbacks, refunds, recovering the costs in the pricing of our products, or securing alternative sources of materials or products.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Lockheed Martin says it may not be able to fully recover increases in costs due to tariffs, and that recovery may not occur in the same period as the incurred costs.",
+          "filing_id": "LMT_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Increases in costs due to tariffs may impact our cash flows, as we may not be able to fully recover these costs, and even if recovery is possible, it may not occur in the same period as the incurred costs.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Lockheed Martin says the tariff environment has been dynamic in 2025, with changes occurring on an ongoing basis.",
+          "filing_id": "LMT_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "The tariff environment has been dynamic in 2025, with changes occurring on an ongoing basis",
+          "tier": "detail"
+        },
+        {
+          "fact": "RTX does not believe, based on current conditions, that the announced tariffs or counter tariffs will have a material adverse effect on its results of operations, financial condition or cash flows.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Based on current conditions, we do not believe that the tariffs announced by the U.S. or counter tariffs or other actions taken by other countries will have a material adverse effect upon our results of operations, financial condition, or cash flows.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "RTX is pursuing options to mitigate the impact of tariffs, including using available exemptions or exclusions, evaluating operational and supply chain changes and, where feasible, increasing the prices of its goods and services.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "We continue to pursue available options to mitigate the impact of tariffs and countermeasures, including (i) utilizing available exemptions or exclusions to tariffs, such as trade agreements, treaties or other statutory relief, (ii) evaluating operational and supply chain changes, and (iii) where feasible, increasing the prices of our goods and services.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "RTX says its businesses and suppliers import goods subject to U.S. tariffs and goods subject to counter tariffs imposed by other countries.",
+          "filing_id": "RTX_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Our businesses and suppliers import goods subject to U.S. imposed tariffs, as well as goods subject to counter tariffs imposed by other countries.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UPS says global trade policy changes during 2025, including tariffs and de minimis exclusions, shifted trade lane volumes, particularly reducing volumes on its China to U.S. lane.",
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Global trade policy changes during 2025, including pending and enacted tariffs and de minimis exclusions, resulted in shifting trade lane volumes, particularly reducing volumes on our China to U.S. lane",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UPS says the shift in trade lane volumes pressured its International Package segment margins during 2025.",
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "particularly reducing volumes on our China to U.S. lane, pressuring our International Package segment margins during the year.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UPS says revenue in its remaining Forwarding businesses declined partly from the effects of changing trade policies and tariff uncertainty.",
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "MD&A",
+          "evidence": "Revenue within our remaining Forwarding businesses declined $245 million, primarily from demand softness in air and ocean markets and from the effects of changing trade policies and tariff uncertainty",
+          "tier": "detail"
+        },
+        {
+          "fact": "UPS says it is and expects to continue to be impacted by laws, regulations and policies that affect global trade, including tariff and trade policies.",
+          "filing_id": "UPS_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "we are and expect to continue to be impacted by laws, regulations and policies that affect global trade, including tariff and trade policies",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "BA",
+            "CAT",
+            "DE",
+            "LMT",
+            "RTX",
+            "UPS"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sector-energy-operational-risks",
+      "question": "What operational risks do the energy companies face, and how do they manage them?",
+      "history": [],
+      "question_type": "sector",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "The Sector table's Energy sector is Chevron and ExxonMobil. Chevron's latest 10-K is FY2024 and ExxonMobil's is FY2025, so the periods differ. Drafted from both whole Risk Factors Sections: Chevron's business and operational risk factors and ExxonMobil's Operational and Other Factors. Not a repeat: the oil majors follow-up asks these Companies about greenhouse gas and other regulation, risk-cvx-xom-commodity-prices about oil and gas prices, and the Brief Suite variant about ExxonMobil's primary risks; this asks about operational hazards and their management. Every half of the question has facts. Must-state: each Company's disruption and hazard risks and its main management response (Chevron's system of corporate policies and standards and its self-insurance; ExxonMobil's management systems, safety focus and enterprise risk management system). Cyber incidents, facility design and preparedness, insurance limits, non-operated assets and spill prevention are details. No fact states an amount.",
+      "expected_sources": [
+        {
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Chevron says its operations are subject to disruption from natural or human causes beyond its control, including severe weather, military conflicts, accidents, cyber threats and terrorist acts.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "The company’s operations are therefore subject to disruption from natural or human causes beyond its control, including risks from hurricanes, severe storms, floods, heat waves, and other forms of severe weather; wildfires; ambient temperature increases; sea level rise; war or other military conflicts such as the conflict in the Middle East and the military conflict between Russia and Ukraine; accidents; civil unrest; political events; fires; earthquakes; system failures; cyber threats; terrorist acts",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Chevron says failure to manage the risks and hazards inherent in operating in the energy industry could result in incidents including releases, explosions or mechanical failures.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Chevron’s results depend on its ability to identify and mitigate the risks and hazards inherent to operating in the energy industry. The company seeks to minimize these operational risks by carefully designing and building its facilities and conducting its operations in a safe and reliable manner. However, failure to manage these risks effectively could impair our ability to operate and result in unexpected incidents, including releases, explosions or mechanical failures",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Chevron maintains a system of corporate policies, standards, processes and compliance mechanisms to manage safety, health, environmental, reliability and efficiency risks.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Chevron has implemented and maintains a system of corporate policies, standards, processes and systems, behaviors and compliance mechanisms to manage safety, health, environmental, reliability and efficiency risks",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Chevron says it is, to a substantial extent, self-insured for significant incidents causing catastrophic loss.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "The company does not have commercial insurance or third-party indemnities to fully cover all operational risks or potential liability in the event of a significant incident or series of incidents causing catastrophic loss. As a result, the company is, to a substantial extent, self-insured for such events.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Chevron seeks to minimize operational risks by carefully designing and building its facilities and conducting its operations in a safe and reliable manner.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "The company seeks to minimize these operational risks by carefully designing and building its facilities and conducting its operations in a safe and reliable manner.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron's risk management systems are designed to assess potential physical and other risks to its operations and assets and to plan for their resiliency.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Chevron’s risk management systems are designed to assess potential physical and other risks to its operations and assets and to plan for their resiliency.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron says it has experienced and will continue to experience cyber incidents of varying degrees in the conduct of its business.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "the company has experienced and will continue to experience cyber incidents of varying degrees in the conduct of its business.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron says cyber threat actors could compromise its operational technology networks, resulting in disruptions to its business operations, injury to people or harm to the environment.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Cyber threat actors could compromise the company’s operational technology networks or other critical systems and infrastructure, resulting in disruptions to its business operations, injury to people, harm to the environment",
+          "tier": "detail"
+        },
+        {
+          "fact": "Chevron says that where it is not the operator, it may have limited influence and control over third parties, which may limit its ability to manage and control such risks.",
+          "filing_id": "CVX_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "In certain situations where Chevron is not the operator, the company may have limited influence and control over third parties, which may limit its ability to manage and control such risks.",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says its results depend on management's ability to minimize the inherent risks of oil, gas and petrochemical operations.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our results depend on management’s ability to minimize the inherent risks of oil, gas, and petrochemical operations",
+          "tier": "must_state"
+        },
+        {
+          "fact": "ExxonMobil applies rigorous management systems and continuous focus on workplace safety, spills avoidance and other adverse environmental events.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We apply rigorous management systems and continuous focus on workplace safety, spills avoidance, and other adverse environmental events.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "ExxonMobil employs an enterprise risk management system to identify and manage risk across its businesses.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We employ a robust and actively evolving enterprise risk management system to identify and manage risk across our businesses.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "ExxonMobil says its operations may be disrupted by severe weather events, natural disasters, human error and similar events.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our operations may be disrupted by severe weather events, natural disasters, human error, and similar events.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "ExxonMobil works to minimize spills through a combined program of operations integrity management, ongoing upgrades, key equipment replacements and comprehensive inspection and surveillance.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "we work to minimize spills through a combined program of effective operations integrity management, ongoing upgrades, key equipment replacements, and comprehensive inspection and surveillance.",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says its facilities are designed, engineered, constructed and operated to withstand a variety of extreme climatic and other conditions.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our facilities are designed, engineered, constructed, and operated to withstand a variety of extreme climatic and other conditions",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says its ability to mitigate the adverse impacts of these events depends in part on its facility engineering, disaster preparedness and response, and business continuity planning.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our ability to mitigate the adverse impacts of these events depends in part upon the effectiveness of our robust facility engineering, our rigorous disaster preparedness and response, and business continuity planning.",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says its ability to insure against many of its risks is limited by the availability and cost of coverage.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "The ability of the Corporation to insure against many of the risks it faces as described in this Item 1A is limited by the availability and cost of coverage",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says it is regularly subject to attempted cybersecurity disruptions from a variety of sources, including state-sponsored actors.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "ExxonMobil is regularly subject to attempted cybersecurity disruptions from a variety of sources including state-sponsored actors.",
+          "tier": "detail"
+        },
+        {
+          "fact": "ExxonMobil says cybersecurity disruptions could cause physical harm to people or the environment and damage or destroy assets.",
+          "filing_id": "XOM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Cybersecurity disruptions could cause physical harm to people or the environment; damage or destroy assets",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "CVX",
+            "XOM"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sector-banks-capital-liquidity",
+      "question": "How could regulatory capital and liquidity requirements affect the major banks?",
+      "history": [],
+      "question_type": "sector",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "The Sector table's Banks industry is Bank of America and JPMorgan. Bank of America's latest 10-K is FY2024 (its 2025 10-Qs report no material change to its risk factors) and JPMorgan's is FY2025, so the periods differ. Drafted from every capital and liquidity passage in both whole Risk Factors Sections: Bank of America's capital and liquidity, holding company and resolution risk factors, and JPMorgan's Liquidity, Capital, resolution and model risk factors. Not a repeat: sector-banks-risks asks these banks about their main risks across every category, and the brief's question names JPMorgan's capital risk among its primary risks; this asks about capital and liquidity requirements alone. Must-state: each bank's statement that requirements may rise and limit its capital distributions (Bank of America's G-SIB buffers and the dependence of dividends and repurchases on capital above them; JPMorgan's capital limits on distributions, what can raise its required capital and what a shortfall would do, and regulatory liquidity changes). Ratios, buffer changes, proposals, stress tests, resolution plans, subsidiaries and models are details. No fact states an amount.",
+      "expected_sources": [
+        {
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Bank of America says U.S. federal banking agencies may require increased capital and liquidity levels, which could adversely impact it.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "U.S. federal banking agencies may require increased capital and liquidity levels, which could adversely impact the Corporation.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Bank of America says that, as a G-SIB, it is required to hold additional capital buffers, including a G-SIB surcharge, an SCB and a countercyclical buffer.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "As a G-SIB, we are also required to hold additional capital buffers, including a G-SIB surcharge, a SCB and a countercyclical buffer, which are reassessed at least annually.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Bank of America says its ability to pay dividends or repurchase common stock depends, in part, on maintaining regulatory capital levels above minimum requirements plus buffers.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our ability to pay dividends or repurchase common stock depends, in part, on our ability to maintain regulatory capital levels above minimum requirements plus buffers.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Bank of America is subject to regulatory liquidity requirements, including the Liquidity Coverage Ratio and the Net Stable Funding Ratio.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Also, we are subject to regulatory liquidity requirements, including the Liquidity Coverage Ratio and the Net Stable Funding Ratio.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Bank of America's SCB increased by 70 bps to 3.2 percent in 2024.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "For example, in 2024, our SCB increased by 70 bps to 3.2 percent",
+          "tier": "detail"
+        },
+        {
+          "fact": "Bank of America's G-SIB surcharge increased 50 bps to 3.0 percent in 2024.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "For example, in 2024, our SCB increased by 70 bps to 3.2 percent and our G-SIB surcharge increased 50 bps to 3.0 percent.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Bank of America expects its G-SIB surcharge to increase to 3.5 percent from 3.0 percent in 2027.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our G-SIB surcharge is expected to increase to 3.5 percent from 3.0 percent in 2027, and could further increase in the future.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Bank of America says U.S. banking regulators issued proposed rulemaking in 2023 to revise the measurement of RWA and the G-SIB surcharge calculation.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "In 2023, U.S. banking regulators issued notices of proposed rulemaking to revise the measurement of RWA and the G-SIB surcharge calculation, both of which may be re-proposed.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Bank of America says Federal Reserve stress test scenarios may affect its CCAR results, which may impact its SCB level and require it to hold additional capital.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Those scenarios may affect our CCAR stress test results, which may impact our SCB level and require us to hold additional capital.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Bank of America says changes to and compliance with capital and liquidity requirements may require it to liquidate assets, increase borrowings, issue additional securities or reduce common stock repurchases or dividends.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Changes to and compliance with the regulatory capital and liquidity requirements may impact our operations by requiring us to liquidate assets, increase borrowings, issue additional securities, reduce common stock repurchases or dividends",
+          "tier": "detail"
+        },
+        {
+          "fact": "Bank of America says its bank and broker-dealer subsidiaries are subject to minimum regulatory capital and liquidity requirements.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our bank and broker-dealer subsidiaries are subject to restrictions on their ability to lend or transact with affiliates, minimum regulatory capital and liquidity requirements",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says its ability to distribute capital to shareholders and to support its business activities could be limited if it does not satisfy applicable regulatory capital requirements.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "JPMorganChase’s ability to distribute capital to shareholders, and to support its business activities could be limited if it does not satisfy applicable regulatory capital requirements.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan says the amount of capital it is required to hold could increase due to actions by banking regulators, developments that increase its RWA or increases in estimated stress losses under CCAR.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "JPMorganChase is subject to various regulatory capital requirements, and the amount of capital that it is required to hold under those requirements could increase at any given time due to factors such as: | | 19 Part I•actions by banking regulators, as well as changes in applicable law or how applicable law is implemented by banking regulators•changes in the composition of JPMorganChase’s balance sheet or developments that could increase RWA, such as increased market risk, customer delinquencies, client credit rating downgrades or other factors, and•increases in estimated stress losses as determined by the Federal Reserve under CCAR, which could increase JPMorganChase’s SCB.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan says a failure to maintain the required level and composition of capital could reduce its permitted share repurchases, constrain its dividends or curtail its business activities.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Any failure by or inability of JPMorganChase to maintain the required level and composition of capital, any decision by JPMorgan Chase to use its regulatory buffers allowing capital ratios to decline below regulatory requirements or unfavorable changes in applicable capital requirements, could have an adverse impact on JPMorganChase’s shareholders by:•reducing the amount of common stock that JPMorganChase is permitted to repurchase•requiring the issuance of, or prohibiting the redemption of, capital instruments in a manner inconsistent with JPMorganChase’s capital management strategy•constraining the amount of dividends that can be paid on common stock, or•curtailing JPMorganChase’s business activities or operations.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan says its liquidity could be impacted by actions by governmental authorities, including changes in regulatory requirements relating to liquidity or capital.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "actions by governmental authorities, including changes in regulatory requirements relating to liquidity or capital",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan says its funding costs could be negatively affected by actions it may take to satisfy regulatory requirements relating to liquidity and funding.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "JPMorganChase’s funding costs could also be negatively affected by actions that it may take in order to satisfy regulatory requirements, including those relating to:•liquidity and funding",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says it may use its regulatory capital buffers, allowing its capital ratios to decline below regulatory requirements and subjecting it to restrictions on capital distributions.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "JPMorganChase may use its regulatory capital buffers allowing capital ratios to decline below regulatory requirements, subjecting it to restrictions on capital distributions",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says that if the Federal Reserve and the FDIC found deficiencies in its resolution plan, they could jointly impose more stringent capital, leverage or liquidity requirements.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "If the Federal Reserve and the FDIC were both to determine that a resolution plan submitted by JPMorganChase has deficiencies, they could jointly impose more stringent capital, leverage or liquidity requirements",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says its intermediate holding company is prohibited from paying dividends or extending credit to the Parent Company if certain capital or liquidity thresholds are breached.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "the IHC is prohibited from paying dividends or extending credit to the Parent Company if certain capital or liquidity thresholds are breached",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan says that if its models and estimations for calculating RWA under Basel III are not approved by its regulators, it could be subject to higher capital charges.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "If JPMorganChase’s models and estimations are not approved by its regulators, it could be subject to higher capital charges",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "BAC",
+            "JPM"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "sector-financials-digital-assets",
+      "question": "What risks do the financial companies see from stablecoins and other digital assets?",
+      "history": [],
+      "question_type": "sector",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "The Sector table's Financials sector is ten Companies: American Express, Bank of America, BlackRock, Berkshire Hathaway, GE (GE Capital's FY2014 10-K), Goldman Sachs, JPMorgan, Mastercard, Morgan Stanley and Visa. A broad Sector phrase, so the answer must state two gaps: GE's only Filing is stale, and the latest Filings cover different periods (BlackRock's latest 10-K is FY2023, Goldman Sachs', Berkshire Hathaway's and Bank of America's FY2024, Visa's ends September 2025 and the rest December 2025). Drafted from every digital asset, cryptocurrency and stablecoin passage in each latest 10-K's whole Risk Factors Section; Berkshire Hathaway, GE Capital and Morgan Stanley (whose 10-K the Corpus holds as one Unsectioned Section) name none, so they have no facts. Not a repeat: the other financials cases ask about cybersecurity (Visa, Mastercard), the banks' main risks and capital, and JPMorgan's primary and regulatory risks, not digital assets. Must-state: each of the seven Companies' main statement of the risk (Visa's stablecoins that could disrupt payment networks, American Express's stablecoin legislation altering competition, Bank of America's strategic risks, BlackRock's investment in Circle and its regulatory uncertainty, Goldman Sachs' distributed ledger exposures, JPMorgan's new competitors offering stablecoins, Mastercard's technological change). Laws, adoption paths, revenues, market volatility, collateral, cyber weaknesses, disintermediation and costs are details. No fact states an amount.",
+      "expected_sources": [
+        {
+          "filing_id": "AXP_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "BLK_10-K_2023-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "GS_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Visa says that, with more regulatory certainty and permissive or favorable regulations, stablecoins could potentially disrupt existing payment networks, including in cross-border and B2B transactions.",
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Risk Factors",
+          "evidence": "With more regulatory certainty and permissive or favorable regulations, stablecoins could potentially disrupt existing payment networks, including in cross-border and B2B transactions.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Visa says the U.S. enacted the GENIUS Act in July 2025, establishing a comprehensive framework for regulating stablecoins.",
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Risk Factors",
+          "evidence": "In July 2025, the U.S. enacted the Guiding and Establishing National Innovation for U.S. Stablecoins Act (GENIUS Act), establishing a comprehensive framework for regulating stablecoins.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Visa names cryptocurrency, including stablecoin-based payments initiatives, among the alternative payment services that could reduce its role or disintermediate it.",
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Risk Factors",
+          "evidence": "that could either reduce our role or otherwise disintermediate us from the transaction processing or the value-added services we provide to support such processing. Examples include initiatives from The Clearing House, an association consisting of large financial institutions that has developed its own faster payments system; Early Warning Services, which operates Zelle, a bank-offered alternative network that provides another platform for faster funds or real-time payments across a variety of payment types, including P2P, corporate and government disbursement, bill pay and deposit check transactions; and cryptocurrency, including stablecoin-based payments initiatives.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Visa says stablecoins could achieve broad adoption in more mature markets through regulated issuance by traditional banks, fintechs and other new entrants.",
+          "filing_id": "V_10-K_2025-09-30",
+          "section": "Risk Factors",
+          "evidence": "In more mature markets, stablecoins could achieve broad adoption through regulated issuance by traditional banks, fintechs and other new entrants",
+          "tier": "detail"
+        },
+        {
+          "fact": "American Express says regulatory and legislative changes, such as recent U.S. legislation establishing a regulatory framework for stablecoins, may significantly alter the competitive landscape by facilitating alternative payment mechanisms.",
+          "filing_id": "AXP_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Regulatory and legislative changes may also significantly alter the competitive landscape, including by facilitating alternative payment or financing mechanisms, such as recent legislation in the U.S. establishing a regulatory framework for stablecoins",
+          "tier": "must_state"
+        },
+        {
+          "fact": "American Express says the expansion of other payment and financing mechanisms could negatively impact its discount revenues and net interest income.",
+          "filing_id": "AXP_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "To the extent other payment and financing mechanisms, systems and products continue to successfully expand, our discount revenues earned from Card Member spending and our net interest income earned from Card Member borrowing could be negatively impacted.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Bank of America says the adoption and evolution of digital assets, including cryptocurrencies and stablecoins, create additional strategic risks and could negatively impact its ability to compete.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Widespread adoption and rapid evolution of, as well as developments in the regulatory landscape relating to emerging technologies, including analytic capabilities, AI (including machine learning and generative AI), automated decision-making, self-service digital trading platforms and automated trading markets, internet services, and digital assets, such as central bank digital currencies, cryptocurrencies (including stablecoins), tokens and other cryptoassets that utilize distributed ledger technology (DLT), as well as payment, clearing and settlement processes that use DLT, create additional strategic risks, could negatively impact our ability to compete",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Bank of America says adapting its products and services to emerging technologies such as digital assets could require substantial expenditures.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "cryptocurrencies (including stablecoins), tokens and other cryptoassets that utilize distributed ledger technology (DLT), as well as payment, clearing and settlement processes that use DLT, create additional strategic risks, could negatively impact our ability to compete and require substantial expenditures to the extent we were to modify or adapt our existing products and services.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Bank of America says global markets may be affected by the volatility of digital assets.",
+          "filing_id": "BAC_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Global markets also may be affected by adverse developments impacting the U.S. or global banking industry, including bank failures, the failure of nonbank financial institutions and liquidity concerns, fluctuations or other significant changes in both debt and equity capital markets and currencies, the transition of benchmark rates to alternative reference rates, the impact of the volatility of digital assets on the broader market",
+          "tier": "detail"
+        },
+        {
+          "fact": "BlackRock has a minority investment in Circle Internet Financial, which is associated with crypto asset markets.",
+          "filing_id": "BLK_10-K_2023-12-31",
+          "section": "Risk Factors",
+          "evidence": "For example, BlackRock has a minority investment in Circle Internet Financial (“Circle”), which is associated with crypto asset markets",
+          "tier": "must_state"
+        },
+        {
+          "fact": "BlackRock says the significant regulatory uncertainty in crypto asset markets could negatively impact its investment in Circle.",
+          "filing_id": "BLK_10-K_2023-12-31",
+          "section": "Risk Factors",
+          "evidence": "The crypto asset markets are subject to significant regulatory uncertainty, which could also negatively impact BlackRock’s investment in Circle.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "BlackRock says crypto asset markets experienced substantial volatility and high-profile enterprise failures and bankruptcies.",
+          "filing_id": "BLK_10-K_2023-12-31",
+          "section": "Risk Factors",
+          "evidence": "which is associated with crypto asset markets which experienced substantial volatility and high-profile enterprise failures and bankruptcies.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Goldman Sachs says it is exposed to risks related to distributed ledger technology, including through its facilitation of clients' activities involving cryptocurrencies or other digital assets.",
+          "filing_id": "GS_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "We are exposed to risks, and may become exposed to additional risks, related to distributed ledger technology, including through our facilitation of clients’ activities involving financial products that use distributed ledger technology, such as blockchain, cryptocurrencies or other digital assets",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Goldman Sachs says distributed ledger technology, cryptocurrency and similar technologies are nascent and may be vulnerable to cyber attacks or have other inherent weaknesses.",
+          "filing_id": "GS_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "although the prevalence and scope of applications of distributed ledger technology, cryptocurrency and similar technologies is growing, the technology is nascent and may be vulnerable to cyber attacks or have other inherent weaknesses.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Goldman Sachs is exposed to risks from receiving cryptocurrencies or other digital assets as collateral.",
+          "filing_id": "GS_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "We are exposed to risks, and may become exposed to additional risks, related to distributed ledger technology, including through our facilitation of clients’ activities involving financial products that use distributed ledger technology, such as blockchain, cryptocurrencies or other digital assets, our investments in companies that seek to develop platforms based on distributed ledger technology, the use of distributed ledger technology by third-party vendors, clients, counterparties, clearinghouses and other financial intermediaries, and the receipt of cryptocurrencies or other digital assets as collateral.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Goldman Sachs says technologies based on distributed ledgers that do not require intermediation could significantly disrupt payments processing and other financial services.",
+          "filing_id": "GS_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Further, technologies, such as those based on distributed ledgers, that do not require intermediation could also significantly disrupt payments processing and other financial services.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Goldman Sachs says regulatory limitations on its involvement in products and platforms involving digital assets may not apply equally, or at all, to certain of its competitors.",
+          "filing_id": "GS_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Regulatory limitations on our involvement in products and platforms involving digital assets and distributed ledger technologies may not apply equally or, in some cases, at all to certain of our competitors.",
+          "tier": "detail"
+        },
+        {
+          "fact": "JPMorgan names cryptocurrency, including stablecoins, among the financial solutions that technological advances have allowed financial institutions and other companies to provide, as new competitors in financial services continue to emerge.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "with new competitors in the financial services industry continuing to emerge. For example, technological advances and the growth of e-commerce have made it possible for non-depository institutions to offer products and services that traditionally were banking products. These advances have also allowed financial institutions and other companies to provide electronic and internet-based financial solutions, including:•lending and other extensions of credit to consumers•payments processing•cryptocurrency, including stablecoins",
+          "tier": "must_state"
+        },
+        {
+          "fact": "JPMorgan says financial institutions face the risk of disruption to payments processing and other products and services from technologies that may not require intermediation, such as tokenized securities or other products that leverage distributed ledger technology.",
+          "filing_id": "JPM_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Furthermore, both financial institutions and their non-banking competitors face the risk of disruption to payments processing and other products and services from the use of new technologies that may not require intermediation, such as tokenized securities or other products that leverage distributed ledger technology.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Mastercard says rapid and significant technological changes in the payments industry, including digital assets and blockchain, could negatively impact its business and results of operations.",
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Rapid and significant technological developments and changes could negatively impact our overall business and results of operations or limit our future growth.The payments industry is subject to rapid and significant technological changes, including new technologies and changes to existing technologies (such as digital assets and blockchain",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Mastercard says these technological changes could result in new technologies that may be superior to, or render obsolete, the technologies it currently uses.",
+          "filing_id": "MA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "These changes could result in new technologies that may be superior to, or render obsolete, the technologies we currently use in our programs and services.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "stale_filing",
+          "companies": [
+            "GE"
+          ]
+        },
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "AXP",
+            "BAC",
+            "BLK",
+            "BRK",
+            "GS",
+            "JPM",
+            "MA",
+            "MS",
+            "V"
+          ]
+        }
+      ]
     }
   ]
 }

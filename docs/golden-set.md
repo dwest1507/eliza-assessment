@@ -2,7 +2,7 @@
 
 The Golden Set is the evaluation's ground truth: 30 labelled questions that the retrieval and generation harnesses score the system against. It lives in [`data/eval/golden_set.json`](../data/eval/golden_set.json) and is read by `edgar_rag.golden_set.load_golden_set()`, which checks the schema. It was written before any retrieval Arm or prompt ran, so no label was written with results in view.
 
-This page describes version 1, the set every result so far was measured on, the Required Fact tiers that version 2 adds, and the [Brief Suite](#the-brief-suite), the brief's questions in a file of their own. Version 2's [file](#the-file) is built and holds all 27 of version 1's cases other than the brief's, [rewritten](#the-rewritten-version-1-cases), and the first three slices of its [new cases](#the-new-cases); the rest of version 2 is decided but not built yet: see [Version 2](#version-2). Version 1's file stays unchanged as a record, and a test pins its digest.
+This page describes version 1, the set every result so far was measured on, the Required Fact tiers that version 2 adds, and the [Brief Suite](#the-brief-suite), the brief's questions in a file of their own. Version 2's [file](#the-file) is built and holds all 27 of version 1's cases other than the brief's, [rewritten](#the-rewritten-version-1-cases), and the first four slices of its [new cases](#the-new-cases); the rest of version 2 is decided but not built yet: see [Version 2](#version-2). Version 1's file stays unchanged as a record, and a test pins its digest.
 
 ## What it covers
 
@@ -131,7 +131,7 @@ No id is in both files: the loader rejects one that is.
 
 ## Version 2
 
-Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions and four variants of each, and version 2's file, with all three batches of version 1's 27 other cases rewritten and the first three of six slices of new cases, are built so far.
+Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions and four variants of each, and version 2's file, with all three batches of version 1's 27 other cases rewritten and the first four of six slices of new cases, are built so far.
 
 ### The file
 
@@ -280,6 +280,30 @@ The third slice is nine figure trends on Tracked Companies: revenue, net income 
 - **Coverage Gaps.** Apple's fiscal 2025 ends in September and Microsoft's in June, so their case expects the periods differ gap. Pfizer's and Johnson & Johnson's 2024 years end two days apart, and Alphabet's and Meta's on the same day, so those cases expect none.
 - **Sections.** ExxonMobil's Item 7 only refers to the MD&A in its Financial Section, which the Corpus seam names Other, so its facts cite Other, as JPMorgan's 10-K financial review does. Apple's MD&A gives no net income figure, so its net income facts cite its Financial Statements.
 - **Fact wording.** As in the first two slices, each fact states one claim in the Filing's own terms and names its Company, and none renames a period or states a cause or change the Filing does not. Coca-Cola's nine-month facts keep the Filing's period ("the nine months ended September 26, 2025") rather than a calendar quarter.
+
+The fourth slice is four outlook questions and five sector questions. Two outlook questions have their guidance in the Filings and two do not, so they expect a `no_guidance` gap. Each sector question uses a Sector phrase the Sector table resolves, is about industrials, energy or financials Companies, and has facts from several of the resolved Companies. A test checks the slice's ids, that each outlook question is about one Company and expects the no guidance gap exactly when its guidance is not in the Filing, and that each sector question's phrase is in its question, its Sources and facts are Companies the phrase resolves to, at least two of them, and the slice covers all three sectors.
+
+| Case | Companies | Topic | Required Facts (must-state / detail) | Sections drafted from |
+|---|---|---|---|---|
+| `outlook-amzn-q1-2026-guidance` | Amazon | First quarter 2026 guidance, in the Filing | 2 / 8 | MD&A of the FY2025 10-K, its Guidance section included |
+| `outlook-mcd-2025` | McDonald's | 2025 outlook, in the Filing | 4 / 8 | The FY2024 10-K, one Unsectioned Section, its 2025 Outlook and Long-Term Outlook |
+| `outlook-intc-2026` | Intel | 2026 outlook, no guidance | 4 / 6 | The FY2025 10-K, one Unsectioned Section, every 2026 expectation in it |
+| `outlook-nflx-growth` | Netflix | Revenue growth and profitability outlook, no guidance | 4 / 7 | MD&A and Risk Factors of the FY2025 10-K |
+| `sector-aerospace-supply-chain` | "the aerospace and defense companies": Boeing, Lockheed Martin, RTX | Supply chain risks | 7 / 11 | Risk Factors of the three FY2025 10-Ks |
+| `sector-industrials-tariffs` | "the industrial companies": Boeing, Caterpillar, Deere, Lockheed Martin, RTX, UPS | Tariffs | 11 / 13 | Risk Factors and MD&A of each latest 10-K |
+| `sector-energy-operational-risks` | "the energy companies": Chevron, ExxonMobil | Operational risks and how they manage them | 8 / 11 | Risk Factors of Chevron's FY2024 and ExxonMobil's FY2025 10-Ks |
+| `sector-banks-capital-liquidity` | "the major banks": Bank of America, JPMorgan | Regulatory capital and liquidity requirements | 7 / 13 | Risk Factors of Bank of America's FY2024 and JPMorgan's FY2025 10-Ks |
+| `sector-financials-digital-assets` | "the financial companies": the ten Financials, seven with facts | Stablecoins and other digital assets | 8 / 13 | Risk Factors of each latest 10-K of American Express, Bank of America, BlackRock, Goldman Sachs, JPMorgan, Mastercard and Visa |
+
+- **Not a repeat.** The Golden Set's other outlook cases ask about Tesla, Microsoft, Meta, NVIDIA and UnitedHealth; this slice asks about four other Companies. The banks' main risks, the aerospace and defense companies' dependence on government contracts, Boeing's commercial production, the oil majors' regulation and commodity prices, and Nike's, Tesla's and Amazon's tariffs are already asked; this slice asks the same Sectors about capital and liquidity, supply chains, operational hazards, tariffs and digital assets.
+- **Guidance or not.** Amazon's FY2025 10-K repeats the first quarter 2026 guidance of its earnings release, and McDonald's FY2024 10-K has a 2025 Outlook section, so those two cases expect no gap; the harness checks only the gaps listed, so a system that states the no guidance gap anyway is not penalised. Intel's and Netflix's 10-Ks give no guidance, so their answers state the gap and draw the outlook from commentary and risk factors, which the facts cover.
+- **Coverage Gaps.** Deere's fiscal 2025 ends on November 2, Chevron's latest 10-K is FY2024, and Bank of America's is FY2024, so the tariff, energy and banks cases expect the periods differ gap. "The financial companies" resolves to all ten Financials, GE among them, so that case expects GE's stale Filing gap as well as the periods differ gap; Berkshire Hathaway, GE Capital and Morgan Stanley name no digital asset risk, so they have no facts. The aerospace and defense companies all have FY2025 10-Ks, so that case expects none.
+- **Every half of a question has facts.** The energy question asks how the Companies manage their operational risks: Chevron's system of corporate policies, standards and compliance mechanisms and its self-insurance, and ExxonMobil's management systems, safety focus and enterprise risk management system are must-state. For tariffs, Lockheed Martin and RTX expect no material adverse effect, so that view and how they mitigate tariffs are their must-state facts.
+- **Must-state or detail.** The must-state facts are each Company's headline statement on the question's topic: for an outlook, what it expects (a growth range, an operating margin range, supply constraints, lower expenses, continued content investment, the timing of a pending acquisition); for a sector question, what each Company says the topic does to it. Further expectations, drivers, ratios, laws, proposals and knock-on effects are details.
+- **No amount.** No fact states a dollar amount. The guided and forecast amounts (Amazon's net sales and operating income ranges, McDonald's capital expenditures, Caterpillar's expected tariff costs) have no SEC company-facts value, and every Company in the slice but Amazon is a Snapshot Company the reference does not cache. Where a range is the answer, the must-state fact says the Filing gives it, as `outlook-meta-capex-2026` does; the amounts stay in the evidence quotes.
+- **Sections.** The Corpus finds no Item headings in McDonald's and Intel's 10-Ks, so each is one Unsectioned Section and their facts cite it. Deere's MD&A sits in Other; its Risk Factors carry the same tariff passages, which its facts cite.
+- **Names.** The Sector table writes "McDonalds Corporation"; the facts write "McDonald's", and the label test that a fact names its Company ignores apostrophes.
+- **Fact wording.** As in the earlier slices, each fact states one claim in the Filing's own terms and names its Company, and none renames a period or states a cause or change the Filing does not: Intel's facts keep "Q1 2026" and Deere's "fiscal year 2025".
 
 ### What is decided
 
