@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type Ref } from 'react'
 import Link from 'next/link'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
@@ -42,7 +42,12 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
   })
   const [input, setInput] = useState('')
   const [open, setOpen] = useState<OpenSource | null>(null)
-  const endRef = useRef<HTMLDivElement>(null)
+  const threadRef = useRef<HTMLDivElement>(null)
+  const lastQuestionRef = useRef<HTMLDivElement>(null)
+  // How to scroll the next question into place once it renders, or null for not at all.
+  const pendingScroll = useRef<ScrollBehavior | null>(null)
+  const [end, setEnd] = useState<HTMLDivElement | null>(null)
+  const [endBelow, setEndBelow] = useState(false)
 
   const busy = status === 'submitted' || status === 'streaming'
 
@@ -50,7 +55,11 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
   // has no storage) and the browser's first render agree.
   useEffect(() => {
     const saved = loadConversation()
-    if (saved.length > 0) setMessages(saved)
+    if (saved.length > 0) {
+      // A restored conversation opens at its last question, at once.
+      pendingScroll.current = 'auto'
+      setMessages(saved)
+    }
   }, [setMessages])
 
   // Saved once each answer is complete, never half-written. Only "New conversation"
@@ -59,13 +68,35 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
     if (!busy && messages.length > 0) saveConversation(messages)
   }, [messages, busy])
 
+  // The thread scrolls once per question, to put it at the top of the thread, and never
+  // while its answer streams, so the reader keeps their place.
+  const lastQuestionId = messages.findLast((m) => m.role === 'user')?.id
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-  }, [messages, status])
+    const behavior = pendingScroll.current
+    if (!behavior || !lastQuestionId) return
+    pendingScroll.current = null
+    lastQuestionRef.current?.scrollIntoView({ behavior, block: 'start' })
+  }, [lastQuestionId])
+
+  // "Jump to latest" shows while the end of the thread is below the thread's visible area.
+  useEffect(() => {
+    if (!end || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(
+      ([entry]) =>
+        setEndBelow(
+          !entry.isIntersecting &&
+            (!entry.rootBounds || entry.boundingClientRect.top >= entry.rootBounds.bottom)
+        ),
+      { root: threadRef.current }
+    )
+    observer.observe(end)
+    return () => observer.disconnect()
+  }, [end])
 
   function ask(question: string) {
     const text = question.trim()
     if (!text || busy) return
+    pendingScroll.current = scrollBehavior()
     sendMessage({ text })
   }
 
@@ -88,6 +119,50 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
   const openSources = open && openMessage ? switcherSources(openMessage, open.tag) : []
   const last = messages.at(-1)
   const writing = status === 'streaming' && last?.role === 'assistant' && !messageText(last)
+  const turns = groupTurns(messages)
+
+  const renderMessage = (message: ResearchMessage) =>
+    message.role === 'user' ? (
+      <UserMessage
+        key={message.id}
+        ref={message.id === lastQuestionId ? lastQuestionRef : undefined}
+        text={messageText(message)}
+      />
+    ) : (
+      <AnswerMessage
+        key={message.id}
+        text={messageText(message)}
+        sources={messageSources(message)}
+        scope={messageDataPart(message, 'query-scope')}
+        gaps={messageDataPart(message, 'coverage-gaps')?.gaps ?? []}
+        complete={answerComplete(message, messages, status)}
+        openTag={open?.messageId === message.id ? open.tag : null}
+        onCite={(tag) => setOpen({ messageId: message.id, tag })}
+      />
+    )
+
+  // Progress, errors and the end-of-thread marker follow the latest turn.
+  const tail = (
+    <>
+      {status === 'submitted' && <Progress text="Retrieving Sources…" />}
+      {writing && <Progress text="Writing the answer…" />}
+
+      {status === 'error' && (
+        <div
+          role="alert"
+          className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-[14px] text-red-200"
+        >
+          {rejectionReason(error) ?? (
+            <>
+              The answer could not be loaded. Check that the API is running (
+              <code className="font-mono text-[13px]">make dev</code>) and try again.
+            </>
+          )}
+        </div>
+      )}
+      <div ref={setEnd} />
+    </>
+  )
 
   return (
     <div className="flex h-dvh flex-col text-ink">
@@ -117,47 +192,47 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
 
       <div className="flex min-h-0 flex-1">
         <main className="flex min-w-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <div className="mx-auto flex max-w-3xl flex-col gap-6 px-5 py-8">
-              {messages.length === 0 ? (
-                <EmptyState disabled={busy} onPick={ask} coverage={coverage} />
-              ) : (
-                messages.map((message) =>
-                  message.role === 'user' ? (
-                    <UserMessage key={message.id} text={messageText(message)} />
-                  ) : (
-                    <AnswerMessage
-                      key={message.id}
-                      text={messageText(message)}
-                      sources={messageSources(message)}
-                      scope={messageDataPart(message, 'query-scope')}
-                      gaps={messageDataPart(message, 'coverage-gaps')?.gaps ?? []}
-                      complete={answerComplete(message, messages, status)}
-                      openTag={open?.messageId === message.id ? open.tag : null}
-                      onCite={(tag) => setOpen({ messageId: message.id, tag })}
-                    />
+          <div className="relative flex min-h-0 flex-1 flex-col">
+            {/* A size container, so the latest turn can be sized to the thread's height. */}
+            <div ref={threadRef} className="[container-type:size] min-h-0 flex-1 overflow-y-auto">
+              <div className="mx-auto flex max-w-3xl flex-col gap-6 px-5 py-8">
+                {turns.length === 0 ? (
+                  <>
+                    <EmptyState disabled={busy} onPick={ask} coverage={coverage} />
+                    {tail}
+                  </>
+                ) : (
+                  turns.map((turn, i) =>
+                    i < turns.length - 1 ? (
+                      <div key={turn[0].id} className="flex flex-col gap-6">
+                        {turn.map(renderMessage)}
+                      </div>
+                    ) : (
+                      // At least the thread's height, less its bottom padding and the
+                      // question's top margin, so a new question can scroll to the top
+                      // with room below it for the answer.
+                      <div
+                        key={turn[0].id}
+                        className="flex min-h-[calc(100cqh-3.5rem)] flex-col gap-6"
+                      >
+                        {turn.map(renderMessage)}
+                        {tail}
+                      </div>
+                    )
                   )
-                )
-              )}
-
-              {status === 'submitted' && <Progress text="Retrieving Sources…" />}
-              {writing && <Progress text="Writing the answer…" />}
-
-              {status === 'error' && (
-                <div
-                  role="alert"
-                  className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-[14px] text-red-200"
-                >
-                  {rejectionReason(error) ?? (
-                    <>
-                      The answer could not be loaded. Check that the API is running (
-                      <code className="font-mono text-[13px]">make dev</code>) and try again.
-                    </>
-                  )}
-                </div>
-              )}
-              <div ref={endRef} />
+                )}
+              </div>
             </div>
+
+            {end && endBelow && (
+              <button
+                type="button"
+                onClick={() => end.scrollIntoView({ behavior: scrollBehavior(), block: 'end' })}
+                className="btn-secondary absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-1.5 text-[13px] whitespace-nowrap shadow-[0_4px_24px_rgba(0,0,0,0.5)]"
+              >
+                Jump to latest <span aria-hidden="true">↓</span>
+              </button>
+            )}
           </div>
 
           <form
@@ -215,6 +290,27 @@ function switcherSources(message: ResearchMessage, openTag: string): Source[] {
   const sources = messageSources(message)
   const cited = citedSources(messageText(message), sources)
   return sources.filter((s) => s.tag === openTag || cited.includes(s))
+}
+
+/**
+ * The conversation as turns: each question with the answer that follows it. A turn keeps
+ * its element as later turns arrive, so an answer's component state survives a new question.
+ */
+function groupTurns(messages: ResearchMessage[]): ResearchMessage[][] {
+  const turns: ResearchMessage[][] = []
+  for (const message of messages) {
+    if (message.role === 'user' || turns.length === 0) turns.push([message])
+    else turns[turns.length - 1].push(message)
+  }
+  return turns
+}
+
+/** Smooth scrolling, unless the user prefers reduced motion. */
+function scrollBehavior(): ScrollBehavior {
+  const reduce =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  return reduce ? 'auto' : 'smooth'
 }
 
 function EmptyState({
@@ -280,9 +376,9 @@ function CoverageLine({ coverage }: { coverage: CoverageSummary }) {
   )
 }
 
-function UserMessage({ text }: { text: string }) {
+function UserMessage({ text, ref }: { text: string; ref?: Ref<HTMLDivElement> }) {
   return (
-    <div className="flex justify-end">
+    <div ref={ref} className="flex scroll-mt-6 justify-end">
       <p className="max-w-[85%] rounded-xl bg-accent/15 px-4 py-2.5 text-[14px] break-words whitespace-pre-wrap text-ink shadow-[inset_0_0_0_1px_rgba(14,165,233,0.25)]">
         {text}
       </p>
