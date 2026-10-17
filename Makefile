@@ -44,7 +44,7 @@ for key in $(1); do \
 	done
 endef
 
-.PHONY: help install test lint format eda sec-facts index embeddings ask api eval-retrieval eval-generation eval-brief eval-rescore eval-arms eval-generators eval-export deck dev frontend-deps
+.PHONY: help install test lint format eda sec-facts index embeddings ask api eval-retrieval eval-generation eval-brief eval-rescore eval-arms eval-generators eval-settings eval-export deck dev frontend-deps
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-15s %s\n", $$1, $$2}'
@@ -130,7 +130,11 @@ eval-rescore: $(INDEX) ## Redo the figure check of every saved generation report
 	@if [ -z "$(GENERATION_REPORTS)" ]; then echo 'No saved generation reports in data/derived/eval/.'; exit 0; fi
 	$(UV) python -m edgar_eval.generation --rescore $(addprefix ../,$(GENERATION_REPORTS))
 
-eval-arms: $(INDEX) $(EMBEDDINGS) ## Answer the split through every Arm and choose one by the selection rule (costs money)
+# The comparison commands share a round's shipped run (generation-<split>.json) and Control
+# Run (generation-control-<split>.json), reusing them while the code, prompt and Golden Set
+# version are unchanged, and running them first otherwise (ADR 0011).
+
+eval-arms: $(INDEX) $(EMBEDDINGS) ## Answer the split through every Arm, with the round's shipped run and Control Run, and choose one by the selection rule (costs money)
 	@keys=$$($(GENERATOR_KEYS)) || exit 1; \
 	$(call require_keys,$$keys JEV_API_KEY)
 	$(UV) python -m edgar_eval.selection arms --split $(SPLIT)
@@ -143,6 +147,15 @@ eval-generators: $(INDEX) ## Answer the split with gpt-6-luna and claude-haiku-5
 	@keys=$$( ($(GENERATOR_KEYS)) && ($(GENERATOR_KEYS) $(or $(MODELS),--all)) ) || exit 1; \
 	$(call require_keys,$$keys JEV_API_KEY)
 	$(UV) python -m edgar_eval.selection generators --split $(SPLIT) $(foreach m,$(MODELS),--model $(m))
+
+# The settings `make eval-settings` compares, each CHUNKS:BUDGET (ADR 0010's grid).
+CANDIDATES ?=
+
+eval-settings: $(INDEX) ## Answer the split at each chunk size and context budget named and choose by the selection rule: make eval-settings CANDIDATES="450:32000 600:48000" (costs money)
+	@if [ -z "$(CANDIDATES)" ]; then echo 'usage: make eval-settings CANDIDATES="450:32000 ..."' >&2; exit 1; fi
+	@keys=$$($(GENERATOR_KEYS)) || exit 1; \
+	$(call require_keys,$$keys JEV_API_KEY)
+	$(UV) python -m edgar_eval.selection settings --split $(SPLIT) $(foreach s,$(CANDIDATES),--setting $(s))
 
 SPLIT ?= dev
 RETRIEVAL_REPORT = data/derived/eval/retrieval-$(SPLIT).json

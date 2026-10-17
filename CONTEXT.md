@@ -59,7 +59,7 @@ Whether a Required Fact's evidence quote is in the text of an Answer Context's S
 _Avoid_: Recall (unqualified), coverage
 
 **Control Run**:
-The shipped choice run again beside its challengers in a comparison, so the comparison shows its own run-to-run noise.
+The shipped choice run again beside its challengers in a comparison, so the comparison shows its own run-to-run noise. If it comes out ahead of the shipped run, the comparison is inconclusive and the shipped choice stands. The comparisons of one round (the same code, prompt and Golden Set version) share one shipped run and one Control Run.
 _Avoid_: Baseline, rerun
 
 **Arm**:

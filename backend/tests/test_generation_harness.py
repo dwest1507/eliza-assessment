@@ -736,6 +736,48 @@ def test_the_command_line_prints_scores_with_cost_and_latency_and_writes_json(in
     assert case["fact_recall"] is not None
 
 
+def test_a_report_records_the_round_it_was_run_in(index, tmp_path):
+    """The code, prompt and Golden Set version the selection commands match a shipped
+    run and a Control Run on, to reuse them within a round (ADR 0011)."""
+    import io
+    import json
+
+    from edgar_eval.generation import current_round, main
+    from edgar_rag.retrieval import PROMPT_VERSION
+
+    path = tmp_path / "generation-dev.json"
+    main(
+        ["--case", "risk-aapl-tsla-jpm", "--index", str(index), "--log", str(tmp_path / "l")]
+        + ["--json", str(path)],
+        model=FakeModel(ANSWER),
+        judge=FakeJudge(),
+        fact_values=lambda tickers: [],
+        out=io.StringIO(),
+    )
+
+    data = json.loads(path.read_text())
+    now = current_round()
+    assert {k: data[k] for k in now} == now
+    assert now["prompt_version"] == PROMPT_VERSION
+    assert now["golden_set_version"] == data["golden_set_version"]
+
+
+def test_the_code_version_changes_with_any_source_file(tmp_path):
+    from edgar_eval.generation import code_version
+
+    (tmp_path / "pkg").mkdir()
+    (tmp_path / "pkg" / "a.py").write_text("A = 1\n")
+    (tmp_path / "pkg" / "notes.txt").write_text("not code")
+    before = code_version(tmp_path)
+
+    assert code_version(tmp_path) == before
+    (tmp_path / "pkg" / "notes.txt").write_text("still not code")
+    assert code_version(tmp_path) == before
+    (tmp_path / "pkg" / "a.py").write_text("A = 2\n")
+    assert code_version(tmp_path) != before
+    assert code_version() != code_version(tmp_path)  # the backend's own source by default
+
+
 def test_the_command_answers_through_a_chosen_arm_and_records_it(index, tmp_path):
     import io
     import json

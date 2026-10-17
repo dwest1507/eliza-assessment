@@ -51,12 +51,18 @@ about a third of a cent per case with `gpt-6-luna`, Jev included.
 reports from their stored answers, in place, with no Answer Call and no Jev call
 (`rescore_figures`). A changed check is a fixed measurement, not a new choice, so
 rescoring is allowed on the holdout.
+
+A Golden Set report records the round it was run in (`current_round`): the code version
+(a digest of the backend's source, `code_version`), the prompt version and the Golden
+Set version. The selection commands reuse a round's shipped run and Control Run only
+when all three match (ADR 0011).
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import json
 import re
 import sys
@@ -95,9 +101,11 @@ from edgar_rag.golden_set import (
     load_golden_set,
     normalise_whitespace,
 )
+from edgar_rag.paths import REPO_ROOT
 from edgar_rag.retrieval import (
     CONTEXT_BUDGET_TOKENS,
     DEFAULT_INDEX,
+    PROMPT_VERSION,
     Source,
     index_chunk_tokens,
     prepare_answer_context,
@@ -109,7 +117,9 @@ __all__ = [
     "GenerationReport",
     "Judge",
     "Summary",
+    "code_version",
     "company_names",
+    "current_round",
     "evaluate",
     "main",
     "rescore_figures",
@@ -570,6 +580,31 @@ def corpus_fact_values(filing_id: str) -> tuple[int, ...]:
 # --- Command line -------------------------------------------------------------------------
 
 
+_SOURCE = REPO_ROOT / "backend" / "src"
+
+
+def code_version(source: Path = _SOURCE) -> str:
+    """A digest of every Python file under `source` (the backend's packages by default),
+    their paths and contents: any change to the code that answers, judges or scores a
+    case changes it, and nothing else does."""
+    digest = hashlib.sha256()
+    for path in sorted(source.rglob("*.py")):
+        digest.update(path.relative_to(source).as_posix().encode() + b"\0")
+        digest.update(path.read_bytes() + b"\0")
+    return digest.hexdigest()[:16]
+
+
+def current_round(golden_set: Path = DEFAULT_GOLDEN_SET) -> dict[str, str | int]:
+    """The round a Golden Set run now belongs to: the same code, prompt and Golden Set
+    version (ADR 0011). A report records it, so a selection command can tell whether a
+    shipped run or Control Run already written belongs to this round."""
+    return {
+        "code_version": code_version(),
+        "prompt_version": PROMPT_VERSION,
+        "golden_set_version": load_golden_set(golden_set).version,
+    }
+
+
 def main(
     argv: list[str] | None = None,
     *,
@@ -719,7 +754,7 @@ def main(
     _print_report(report, args.split, out)
     if args.json:
         args.json.parent.mkdir(parents=True, exist_ok=True)
-        data = {"split": args.split, "golden_set_version": golden.version} | report.to_dict()
+        data = {"split": args.split} | current_round(args.golden_set) | report.to_dict()
         args.json.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
         print(f"\nWritten to {args.json.resolve()}", file=out)
     return 1 if report.errors else 0

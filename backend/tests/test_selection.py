@@ -472,7 +472,8 @@ def test_the_generator_comparison_can_be_limited_to_named_generators(monkeypatch
 
     main(["generators", "--model", "claude-haiku-5-5", "--json", str(out)], out=io.StringIO())
 
-    assert ran == ["gpt-6-luna", "claude-haiku-5-5"]  # the shipped generator always first
+    # The shipped generator first, as the shipped run and the Control Run.
+    assert ran == ["gpt-6-luna", "gpt-6-luna", "claude-haiku-5-5"]
     written = json.loads(out.read_text())
     assert written["reports"] == [
         str(tmp_path / "generation-dev.json"),
@@ -489,7 +490,7 @@ def test_naming_the_shipped_generator_runs_it_once(monkeypatch, tmp_path):
 
     main([*argv, "--json", str(tmp_path / "c.json")], out=io.StringIO())
 
-    assert ran == ["gpt-6-luna", "claude-haiku-5-5"]
+    assert ran == ["gpt-6-luna", "gpt-6-luna", "claude-haiku-5-5"]  # no third shipped run
 
 
 def test_with_no_generator_named_every_generator_in_the_table_runs(monkeypatch, tmp_path):
@@ -500,7 +501,7 @@ def test_with_no_generator_named_every_generator_in_the_table_runs(monkeypatch, 
 
     main(["generators", "--json", str(tmp_path / "c.json")], out=io.StringIO())
 
-    assert ran == [g.model for g in GENERATORS]
+    assert ran == [GENERATORS[0].model] + [g.model for g in GENERATORS]
 
 
 def test_a_generator_not_in_the_table_is_refused_before_any_run(monkeypatch, tmp_path):
@@ -512,3 +513,230 @@ def test_a_generator_not_in_the_table_is_refused_before_any_run(monkeypatch, tmp
         main(["generators", "--model", "gemini-9"], out=io.StringIO())
 
     assert stopped.value.code != 0 and ran == []
+
+
+# --- The Control Run (ADR 0011) ----------------------------------------------------------
+# Every comparison reruns the shipped choice as a Control Run. If it comes out ahead of
+# the shipped run on any of the rule's ahead metrics, the noise is larger than the
+# thresholds assume: the choice is inconclusive and the shipped choice stands.
+
+
+def _control(recall, *, gaps=None):
+    """A Control Run on cases c0..c<n>, named as the shipped choice is."""
+    return _candidate("fts5", recall, gaps=gaps)
+
+
+@pytest.mark.parametrize("rule", ["arms", "generators", "settings"])
+def test_a_control_run_ahead_of_the_shipped_run_makes_the_choice_inconclusive(rule):
+    better = _candidate("dense", [1.0] * 6 + [0.0] * 2)  # ahead: 6 wins to 0
+    control = _control([1.0] * 5 + [0.0] * 3)  # the shipped choice again, 5 wins to 0
+
+    choice = choose(SHIPPED, [better], rule, control=control)
+
+    assert choice.comparisons["dense"].qualifies  # the challenger is ahead on its own
+    assert choice.control is not None and choice.control.fact_recall.verdict == "ahead"
+    assert choice.inconclusive
+    assert choice.chosen == "fts5"
+    assert "Control Run" in choice.reason and "Fact Recall" in choice.reason
+
+
+def test_a_control_run_ahead_on_coverage_gaps_is_inconclusive_only_where_gaps_can_win():
+    # Coverage Gaps are an ahead metric under the generator rule only; under the Arm
+    # rule they are a guardrail, so a Control Run ahead on them alone decides nothing.
+    shipped = _candidate("gpt-6-luna", [0.0] * 8, gaps=[False] * 8)
+    better = _candidate("claude-haiku-5-5", [1.0] * 6 + [0.0] * 2, gaps=[True] * 8)
+    control = _candidate("gpt-6-luna", [0.0] * 8, gaps=[True] * 6 + [False] * 2)
+
+    assert choose(shipped, [better], "generators", control=control).inconclusive
+    by_arms = choose(shipped, [better], "arms", control=control)
+    assert not by_arms.inconclusive and by_arms.chosen == "claude-haiku-5-5"
+
+
+@pytest.mark.parametrize("rule", ["arms", "generators", "settings"])
+def test_a_control_run_within_noise_leaves_the_choice_to_the_challengers(rule):
+    better = _candidate("dense", [1.0] * 6 + [0.0] * 2)
+    control = _control([1.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])  # 2 wins to 0: p = 0.25
+
+    choice = choose(SHIPPED, [better], rule, control=control)
+
+    assert choice.control.fact_recall.verdict == "indistinguishable"
+    assert not choice.inconclusive and choice.reason is None
+    assert choice.chosen == "dense"
+
+
+def test_a_control_run_within_noise_keeps_the_shipped_choice_with_no_challenger_ahead():
+    close = _candidate("dense", [1.0] * 2 + [0.0] * 6)
+
+    choice = choose(SHIPPED, [close], control=_control([0.0] * 8))
+
+    assert not choice.inconclusive and choice.chosen == "fts5"
+
+
+def _report(path, name, recall, *, key="arm", **fields):
+    cases = [
+        {"case_id": f"c{i}", "fact_recall": r, "faithfulness": 1.0, "coverage_gaps": None}
+        for i, r in enumerate(recall)
+    ]
+    path.write_text(json.dumps({key: name, "split": "dev", "cases": cases} | fields))
+    return str(path)
+
+
+def test_the_compare_command_takes_a_control_run_and_says_why_it_is_inconclusive(tmp_path, capsys):
+    from edgar_eval.selection import main
+
+    shipped = _report(tmp_path / "generation-dev.json", "fts5", [0.0] * 8)
+    control = _report(tmp_path / "generation-control-dev.json", "fts5", [1.0] * 5 + [0.0] * 3)
+    challenger = _report(tmp_path / "generation-arms-dev-dense.json", "dense", [1.0] * 8)
+    out = tmp_path / "arm-choice-dev.json"
+
+    main(["compare", shipped, challenger, "--control", control, "--json", str(out)])
+
+    printed = capsys.readouterr().out
+    assert "Control Run" in printed
+    assert "Inconclusive:" in printed and "Chosen: fts5" in printed
+    saved = json.loads(out.read_text())
+    assert saved["control_report"] == control
+    assert saved["inconclusive"] is True and saved["chosen"] == "fts5"
+    assert saved["control"]["fact_recall"]["verdict"] == "ahead"
+    assert saved["comparisons"]["dense"]["qualifies"]
+
+
+# --- One shipped run and one Control Run per round (ADR 0011) ------------------------------
+# A round is the same code, prompt and Golden Set version on one split. The Arm, settings
+# and generator commands of a round share its shipped run and Control Run, reusing them
+# when they exist for that round and running them again when any of the three differs.
+
+
+@pytest.fixture
+def harness_runs(monkeypatch, tmp_path, request):
+    """A fake generation harness that records each run (its report's name, and its
+    arguments in `request.node.argvs`) and writes a report stamped with the current
+    round, a dict the test can change; an index of another chunk size is recorded in
+    `request.node.built` instead of built."""
+    from edgar_eval import generation, selection
+
+    current = {"code_version": "code-1", "prompt_version": "v7", "golden_set_version": 1}
+    runs, argvs = [], {}
+
+    def fake_main(argv, *, out=None):
+        target = Path(argv[argv.index("--json") + 1])
+        runs.append(target.name)
+        argvs[target.name] = argv
+        model = argv[argv.index("--model") + 1] if "--model" in argv else "gpt-6-luna"
+        arm = argv[argv.index("--arm") + 1] if "--arm" in argv else "fts5"
+        budget = argv[argv.index("--context-budget") + 1] if "--context-budget" in argv else 32000
+        chunks = 600
+        if "--index" in argv:
+            chunks = int(argv[argv.index("--index") + 1].rsplit("chunks", 1)[1].split(".")[0])
+        cases = [{"case_id": "c0", "fact_recall": 0.5, "faithfulness": 1.0, "coverage_gaps": None}]
+        report = {
+            "model": model,
+            "arm": arm,
+            "settings": f"chunks-{chunks}-budget-{budget}",
+            "split": "dev",
+            "cases": cases,
+        }
+        target.write_text(json.dumps(report | current))
+        return 0
+
+    monkeypatch.setattr(generation, "main", fake_main)
+    monkeypatch.setattr(generation, "current_round", lambda golden_set=None: dict(current))
+    monkeypatch.setattr(selection, "_EVAL_DIR", tmp_path)
+    monkeypatch.setattr(selection, "_INDEX_DIR", tmp_path)
+    built = []
+    monkeypatch.setattr(
+        selection, "_build_index", lambda chunks, path: built.append((chunks, path.name))
+    )
+    request.node.argvs, request.node.built = argvs, built
+    return runs, current
+
+
+def _command(*argv, tmp_path):
+    from edgar_eval.selection import main
+
+    out = io.StringIO()
+    main([*argv, "--json", str(tmp_path / "choice.json")], out=out)
+    return out.getvalue(), json.loads((tmp_path / "choice.json").read_text())
+
+
+def test_a_command_runs_the_rounds_shipped_run_and_control_run_once(harness_runs, tmp_path):
+    runs, _ = harness_runs
+
+    _, choice = _command("arms", tmp_path=tmp_path)
+
+    assert runs[:2] == ["generation-dev.json", "generation-control-dev.json"]
+    assert "generation-arms-dev-fts5.json" not in runs  # the shipped run is the Shipped Arm's
+    assert choice["reports"][0] == str(tmp_path / "generation-dev.json")
+    assert choice["control_report"] == str(tmp_path / "generation-control-dev.json")
+    assert "fts5" not in choice["comparisons"] and choice["control"] is not None
+
+
+def test_the_arm_settings_and_generator_commands_of_one_round_share_its_runs(
+    harness_runs, tmp_path
+):
+    runs, _ = harness_runs
+
+    _command("arms", tmp_path=tmp_path)
+    runs.clear()
+    printed, _ = _command("generators", "--model", "claude-haiku-5-5", tmp_path=tmp_path)
+    assert runs == ["generation-dev-claude-haiku-5-5.json"]
+    assert "Reusing the shipped run" in printed and "Reusing the Control Run" in printed
+    runs.clear()
+    _, choice = _command("settings", "--setting", "450:32000", tmp_path=tmp_path)
+    assert runs == ["generation-dev-chunks450-budget32000.json"]
+    assert list(choice["comparisons"]) == ["chunks-450-budget-32000"]
+
+
+@pytest.mark.parametrize("changed", ["code_version", "prompt_version", "golden_set_version"])
+def test_a_new_code_prompt_or_golden_set_version_starts_a_new_round(
+    harness_runs, tmp_path, changed
+):
+    runs, current = harness_runs
+
+    _command("generators", "--model", "claude-haiku-5-5", tmp_path=tmp_path)
+    current[changed] = "changed"
+    runs.clear()
+    _command("generators", "--model", "claude-haiku-5-5", tmp_path=tmp_path)
+
+    assert runs[:2] == ["generation-dev.json", "generation-control-dev.json"]
+
+
+def test_a_report_of_another_setup_is_not_taken_as_the_shipped_run(harness_runs, tmp_path):
+    runs, current = harness_runs
+    # `make eval-generation MODEL=...` with OPENAI_MODEL set, say: the right name, the
+    # right round, another generator.
+    _report(tmp_path / "generation-dev.json", "gpt-6.1-sol", [0.5], key="model", arm="fts5")
+    data = json.loads((tmp_path / "generation-dev.json").read_text())
+    (tmp_path / "generation-dev.json").write_text(json.dumps(data | current))
+
+    _command("generators", "--model", "claude-haiku-5-5", tmp_path=tmp_path)
+
+    assert runs[0] == "generation-dev.json"
+
+
+def test_the_settings_command_answers_each_named_setting_from_its_own_index(
+    harness_runs, tmp_path, request
+):
+    _command("settings", "--setting", "450:32000", "--setting", "600:48000", tmp_path=tmp_path)
+
+    argvs = request.node.argvs
+    small = argvs["generation-dev-chunks450-budget32000.json"]
+    assert small[small.index("--index") + 1] == str(tmp_path / "edgar_rag-chunks450.sqlite")
+    assert small[small.index("--context-budget") + 1] == "32000"
+    bigger = argvs["generation-dev-chunks600-budget48000.json"]
+    assert "--index" not in bigger  # the shipped chunk size reads the shipped index
+    assert bigger[bigger.index("--context-budget") + 1] == "48000"
+    assert request.node.built == [
+        (450, "edgar_rag-chunks450.sqlite")
+    ]  # built once, as it was missing
+
+
+def test_the_settings_command_needs_a_named_setting(harness_runs, tmp_path):
+    from edgar_eval.selection import main
+
+    runs, _ = harness_runs
+
+    with pytest.raises(SystemExit) as stopped:
+        main(["settings"], out=io.StringIO())
+
+    assert stopped.value.code != 0 and runs == []

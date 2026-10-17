@@ -21,34 +21,50 @@ but never decided on.
   the guardrails**.
 
 - **Settings** (ADR 0010): a chunk size and context budget replace the shipped ones under
-  the Arm rule. Each setting's report comes from `make eval-generation` with
-  `CHUNK_TOKENS` and `CONTEXT_BUDGET`, and is named by its setting
-  (`chunks-600-budget-32000`); only `compare` applies it.
+  the Arm rule. Each setting's report is named by its setting (`chunks-600-budget-32000`).
 
 Under any rule, when several challengers qualify, the **cheapest** wins: the lowest
 mean answer cost, then the earliest listed. `RULES` states the rules, and is the only
 place they differ. Choice files written under version 1's two-sided p < 0.05 rule are
 records and are not recomputed.
 
+**The Control Run** (ADR 0011). Every comparison also takes a Control Run: the shipped
+choice run again, compared with the shipped run under the same rule. If it comes out
+ahead of the shipped run on any of the rule's ahead metrics, the noise is larger than
+the thresholds assume: the choice is **inconclusive**, the shipped choice stands whatever
+its challengers scored, and the output says why.
+
+**One shipped run and one Control Run per round.** A round is the same code (a digest of
+the backend's source), prompt and Golden Set version on one split, which every Golden
+Set report records (`edgar_eval.generation.current_round`). The `arms`, `generators` and
+`settings` commands of a round share its shipped run, `generation-<split>.json` (the
+Shipped Arm, the shipped generator, the shipped chunk size and context budget), and its
+Control Run, `generation-control-<split>.json`: each command reuses them when they are of
+the shipped setup and of this round, and otherwise runs them again first.
+
     python -m edgar_eval.selection arms [--split dev] [--reuse]
     python -m edgar_eval.selection generators [--split dev] [--reuse] [--model MODEL]...
+    python -m edgar_eval.selection settings [--split dev] [--reuse] --setting CHUNKS:BUDGET...
     python -m edgar_eval.selection compare SHIPPED.json CHALLENGER.json...
-        [--rule arms|generators|settings] [--json PATH]
+        [--control CONTROL.json] [--rule arms|generators|settings] [--json PATH]
 
-`arms` runs the generation harness once per Arm in `edgar_eval.arms.ARMS`, writing
-`data/derived/eval/generation-arms-<split>-<arm>.json`, and compares the Shipped Arm
-with each challenger. `generators` runs it once per model in
-`edgar_eval.generators.GENERATORS` on the Shipped Arm, writing the default generator's
-report to `generation-<split>.json` and each other's to `generation-<split>-<model>.json`
-(the names `make eval-generation` uses), and compares the default with each other model;
-`--model` (repeatable) limits it to the generators named, the default always run first
-(`make eval-generators` passes `gpt-6-luna` and `claude-haiku-5-5`, Golden Set version
-2's comparison, unless `MODELS=` says otherwise).
-With `--reuse`, a report already written is read instead of rerun. Both call the
+`arms` runs the generation harness once per challenger Arm in `edgar_eval.arms.ARMS`,
+writing `data/derived/eval/generation-arms-<split>-<arm>.json`. `generators` runs it
+once per other model in `edgar_eval.generators.GENERATORS` on the Shipped Arm, writing
+`generation-<split>-<model>.json` (the name `make eval-generation` uses); `--model`
+(repeatable) limits it to the generators named (`make eval-generators` passes
+`gpt-6-luna` and `claude-haiku-5-5`, Golden Set version 2's comparison, unless `MODELS=`
+says otherwise). `settings` runs it once per `--setting`, a chunk size and context
+budget such as `450:32000`, writing `generation-<split>-chunks<N>-budget<B>.json` (the
+name `make eval-generation CHUNK_TOKENS=<N> CONTEXT_BUDGET=<B>` uses) and building the
+index of another chunk size, `data/derived/edgar_rag-chunks<N>.sqlite`, when missing.
+With `--reuse`, a challenger's report already written is read instead of rerun; the
+shipped run and Control Run are reused by round, with or without it. All three call the
 generators and Jev, so they cost money. `compare` applies a rule to generation reports
-already written, the first being the shipped choice. All three print the comparison and
-write it, with the choice, to `--json` (by default
-`data/derived/eval/<arm|generator>-choice-<split>.json`).
+already written, the first being the shipped choice, with `--control` the Control Run's
+(without one, as for version 1's reports, it says the noise is not shown). All print the
+comparison and write it, with the choice, to `--json` (by default
+`data/derived/eval/<arm|generator|settings>-choice-<split>.json`).
 """
 
 from __future__ import annotations
@@ -81,6 +97,9 @@ __all__ = [
 ]
 
 _EVAL_DIR = DERIVED_DIR / "eval"
+_INDEX_DIR = DERIVED_DIR
+"""Where an index of another chunk size is, or is built: `edgar_rag-chunks<N>.sqlite`,
+the name `make eval-generation CHUNK_TOKENS=<N>` uses."""
 
 RuleName = Literal["arms", "generators", "settings"]
 Score = Literal["fact_recall", "faithfulness", "coverage_gaps", "contradicted_claims"]
@@ -98,7 +117,7 @@ def _run_arms(split: str, reuse: bool, out: TextIO) -> list[Path]:
     from edgar_eval.arms import ARMS
 
     paths = []
-    for arm in sorted(ARMS, key=lambda a: not a.shipped):
+    for arm in (a for a in ARMS if not a.shipped):
         path = _EVAL_DIR / f"generation-arms-{split}-{arm.name}.json"
         if not (reuse and path.exists()):
             print(f"\n== Arm {arm.name} ==", file=out, flush=True)
@@ -109,23 +128,114 @@ def _run_arms(split: str, reuse: bool, out: TextIO) -> list[Path]:
 
 def _run_generators(split: str, reuse: bool, out: TextIO, only: Sequence[str] = ()) -> list[Path]:
     from edgar_eval import generation
+    from edgar_eval.generators import GENERATORS
+
+    _check_generators(only)
+    models = [g.model for g in GENERATORS[1:] if not only or g.model in only]
+    paths = []
+    for model in models:
+        path = _EVAL_DIR / f"generation-{split}-{model}.json"
+        if not (reuse and path.exists()):
+            print(f"\n== Generator {model} ==", file=out, flush=True)
+            generation.main(["--split", split, "--model", model, "--json", str(path)], out=out)
+        paths.append(path)
+    return paths
+
+
+def _check_generators(only: Sequence[str]) -> None:
+    """Refuse a model not in the table of compared generators."""
     from edgar_eval.generators import GENERATORS, generator
 
     unknown = [m for m in only if generator(m) is None]
     if unknown:
         listed = ", ".join(g.model for g in GENERATORS)
         raise SystemExit(f"error: not compared generators: {', '.join(unknown)} (one of {listed})")
-    models = [g.model for g in GENERATORS if g is GENERATORS[0] or not only or g.model in only]
+
+
+def _run_settings(
+    split: str, reuse: bool, out: TextIO, settings: Sequence[tuple[int, int]] = ()
+) -> list[Path]:
+    from edgar_eval import generation
+    from edgar_rag.retrieval import CHUNK_TOKENS
+
+    if not settings:
+        raise SystemExit("error: name each setting to compare: --setting CHUNKS:BUDGET")
     paths = []
-    for n, model in enumerate(models):
-        path = _EVAL_DIR / (
-            f"generation-{split}.json" if n == 0 else f"generation-{split}-{model}.json"
-        )
+    for chunks, budget in settings:
+        path = _EVAL_DIR / f"generation-{split}-chunks{chunks}-budget{budget}.json"
         if not (reuse and path.exists()):
-            print(f"\n== Generator {model} ==", file=out, flush=True)
-            generation.main(["--split", split, "--model", model, "--json", str(path)], out=out)
+            index: list[str] = []
+            if chunks != CHUNK_TOKENS:
+                index_path = _INDEX_DIR / f"edgar_rag-chunks{chunks}.sqlite"
+                if not index_path.exists():
+                    _build_index(chunks, index_path)
+                index = ["--index", str(index_path)]
+            print(f"\n== Setting chunks-{chunks}-budget-{budget} ==", file=out, flush=True)
+            argv = ["--split", split, *index, "--context-budget", str(budget), "--json", str(path)]
+            generation.main(argv, out=out)
         paths.append(path)
     return paths
+
+
+def _build_index(chunks: int, path: Path) -> None:
+    """Build an index of another chunk size, as `make index` builds the shipped one."""
+    from edgar_rag.corpus import load_corpus
+    from edgar_rag.retrieval import build_index
+
+    build_index(load_corpus(), path, chunk_tokens=chunks)
+
+
+def _setting(value: str) -> tuple[int, int]:
+    """A `--setting` value, `CHUNKS:BUDGET` (`450:32000`)."""
+    try:
+        chunks, budget = (int(part) for part in value.split(":"))
+    except ValueError:
+        raise argparse.ArgumentTypeError(f"not CHUNKS:BUDGET: {value}") from None
+    return chunks, budget
+
+
+_SHIPPED_RUN = "generation-{split}.json"
+_CONTROL_RUN = "generation-control-{split}.json"
+
+
+def _round_runs(split: str, out: TextIO) -> tuple[Path, Path]:
+    """The round's shipped run and Control Run: the shipped setup (the Shipped Arm, the
+    shipped generator, the shipped chunk size and context budget) answering the split
+    twice. A report already written is reused when it is of the shipped setup and of
+    this round (the same code, prompt and Golden Set version, `generation.current_round`);
+    otherwise it is run again, so the comparisons of one round pay for the shipped
+    choice twice, not once per comparison."""
+    from edgar_eval import generation
+    from edgar_eval.arms import ARMS
+    from edgar_eval.generators import GENERATORS
+    from edgar_rag.retrieval import CHUNK_TOKENS, CONTEXT_BUDGET_TOKENS
+
+    setup = {
+        "model": GENERATORS[0].model,
+        "arm": next(a.name for a in ARMS if a.shipped),
+        "settings": f"chunks-{CHUNK_TOKENS}-budget-{CONTEXT_BUDGET_TOKENS}",
+        "split": split,
+    }
+    expected = setup | generation.current_round()
+    paths = []
+    for label, name in (("shipped run", _SHIPPED_RUN), ("Control Run", _CONTROL_RUN)):
+        path = _EVAL_DIR / name.format(split=split)
+        if _recorded(path, expected):
+            print(f"Reusing the {label} of this round: {path}", file=out, flush=True)
+        else:
+            print(f"\n== The {label} ({setup['arm']}, {setup['model']}) ==", file=out, flush=True)
+            argv = ["--split", split, "--model", setup["model"], "--json", str(path)]
+            generation.main(argv, out=out)
+        paths.append(path)
+    return paths[0], paths[1]
+
+
+def _recorded(path: Path, expected: Mapping[str, Any]) -> bool:
+    """Whether the report at `path` exists and records every field of `expected`."""
+    if not path.exists():
+        return False
+    report = json.loads(path.read_text(encoding="utf-8"))
+    return all(report.get(k) == v for k, v in expected.items())
 
 
 @dataclass(frozen=True)
@@ -139,11 +249,12 @@ class Rule:
     behind_on_none: tuple[Score, ...]
     named_by: str
     """The generation report field that names a candidate (falling back to its model)."""
-    run: Callable[..., list[Path]] | None
-    """Runs the generation harness once per candidate on a split (reusing reports already
-    written when asked) and returns the reports, the shipped choice's first; None for a
-    rule applied only to reports already written (`compare`). The generator rule's also
-    takes `only`, the models to limit the run to."""
+    run: Callable[..., list[Path]]
+    """Runs the generation harness once per challenger on a split (reusing reports
+    already written when asked) and returns their reports; the shipped run and Control
+    Run come from the round (`_round_runs`). The generator rule's also takes `only`, the
+    models to limit the run to; the settings rule's `settings`, the (chunk size, context
+    budget) pairs to compare."""
     choice_file: str
     """The default file the choice is written to, before `-<split>.json`."""
 
@@ -167,7 +278,7 @@ RULES: dict[RuleName, Rule] = {
         ahead_on_any=("fact_recall",),
         behind_on_none=("faithfulness", "coverage_gaps", "contradicted_claims"),
         named_by="settings",
-        run=None,
+        run=_run_settings,
         choice_file="settings-choice",
     ),
 }
@@ -272,6 +383,15 @@ class Choice:
     chosen: str
     comparisons: dict[str, Comparison]
     costs: dict[str, float | None]
+    control: Comparison | None = None
+    """The Control Run (the shipped choice run again) against the shipped run, under the
+    same rule; None for a comparison made without one, as version 1's were."""
+    inconclusive: bool = False
+    """Whether the Control Run came out ahead of the shipped run on one of the rule's
+    ahead metrics: the noise is larger than the thresholds assume, so the shipped
+    choice stands whatever its challengers scored."""
+    reason: str | None = None
+    """Why the choice is inconclusive; None when it is not."""
 
 
 _SCORES: tuple[Score, ...] = ("fact_recall", "faithfulness", "coverage_gaps", "contradicted_claims")
@@ -315,9 +435,38 @@ def compare(challenger: Candidate, shipped: Candidate, rule: RuleName = "arms") 
     )
 
 
-def choose(shipped: Candidate, challengers: Sequence[Candidate], rule: RuleName = "arms") -> Choice:
-    """Apply the selection rule for Arms or for generators."""
+_LABELS: dict[Score, str] = {
+    "fact_recall": "Fact Recall",
+    "faithfulness": "Faithfulness",
+    "coverage_gaps": "Coverage Gaps",
+    "contradicted_claims": "No Contradicted Claim",
+}
+
+
+def choose(
+    shipped: Candidate,
+    challengers: Sequence[Candidate],
+    rule: RuleName = "arms",
+    *,
+    control: Candidate | None = None,
+) -> Choice:
+    """Apply a selection rule. With a `control` (the shipped choice run again, ADR
+    0011), the choice is inconclusive, and the shipped choice stands, when the Control
+    Run is ahead of the shipped run on any of the rule's ahead metrics."""
     comparisons = {c.name: compare(c, shipped, rule) for c in challengers}
+    checked = compare(control, shipped, rule) if control is not None else None
+    noisy = [
+        _LABELS[f]
+        for f in RULES[rule].ahead_on_any
+        if checked and getattr(checked, f).verdict == "ahead"
+    ]
+    reason = (
+        f"the Control Run, {shipped.name} run again, is ahead of the shipped run on "
+        f"{' and '.join(noisy)}: the noise is larger than the thresholds assume, so "
+        f"{shipped.name} stands"
+        if noisy
+        else None
+    )
     qualifying = [
         (c.cost_usd if c.cost_usd is not None else float("inf"), n, c.name)
         for n, c in enumerate(challengers)
@@ -326,9 +475,12 @@ def choose(shipped: Candidate, challengers: Sequence[Candidate], rule: RuleName 
     return Choice(
         rule=rule,
         shipped=shipped.name,
-        chosen=min(qualifying)[2] if qualifying else shipped.name,
+        chosen=min(qualifying)[2] if qualifying and not noisy else shipped.name,
         comparisons=comparisons,
         costs={c.name: c.cost_usd for c in (shipped, *challengers)},
+        control=checked,
+        inconclusive=bool(noisy),
+        reason=reason,
     )
 
 
@@ -340,42 +492,84 @@ def main(argv: list[str] | None = None, *, out: TextIO | None = None) -> int:
     parser = argparse.ArgumentParser(description="Choose between Arms by the selection rule.")
     commands = parser.add_subparsers(dest="command", required=True)
     arms = commands.add_parser("arms", help="run every Arm through the generation harness")
-    arms.add_argument("--split", choices=("dev", "holdout", "all"), default="dev")
-    arms.add_argument("--reuse", action="store_true", help="read reports already written")
-    arms.add_argument("--json", type=Path)
     generators = commands.add_parser("generators", help="run every generator through the harness")
-    generators.add_argument("--split", choices=("dev", "holdout", "all"), default="dev")
-    generators.add_argument("--reuse", action="store_true", help="read reports already written")
+    settings = commands.add_parser("settings", help="run each named setting through the harness")
+    for command in (arms, generators, settings):
+        command.add_argument("--split", choices=("dev", "holdout", "all"), default="dev")
+        command.add_argument(
+            "--reuse", action="store_true", help="read challenger reports already written"
+        )
+        command.add_argument("--json", type=Path)
     generators.add_argument(
         "--model", action="append", default=[], help="run only this generator (repeatable)"
     )
-    generators.add_argument("--json", type=Path)
+    settings.add_argument(
+        "--setting",
+        action="append",
+        type=_setting,
+        default=[],
+        metavar="CHUNKS:BUDGET",
+        help="a chunk size and context budget to compare, such as 450:32000 (repeatable)",
+    )
     reports = commands.add_parser("compare", help="compare generation reports")
     reports.add_argument("reports", type=Path, nargs="+", help="the shipped choice's first")
+    reports.add_argument("--control", type=Path, help="the Control Run's report")
     reports.add_argument("--rule", choices=tuple(RULES), default="arms")
     reports.add_argument("--json", type=Path)
     args = parser.parse_args(argv)
 
     rule: RuleName
     if args.command == "compare":
-        rule, paths, target = args.rule, args.reports, args.json
+        rule, paths, control, target = args.rule, args.reports, args.control, args.json
     else:
         rule = args.command
-        run = RULES[rule].run
-        assert run is not None
-        only = {"only": args.model} if args.command == "generators" else {}
-        paths = run(args.split, args.reuse, out, **only)
+        options: dict[str, Any] = {}
+        if rule == "generators":
+            _check_generators(args.model)  # before any paid run
+            options = {"only": args.model}
+        elif rule == "settings":
+            if not args.setting:
+                parser.error("name each setting to compare: --setting CHUNKS:BUDGET")
+            options = {"settings": args.setting}
+        shipped_path, control = _round_runs(args.split, out)
+        paths = [shipped_path, *RULES[rule].run(args.split, args.reuse, out, **options)]
         target = args.json or _EVAL_DIR / f"{RULES[rule].choice_file}-{args.split}.json"
     data = [json.loads(Path(p).read_text(encoding="utf-8")) for p in paths]
     candidates = [Candidate.from_report(d, rule) for d in data]
-    choice = choose(candidates[0], candidates[1:], rule)
+    control_candidate = (
+        Candidate.from_report(json.loads(control.read_text(encoding="utf-8")), rule)
+        if control
+        else None
+    )
+    choice = choose(candidates[0], candidates[1:], rule, control=control_candidate)
     _print(choice, out)
     if target:
         target.parent.mkdir(parents=True, exist_ok=True)
-        record = {"split": data[0].get("split"), "reports": [str(p) for p in paths]}
+        record = {
+            "split": data[0].get("split"),
+            "reports": [str(p) for p in paths],
+            "control_report": str(control) if control else None,
+        }
         target.write_text(json.dumps(record | asdict(choice), indent=2) + "\n", encoding="utf-8")
         print(f"\nWritten to {target.resolve()}", file=out)
     return 0
+
+
+def _print_scores(c: Comparison, out: TextIO) -> None:
+    for score, label in _LABELS.items():
+        r: ScoreComparison = getattr(c, score)
+        d = r.difference
+        shift = (
+            f"; mean difference {d.mean:+.3f}, 95% interval [{d.low:+.3f}, {d.high:+.3f}]"
+            if d
+            else ""
+        )
+        print(
+            f"  {label}: {r.verdict} ({r.wins} cases higher, {r.losses} lower, "
+            f"p ahead = {r.p_ahead:.3f}, p behind = {r.p_behind:.3f}; "
+            f"{r.paired} cases paired, {r.left_out} left out{shift})",
+            file=out,
+        )
 
 
 def _print(choice: Choice, out: TextIO) -> None:
@@ -384,29 +578,22 @@ def _print(choice: Choice, out: TextIO) -> None:
         f"test: ahead at p < {AHEAD_P:.2f}, behind at p < {BEHIND_P:.2f}):",
         file=out,
     )
+    if choice.control is not None:
+        print(
+            f"\nControl Run ({choice.shipped} run again, {choice.control.cases} cases): "
+            "within noise unless ahead of the shipped run",
+            file=out,
+        )
+        _print_scores(choice.control, out)
+    else:
+        print("\nNo Control Run: the noise of this comparison is not shown.", file=out)
     for name, c in choice.comparisons.items():
         cost = choice.costs[name]
         print(f"\n{name} ({c.cases} cases, ${cost or 0:.4f} per answer)", file=out)
-        for label, score in (
-            ("Fact Recall", "fact_recall"),
-            ("Faithfulness", "faithfulness"),
-            ("Coverage Gaps", "coverage_gaps"),
-            ("No Contradicted Claim", "contradicted_claims"),
-        ):
-            r: ScoreComparison = getattr(c, score)
-            d = r.difference
-            shift = (
-                f"; mean difference {d.mean:+.3f}, 95% interval [{d.low:+.3f}, {d.high:+.3f}]"
-                if d
-                else ""
-            )
-            print(
-                f"  {label}: {r.verdict} ({r.wins} cases higher, {r.losses} lower, "
-                f"p ahead = {r.p_ahead:.3f}, p behind = {r.p_behind:.3f}; "
-                f"{r.paired} cases paired, {r.left_out} left out{shift})",
-                file=out,
-            )
+        _print_scores(c, out)
         print(f"  Qualifies: {'yes' if c.qualifies else 'no'}", file=out)
+    if choice.inconclusive:
+        print(f"\nInconclusive: {choice.reason}.", file=out)
     print(f"\nChosen: {choice.chosen}", file=out)
 
 
