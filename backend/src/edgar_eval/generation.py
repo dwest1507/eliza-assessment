@@ -17,6 +17,10 @@ Call to the generator under test. The answer is then scored three ways:
   at the model's price in `edgar_eval.generators.GENERATORS`, and its latency to the
   first text and to the end.
 
+An answer the model stopped at the Answer Call's token cap (its stop reason is
+`token_cap`) is truncated: it fails, its Fact Recall is 0, its Faithfulness is still
+judged on what it wrote, and the run counts it.
+
 `make eval-generation` runs it on the dev split with the default generator, prints the
 scores and writes them, with every answer, as JSON under `data/derived/eval/`:
 
@@ -69,7 +73,7 @@ from edgar_eval.answer_checks import (
 from edgar_eval.generators import answer_cost, answer_model
 from edgar_eval.judge import Evidence, Judgments
 from edgar_eval.retrieval import Arm, Prepare, conversation
-from edgar_rag.answer_model import DEFAULT_ANSWER_LOG, AnswerCall, AnswerModel
+from edgar_rag.answer_model import DEFAULT_ANSWER_LOG, AnswerCall, AnswerModel, StopReason
 from edgar_rag.corpus import DEFAULT_SECTOR_TABLE
 from edgar_rag.golden_set import DEFAULT_GOLDEN_SET, GoldenCase, Tier, load_golden_set
 from edgar_rag.retrieval import (
@@ -144,11 +148,28 @@ class CaseResult:
     fact_tiers: tuple[Tier, ...] = ()
     """Each judged Required Fact's tier, in the order of `judgments.facts`. Empty means
     every fact is must-state, as in version 1."""
+    stop_reason: StopReason | None = None
+    """Why the model stopped, from the Answer Call's record."""
+    raw_stop_reason: str | None = None
+
+    @property
+    def truncated(self) -> bool:
+        """Whether the answer was cut off at the Answer Call's token cap."""
+        return self.stop_reason == "token_cap"
+
+    @property
+    def passed(self) -> bool:
+        """Whether the answer passes: not truncated, every citation valid, every
+        expected Coverage Gap stated, and no Contradicted Claim."""
+        gaps = self.coverage_gaps is None or self.coverage_gaps.passed
+        return not self.truncated and self.citations.passed and gaps and self.contradictions.passed
 
     @property
     def fact_recall(self) -> float | None:
-        """The share of must-state Required Facts stated, or None if the case has none."""
-        return self._recall("must_state")
+        """The share of must-state Required Facts stated, or None if the case has none.
+        A truncated answer's is 0: a cut-off answer can't score as complete."""
+        recall = self._recall("must_state")
+        return 0.0 if self.truncated and recall is not None else recall
 
     @property
     def detail_recall(self) -> float | None:
@@ -204,6 +225,8 @@ class Summary:
     mean_input_tokens: float | None
     mean_output_tokens: float | None
     judge_cost_usd: float
+    truncated: int = 0
+    """Answers cut off at the Answer Call's token cap."""
 
 
 @dataclass(frozen=True)
@@ -240,6 +263,8 @@ class GenerationReport:
                 "count": contradictions.count,
                 "passed": contradictions.passed,
             }
+            case["truncated"] = result.truncated
+            case["passed"] = result.passed
             case["judgments"]["judge_cost_usd"] = result.judgments.cost_usd
         return data
 
@@ -350,6 +375,8 @@ def _run_case(
         ),
         structure=check_structure(answer, covered),
         fact_tiers=tuple(f.tier for f in case.required_facts),
+        stop_reason=record.stop_reason,
+        raw_stop_reason=record.raw_stop_reason,
     )
 
 
@@ -391,6 +418,7 @@ def _summarise(results: Sequence[CaseResult]) -> Summary:
         mean_input_tokens=mean(r.input_tokens for r in results),
         mean_output_tokens=mean(r.output_tokens for r in results),
         judge_cost_usd=sum(r.judgments.cost_usd for r in results),
+        truncated=sum(r.truncated for r in results),
     )
 
 
@@ -656,6 +684,7 @@ def _print_report(report: GenerationReport, split: str, out: TextIO) -> None:
         file=out,
     )
     for label, failing in (
+        ("Truncated at the token cap", [r.case_id for r in report.cases if r.truncated]),
         ("Citations invalid", [r.case_id for r in report.cases if not r.citations.passed]),
         ("Figures not exact", [r.case_id for r in report.cases if not r.figures.passed]),
         (

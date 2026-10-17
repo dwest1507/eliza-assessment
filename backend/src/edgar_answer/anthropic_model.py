@@ -4,8 +4,9 @@ Streams a Message with adaptive thinking at effort `low` and a token cap of 2,50
 covers the thinking and a 300–600 word answer: the same settings as the OpenAI
 implementation's reasoning effort `low` and completion-token cap, so the generator
 comparison measures the models rather than their settings. The thinking is not shown
-(the API's default display omits it) and counts in the output tokens. The SDK reads the
-key from `ANTHROPIC_API_KEY`.
+(the API's default display omits it) and counts in the output tokens. Its `stop_reason`
+becomes the Answer Call's stop reason: `max_tokens`, the cap, is `token_cap`. The SDK
+reads the key from `ANTHROPIC_API_KEY`.
 
 No refusal fallback is configured: a fallback would answer with a different model, and
 the comparison would no longer measure the one it names. A refused answer raises
@@ -19,13 +20,21 @@ from __future__ import annotations
 from collections.abc import Iterator, Sequence
 from typing import Any
 
-from edgar_rag.answer_model import Usage
+from edgar_rag.answer_model import StopReason, Usage
 from edgar_rag.retrieval import PromptMessage
 
 __all__ = ["EFFORT", "MAX_TOKENS", "AnswerRefused", "AnthropicAnswerModel"]
 
 EFFORT = "low"
 MAX_TOKENS = 2_500
+
+_STOP_REASONS: dict[str, StopReason] = {
+    "end_turn": "complete",
+    "stop_sequence": "complete",
+    "max_tokens": "token_cap",
+}
+"""Anthropic's `stop_reason`s that the answer model's stop reasons name; any other is
+`other`."""
 
 
 class AnswerRefused(RuntimeError):
@@ -71,4 +80,8 @@ class AnthropicAnswerModel:
             + (getattr(usage, "cache_read_input_tokens", None) or 0),
             output_tokens=usage.output_tokens,
             reasoning_tokens=getattr(details, "thinking_tokens", 0) or 0,
+            stop_reason=_STOP_REASONS.get(message.stop_reason, "other")
+            if message.stop_reason
+            else None,
+            raw_stop_reason=message.stop_reason,
         )

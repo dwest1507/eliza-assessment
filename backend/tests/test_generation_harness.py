@@ -121,8 +121,9 @@ class FakeModel:
 
     model = "gpt-6-luna"
 
-    def __init__(self, answer):
+    def __init__(self, answer, stop_reason="complete"):
         self.answer = answer
+        self.stop_reason = stop_reason
         self.prompts = []
 
     def stream(self, messages):
@@ -130,7 +131,8 @@ class FakeModel:
         yield from re.findall(r"\S+\s*|\s+", self.answer)  # word by word, as it streams
         from edgar_rag.answer_model import Usage
 
-        yield Usage(input_tokens=20_000, output_tokens=1_000)
+        raw = {"complete": "stop", "token_cap": "length"}.get(self.stop_reason)
+        yield Usage(20_000, 1_000, stop_reason=self.stop_reason, raw_stop_reason=raw)
 
 
 class FakeJudge:
@@ -294,6 +296,56 @@ def test_fact_recall_scores_must_state_facts_and_detail_recall_the_details(index
     assert [c["detail_recall"] for c in data["cases"]] == [pytest.approx(1 / 3), None]
     assert data["cases"][0]["fact_tiers"] == ["must_state"] * 2 + ["detail"] * 3
     assert data["overall"]["detail_recall"] == pytest.approx(1 / 3)
+
+
+def test_an_answer_cut_off_at_the_token_cap_fails_with_no_fact_recall(index):
+    from edgar_eval.generation import evaluate
+
+    cases = [
+        _case(
+            case_id,
+            "What are the primary risk factors facing Apple?",
+            facts=["Apple uses outsourcing partners."],
+        )
+        for case_id in ("cut-off", "finished")
+    ]
+    whole = "Apple relies on outsourcing partners in Asia [S1]."
+    judge = FakeJudge()  # says the fact is stated and every claim supported
+
+    report = evaluate(
+        cases[:1],
+        FakeModel(whole + " Apple also", stop_reason="token_cap"),
+        judge,
+        index,
+        names={},
+        fact_values=lambda filing_id: [],
+        log_path=None,
+    )
+    finished = evaluate(
+        cases[1:],
+        FakeModel(whole),
+        judge,
+        index,
+        names={},
+        fact_values=lambda filing_id: [],
+        log_path=None,
+    )
+
+    [result] = report.cases
+    assert (result.stop_reason, result.raw_stop_reason) == ("token_cap", "length")
+    assert result.truncated
+    assert not result.passed
+    assert result.fact_recall == 0.0
+    # What it did write is still judged for Faithfulness.
+    assert judge.asked[0][2][0].text == "Apple relies on outsourcing partners in Asia."
+    assert result.faithfulness is not None
+    assert (report.overall.truncated, report.overall.fact_recall) == (1, 0.0)
+    data = report.to_dict()["cases"][0]
+    assert (data["truncated"], data["passed"], data["fact_recall"]) == (True, False, 0.0)
+    # The same answer, finished, passes with its Fact Recall.
+    [done] = finished.cases
+    assert (done.truncated, done.passed, done.fact_recall) == (False, True, 1.0)
+    assert finished.overall.truncated == 0
 
 
 def test_a_figure_matching_only_an_uncited_filings_financial_fact_fails(index, tmp_path):
@@ -494,6 +546,7 @@ def test_the_command_line_prints_scores_with_cost_and_latency_and_writes_json(in
     printed = out.getvalue()
     assert "gpt-6-luna" in printed and JEV_MODEL in printed
     assert "$/answer" in printed and "latency s" in printed
+    assert "Truncated at the token cap: none" in printed
     data = json.loads(path.read_text())
     assert data["split"] == "dev"
     [case] = data["cases"]
@@ -599,8 +652,9 @@ def test_rescoring_redoes_the_figure_check_from_the_saved_answers_alone(index, t
     assert "1.00 → 0.00" in out.getvalue()
 
 
-def test_a_report_saved_before_tiers_still_loads_and_rescores(index, tmp_path):
-    """Version 1 reports name no tier and no detail recall: every fact was must-state."""
+def test_a_report_saved_before_tiers_and_stop_reasons_still_loads_and_rescores(index, tmp_path):
+    """Version 1 reports name no tier, no detail recall and no stop reason: every fact
+    was must-state, and no answer was marked truncated."""
     import io
     import json
 
@@ -610,8 +664,9 @@ def test_a_report_saved_before_tiers_still_loads_and_rescores(index, tmp_path):
     path, saved = _saved_report(index, tmp_path, ANSWER, lambda filing_id: [])
     for case in saved["cases"]:
         del case["fact_tiers"], case["detail_recall"]
+        del case["stop_reason"], case["raw_stop_reason"], case["truncated"], case["passed"]
     for summary in (saved["overall"], *saved["by_type"].values()):
-        del summary["detail_recall"]
+        del summary["detail_recall"], summary["truncated"]
     path.write_text(json.dumps(saved))
 
     code = main(
