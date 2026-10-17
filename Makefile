@@ -44,7 +44,7 @@ for key in $(1); do \
 	done
 endef
 
-.PHONY: help install test lint format eda sec-facts index embeddings ask api eval-retrieval eval-generation eval-brief eval-rescore eval-arms eval-generators eval-settings eval-export deck dev frontend-deps
+.PHONY: help install test lint format eda sec-facts index embeddings ask api eval-retrieval eval-generation eval-brief eval-rescore eval-arms eval-generators eval-settings eval-export judge-study-sample deck dev frontend-deps
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-15s %s\n", $$1, $$2}'
@@ -162,6 +162,9 @@ RETRIEVAL_REPORT = data/derived/eval/retrieval-$(SPLIT).json
 
 eval-export: $(RETRIEVAL_REPORT) ## Export the latest eval results and Corpus coverage for the "How it works" page [SPLIT=...]
 	$(UV) python -m edgar_eval.export --split $(SPLIT)
+
+judge-study-sample: $(INDEX) ## Draw the judge study's items from the saved reports and write its blind labelling sheet (no provider call) [SEED=...]
+	$(UV) python -m edgar_eval.judge_study sample $(if $(SEED),--seed $(SEED))
 
 # The slide deck is Markdown for Marp (docs/deck.md); npx fetches the pinned Marp CLI.
 MARP := npx --yes @marp-team/marp-cli@4.5.1
