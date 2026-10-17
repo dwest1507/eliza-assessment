@@ -2,6 +2,8 @@
 
 The Golden Set is the evaluation's ground truth: 30 labelled questions that the retrieval and generation harnesses score the system against. It lives in [`data/eval/golden_set.json`](../data/eval/golden_set.json) and is read by `edgar_rag.golden_set.load_golden_set()`, which checks the schema. It was written before any retrieval Arm or prompt ran, so no label was written with results in view.
 
+This page describes version 1, the set every result so far was measured on. Version 2 is decided but not built yet: see [Version 2](#version-2).
+
 ## What it covers
 
 | Question type | Cases | What it tests |
@@ -79,3 +81,24 @@ No second human was available to label, so an agent drafted every case from the 
 3. **Reviewed by reading.** Each case was read back against its notes: is the question one an analyst would ask, are the expected Sources the ones that answer it, and is anything the answer must say missing from Required Facts or Coverage Gaps?
 
 The tests prove that the labels point at real text. They cannot prove that the labels are complete: an answer may cite a correct Source or state a correct fact that the case does not list. Fact Recall is therefore scored against the Required Facts, while Faithfulness is judged separately from the cited passages.
+
+## Version 2
+
+Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)) and not built yet. Version 1 has too few cases for a comparison to see a real difference, and some of its labels make the judge misread answers ([Evaluation version 2](evaluation.md#evaluation-version-2)).
+
+- **The Brief Suite.** The brief's three example questions move out of the dev/holdout split, each with four variants: about 15 cases in all. Each case runs 5 times on every change that could alter an answer. It passes when every must-state Required Fact is stated in at least 4 of the 5 runs and no run has a Contradicted Claim. Its cases are reported one by one and may be tuned on, since it is a must-pass check, not an estimate. The starter prompts keep the brief's three questions, now from the Brief Suite.
+- **60 dev cases and 20 holdout cases:**
+
+  | Kind of question | Dev | Holdout |
+  |---|---|---|
+  | Multi-Company risk comparisons | ~15 | ~5 |
+  | Figure and outlook trends | ~15 | ~5 |
+  | Sector questions | ~12 | ~4 |
+  | Coverage Gap cases | ~10 | ~3 |
+  | Follow-ups | ~8 | ~3 |
+
+  Figure facts are labelled from the SEC company-facts reference, independently of the system's own Financial Facts.
+- **Version 1's 27 cases other than the brief's join dev**, including its 10 holdout cases, which were scored once and never tuned on. Their labels are rewritten in the new format.
+- **A split recorded per case.** The 33 new dev cases and 20 holdout cases are drafted together, and the 20 whose ids have the lowest SHA-256 digests are the holdout. Every case records its split, and no case moves when another is added. This replaces the ranking rule above, under which adding a case could move another.
+- **One-claim Required Facts, must-state or detail.** Each fact states one claim and names its Company. A must-state fact is something any good answer covers. A detail is reported, but Fact Recall is scored on the must-state facts. A fact that bundles two claims ("up 62% from a year earlier and 22% sequentially") becomes two. Every fact keeps a verbatim evidence quote, checked by the tests as before.
+- **Drafted from whole Sections.** Candidate facts are drafted in Claude Code from the whole of each relevant Section, not from what retrieval returns, and the developer accepts or rejects each one. A question's every half gets facts: the pharmaceutical question's "how are they addressing them" and the NVIDIA question's "growth outlook changed" have almost none in version 1.

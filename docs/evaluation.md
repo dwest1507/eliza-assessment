@@ -2,6 +2,8 @@
 
 How the system's quality is measured. Everything is scored against the [Golden Set](golden-set.md): choices are tuned on its dev split, and the holdout split is scored once per final setup, after every choice is made on dev, and never used to choose ([the holdout rule](#the-holdout-rule)). Two harnesses do the measuring: the [retrieval harness](#retrieval-harness) asks whether the right Sections reach the Answer Call; the [generation harness](#generation-harness) asks whether the answers are right, and what they cost. `make eval-export` puts their latest results in the workspace's "How it works" page ([Showing the results](#showing-the-results)).
 
+Everything below describes Golden Set version 1 as measured. A review of this setup on 2026-10-17 found that it cannot see most real differences, and that some of its scores are measurement errors. Golden Set version 2, a Brief Suite, new decision thresholds and a check of the judge are decided but not built yet: see [Evaluation version 2](#evaluation-version-2).
+
 ## Retrieval harness
 
 ```sh
@@ -433,7 +435,7 @@ The one miss at hit@10 is `outlook-msft-cloud`, whose expected MD&A Section rank
 Gaps stated is over the 6 holdout cases with expected gaps. The answers averaged 25,500 input and 960 output tokens and cost $0.030 in all; the slowest took 11.2 seconds; Jev's judging cost $0.012.
 
 - **The holdout scores are in line with dev.** Fact Recall 0.67 and Faithfulness 0.95 against v7's 0.62 to 0.65 and 0.90 to 0.95 on dev; hit@10 0.90 against 0.88. On 10 cases one case moves a share by 0.10, so this says the dev choices did not overfit badly, not that the holdout is better.
-- **The misses are on outlook and trend questions.** `outlook-msft-cloud` (Fact Recall 0.33) is the retrieval miss above, and leaves out Microsoft's remaining performance obligation and capital expenditure plans. `trend-amzn-aws-two-years` (0.33) states AWS's revenue but computes its own growth rate (19.7%) instead of quoting the MD&A's 19% and 20%. `outlook-nvda-revenue-two-years` (0.50) leaves out the latest quarter's revenue and the H20 export charge.
+- **The misses are on outlook and trend questions.** `outlook-msft-cloud` (Fact Recall 0.33) is the retrieval miss above, and leaves out Microsoft's remaining performance obligation and capital expenditure plans. `trend-amzn-aws-two-years` (0.33) states AWS's revenue but computes its own growth rate (19.7%) instead of quoting the MD&A's 19% and 20%. `outlook-nvda-revenue-two-years` (0.50) is a measurement miss, not an answer miss. This was first recorded as the answer leaving out the latest quarter's revenue and the H20 export charge, but on rereading (2026-10-17) the answer states both: Q3 FY2026 revenue of $57,006 million, up 62.5%, and the $4.5 billion H20 charge. Jev gave those facts 0.16 and 0.28 because each bundles a detail the answer does not give ("and 22% sequentially", "in the first quarter of fiscal 2026"). The "outlook changed" half of the question has no Required Fact at all ([Evaluation version 2](#evaluation-version-2)).
 - **The one figure failure is a labelled derivation.** The Apple revenue answer gives FY2025 growth as "6.4% ... derived from those reported amounts", as prompt rule 5 asks; the check fails every derived figure by design.
 - Two answers run over 600 words (621 and 609), the same length failure as on dev. Every citation is valid and every expected gap stated.
 
@@ -505,6 +507,7 @@ The holdout run above came before two tickets that could change what ships, [the
 - **That run reports and decides nothing, and nothing changes after it.** Whatever it scores, no Arm, chunk size, context budget, template or generator is changed, and no Golden Set case is relabelled. A worse score is reported as it is.
 - **It is read with the 10-case caveat.** On 10 cases one case moves a share by 0.10, so two holdout runs that differ by a case or two do not show that the setup got better or worse.
 - Rescoring a saved holdout report offline with a corrected check ([Rescoring a fixed check](#generation-harness)) is not a run: it makes no Answer Call and changes no choice.
+- **The rule applies per Golden Set version.** Version 2 brings 20 new holdout cases, scored once on the final version 2 setup ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The version 1 holdout run below stands as recorded, and version 1's 10 holdout cases, scored once and never tuned on, join version 2's dev split.
 
 **The setup a second run would measure** is the one that ships: the `fts5` Arm with prose chunks of about 600 tokens and a 32,000-token per-Company context budget, `gpt-6-luna` at reasoning effort `low`, prompt v7, judged by `jev-1.13.0`.
 
@@ -531,3 +534,50 @@ make eval-export SPLIT=holdout   # the holdout's reports on their own
 The export reads the harnesses' latest reports for the split from `data/derived/eval/`: `retrieval-<split>.json` (required; the retrieval harness runs first if it is missing, since it makes no LLM call) and every `generation-<split>[-<model>].json` (one scoreboard row per generator; none until `make eval-generation` has run, since that costs money). The Arm comparison's answer reports (`generation-arms-<split>-<arm>.json`) are not generator rows and are left out; the challengers show on the page through the retrieval report. When `make eval-generators` has run, it adds the generator comparison from `generator-choice-<split>.json`: each challenger's sign tests against the shipped generator and the generator chosen. A dev export also carries the holdout's reports, `retrieval-holdout.json` and every `generation-holdout[-<suffix>].json`, once the holdout has been scored, so the page shows the holdout run (or runs) beside the dev results the choices were made on. It adds the Corpus coverage grid, each Company's Filings by the calendar quarter of their Report Period, and writes everything to `frontend/data/eval-export.json` for the workspace's "How it works" page. The code is [`backend/src/edgar_eval/export.py`](../backend/src/edgar_eval/export.py).
 
 The page shows what the reports hold, nothing more: per Arm, hit@k, recall@k at the gating k, recall@all, MRR and the mean number of Sources, with each challenger's McNemar verdict and the cases the Shipped Arm misses; per generator, the code checks, the Jev judgments, cost and latency, overall and per question type, with the shipped generator marked and each challenger's sign tests and whether it qualifies; and the holdout run's retrieval and answer scores in a section of their own, with the 10-case caveat. The export is committed, so the page shows the last results exported, dated on the page; the numbers in this document remain the record of each run.
+
+## Evaluation version 2
+
+Decided on 2026-10-17 and not built yet. Version 1's harnesses and results above stay as they are until it is.
+
+### What the review found
+
+The saved reports of version 1 (28 generation runs) were read case by case.
+
+- **The brief's questions are not measured where they matter.**
+  - *Example 1* (Apple, Tesla and JPMorgan, dev): all seven evidence quotes reach the prompt, and Fact Recall moves between 0.57 and 1.00 across the shipped setup's runs. The misses are details the answer happened to leave out, not wrong statements.
+  - *Example 2* (NVIDIA): it is in the holdout, so it was scored once, and that score is a judging error ([the holdout run](#the-holdout-run)).
+  - *Example 3* (pharmaceuticals, dev): it scored 0.00 Fact Recall in 24 of 27 runs, across every Arm and generator. None of its five evidence quotes reaches the prompt, and no Source even mentions the Inflation Reduction Act, so it ties in every comparison and has decided nothing.
+- **The comparisons cannot see a real difference.** On 20 dev cases the two-sided sign test at p < 0.05 finds a real gain about one time in ten. Five of the 16 dev cases with Required Facts never change score in any run, so about 11 carry information. The generators' "indistinguishable" verdicts are not ties: Claude Sonnet 5.5 is +0.13 Fact Recall against `gpt-6-luna` (95% bootstrap interval +0.03 to +0.25), against +0.06 for the Control Run.
+- **Some scores are measurement errors:**
+  - **Compound Required Facts:** Jev marks a fact not stated when an answer gives most of it. Its probabilities have never been checked against a human's; 227 of the 1,190 fact judgments (19%) fall between 0.05 and 0.65, where the 0.5 cut-off decides.
+  - **A dropped case:** Jev failed on long inputs in 16 of 28 runs. Each failure dropped `trend-jpm-revenue-snapshot`, a starter prompt, with its code checks, so the generator table compares means over 19 and 20 cases.
+  - **Truncated answers:** two `claude-opus-5-5` answers stopped at the 2,500-token cap, which includes thinking, and were scored as complete.
+  - **Uncited text:** Faithfulness judges only cited sentences, so an uncited paragraph from general knowledge is caught only by the pass/fail citation check.
+  - **Contradicted claims averaged away:** 31 across all runs, each just a fraction of Faithfulness.
+  - **A saturated retrieval gate:** hit@10 is identical for all four Arms and all 16 chunk-size and budget settings. Evidence Reached is the retrieval measure that varies.
+  - **Labels drafted with the system's own rules:** an agent drafted every label, using the system's own Query Scope rules and Section plan, so the labels cannot catch where that plan falls short. The pharmaceutical question's "how are they addressing them" has one Required Fact.
+
+### What changes
+
+- **Decision thresholds** ([ADR 0011](adr/0011-one-sided-thresholds-and-a-control-run.md)): a challenger is ahead at one-sided p < 0.10 and behind on a guardrail (Faithfulness, Coverage Gaps, Contradicted Claims) at p < 0.20, with a Control Run in every comparison and the mean paired difference reported with a bootstrap interval. The retrieval harness gates on Evidence Reached, and it screens candidates for free: at most three per rule go on to paid Answer Calls, so the chance of a false switch stays near 20% instead of about 66% across version 1's 15 setting challengers.
+- **Golden Set version 2 and the Brief Suite** ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)): 60 dev and 20 new holdout cases, one-claim Required Facts that are must-state or detail, a split recorded per case, and the brief's questions with variants in a must-pass Brief Suite reported case by case ([Golden Set](golden-set.md#version-2)).
+- **The judge** ([ADR 0013](adr/0013-jev-stays-the-judge-checked-by-a-judge-study.md)): Jev stays, checked first by a judge study against the developer's labels. The study sets the stated-fact cut-off and decides whether claims are split by an LLM. Its fact items use the rewritten one-claim Required Facts, and its claim labelling may stop at 100 items by a rule fixed in advance.
+- **Measurement fixes in the harnesses:**
+  - a Jev failure is recorded against its judgment, not the whole case;
+  - an answer that stops at the token cap fails instead of being scored as complete;
+  - Faithfulness judges every sentence, an uncited one counting as unsupported;
+  - any Contradicted Claim fails the answer;
+  - each sentence goes to the judge with its heading and table header, so a table row or an "it" keeps its meaning;
+  - the Brief Suite's cases are reported one by one.
+- **Another generator:** `claude-haiku-5-5`, listed at `gpt-6-luna`'s price ($0.10 in, $0.50 out per million tokens), is the one challenger to `gpt-6-luna` on version 2.
+
+### Order and cost
+
+1. The Brief Suite and the label format.
+2. The measurement fixes and the decision thresholds.
+3. Version 1's 27 other cases, rewritten in the new format.
+4. The judge study, on those rewritten facts.
+5. Golden Set version 2's 53 new cases, drafted in slices of at most ten, one slice at a time, then the split frozen.
+6. The Arm, settings and generator comparisons on it, then the holdout, once.
+
+Labels are drafted in Claude Code, not through the API. The API spend is expected to be about $5 to $6, budgeted at $20 to allow for reruns: about $2 for the judge study and the rest for the comparisons and the Brief Suite, with `gpt-6-luna` and `claude-haiku-5-5` answering and Jev judging. The larger cost is the developer's time: about 4 to 7 hours labelling for the judge study and about 7 hours reviewing Golden Set version 2.

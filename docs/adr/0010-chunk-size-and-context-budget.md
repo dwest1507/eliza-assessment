@@ -4,6 +4,8 @@ status: accepted
 
 # 600-token chunks and the 32k context budget stay: no setting beat them on paired cases
 
+> The rule's threshold (two-sided p < 0.05) is superseded by [ADR 0011](0011-one-sided-thresholds-and-a-control-run.md) for comparisons on Golden Set version 2. The choice recorded here stands until such a comparison says otherwise.
+
 Spec #14 says the chunk size and the per-Company context budget are "tuned by the evaluation". Neither has been: both are still the EDA's starting points (finding 15), prose chunks of about 600 tokens (never above 800, with 60 tokens of overlap) and 32,000 tokens of Source text per Answer Call, split evenly across the Companies in scope. The prompt iteration log blames the 14 dev Required Facts that no run reaches on that budget. This ADR records how the two settings were chosen. The rule, the grid and how candidates reach the generation harness (the next three sections) were written and pushed before any run (commit `014194a`), so they could not be fitted to the results. We ran them on the Golden Set's dev split on 2026-10-16, and **600-token chunks and the 32k budget stay**. Only a 48k budget reached more Required Facts' evidence than the shipped setting, and its answers were not distinguishably better: one case higher on Fact Recall, one lower.
 
 ## The rule

@@ -31,20 +31,36 @@ _Avoid_: Limitation, missing data, caveat
 ### Evaluation
 
 **Golden Set**:
-The labelled questions retrieval and answers are scored against, each with its expected (Filing ID, Section) pairs, Required Facts and expected Coverage Gaps, split into dev and holdout by a hash of the case id.
+The labelled questions retrieval and answers are scored against, each with its expected (Filing ID, Section) pairs, Required Facts and expected Coverage Gaps, and each assigned to dev or holdout by a hash of its id, a split it keeps for good.
 _Avoid_: Test set, benchmark, eval data
 
+**Brief Suite**:
+The brief's example questions and variants of them, kept outside the Golden Set's split: a must-pass check that every change which could alter an answer is run against, case by case.
+_Avoid_: Demo set, smoke test, starter prompts
+
 **Required Fact**:
-A self-contained sentence, naming its Company, that a good answer to a Golden Set question must state, with an evidence quote from the Section that supports it.
+One claim, naming its Company, that a good answer to a Golden Set or Brief Suite question must state, with an evidence quote from the Section that supports it. Each is either must-state (something any good answer covers) or a detail.
 _Avoid_: Expected answer, key point
 
 **Fact Recall**:
-The share of a Golden Set case's Required Facts that an answer states, as judged by Jev.
+The share of a case's must-state Required Facts that an answer states, as judged by Jev.
 _Avoid_: Recall (unqualified), coverage
 
 **Faithfulness**:
-The share of an answer's cited claims that the Sources they cite support, as judged by Jev.
+The share of an answer's claims that the Sources they cite support, as judged by Jev. A claim that cites no Source is unsupported.
 _Avoid_: Groundedness, accuracy, hallucination rate
+
+**Contradicted Claim**:
+A claim whose cited Sources say something different from it: another figure, period, Company or direction of change. One fails the answer, whatever its Faithfulness.
+_Avoid_: Error, hallucination
+
+**Evidence Reached**:
+Whether a Required Fact's evidence quote is in the text of an Answer Context's Sources: retrieval's measure of whether an answer could state that fact at all.
+_Avoid_: Recall (unqualified), coverage
+
+**Control Run**:
+The shipped choice run again beside its challengers in a comparison, so the comparison shows its own run-to-run noise.
+_Avoid_: Baseline, rerun
 
 **Arm**:
 One way of ranking the chunks that become an Answer Call's Sources (FTS5, dense embeddings, a hybrid, a re-ranker), scored by the retrieval and generation harnesses on the Golden Set.

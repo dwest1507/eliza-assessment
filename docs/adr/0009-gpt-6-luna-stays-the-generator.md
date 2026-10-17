@@ -4,6 +4,8 @@ status: accepted
 
 # `gpt-6-luna` stays the generator: no challenger beat it on paired cases
 
+> The rule's threshold (two-sided p < 0.05) is superseded by [ADR 0011](0011-one-sided-thresholds-and-a-control-run.md) for comparisons on Golden Set version 2. The choice recorded here stands until such a comparison says otherwise.
+
 The spec compares four generators for the Answer Call (user story 55): OpenAI's `gpt-6-luna` and `gpt-6.1-sol`, and Anthropic's Claude Sonnet 5.5 (`claude-sonnet-5-5`) and Claude Opus 5.5 (`claude-opus-5-5`), chosen between by the same kind of rule as the Arms (ADR 0008). `gpt-6-luna` ships unless a challenger is **distinguishably better on Fact Recall or on Coverage Gaps** and **worse on none of Fact Recall, Faithfulness and Coverage Gaps**, and the cheapest qualifying challenger wins. We ran all four on the Golden Set's dev split on 2026-10-16, and **`gpt-6-luna` stays the generator**. Every challenger stated more Required Facts, but none did so on enough cases for the paired sign test to tell it from noise, and each costs 20 to 65 times as much per answer.
 
 | Generator | cases | citations valid | structure followed | words | Fact Recall | Faithfulness | $ per answer | latency s | first text s | Fact Recall vs Luna (higher / lower, exact p) | Faithfulness vs Luna | Coverage Gaps vs Luna |

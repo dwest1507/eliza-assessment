@@ -4,6 +4,8 @@ status: accepted
 
 # FTS5 stays the Shipped Arm: no challenger beat it on paired cases
 
+> The rule's threshold (two-sided p < 0.05) is superseded by [ADR 0011](0011-one-sided-thresholds-and-a-control-run.md) for comparisons on Golden Set version 2. The choice recorded here stands until such a comparison says otherwise.
+
 The spec sets three challengers against FTS5 `bm25()`: OpenAI dense embeddings searched by exact inner product, a weighted reciprocal-rank fusion hybrid (k = 1), and FTS5's top 20 re-ranked by an ONNX cross-encoder. They are chosen between by a fixed rule (user story 54): FTS5 ships unless a challenger is distinguishably better on Fact Recall and not worse on Faithfulness or Coverage Gaps, and the cheapest wins ties. We measured all four on the Golden Set's dev split in both harnesses, on 2026-10-16, and **FTS5 stays the Shipped Arm**. No challenger was distinguishably better on Fact Recall, so none qualifies.
 
 | Arm | hit@10 | recall@10 | MRR | Fact Recall vs FTS5 (higher / lower cases, exact p) | Faithfulness vs FTS5 | Coverage Gaps vs FTS5 |
