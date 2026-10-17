@@ -35,7 +35,7 @@ The starter prompts are the Golden Set cases that carry a `starter` object (`dat
 
 ## The "How it works" page
 
-`/how-it-works`, linked from the workspace's header, puts the evidence inside the product: the architecture (from the Corpus to the one Answer Call, and how it is measured), the evaluation scoreboard (each retrieval Arm against the Shipped Arm, each generator's scores, cost and latency) and the Corpus coverage grid (each Company's Filings by Report Period, Tracked and Snapshot). It is a static page built from [`data/eval-export.json`](data/eval-export.json), which `make eval-export` writes from the harnesses' latest reports (see the root [README](../README.md#showing-the-results-in-the-workspace)). The file is committed and generated, never edited by hand; Prettier skips it.
+`/how-it-works`, linked from the workspace's header, puts the evidence inside the product: the architecture (from the Corpus to the one Answer Call, and how it is measured), the evaluation scoreboard (each retrieval Arm against the Shipped Arm, each generator's scores, cost and latency, and the generator comparison: each challenger's sign tests against the shipped generator and the generator chosen), the holdout run (its retrieval and answer scores, shown beside the dev results with the small-sample caveat) and the Corpus coverage grid (each Company's Filings by Report Period, Tracked and Snapshot). It is a static page built from [`data/eval-export.json`](data/eval-export.json), which `make eval-export` writes from the harnesses' latest reports (see the root [README](../README.md#showing-the-results-in-the-workspace)). The file is committed and generated, never edited by hand; Prettier skips it.
 
 ## Commands
 

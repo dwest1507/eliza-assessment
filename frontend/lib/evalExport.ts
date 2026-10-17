@@ -64,6 +64,8 @@ export interface GenerationSummary {
 }
 
 export interface GenerationRun {
+  /** The report the run was read from, e.g. `generation-holdout.json`. */
+  report: string
   model: string
   judgeModel: string
   promptVersion: string
@@ -71,6 +73,44 @@ export interface GenerationRun {
   byType: ({ questionType: string } & GenerationSummary)[]
   failing: { citations: string[]; figures: string[]; coverageGaps: string[] }
   errors: string[]
+}
+
+/** An exact sign test of a challenger against the shipped choice, case by case. */
+export interface SignTest {
+  /** Cases the challenger scored higher on. */
+  challengerOnly: number
+  /** Cases the shipped choice scored higher on. */
+  shippedOnly: number
+  pValue: number
+  /** `ahead`, `behind` or `indistinguishable`. */
+  verdict: string
+}
+
+/** A challenger generator against the shipped one, on the cases both answered. */
+export interface GeneratorComparison {
+  model: string
+  cases: number
+  factRecall: SignTest
+  faithfulness: SignTest
+  coverageGaps: SignTest
+  /** Whether the challenger qualifies under the generator rule (ADR 0009). */
+  qualifies: boolean
+}
+
+/** The generator comparison (`make eval-generators`) and the generator the rule chose. */
+export interface GeneratorChoice {
+  shipped: string
+  chosen: string
+  comparisons: GeneratorComparison[]
+}
+
+/** The holdout's reports, shown beside a dev export. */
+export interface HoldoutResults {
+  splitCases: number
+  /** Null when only answers were scored on the holdout. */
+  retrieval: RetrievalResults | null
+  /** Every holdout generation run, the first first. */
+  generation: GenerationRun[]
 }
 
 export interface CoverageFiling {
@@ -99,6 +139,10 @@ export interface EvalExport {
   retrieval: RetrievalResults
   /** One run per generator; empty until `make eval-generation` has run. */
   generation: GenerationRun[]
+  /** Null until `make eval-generators` has run on the split. */
+  generatorChoice: GeneratorChoice | null
+  /** Null until the holdout is scored, and for a holdout export itself. */
+  holdout: HoldoutResults | null
   coverage: { periods: string[]; companies: CoverageCompany[] }
 }
 

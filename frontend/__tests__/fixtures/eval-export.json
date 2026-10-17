@@ -1,7 +1,11 @@
 {
   "exportedOn": "2026-10-16",
   "split": "dev",
-  "goldenSet": { "version": 1, "cases": 30, "splitCases": 20 },
+  "goldenSet": {
+    "version": 1,
+    "cases": 30,
+    "splitCases": 20
+  },
   "retrieval": {
     "gatingMetric": "hit@10",
     "ks": [5, 10, 20],
@@ -13,8 +17,16 @@
         "shipped": true,
         "overall": {
           "cases": 17,
-          "hitAt": { "5": 0.647, "10": 0.706, "20": 0.765 },
-          "recallAt": { "5": 0.598, "10": 0.647, "20": 0.667 },
+          "hitAt": {
+            "5": 0.647,
+            "10": 0.706,
+            "20": 0.765
+          },
+          "recallAt": {
+            "5": 0.598,
+            "10": 0.647,
+            "20": 0.667
+          },
           "hitAll": 0.824,
           "recallAll": 0.765,
           "mrr": 0.59,
@@ -24,8 +36,16 @@
           {
             "questionType": "risk",
             "cases": 6,
-            "hitAt": { "5": 0.5, "10": 0.5, "20": 0.5 },
-            "recallAt": { "5": 0.42, "10": 0.42, "20": 0.42 },
+            "hitAt": {
+              "5": 0.5,
+              "10": 0.5,
+              "20": 0.5
+            },
+            "recallAt": {
+              "5": 0.42,
+              "10": 0.42,
+              "20": 0.42
+            },
             "hitAll": 0.67,
             "recallAll": 0.5,
             "mrr": 0.51,
@@ -39,8 +59,16 @@
         "shipped": false,
         "overall": {
           "cases": 17,
-          "hitAt": { "5": 0.59, "10": 0.65, "20": 0.82 },
-          "recallAt": { "5": 0.5, "10": 0.55, "20": 0.7 },
+          "hitAt": {
+            "5": 0.59,
+            "10": 0.65,
+            "20": 0.82
+          },
+          "recallAt": {
+            "5": 0.5,
+            "10": 0.55,
+            "20": 0.7
+          },
           "hitAll": 0.88,
           "recallAll": 0.8,
           "mrr": 0.48,
@@ -64,6 +92,7 @@
   },
   "generation": [
     {
+      "report": "generation-dev.json",
       "model": "gpt-6-luna",
       "judgeModel": "jev-1.13.0",
       "promptVersion": "v2",
@@ -108,8 +137,132 @@
         "coverageGaps": []
       },
       "errors": []
+    },
+    {
+      "report": "generation-dev-gpt-6.1-sol.json",
+      "model": "gpt-6.1-sol",
+      "judgeModel": "jev-1.13.0",
+      "promptVersion": "v2",
+      "overall": {
+        "cases": 20,
+        "citationsValid": 0.95,
+        "figuresExact": 0.9,
+        "coverageGapsStated": 0.5,
+        "factRecall": 0.73,
+        "faithfulness": 0.95,
+        "meanCostUsd": 0.0492,
+        "totalCostUsd": 0.94,
+        "meanLatencyS": 13.2,
+        "maxLatencyS": 14.9,
+        "meanFirstTokenS": 2.3,
+        "meanInputTokens": 23900,
+        "meanOutputTokens": 460,
+        "judgeCostUsd": 0.016
+      },
+      "byType": [],
+      "failing": {
+        "citations": [],
+        "figures": [],
+        "coverageGaps": []
+      },
+      "errors": []
     }
   ],
+  "generatorChoice": {
+    "shipped": "gpt-6-luna",
+    "chosen": "gpt-6-luna",
+    "comparisons": [
+      {
+        "model": "gpt-6.1-sol",
+        "cases": 19,
+        "factRecall": {
+          "challengerOnly": 4,
+          "shippedOnly": 1,
+          "pValue": 0.375,
+          "verdict": "indistinguishable"
+        },
+        "faithfulness": {
+          "challengerOnly": 8,
+          "shippedOnly": 4,
+          "pValue": 0.3877,
+          "verdict": "indistinguishable"
+        },
+        "coverageGaps": {
+          "challengerOnly": 0,
+          "shippedOnly": 0,
+          "pValue": 1,
+          "verdict": "indistinguishable"
+        },
+        "qualifies": false
+      }
+    ]
+  },
+  "holdout": {
+    "splitCases": 10,
+    "retrieval": {
+      "gatingMetric": "hit@10",
+      "ks": [5, 10, 20],
+      "scoredCases": 10,
+      "unscored": [],
+      "arms": [
+        {
+          "name": "fts5",
+          "shipped": true,
+          "overall": {
+            "cases": 10,
+            "hitAt": {
+              "5": 0.9,
+              "10": 0.9,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.83,
+              "10": 0.88,
+              "20": 0.97
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.97,
+            "mrr": 0.72,
+            "meanSources": 12.8
+          },
+          "byType": [],
+          "missed": ["outlook-msft-cloud"]
+        }
+      ],
+      "comparisons": []
+    },
+    "generation": [
+      {
+        "report": "generation-holdout.json",
+        "model": "gpt-6-luna",
+        "judgeModel": "jev-1.13.0",
+        "promptVersion": "v7",
+        "overall": {
+          "cases": 10,
+          "citationsValid": 1,
+          "figuresExact": 0.9,
+          "coverageGapsStated": 1,
+          "factRecall": 0.67,
+          "faithfulness": 0.95,
+          "meanCostUsd": 0.003,
+          "totalCostUsd": 0.052,
+          "meanLatencyS": 9.5,
+          "maxLatencyS": 14.9,
+          "meanFirstTokenS": 2.3,
+          "meanInputTokens": 23900,
+          "meanOutputTokens": 460,
+          "judgeCostUsd": 0.016
+        },
+        "byType": [],
+        "failing": {
+          "citations": [],
+          "figures": ["trend-aapl-revenue"],
+          "coverageGaps": []
+        },
+        "errors": []
+      }
+    ]
+  },
   "coverage": {
     "periods": ["2025Q3", "2025Q4"],
     "companies": [

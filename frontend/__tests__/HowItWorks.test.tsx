@@ -54,11 +54,60 @@ describe('the "How it works" page', () => {
     expect(section('Evaluation scoreboard')).toHaveTextContent('jev-1.13.0')
   })
 
+  it('shows the generator comparison: each challenger’s sign tests and the generator chosen', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const scoreboard = section('Evaluation scoreboard')
+    const answers = within(scoreboard).getByRole('table', { name: /Answers/ })
+    expect(within(answers).getByRole('row', { name: /gpt-6-luna/ })).toHaveTextContent('shipped')
+    expect(within(answers).getByRole('row', { name: /gpt-6.1-sol/ })).not.toHaveTextContent(
+      'shipped'
+    )
+
+    const table = within(scoreboard).getByRole('table', { name: /Choosing the generator/ })
+    const sol = within(table).getByRole('row', { name: /gpt-6.1-sol/ })
+    expect(sol).toHaveTextContent('4 higher, 1 lower, p = 0.38') // Fact Recall
+    expect(sol).toHaveTextContent('8 higher, 4 lower, p = 0.39') // Faithfulness
+    expect(sol).toHaveTextContent('0 higher, 0 lower, p = 1.00') // Coverage Gaps
+    expect(sol).toHaveTextContent('no')
+    expect(scoreboard).toHaveTextContent('Chosen: gpt-6-luna')
+  })
+
+  it('leaves the generator comparison out when it has not run', () => {
+    render(<HowItWorks data={{ ...EXPORT, generatorChoice: null }} />)
+
+    expect(screen.queryByRole('table', { name: /Choosing the generator/ })).not.toBeInTheDocument()
+  })
+
+  it('shows the holdout run beside the dev results, with its small-sample caveat', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const holdout = section('The holdout run')
+    expect(holdout).toHaveTextContent('one case moves a share by 0.10')
+    const retrieval = within(holdout).getByRole('table', { name: /Retrieval/ })
+    const fts5 = within(retrieval).getByRole('row', { name: /fts5/ })
+    expect(fts5).toHaveTextContent('0.90') // hit@10
+    expect(fts5).toHaveTextContent('0.72') // MRR
+    expect(holdout).toHaveTextContent('10 of 10 holdout cases')
+    const answers = within(holdout).getByRole('table', { name: /Answers/ })
+    const luna = within(answers).getByRole('row', { name: /gpt-6-luna/ })
+    expect(luna).toHaveTextContent('0.67') // Fact Recall
+    expect(luna).toHaveTextContent('0.95') // Faithfulness
+    expect(luna).toHaveTextContent('prompt v7')
+  })
+
+  it('leaves the holdout out until it has been scored', () => {
+    render(<HowItWorks data={{ ...EXPORT, holdout: null }} />)
+
+    expect(screen.queryByRole('region', { name: 'The holdout run' })).not.toBeInTheDocument()
+  })
+
   it('says how to score answers when the generation harness has not run', () => {
     render(<HowItWorks data={{ ...EXPORT, generation: [] }} />)
 
-    expect(section('Evaluation scoreboard')).toHaveTextContent('make eval-generation')
-    expect(screen.queryByRole('table', { name: /Answers/ })).not.toBeInTheDocument()
+    const scoreboard = section('Evaluation scoreboard')
+    expect(scoreboard).toHaveTextContent('make eval-generation')
+    expect(within(scoreboard).queryByRole('table', { name: /Answers/ })).not.toBeInTheDocument()
   })
 
   it('shows the Corpus coverage grid: each Company’s Filings by Report Period', () => {

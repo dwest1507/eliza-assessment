@@ -593,59 +593,60 @@
   },
   "generation": [
     {
+      "report": "generation-dev.json",
       "model": "gpt-6-luna",
       "judgeModel": "jev-1.13.0",
       "promptVersion": "v7",
       "overall": {
-        "cases": 20,
-        "citationsValid": 0.9,
-        "figuresExact": 0.95,
+        "cases": 19,
+        "citationsValid": 0.9473684210526315,
+        "figuresExact": 1.0,
         "coverageGapsStated": 1.0,
-        "factRecall": 0.6484593837535014,
-        "faithfulness": 0.90646401848824,
-        "meanCostUsd": 0.0026177450000000003,
-        "totalCostUsd": 0.0523549,
-        "meanLatencyS": 8.8534,
-        "maxLatencyS": 13.575,
-        "meanFirstTokenS": 3.01175,
-        "meanInputTokens": 22125.7,
-        "meanOutputTokens": 810.35,
-        "judgeCostUsd": 0.027500676
+        "factRecall": 0.6160714285714286,
+        "faithfulness": 0.8994521103896104,
+        "meanCostUsd": 0.002503342105263158,
+        "totalCostUsd": 0.0475635,
+        "meanLatencyS": 7.858,
+        "maxLatencyS": 12.576,
+        "meanFirstTokenS": 2.759105263157895,
+        "meanInputTokens": 21151.315789473683,
+        "meanOutputTokens": 776.421052631579,
+        "judgeCostUsd": 0.022891428000000002
       },
       "byType": [
         {
           "questionType": "figure_trend",
-          "cases": 4,
+          "cases": 3,
           "citationsValid": 1.0,
-          "figuresExact": 0.75,
-          "coverageGapsStated": 1.0,
-          "factRecall": 0.6666666666666666,
-          "faithfulness": 0.9660633484162896,
-          "meanCostUsd": 0.0042935,
-          "totalCostUsd": 0.017174,
-          "meanLatencyS": 10.31025,
-          "maxLatencyS": 11.054,
-          "meanFirstTokenS": 3.69675,
-          "meanInputTokens": 37692.5,
-          "meanOutputTokens": 1048.5,
-          "judgeCostUsd": 0.007137858
+          "figuresExact": 1.0,
+          "coverageGapsStated": null,
+          "factRecall": 0.611111111111111,
+          "faithfulness": 0.9761904761904763,
+          "meanCostUsd": 0.0041252,
+          "totalCostUsd": 0.0123756,
+          "meanLatencyS": 8.196,
+          "maxLatencyS": 8.81,
+          "meanFirstTokenS": 2.3543333333333334,
+          "meanInputTokens": 36710.333333333336,
+          "meanOutputTokens": 908.3333333333334,
+          "judgeCostUsd": 0.002457126
         },
         {
           "questionType": "missing_company",
           "cases": 4,
-          "citationsValid": 0.75,
+          "citationsValid": 1.0,
           "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
           "factRecall": 0.75,
-          "faithfulness": 0.7222222222222222,
-          "meanCostUsd": 0.00110945,
-          "totalCostUsd": 0.0044378,
-          "meanLatencyS": 6.3325000000000005,
-          "maxLatencyS": 11.236,
-          "meanFirstTokenS": 2.55575,
+          "faithfulness": 0.75,
+          "meanCostUsd": 0.0011017,
+          "totalCostUsd": 0.0044068,
+          "meanLatencyS": 5.7749999999999995,
+          "maxLatencyS": 9.924,
+          "meanFirstTokenS": 2.49175,
           "meanInputTokens": 8463.25,
-          "meanOutputTokens": 526.25,
-          "judgeCostUsd": 0.001635816
+          "meanOutputTokens": 510.75,
+          "judgeCostUsd": 0.0016400160000000002
         },
         {
           "questionType": "outlook",
@@ -654,15 +655,15 @@
           "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
           "factRecall": 0.75,
-          "faithfulness": 0.9583333333333333,
-          "meanCostUsd": 0.00360675,
-          "totalCostUsd": 0.0072135,
-          "meanLatencyS": 8.552999999999999,
-          "maxLatencyS": 10.149,
-          "meanFirstTokenS": 2.6065,
+          "faithfulness": 0.9642857142857143,
+          "meanCostUsd": 0.003621,
+          "totalCostUsd": 0.007242,
+          "meanLatencyS": 7.875500000000001,
+          "maxLatencyS": 8.143,
+          "meanFirstTokenS": 3.6814999999999998,
           "meanInputTokens": 32312.5,
-          "meanOutputTokens": 751.0,
-          "judgeCostUsd": 0.0007812000000000001
+          "meanOutputTokens": 779.5,
+          "judgeCostUsd": 0.0008295420000000001
         },
         {
           "questionType": "risk",
@@ -670,16 +671,16 @@
           "citationsValid": 1.0,
           "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
-          "factRecall": 0.615079365079365,
-          "faithfulness": 0.9097222222222222,
-          "meanCostUsd": 0.0022997666666666667,
-          "totalCostUsd": 0.013798600000000001,
-          "meanLatencyS": 9.579166666666667,
-          "maxLatencyS": 12.005,
-          "meanFirstTokenS": 3.106833333333333,
+          "factRecall": 0.5595238095238095,
+          "faithfulness": 0.8888888888888888,
+          "meanCostUsd": 0.0023061,
+          "totalCostUsd": 0.013836600000000001,
+          "meanLatencyS": 9.0205,
+          "maxLatencyS": 12.026,
+          "meanFirstTokenS": 2.7261666666666664,
           "meanInputTokens": 18581.0,
-          "meanOutputTokens": 883.3333333333334,
-          "judgeCostUsd": 0.012335568000000002
+          "meanOutputTokens": 896.0,
+          "judgeCostUsd": 0.013427106000000001
         },
         {
           "questionType": "sector",
@@ -688,15 +689,15 @@
           "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
           "factRecall": 0.3333333333333333,
-          "faithfulness": 0.9047619047619047,
-          "meanCostUsd": 0.0029131499999999998,
-          "totalCostUsd": 0.0058262999999999995,
-          "meanLatencyS": 12.8875,
-          "maxLatencyS": 13.575,
-          "meanFirstTokenS": 3.901,
+          "faithfulness": 0.8958333333333333,
+          "meanCostUsd": 0.0028801499999999997,
+          "totalCostUsd": 0.0057602999999999994,
+          "meanLatencyS": 11.2705,
+          "maxLatencyS": 12.576,
+          "meanFirstTokenS": 4.038,
           "meanInputTokens": 23509.0,
-          "meanOutputTokens": 1124.5,
-          "judgeCostUsd": 0.0047250420000000005
+          "meanOutputTokens": 1058.5,
+          "judgeCostUsd": 0.003628422
         },
         {
           "questionType": "stale_filing",
@@ -705,30 +706,750 @@
           "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
           "factRecall": 1.0,
-          "faithfulness": 0.9166666666666666,
-          "meanCostUsd": 0.00195235,
-          "totalCostUsd": 0.0039047,
-          "meanLatencyS": 5.0705,
-          "maxLatencyS": 7.432,
-          "meanFirstTokenS": 1.7845,
+          "faithfulness": 0.9090909090909091,
+          "meanCostUsd": 0.0019711,
+          "totalCostUsd": 0.0039422,
+          "meanLatencyS": 4.5995,
+          "maxLatencyS": 7.29,
+          "meanFirstTokenS": 1.7985,
           "meanInputTokens": 17381.0,
-          "meanOutputTokens": 428.5,
-          "judgeCostUsd": 0.000885192
+          "meanOutputTokens": 466.0,
+          "judgeCostUsd": 0.000909216
+        }
+      ],
+      "failing": {
+        "citations": [
+          "stale-ge-recent-performance"
+        ],
+        "figures": [],
+        "coverageGaps": []
+      },
+      "errors": [
+        "trend-jpm-revenue-snapshot"
+      ]
+    },
+    {
+      "report": "generation-dev-claude-opus-5-5.json",
+      "model": "claude-opus-5-5",
+      "judgeModel": "jev-1.13.0",
+      "promptVersion": "v7",
+      "overall": {
+        "cases": 19,
+        "citationsValid": 0.3684210526315789,
+        "figuresExact": 1.0,
+        "coverageGapsStated": 1.0,
+        "factRecall": 0.75,
+        "faithfulness": 0.9285118349526394,
+        "meanCostUsd": 0.16406042105263158,
+        "totalCostUsd": 3.117148,
+        "meanLatencyS": 15.824526315789473,
+        "maxLatencyS": 21.732,
+        "meanFirstTokenS": 3.657,
+        "meanInputTokens": 32695.894736842107,
+        "meanOutputTokens": 1663.842105263158,
+        "judgeCostUsd": 0.028932666
+      },
+      "byType": [
+        {
+          "questionType": "figure_trend",
+          "cases": 3,
+          "citationsValid": 0.3333333333333333,
+          "figuresExact": 1.0,
+          "coverageGapsStated": null,
+          "factRecall": 0.8888888888888888,
+          "faithfulness": 0.9210727969348659,
+          "meanCostUsd": 0.251228,
+          "totalCostUsd": 0.753684,
+          "meanLatencyS": 16.959333333333333,
+          "maxLatencyS": 20.398,
+          "meanFirstTokenS": 4.419,
+          "meanInputTokens": 53465.333333333336,
+          "meanOutputTokens": 1868.3333333333333,
+          "judgeCostUsd": 0.0054145980000000005
+        },
+        {
+          "questionType": "missing_company",
+          "cases": 4,
+          "citationsValid": 0.0,
+          "figuresExact": 1.0,
+          "coverageGapsStated": 1.0,
+          "factRecall": 1.0,
+          "faithfulness": 0.9821428571428572,
+          "meanCostUsd": 0.078602,
+          "totalCostUsd": 0.314408,
+          "meanLatencyS": 11.37725,
+          "maxLatencyS": 15.276,
+          "meanFirstTokenS": 1.23025,
+          "meanInputTokens": 13813.0,
+          "meanOutputTokens": 1167.5,
+          "judgeCostUsd": 0.001966776
+        },
+        {
+          "questionType": "outlook",
+          "cases": 2,
+          "citationsValid": 0.0,
+          "figuresExact": 1.0,
+          "coverageGapsStated": 1.0,
+          "factRecall": 0.75,
+          "faithfulness": 0.9237132352941176,
+          "meanCostUsd": 0.22853800000000002,
+          "totalCostUsd": 0.45707600000000004,
+          "meanLatencyS": 17.701,
+          "maxLatencyS": 18.675,
+          "meanFirstTokenS": 4.519,
+          "meanInputTokens": 47944.5,
+          "meanOutputTokens": 1838.0,
+          "judgeCostUsd": 0.002429868
+        },
+        {
+          "questionType": "risk",
+          "cases": 6,
+          "citationsValid": 0.8333333333333334,
+          "figuresExact": 1.0,
+          "coverageGapsStated": 1.0,
+          "factRecall": 0.6944444444444445,
+          "faithfulness": 0.9034811165845649,
+          "meanCostUsd": 0.15764466666666666,
+          "totalCostUsd": 0.9458679999999999,
+          "meanLatencyS": 17.229333333333333,
+          "maxLatencyS": 21.57,
+          "meanFirstTokenS": 4.029,
+          "meanInputTokens": 30312.833333333332,
+          "meanOutputTokens": 1819.6666666666667,
+          "judgeCostUsd": 0.012180294000000001
+        },
+        {
+          "questionType": "sector",
+          "cases": 2,
+          "citationsValid": 0.5,
+          "figuresExact": 1.0,
+          "coverageGapsStated": 1.0,
+          "factRecall": 0.3333333333333333,
+          "faithfulness": 0.9480431848852902,
+          "meanCostUsd": 0.199628,
+          "totalCostUsd": 0.399256,
+          "meanLatencyS": 20.125,
+          "maxLatencyS": 21.732,
+          "meanFirstTokenS": 5.469,
+          "meanInputTokens": 38354.5,
+          "meanOutputTokens": 2310.5,
+          "judgeCostUsd": 0.005886888
+        },
+        {
+          "questionType": "stale_filing",
+          "cases": 2,
+          "citationsValid": 0.0,
+          "figuresExact": 1.0,
+          "coverageGapsStated": 1.0,
+          "factRecall": 1.0,
+          "faithfulness": 0.9642857142857143,
+          "meanCostUsd": 0.123428,
+          "totalCostUsd": 0.246856,
+          "meanLatencyS": 12.6255,
+          "maxLatencyS": 14.367,
+          "meanFirstTokenS": 3.5775,
+          "meanInputTokens": 25549.5,
+          "meanOutputTokens": 1061.5,
+          "judgeCostUsd": 0.001054242
+        }
+      ],
+      "failing": {
+        "citations": [
+          "sector-pharma-regulatory",
+          "missing-wells-fargo-vs-jpm",
+          "stale-ge-recent-performance",
+          "stale-gecc-eni-2014",
+          "trend-meta-revenue-two-years",
+          "outlook-tsla-2026",
+          "outlook-meta-capex-2026",
+          "missing-citigroup",
+          "missing-bms-with-merck",
+          "followup-switch-to-msft",
+          "followup-topic-change-export-controls",
+          "followup-ge-to-honeywell"
+        ],
+        "figures": [],
+        "coverageGaps": []
+      },
+      "errors": [
+        "trend-jpm-revenue-snapshot"
+      ]
+    },
+    {
+      "report": "generation-dev-claude-sonnet-5-5.json",
+      "model": "claude-sonnet-5-5",
+      "judgeModel": "jev-1.13.0",
+      "promptVersion": "v7",
+      "overall": {
+        "cases": 20,
+        "citationsValid": 0.6,
+        "figuresExact": 1.0,
+        "coverageGapsStated": 1.0,
+        "factRecall": 0.7352941176470589,
+        "faithfulness": 0.9166340793892775,
+        "meanCostUsd": 0.0805176,
+        "totalCostUsd": 1.610352,
+        "meanLatencyS": 9.2987,
+        "maxLatencyS": 13.867,
+        "meanFirstTokenS": 1.3202500000000001,
+        "meanInputTokens": 33923.55,
+        "meanOutputTokens": 1267.05,
+        "judgeCostUsd": 0.027149598
+      },
+      "byType": [
+        {
+          "questionType": "figure_trend",
+          "cases": 4,
+          "citationsValid": 0.75,
+          "figuresExact": 1.0,
+          "coverageGapsStated": 1.0,
+          "factRecall": 0.7916666666666666,
+          "faithfulness": 0.9408764967975494,
+          "meanCostUsd": 0.122895,
+          "totalCostUsd": 0.49158,
+          "meanLatencyS": 9.8995,
+          "maxLatencyS": 10.19,
+          "meanFirstTokenS": 1.44375,
+          "meanInputTokens": 54411.25,
+          "meanOutputTokens": 1407.25,
+          "judgeCostUsd": 0.006614328000000001
+        },
+        {
+          "questionType": "missing_company",
+          "cases": 4,
+          "citationsValid": 0.5,
+          "figuresExact": 1.0,
+          "coverageGapsStated": 1.0,
+          "factRecall": 1.0,
+          "faithfulness": 0.9852941176470589,
+          "meanCostUsd": 0.037466,
+          "totalCostUsd": 0.149864,
+          "meanLatencyS": 7.3295,
+          "maxLatencyS": 10.281,
+          "meanFirstTokenS": 0.89775,
+          "meanInputTokens": 13813.0,
+          "meanOutputTokens": 984.0,
+          "judgeCostUsd": 0.001948464
+        },
+        {
+          "questionType": "outlook",
+          "cases": 2,
+          "citationsValid": 1.0,
+          "figuresExact": 1.0,
+          "coverageGapsStated": 1.0,
+          "factRecall": 0.75,
+          "faithfulness": 0.9444444444444444,
+          "meanCostUsd": 0.108824,
+          "totalCostUsd": 0.217648,
+          "meanLatencyS": 10.363,
+          "maxLatencyS": 11.03,
+          "meanFirstTokenS": 2.393,
+          "meanInputTokens": 47944.5,
+          "meanOutputTokens": 1293.5,
+          "judgeCostUsd": 0.002239734
+        },
+        {
+          "questionType": "risk",
+          "cases": 6,
+          "citationsValid": 0.6666666666666666,
+          "figuresExact": 1.0,
+          "coverageGapsStated": 1.0,
+          "factRecall": 0.6944444444444445,
+          "faithfulness": 0.8597222222222222,
+          "meanCostUsd": 0.07437566666666666,
+          "totalCostUsd": 0.446254,
+          "meanLatencyS": 10.3105,
+          "maxLatencyS": 13.867,
+          "meanFirstTokenS": 1.4589999999999999,
+          "meanInputTokens": 30312.833333333332,
+          "meanOutputTokens": 1375.0,
+          "judgeCostUsd": 0.00976164
+        },
+        {
+          "questionType": "sector",
+          "cases": 2,
+          "citationsValid": 0.0,
+          "figuresExact": 1.0,
+          "coverageGapsStated": 1.0,
+          "factRecall": 0.3333333333333333,
+          "faithfulness": 0.9007314524555904,
+          "meanCostUsd": 0.092424,
+          "totalCostUsd": 0.184848,
+          "meanLatencyS": 10.9395,
+          "maxLatencyS": 11.153,
+          "meanFirstTokenS": 0.8775,
+          "meanInputTokens": 38354.5,
+          "meanOutputTokens": 1571.5,
+          "judgeCostUsd": 0.004207098
+        },
+        {
+          "questionType": "stale_filing",
+          "cases": 2,
+          "citationsValid": 0.5,
+          "figuresExact": 1.0,
+          "coverageGapsStated": 1.0,
+          "factRecall": 1.0,
+          "faithfulness": 1.0,
+          "meanCostUsd": 0.060079,
+          "totalCostUsd": 0.120158,
+          "meanLatencyS": 6.295,
+          "maxLatencyS": 9.036,
+          "meanFirstTokenS": 0.8719999999999999,
+          "meanInputTokens": 25549.5,
+          "meanOutputTokens": 898.0,
+          "judgeCostUsd": 0.002378334
+        }
+      ],
+      "failing": {
+        "citations": [
+          "sector-pharma-regulatory",
+          "stale-ge-recent-performance",
+          "sector-aerospace-government",
+          "risk-bac-change-snapshot",
+          "missing-citigroup",
+          "followup-switch-to-msft",
+          "followup-topic-change-export-controls",
+          "followup-ge-to-honeywell"
+        ],
+        "figures": [],
+        "coverageGaps": []
+      },
+      "errors": []
+    },
+    {
+      "report": "generation-dev-gpt-6.1-sol.json",
+      "model": "gpt-6.1-sol",
+      "judgeModel": "jev-1.13.0",
+      "promptVersion": "v7",
+      "overall": {
+        "cases": 19,
+        "citationsValid": 0.7894736842105263,
+        "figuresExact": 0.8947368421052632,
+        "coverageGapsStated": 1.0,
+        "factRecall": 0.7321428571428571,
+        "faithfulness": 0.9510668452923887,
+        "meanCostUsd": 0.04921842105263158,
+        "totalCostUsd": 0.93515,
+        "meanLatencyS": 13.215315789473685,
+        "maxLatencyS": 19.815,
+        "meanFirstTokenS": 1.4013684210526316,
+        "meanInputTokens": 21151.315789473683,
+        "meanOutputTokens": 691.578947368421,
+        "judgeCostUsd": 0.023610216
+      },
+      "byType": [
+        {
+          "questionType": "figure_trend",
+          "cases": 3,
+          "citationsValid": 1.0,
+          "figuresExact": 0.6666666666666666,
+          "coverageGapsStated": null,
+          "factRecall": 0.7222222222222222,
+          "faithfulness": 0.9209401709401709,
+          "meanCostUsd": 0.08271066666666667,
+          "totalCostUsd": 0.24813200000000002,
+          "meanLatencyS": 15.183,
+          "maxLatencyS": 15.953,
+          "meanFirstTokenS": 1.4110000000000003,
+          "meanInputTokens": 36710.333333333336,
+          "meanOutputTokens": 929.0,
+          "judgeCostUsd": 0.00339171
+        },
+        {
+          "questionType": "missing_company",
+          "cases": 4,
+          "citationsValid": 0.5,
+          "figuresExact": 1.0,
+          "coverageGapsStated": 1.0,
+          "factRecall": 1.0,
+          "faithfulness": 0.9782608695652174,
+          "meanCostUsd": 0.0212065,
+          "totalCostUsd": 0.084826,
+          "meanLatencyS": 9.2065,
+          "maxLatencyS": 15.062,
+          "meanFirstTokenS": 1.45975,
+          "meanInputTokens": 8463.25,
+          "meanOutputTokens": 428.0,
+          "judgeCostUsd": 0.00174216
+        },
+        {
+          "questionType": "outlook",
+          "cases": 2,
+          "citationsValid": 1.0,
+          "figuresExact": 0.5,
+          "coverageGapsStated": 1.0,
+          "factRecall": 1.0,
+          "faithfulness": 1.0,
+          "meanCostUsd": 0.07139999999999999,
+          "totalCostUsd": 0.14279999999999998,
+          "meanLatencyS": 11.978000000000002,
+          "maxLatencyS": 14.23,
+          "meanFirstTokenS": 1.3119999999999998,
+          "meanInputTokens": 32312.5,
+          "meanOutputTokens": 677.5,
+          "judgeCostUsd": 0.001049328
+        },
+        {
+          "questionType": "risk",
+          "cases": 6,
+          "citationsValid": 0.8333333333333334,
+          "figuresExact": 1.0,
+          "coverageGapsStated": 1.0,
+          "factRecall": 0.6468253968253969,
+          "faithfulness": 0.9446969696969697,
+          "meanCostUsd": 0.04486866666666667,
+          "totalCostUsd": 0.269212,
+          "meanLatencyS": 15.123166666666668,
+          "maxLatencyS": 19.138,
+          "meanFirstTokenS": 1.2651666666666668,
+          "meanInputTokens": 18581.0,
+          "meanOutputTokens": 770.6666666666666,
+          "judgeCostUsd": 0.011738412
+        },
+        {
+          "questionType": "sector",
+          "cases": 2,
+          "citationsValid": 1.0,
+          "figuresExact": 1.0,
+          "coverageGapsStated": 1.0,
+          "factRecall": 0.3333333333333333,
+          "faithfulness": 0.9772727272727273,
+          "meanCostUsd": 0.056073,
+          "totalCostUsd": 0.112146,
+          "meanLatencyS": 18.6705,
+          "maxLatencyS": 19.815,
+          "meanFirstTokenS": 1.884,
+          "meanInputTokens": 23509.0,
+          "meanOutputTokens": 905.5,
+          "judgeCostUsd": 0.00510762
+        },
+        {
+          "questionType": "stale_filing",
+          "cases": 2,
+          "citationsValid": 0.5,
+          "figuresExact": 1.0,
+          "coverageGapsStated": 1.0,
+          "factRecall": 1.0,
+          "faithfulness": 0.875,
+          "meanCostUsd": 0.039017,
+          "totalCostUsd": 0.078034,
+          "meanLatencyS": 8.34,
+          "maxLatencyS": 13.396,
+          "meanFirstTokenS": 1.2855,
+          "meanInputTokens": 17381.0,
+          "meanOutputTokens": 425.5,
+          "judgeCostUsd": 0.000580986
         }
       ],
       "failing": {
         "citations": [
           "stale-ge-recent-performance",
-          "missing-citigroup"
+          "risk-bac-change-snapshot",
+          "missing-citigroup",
+          "followup-ge-to-honeywell"
         ],
         "figures": [
-          "trend-tsla-net-income-three-years"
+          "trend-tsla-net-income-three-years",
+          "outlook-meta-capex-2026"
         ],
         "coverageGaps": []
       },
-      "errors": []
+      "errors": [
+        "trend-jpm-revenue-snapshot"
+      ]
     }
   ],
+  "generatorChoice": {
+    "shipped": "gpt-6-luna",
+    "chosen": "gpt-6-luna",
+    "comparisons": [
+      {
+        "model": "gpt-6.1-sol",
+        "cases": 19,
+        "factRecall": {
+          "challengerOnly": 4,
+          "shippedOnly": 1,
+          "pValue": 0.375,
+          "verdict": "indistinguishable"
+        },
+        "faithfulness": {
+          "challengerOnly": 8,
+          "shippedOnly": 4,
+          "pValue": 0.3876953125,
+          "verdict": "indistinguishable"
+        },
+        "coverageGaps": {
+          "challengerOnly": 0,
+          "shippedOnly": 0,
+          "pValue": 1.0,
+          "verdict": "indistinguishable"
+        },
+        "qualifies": false
+      },
+      {
+        "model": "claude-sonnet-5-5",
+        "cases": 19,
+        "factRecall": {
+          "challengerOnly": 5,
+          "shippedOnly": 0,
+          "pValue": 0.0625,
+          "verdict": "indistinguishable"
+        },
+        "faithfulness": {
+          "challengerOnly": 8,
+          "shippedOnly": 6,
+          "pValue": 0.79052734375,
+          "verdict": "indistinguishable"
+        },
+        "coverageGaps": {
+          "challengerOnly": 0,
+          "shippedOnly": 0,
+          "pValue": 1.0,
+          "verdict": "indistinguishable"
+        },
+        "qualifies": false
+      },
+      {
+        "model": "claude-opus-5-5",
+        "cases": 19,
+        "factRecall": {
+          "challengerOnly": 5,
+          "shippedOnly": 0,
+          "pValue": 0.0625,
+          "verdict": "indistinguishable"
+        },
+        "faithfulness": {
+          "challengerOnly": 8,
+          "shippedOnly": 6,
+          "pValue": 0.79052734375,
+          "verdict": "indistinguishable"
+        },
+        "coverageGaps": {
+          "challengerOnly": 0,
+          "shippedOnly": 0,
+          "pValue": 1.0,
+          "verdict": "indistinguishable"
+        },
+        "qualifies": false
+      }
+    ]
+  },
+  "holdout": {
+    "splitCases": 10,
+    "retrieval": {
+      "gatingMetric": "hit@10",
+      "ks": [
+        5,
+        10,
+        20
+      ],
+      "scoredCases": 10,
+      "unscored": [],
+      "arms": [
+        {
+          "name": "fts5",
+          "shipped": true,
+          "overall": {
+            "cases": 10,
+            "hitAt": {
+              "5": 0.9,
+              "10": 0.9,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.8083333333333333,
+              "10": 0.875,
+              "20": 0.975
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.975,
+            "mrr": 0.7166666666666667,
+            "meanSources": 12.8
+          },
+          "byType": [
+            {
+              "questionType": "figure_trend",
+              "cases": 2,
+              "hitAt": {
+                "5": 1.0,
+                "10": 1.0,
+                "20": 1.0
+              },
+              "recallAt": {
+                "5": 1.0,
+                "10": 1.0,
+                "20": 1.0
+              },
+              "hitAll": 1.0,
+              "recallAll": 1.0,
+              "mrr": 0.29166666666666663,
+              "meanSources": 28.5
+            },
+            {
+              "questionType": "outlook",
+              "cases": 2,
+              "hitAt": {
+                "5": 0.5,
+                "10": 0.5,
+                "20": 1.0
+              },
+              "recallAt": {
+                "5": 0.16666666666666666,
+                "10": 0.5,
+                "20": 1.0
+              },
+              "hitAll": 1.0,
+              "recallAll": 1.0,
+              "mrr": 0.2916666666666667,
+              "meanSources": 20.5
+            },
+            {
+              "questionType": "risk",
+              "cases": 3,
+              "hitAt": {
+                "5": 1.0,
+                "10": 1.0,
+                "20": 1.0
+              },
+              "recallAt": {
+                "5": 1.0,
+                "10": 1.0,
+                "20": 1.0
+              },
+              "hitAll": 1.0,
+              "recallAll": 1.0,
+              "mrr": 1.0,
+              "meanSources": 6.333333333333333
+            },
+            {
+              "questionType": "sector",
+              "cases": 3,
+              "hitAt": {
+                "5": 1.0,
+                "10": 1.0,
+                "20": 1.0
+              },
+              "recallAt": {
+                "5": 0.9166666666666666,
+                "10": 0.9166666666666666,
+                "20": 0.9166666666666666
+              },
+              "hitAll": 1.0,
+              "recallAll": 0.9166666666666666,
+              "mrr": 1.0,
+              "meanSources": 3.6666666666666665
+            }
+          ],
+          "missed": [
+            "outlook-msft-cloud"
+          ]
+        }
+      ],
+      "comparisons": []
+    },
+    "generation": [
+      {
+        "report": "generation-holdout.json",
+        "model": "gpt-6-luna",
+        "judgeModel": "jev-1.13.0",
+        "promptVersion": "v7",
+        "overall": {
+          "cases": 10,
+          "citationsValid": 1.0,
+          "figuresExact": 0.9,
+          "coverageGapsStated": 1.0,
+          "factRecall": 0.6683333333333333,
+          "faithfulness": 0.9490634514675435,
+          "meanCostUsd": 0.00302542,
+          "totalCostUsd": 0.030254200000000002,
+          "meanLatencyS": 9.4677,
+          "maxLatencyS": 11.221,
+          "meanFirstTokenS": 3.1093,
+          "meanInputTokens": 25471.7,
+          "meanOutputTokens": 956.5,
+          "judgeCostUsd": 0.012363036
+        },
+        "byType": [
+          {
+            "questionType": "figure_trend",
+            "cases": 2,
+            "citationsValid": 1.0,
+            "figuresExact": 0.5,
+            "coverageGapsStated": null,
+            "factRecall": 0.6666666666666666,
+            "faithfulness": 0.9017857142857143,
+            "meanCostUsd": 0.0045566,
+            "totalCostUsd": 0.0091132,
+            "meanLatencyS": 8.198,
+            "maxLatencyS": 8.425,
+            "meanFirstTokenS": 2.95,
+            "meanInputTokens": 41113.5,
+            "meanOutputTokens": 890.5,
+            "judgeCostUsd": 0.002276778
+          },
+          {
+            "questionType": "outlook",
+            "cases": 2,
+            "citationsValid": 1.0,
+            "figuresExact": 1.0,
+            "coverageGapsStated": 1.0,
+            "factRecall": 0.41666666666666663,
+            "faithfulness": 0.9666666666666667,
+            "meanCostUsd": 0.003491,
+            "totalCostUsd": 0.006982,
+            "meanLatencyS": 10.0465,
+            "maxLatencyS": 10.624,
+            "meanFirstTokenS": 3.7005,
+            "meanInputTokens": 29807.5,
+            "meanOutputTokens": 1020.5,
+            "judgeCostUsd": 0.002334024
+          },
+          {
+            "questionType": "risk",
+            "cases": 3,
+            "citationsValid": 1.0,
+            "figuresExact": 1.0,
+            "coverageGapsStated": 1.0,
+            "factRecall": 0.8888888888888888,
+            "faithfulness": 0.9665032679738562,
+            "meanCostUsd": 0.0022464,
+            "totalCostUsd": 0.0067392,
+            "meanLatencyS": 9.533,
+            "maxLatencyS": 11.221,
+            "meanFirstTokenS": 3.1473333333333335,
+            "meanInputTokens": 17837.333333333332,
+            "meanOutputTokens": 925.3333333333334,
+            "judgeCostUsd": 0.0021239400000000004
+          },
+          {
+            "questionType": "sector",
+            "cases": 3,
+            "citationsValid": 1.0,
+            "figuresExact": 1.0,
+            "coverageGapsStated": 1.0,
+            "factRecall": 0.6166666666666667,
+            "faithfulness": 0.9514066496163682,
+            "meanCostUsd": 0.0024732666666666668,
+            "totalCostUsd": 0.007419800000000001,
+            "meanLatencyS": 9.863,
+            "maxLatencyS": 10.704,
+            "meanFirstTokenS": 2.7833333333333337,
+            "meanInputTokens": 19787.666666666668,
+            "meanOutputTokens": 989.0,
+            "judgeCostUsd": 0.005628294000000001
+          }
+        ],
+        "failing": {
+          "citations": [],
+          "figures": [
+            "trend-aapl-revenue-fy2025"
+          ],
+          "coverageGaps": []
+        },
+        "errors": []
+      }
+    ]
+  },
   "coverage": {
     "periods": [
       "2014Q4",

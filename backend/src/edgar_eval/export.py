@@ -8,6 +8,12 @@ It reads the reports the harnesses last wrote for a split under `data/derived/ev
 - `generation-<split>[-<model>].json` (`make eval-generation`): one per generator run,
   each with its scores, cost and latency. Optional, since a run costs money: the export
   lists none until one has run.
+- `generator-choice-<split>.json` (`make eval-generators`): each challenger generator's
+  sign tests against the shipped one, and the generator the rule chose. Optional.
+
+Beside a dev (or all) export it carries the holdout's reports, `retrieval-holdout.json`
+and every `generation-holdout[-<suffix>].json`, when the holdout has been scored, so the
+page shows the holdout run (or runs) next to the numbers the choices were made on.
 
 It adds the Corpus coverage grid (each Company's Filings by the calendar quarter of
 their Report Periods, Tracked Companies first) and writes everything, in the
@@ -55,9 +61,7 @@ def export(
         )
     golden = load_golden_set(golden_set)
     cases = golden.cases if split == "all" else golden.split(split)
-    generation_paths = sorted(eval_dir.glob(f"generation-{split}.json")) + sorted(
-        eval_dir.glob(f"generation-{split}-*.json")
-    )
+    choice_path = eval_dir / f"generator-choice-{split}.json"
     return {
         "exportedOn": today.isoformat(),
         "split": split,
@@ -67,8 +71,30 @@ def export(
             "splitCases": len(cases),
         },
         "retrieval": _retrieval(_read(retrieval_path)),
-        "generation": [_generation(_read(path)) for path in generation_paths],
+        "generation": [_generation(path) for path in _generation_paths(eval_dir, split)],
+        "generatorChoice": _generator_choice(_read(choice_path)) if choice_path.exists() else None,
+        "holdout": None if split == "holdout" else _holdout(eval_dir, len(golden.split("holdout"))),
         "coverage": coverage_grid(filings),
+    }
+
+
+def _generation_paths(eval_dir: Path, split: str) -> list[Path]:
+    """A split's generation reports: the shipped generator's first, then the others."""
+    return sorted(eval_dir.glob(f"generation-{split}.json")) + sorted(
+        eval_dir.glob(f"generation-{split}-*.json")
+    )
+
+
+def _holdout(eval_dir: Path, split_cases: int) -> dict[str, Any] | None:
+    """The holdout's reports, or None when it has not been scored."""
+    retrieval_path = eval_dir / "retrieval-holdout.json"
+    generation_paths = _generation_paths(eval_dir, "holdout")
+    if not retrieval_path.exists() and not generation_paths:
+        return None
+    return {
+        "splitCases": split_cases,
+        "retrieval": _retrieval(_read(retrieval_path)) if retrieval_path.exists() else None,
+        "generation": [_generation(path) for path in generation_paths],
     }
 
 
@@ -163,9 +189,11 @@ def _retrieval_summary(s: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def _generation(report: dict[str, Any]) -> dict[str, Any]:
+def _generation(path: Path) -> dict[str, Any]:
+    report = _read(path)
     cases = report["cases"]
     return {
+        "report": path.name,
         "model": report["model"],
         "judgeModel": report["judge_model"],
         "promptVersion": report["prompt_version"],
@@ -186,6 +214,33 @@ def _generation(report: dict[str, Any]) -> dict[str, Any]:
             ],
         },
         "errors": sorted(report["errors"]),
+    }
+
+
+def _generator_choice(report: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "shipped": report["shipped"],
+        "chosen": report["chosen"],
+        "comparisons": [
+            {
+                "model": model,
+                "cases": c["cases"],
+                "factRecall": _sign_test(c["fact_recall"]),
+                "faithfulness": _sign_test(c["faithfulness"]),
+                "coverageGaps": _sign_test(c["coverage_gaps"]),
+                "qualifies": c["qualifies"],
+            }
+            for model, c in report["comparisons"].items()
+        ],
+    }
+
+
+def _sign_test(result: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "challengerOnly": result["challenger_only"],
+        "shippedOnly": result["shipped_only"],
+        "pValue": result["p_value"],
+        "verdict": result["verdict"],
     }
 
 
@@ -236,10 +291,15 @@ def main(
     args.out.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
     arms = ", ".join(arm["name"] for arm in data["retrieval"]["arms"])
     models = ", ".join(run["model"] for run in data["generation"]) or "none yet"
+    choice = data["generatorChoice"]
+    holdout = data["holdout"]
     print(
         f"Exported the {args.split} split's retrieval results (Arms: {arms}), generation "
-        f"results (generators: {models}) and the coverage of "
-        f"{len(data['coverage']['companies'])} Companies to {args.out.resolve()}",
+        f"results (generators: {models}), "
+        + (f"the generator choice ({choice['chosen']}), " if choice else "")
+        + (f"{len(holdout['generation'])} holdout generation run(s), " if holdout else "")
+        + f"and the coverage of {len(data['coverage']['companies'])} Companies to "
+        f"{args.out.resolve()}",
         file=out,
     )
     return 0

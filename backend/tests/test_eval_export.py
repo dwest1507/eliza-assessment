@@ -13,7 +13,7 @@ from datetime import date
 
 import pytest
 
-from edgar_eval import generation, retrieval
+from edgar_eval import generation, retrieval, selection
 from edgar_eval.export import coverage_grid, main
 from edgar_eval.judge import JEV_MODEL
 from edgar_eval.retrieval import Arm
@@ -78,17 +78,20 @@ class FakeJudge:
 ANSWER = "Apple relies on outsourcing partners in Asia [S1]. Tesla depends on its CEO [S99]."
 
 
-def _write_generation_report(eval_dir, index, tmp_path, model, suffix=""):
-    path = eval_dir / f"generation-dev{suffix}.json"
+def _write_generation_report(
+    eval_dir, index, tmp_path, model, suffix="", split="dev", answer=ANSWER
+):
+    path = eval_dir / f"generation-{split}{suffix}.json"
     code = generation.main(
         ["--case", "risk-aapl-tsla-jpm", "--index", str(index), "--log", str(tmp_path / "log")]
         + ["--json", str(path)],
-        model=FakeModel(model, ANSWER),
+        model=FakeModel(model, answer),
         judge=FakeJudge(),
         fact_values=lambda tickers: [],
         out=io.StringIO(),
     )
     assert code == 0
+    return path
 
 
 def _export(tmp_path, eval_dir, filings, *args):
@@ -178,6 +181,77 @@ def test_generation_is_left_empty_until_its_harness_has_run(tmp_path, eval_dir, 
     data = _export(tmp_path, eval_dir, indexed_filings)
 
     assert data["generation"] == []
+    assert data["generatorChoice"] is None
+    assert data["holdout"] is None
+
+
+def test_the_export_carries_the_generator_comparison_and_its_choice(
+    tmp_path, eval_dir, index, indexed_filings
+):
+    _write_retrieval_report(eval_dir)
+    shipped = _write_generation_report(eval_dir, index, tmp_path, "gpt-6-luna")
+    challenger = _write_generation_report(eval_dir, index, tmp_path, "gpt-6.1-sol", "-gpt-6.1-sol")
+    assert (
+        selection.main(
+            ["compare", str(shipped), str(challenger), "--rule", "generators"]
+            + ["--json", str(eval_dir / "generator-choice-dev.json")],
+            out=io.StringIO(),
+        )
+        == 0
+    )
+
+    data = _export(tmp_path, eval_dir, indexed_filings)
+
+    choice = data["generatorChoice"]
+    assert (choice["shipped"], choice["chosen"]) == ("gpt-6-luna", "gpt-6-luna")
+    [comparison] = choice["comparisons"]
+    assert comparison["model"] == "gpt-6.1-sol"
+    assert comparison["cases"] == 1
+    assert comparison["qualifies"] is False
+    for score in ("factRecall", "faithfulness", "coverageGaps"):
+        assert comparison[score] == {
+            "challengerOnly": 0,
+            "shippedOnly": 0,
+            "pValue": 1.0,
+            "verdict": "indistinguishable",
+        }
+
+
+def test_the_export_carries_every_holdout_run_beside_the_dev_reports(
+    tmp_path, eval_dir, index, indexed_filings
+):
+    _write_retrieval_report(eval_dir)
+    _write_generation_report(eval_dir, index, tmp_path, "gpt-6-luna")
+    _write_retrieval_report(eval_dir, split="holdout")
+    _write_generation_report(eval_dir, index, tmp_path, "gpt-6-luna", split="holdout")
+    _write_generation_report(
+        eval_dir, index, tmp_path, "gpt-6-luna", "-second", "holdout", "Apple relies on Asia [S1]."
+    )
+
+    data = _export(tmp_path, eval_dir, indexed_filings)
+
+    assert data["split"] == "dev"
+    assert [run["report"] for run in data["generation"]] == ["generation-dev.json"]
+    holdout = data["holdout"]
+    assert holdout["splitCases"] == len(load_golden_set().split("holdout"))
+    assert [arm["name"] for arm in holdout["retrieval"]["arms"]] == ["fts5", "nothing"]
+    first, second = holdout["generation"]
+    assert first["report"] == "generation-holdout.json"
+    assert second["report"] == "generation-holdout-second.json"
+    assert first["overall"]["citationsValid"] == 0  # cites [S99]
+    assert second["overall"]["citationsValid"] == 1
+
+
+def test_a_holdout_scored_without_its_retrieval_report_still_shows_its_answers(
+    tmp_path, eval_dir, index, indexed_filings
+):
+    _write_retrieval_report(eval_dir)
+    _write_generation_report(eval_dir, index, tmp_path, "gpt-6-luna", split="holdout")
+
+    holdout = _export(tmp_path, eval_dir, indexed_filings)["holdout"]
+
+    assert holdout["retrieval"] is None
+    assert [run["model"] for run in holdout["generation"]] == ["gpt-6-luna"]
 
 
 def test_the_export_reads_the_chosen_splits_reports(tmp_path, eval_dir, indexed_filings):
@@ -186,6 +260,7 @@ def test_the_export_reads_the_chosen_splits_reports(tmp_path, eval_dir, indexed_
     data = _export(tmp_path, eval_dir, indexed_filings, "--split", "holdout")
 
     assert data["split"] == "holdout"
+    assert data["holdout"] is None  # the holdout is the split itself
     assert data["retrieval"]["scoredCases"] + len(data["retrieval"]["unscored"]) == len(
         load_golden_set().split("holdout")
     )

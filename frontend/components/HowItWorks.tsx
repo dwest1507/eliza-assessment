@@ -5,8 +5,11 @@ import {
   type EvalExport,
   type GenerationRun,
   type GenerationSummary,
+  type GeneratorChoice,
+  type HoldoutResults,
   type RetrievalResults,
   type RetrievalSummary,
+  type SignTest,
   quarterLabel,
   questionType,
   score,
@@ -15,8 +18,9 @@ import {
 } from '@/lib/evalExport'
 
 /**
- * The "How it works" page: the architecture, the evaluation scoreboard and the Corpus
- * coverage grid, all read from the evaluation export so the evidence sits in the product.
+ * The "How it works" page: the architecture, the evaluation scoreboard (with the generator
+ * comparison), the holdout run and the Corpus coverage grid, all read from the evaluation
+ * export so the evidence sits in the product.
  */
 export default function HowItWorks({ data }: { data: EvalExport }) {
   return (
@@ -37,6 +41,7 @@ export default function HowItWorks({ data }: { data: EvalExport }) {
       <main className="mx-auto flex max-w-5xl flex-col gap-12 px-5 py-10">
         <Architecture data={data} />
         <Scoreboard data={data} />
+        {data.holdout && <Holdout holdout={data.holdout} />}
         <CoverageGrid data={data} />
       </main>
     </div>
@@ -76,7 +81,8 @@ interface Stage {
 
 function Architecture({ data }: { data: EvalExport }) {
   const shipped = data.retrieval.arms.find((arm) => arm.shipped)?.name
-  const generator = data.generation[0]
+  const generator =
+    data.generation.find((run) => run.model === data.generatorChoice?.chosen) ?? data.generation[0]
   const filings = data.coverage.companies.reduce((n, c) => n + c.filings.length, 0)
 
   const builtOnce: Stage[] = [
@@ -204,13 +210,18 @@ function Scoreboard({ data }: { data: EvalExport }) {
         <>
           The harnesses’ latest results on the Golden Set’s {split} split, exported on{' '}
           {data.exportedOn}. Choices are tuned on dev; the holdout is scored once per final setup,
-          never to choose. Scores are shares from 0 to 1.
+          never to choose{data.holdout ? ', and its run follows' : ''}. Scores are shares from 0 to
+          1.
         </>
       }
     >
       <RetrievalTable retrieval={retrieval} split={split} splitCases={goldenSet.splitCases} />
       {data.generation.length > 0 ? (
-        <GenerationTable runs={data.generation} split={split} />
+        <GenerationTable
+          runs={data.generation}
+          split={split}
+          shipped={data.generatorChoice?.chosen}
+        />
       ) : (
         <p className="rounded-md border border-line bg-white px-4 py-3 text-[14px] text-muted">
           No answers have been scored on this split yet. Run{' '}
@@ -218,6 +229,33 @@ function Scoreboard({ data }: { data: EvalExport }) {
           generator and the judge, so it costs money), then{' '}
           <code className="font-mono text-[13px]">make eval-export</code>.
         </p>
+      )}
+      {data.generatorChoice && <GeneratorChoiceTable choice={data.generatorChoice} />}
+    </Section>
+  )
+}
+
+function Holdout({ holdout }: { holdout: HoldoutResults }) {
+  const { splitCases } = holdout
+  return (
+    <Section
+      id="holdout"
+      title="The holdout run"
+      intro={
+        <>
+          The shipped setup, scored on the Golden Set’s {splitCases} holdout cases after every
+          choice above was made on dev. The holdout is scored once per final setup and never used to
+          choose: nothing was changed after it. On {splitCases} cases one case moves a share by{' '}
+          {(1 / splitCases).toFixed(2)}, so it shows whether the dev choices overfitted badly, not
+          that one split scores better than the other.
+        </>
+      }
+    >
+      {holdout.retrieval && (
+        <RetrievalTable retrieval={holdout.retrieval} split="holdout" splitCases={splitCases} />
+      )}
+      {holdout.generation.length > 0 && (
+        <GenerationTable runs={holdout.generation} split="holdout" />
       )}
     </Section>
   )
@@ -269,11 +307,13 @@ function RetrievalTable({
           </tbody>
         </table>
         <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
-          Scored on {retrieval.scoredCases} of {splitCases} {split} cases;{' '}
-          {retrieval.unscored.length} have no expected Source to find (a Company missing from the
-          Corpus, General Electric today). Gating metric {retrieval.gatingMetric}: each challenger
-          is compared with the Shipped Arm case by case by McNemar’s exact test, and called ahead or
-          behind only at p &lt; 0.05.
+          Scored on {retrieval.scoredCases} of {splitCases} {split} cases
+          {retrieval.unscored.length > 0 &&
+            `; ${retrieval.unscored.length} have no expected Source to find (a Company missing from the Corpus, General Electric today)`}
+          . Gating metric {retrieval.gatingMetric}
+          {retrieval.comparisons.length > 0 &&
+            ': each challenger is compared with the Shipped Arm case by case by McNemar’s exact test, and called ahead or behind only at p < 0.05'}
+          .
           {shipped && shipped.missed.length > 0 && (
             <>
               {' '}
@@ -374,8 +414,19 @@ const GENERATION_COLUMNS: [string, (s: GenerationSummary) => string][] = [
   ['First text', (s) => seconds(s.meanFirstTokenS)],
 ]
 
-function GenerationTable({ runs, split }: { runs: GenerationRun[]; split: string }) {
+function GenerationTable({
+  runs,
+  split,
+  shipped,
+}: {
+  runs: GenerationRun[]
+  split: string
+  /** The generator the rule chose, marked on its row. */
+  shipped?: string
+}) {
   const judges = [...new Set(runs.map((run) => run.judgeModel))].join(', ')
+  // Name the report when two runs share a generator, e.g. two holdout runs.
+  const repeated = (run: GenerationRun) => runs.filter((r) => r.model === run.model).length > 1
   return (
     <div className="flex flex-col gap-3">
       <div className="overflow-x-auto rounded-md border border-line bg-white p-3">
@@ -393,10 +444,18 @@ function GenerationTable({ runs, split }: { runs: GenerationRun[]; split: string
           </thead>
           <tbody>
             {runs.map((run) => (
-              <tr key={run.model}>
+              <tr key={run.report}>
                 <th scope="row" className={`${td} text-left font-medium`}>
                   <code className="font-mono">{run.model}</code>
+                  {run.model === shipped && (
+                    <span className="ml-2 rounded bg-accent/10 px-1.5 py-0.5 text-[11px] font-medium text-accent">
+                      shipped
+                    </span>
+                  )}
                   <span className="ml-2 text-[11.5px] text-muted">prompt {run.promptVersion}</span>
+                  {repeated(run) && (
+                    <span className="ml-2 font-mono text-[11.5px] text-muted">{run.report}</span>
+                  )}
                 </th>
                 {GENERATION_COLUMNS.map(([name, value]) => (
                   <td key={name} className={td}>
@@ -417,9 +476,9 @@ function GenerationTable({ runs, split }: { runs: GenerationRun[]; split: string
       {runs.map(
         (run) =>
           run.byType.length > 0 && (
-            <details key={run.model} className="rounded-md border border-line bg-white p-3">
+            <details key={run.report} className="rounded-md border border-line bg-white p-3">
               <summary className="cursor-pointer text-[13px] font-medium">
-                {run.model} by question type
+                {run.model} by question type{repeated(run) && ` (${run.report})`}
               </summary>
               <div className="mt-2 overflow-x-auto">
                 <table className="min-w-full border-collapse text-[13px]">
@@ -453,6 +512,53 @@ function GenerationTable({ runs, split }: { runs: GenerationRun[]; split: string
             </details>
           )
       )}
+    </div>
+  )
+}
+
+function signTest(test: SignTest): string {
+  return `${test.verdict} (${test.challengerOnly} higher, ${test.shippedOnly} lower, p = ${test.pValue.toFixed(2)})`
+}
+
+function GeneratorChoiceTable({ choice }: { choice: GeneratorChoice }) {
+  return (
+    <div className="overflow-x-auto rounded-md border border-line bg-white p-3">
+      <table className="min-w-full border-collapse text-[13px]">
+        <caption className={caption}>
+          Choosing the generator: is a challenger distinguishably better?
+        </caption>
+        <thead>
+          <tr>
+            <th className={th}>Challenger vs {choice.shipped}</th>
+            <th className={th}>Cases</th>
+            <th className={th}>Fact Recall</th>
+            <th className={th}>Faithfulness</th>
+            <th className={th}>Coverage Gaps</th>
+            <th className={th}>Qualifies</th>
+          </tr>
+        </thead>
+        <tbody>
+          {choice.comparisons.map((c) => (
+            <tr key={c.model}>
+              <th scope="row" className={`${td} text-left font-medium`}>
+                <code className="font-mono">{c.model}</code>
+              </th>
+              <td className={td}>{c.cases}</td>
+              <td className={td}>{signTest(c.factRecall)}</td>
+              <td className={td}>{signTest(c.faithfulness)}</td>
+              <td className={td}>{signTest(c.coverageGaps)}</td>
+              <td className={td}>{c.qualifies ? 'yes' : 'no'}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
+        Each challenger is compared with {choice.shipped} on the cases both answered, by an exact
+        sign test on each case’s score. It qualifies only if ahead on Fact Recall or Coverage Gaps
+        and behind on none of Fact Recall, Faithfulness and Coverage Gaps, each at p &lt; 0.05; the
+        cheapest qualifier wins.{' '}
+        <span className="font-medium text-ink">Chosen: {choice.chosen}.</span>
+      </p>
     </div>
   )
 }
