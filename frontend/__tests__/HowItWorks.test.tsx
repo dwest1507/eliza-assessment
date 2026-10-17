@@ -309,6 +309,102 @@ describe('the "How it works" page', () => {
   })
 })
 
+/** Domain terms of `CONTEXT.md` that the plain overview keeps to hover text. */
+const JARGON =
+  /\b(Filings?|Compan(?:y|ies)|Sources?|Answer Call|Answer Context|Query Scope|Coverage Gaps?|Fact Recall|Faithfulness|Golden Set|Tracked|Snapshot|Arms?|Corpus|dev|holdout|Jev|Control Run|FTS5|bm25)\b/
+
+const OVERVIEW = ['How an answer is made', 'How well it answers', 'Known limits']
+
+describe('the "How it works" overview', () => {
+  it('opens with the overview, then "Technical details"', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const headings = screen.getAllByRole('heading', { level: 2 }).map((h) => h.textContent)
+    expect(headings.slice(0, 5)).toEqual([
+      'How an answer is made',
+      'What’s covered',
+      'How well it answers',
+      'Known limits',
+      'Technical details',
+    ])
+  })
+
+  it('explains how an answer is made in three steps', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const steps = within(section('How an answer is made')).getByRole('list')
+    const names = within(steps)
+      .getAllByRole('heading', { level: 3 })
+      .map((h) => h.textContent)
+    expect(names).toEqual([
+      'Find the relevant filing passages',
+      'One AI call writes the answer',
+      'Every claim is cited',
+    ])
+  })
+
+  it('gives the shipped run’s headline numbers, each with a plain meaning', () => {
+    // The Control Run listed first must not be taken for the shipped run.
+    const [shipped, control, haiku] = EXPORT.generation
+    render(<HowItWorks data={{ ...EXPORT, generation: [control, haiku, shipped] }} />)
+
+    const numbers = section('How well it answers')
+    const facts = within(numbers).getByRole('listitem', { name: /key facts/i })
+    expect(facts).toHaveTextContent('About 72%') // Fact Recall 0.717
+    expect(within(facts).getByTitle('Fact Recall')).toBeInTheDocument()
+    const claims = within(numbers).getByRole('listitem', { name: /claims backed/i })
+    expect(claims).toHaveTextContent('About 93%') // Faithfulness 0.928
+    expect(within(claims).getByTitle('Faithfulness')).toBeInTheDocument()
+    const gaps = within(numbers).getByRole('listitem', { name: /missing information/i })
+    expect(gaps).toHaveTextContent('100%') // Coverage Gaps stated 1.0
+    expect(within(gaps).getByTitle('Coverage Gaps stated')).toBeInTheDocument()
+    for (const item of [facts, claims, gaps]) {
+      expect(within(item).getByRole('paragraph')).toHaveTextContent(/\w+.*\./)
+    }
+    expect(numbers).not.toHaveTextContent('71%') // the Control Run's Fact Recall
+  })
+
+  it('words the headline numbers as directional, on the questions they were measured on', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const numbers = section('How well it answers')
+    expect(numbers).toHaveTextContent('60 test questions')
+    expect(numbers).toHaveTextContent('a rough guide')
+    expect(numbers).toHaveTextContent('about 2 points')
+    expect(within(numbers).getByRole('link', { name: /full scoreboard/i })).toHaveAttribute(
+      'href',
+      '#scoreboard'
+    )
+  })
+
+  it('leaves the headline numbers out until answers have been scored', () => {
+    render(<HowItWorks data={{ ...EXPORT, generation: [] }} />)
+
+    expect(screen.queryByRole('region', { name: 'How well it answers' })).not.toBeInTheDocument()
+    expect(section('Known limits')).toBeInTheDocument()
+  })
+
+  it('states the known limits plainly', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const limits = within(section('Known limits')).getAllByRole('listitem')
+    expect(limits).toHaveLength(4)
+    const text = limits.map((li) => li.textContent).join(' ')
+    expect(text).toMatch(/only from the filings/i)
+    expect(text).toMatch(/guidance/i)
+    expect(text).toMatch(/only a few filings/i)
+    expect(text).toMatch(/one AI call/i)
+  })
+
+  it('keeps domain terms out of the overview’s text', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    for (const name of OVERVIEW) {
+      expect(section(name).textContent).not.toMatch(JARGON)
+    }
+  })
+})
+
 describe('the "How it works" technical details', () => {
   it('puts every technical section under "Technical details", each collapsed by default', () => {
     render(<HowItWorks data={EXPORT} />)

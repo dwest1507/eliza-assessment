@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import { HeadlineNumbers, HowAnswersAreMade, KnownLimits } from '@/components/Overview'
 import TechnicalDetails, { TechnicalSection } from '@/components/TechnicalDetails'
 import WhatsCovered from '@/components/WhatsCovered'
 import { coverageSummary } from '@/lib/coverage'
@@ -22,19 +23,22 @@ import {
   questionType,
   score,
   seconds,
+  shippedRun,
   usd,
 } from '@/lib/evalExport'
 
 type Thresholds = EvalExport['thresholds']
 
 /**
- * The "How it works" page: "What's covered", then the sections under "Technical details",
- * each collapsed by default: the architecture, the evaluation scoreboard (the shipped run
+ * The "How it works" page: a plain overview first (how an answer is made, "What's
+ * covered", the shipped run's headline numbers and the known limits), then the sections
+ * under "Technical details", each collapsed by default: the architecture, the evaluation scoreboard (the shipped run
  * beside its Control Run, the retrieval Arms and their screen, and the generator
  * comparison), the Brief Suite's verdicts, the holdout run beside dev and the Corpus
  * coverage grid, all read from the evaluation export so the evidence sits in the product.
  */
 export default function HowItWorks({ data }: { data: EvalExport }) {
+  const shipped = shippedRun(data)
   return (
     <div className="min-h-dvh text-ink">
       <header className="sticky top-0 z-30 flex items-center gap-4 border-b border-line bg-canvas/80 px-5 py-3 backdrop-blur-xl">
@@ -42,7 +46,7 @@ export default function HowItWorks({ data }: { data: EvalExport }) {
           How it works<span className="text-accent">.</span>
         </h1>
         <p className="hidden font-mono text-[11px] tracking-widest text-muted lg:block">
-          The architecture, the evaluation scores and the Filings behind every answer
+          How answers are made, what’s covered and how far to trust them
         </p>
         <Link
           href="/"
@@ -53,8 +57,11 @@ export default function HowItWorks({ data }: { data: EvalExport }) {
       </header>
 
       <main className="flex flex-col gap-20 px-5 py-14">
-        <div className="mx-auto w-full max-w-5xl">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-16">
+          <HowAnswersAreMade />
           <WhatsCovered summary={coverageSummary(data.coverage)} />
+          {shipped && <HeadlineNumbers run={shipped} />}
+          <KnownLimits />
         </div>
         <TechnicalDetails
           heading={
