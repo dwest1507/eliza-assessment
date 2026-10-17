@@ -1,6 +1,7 @@
 """The Arm (and generator) selection rule: the shipped choice stays unless a challenger
-is distinguishably better on Fact Recall, question by question, and not worse on
-Faithfulness or Coverage Gaps; the cheapest wins ties."""
+is ahead on Fact Recall, question by question (one-sided p < 0.10), and behind on no
+guardrail (one-sided p < 0.20 on Faithfulness, Coverage Gaps or Contradicted Claims);
+the cheapest qualifying challenger wins."""
 
 import io
 import json
@@ -41,16 +42,17 @@ SHIPPED = _candidate("fts5", [0.0] * 8)
 
 
 def test_the_shipped_choice_stays_when_no_challenger_is_distinguishably_better():
-    close = _candidate("dense", [1.0] * 5 + [0.0] * 3)  # 5 wins to 0: p = 0.0625
+    shipped = _candidate("fts5", [0.0] * 5 + [1.0] + [0.0] * 2)
+    close = _candidate("dense", [1.0] * 5 + [0.0] * 3)  # 5 wins to 1: one-sided p = 0.109
 
-    choice = choose(SHIPPED, [close])
+    choice = choose(shipped, [close])
 
     assert choice.chosen == "fts5"
     assert choice.comparisons["dense"].fact_recall.verdict == "indistinguishable"
 
 
 def test_a_challenger_better_on_fact_recall_and_no_worse_elsewhere_is_chosen():
-    better = _candidate("dense", [1.0] * 6 + [0.0] * 2)  # 6 wins to 0: p = 0.031
+    better = _candidate("dense", [1.0] * 6 + [0.0] * 2)  # 6 wins to 0: one-sided p = 0.016
 
     assert choose(SHIPPED, [better]).chosen == "dense"
 
@@ -79,9 +81,10 @@ def test_a_case_missing_a_score_on_one_side_is_left_out_of_that_scores_pairs():
 
     comparison = choose(shipped, [challenger]).comparisons["dense"]
 
-    assert comparison.fact_recall.shipped_only == 0  # c0 is not a loss
-    assert comparison.paired == {"fact_recall": 6, "faithfulness": 7, "coverage_gaps": 0}
-    assert comparison.left_out == {"fact_recall": 2, "faithfulness": 1, "coverage_gaps": 0}
+    assert comparison.fact_recall.losses == 0  # c0 is not a loss
+    scores = ("fact_recall", "faithfulness", "coverage_gaps")
+    assert [getattr(comparison, s).paired for s in scores] == [6, 7, 0]
+    assert [getattr(comparison, s).left_out for s in scores] == [2, 1, 0]
 
 
 def test_the_command_reports_the_cases_each_score_left_out(tmp_path, capsys):
@@ -102,9 +105,12 @@ def test_the_command_reports_the_cases_each_score_left_out(tmp_path, capsys):
 
     printed = capsys.readouterr().out
     assert "Fact Recall: ahead (7 cases higher, 0 lower" in printed
-    assert "7 cases paired, 1 left out" in printed
-    saved = json.loads(out.read_text())["comparisons"]["dense"]
-    assert (saved["paired"]["fact_recall"], saved["left_out"]["fact_recall"]) == (7, 1)
+    assert "p ahead = 0.008" in printed and "7 cases paired, 1 left out" in printed
+    assert "mean difference +0.500, 95% interval [+0.500, +0.500]" in printed
+    saved = json.loads(out.read_text())["comparisons"]["dense"]["fact_recall"]
+    assert (saved["paired"], saved["left_out"], saved["wins"], saved["losses"]) == (7, 1, 7, 0)
+    assert saved["p_ahead"] == pytest.approx(1 / 128)
+    assert saved["difference"]["mean"] == pytest.approx(0.5)
 
 
 def test_the_command_compares_generation_reports_and_writes_the_choice(tmp_path, capsys):
@@ -134,6 +140,195 @@ def test_the_command_compares_generation_reports_and_writes_the_choice(tmp_path,
     printed = capsys.readouterr().out
     assert "dense" in printed and "Fact Recall" in printed and "Chosen: dense" in printed
     assert json.loads(out.read_text())["chosen"] == "dense"
+
+
+# --- The one-sided thresholds (ADR 0011) -------------------------------------------------
+# Ahead at one-sided p < 0.10 on an ahead metric; behind at one-sided p < 0.20 on any
+# guardrail; one pair of thresholds for every rule.
+
+
+def _scores(wins, losses, ties=0):
+    """Challenger and shipped per-case scores with `wins` and `losses` for the challenger."""
+    return [1.0] * wins + [0.0] * losses + [0.5] * ties, [0.0] * wins + [1.0] * losses + [
+        0.5
+    ] * ties
+
+
+def _against(challenger_recall, shipped_recall, *, faithful=None, contradicted=None, cost=0.002):
+    """A challenger and a shipped Candidate on the same cases."""
+    n = len(challenger_recall)
+    c_faith, s_faith = faithful or ([1.0] * n, [1.0] * n)
+    c_clean, s_clean = contradicted or ([None] * n, [None] * n)
+    cases = [f"c{i}" for i in range(n)]
+
+    def candidate(name, recall, faith, clean, cost):
+        return Candidate(
+            name=name,
+            fact_recall=dict(zip(cases, recall, strict=True)),
+            faithfulness=dict(zip(cases, faith, strict=True)),
+            coverage_gaps=dict.fromkeys(cases),
+            contradicted_claims=dict(zip(cases, clean, strict=True)),
+            cost_usd=cost,
+        )
+
+    return (
+        candidate("challenger", challenger_recall, c_faith, c_clean, cost),
+        candidate("shipped", shipped_recall, s_faith, s_clean, 0.002),
+    )
+
+
+@pytest.mark.parametrize("rule", ["arms", "generators", "settings"])
+def test_ahead_on_fact_recall_just_under_one_sided_p_0_10_qualifies(rule):
+    challenger, shipped = _against(*_scores(7, 2))  # p = 46/512 = 0.090
+
+    comparison = choose(shipped, [challenger], rule).comparisons["challenger"]
+
+    assert comparison.fact_recall.p_ahead == pytest.approx(0.0898, abs=1e-4)
+    assert comparison.fact_recall.verdict == "ahead"
+    assert comparison.qualifies
+
+
+@pytest.mark.parametrize("rule", ["arms", "generators", "settings"])
+def test_ahead_on_fact_recall_just_over_one_sided_p_0_10_does_not_qualify(rule):
+    challenger, shipped = _against(*_scores(11, 5))  # p = 6885/65536 = 0.105
+
+    comparison = choose(shipped, [challenger], rule).comparisons["challenger"]
+
+    assert comparison.fact_recall.p_ahead == pytest.approx(0.1051, abs=1e-4)
+    assert comparison.fact_recall.verdict == "indistinguishable"
+    assert not comparison.qualifies
+    assert choose(shipped, [challenger], rule).chosen == "shipped"
+
+
+def _ahead_on_recall_and_faithfulness(wins, losses):
+    """Fact Recall 9 wins to 0 on cases c0..c8; Faithfulness `wins` to `losses` on the
+    cases after them."""
+    recall = _scores(9, 0, ties=wins + losses)
+    c_faith, s_faith = _scores(wins, losses)
+    return _against(*recall, faithful=([0.5] * 9 + c_faith, [0.5] * 9 + s_faith))
+
+
+@pytest.mark.parametrize("rule", ["arms", "generators", "settings"])
+def test_behind_on_faithfulness_just_under_one_sided_p_0_20_blocks_the_challenger(rule):
+    challenger, shipped = _ahead_on_recall_and_faithfulness(1, 4)  # p = 6/32 = 0.1875
+
+    comparison = choose(shipped, [challenger], rule).comparisons["challenger"]
+
+    assert comparison.faithfulness.p_behind == pytest.approx(0.1875)
+    assert comparison.faithfulness.verdict == "behind"
+    assert not comparison.qualifies
+
+
+@pytest.mark.parametrize("rule", ["arms", "generators", "settings"])
+def test_behind_on_faithfulness_just_over_one_sided_p_0_20_does_not_block(rule):
+    challenger, shipped = _ahead_on_recall_and_faithfulness(2, 5)  # p = 29/128 = 0.227
+
+    comparison = choose(shipped, [challenger], rule).comparisons["challenger"]
+
+    assert comparison.faithfulness.p_behind == pytest.approx(0.2266, abs=1e-4)
+    assert comparison.faithfulness.verdict == "indistinguishable"
+    assert comparison.qualifies
+
+
+@pytest.mark.parametrize("rule", ["arms", "generators", "settings"])
+def test_a_challenger_with_more_contradicted_answers_is_blocked(rule):
+    # Ahead on Fact Recall on all 9 cases, but 4 of the challenger's answers have a
+    # Contradicted Claim where the shipped answers have none, and 1 the other way round:
+    # behind on "has no Contradicted Claim" at p = 6/32 = 0.1875.
+    recall = _scores(9, 0)
+    clean = ([True] * 4 + [False] * 4 + [True], [True] * 4 + [True] * 4 + [False])
+    challenger, shipped = _against(*recall, contradicted=clean)
+
+    comparison = choose(shipped, [challenger], rule).comparisons["challenger"]
+
+    assert comparison.fact_recall.verdict == "ahead"
+    assert comparison.contradicted_claims.verdict == "behind"
+    assert (comparison.contradicted_claims.wins, comparison.contradicted_claims.losses) == (1, 4)
+    assert not comparison.qualifies
+
+
+def test_the_command_reads_contradicted_claims_from_generation_reports(tmp_path, capsys):
+    from edgar_eval.selection import main
+
+    def report(name, contradicted, failed=()):
+        cases = [
+            {
+                "case_id": f"c{i}",
+                "fact_recall": 1.0 if name == "dense" else 0.0,
+                "faithfulness": None if i in failed else 1.0,
+                "coverage_gaps": None,
+                "contradictions": {"claims": ["x"] * n, "count": n, "passed": not n},
+                "judgments": {
+                    "failures": [{"judgment": "faithfulness"}] if i in failed else [],
+                },
+            }
+            for i, n in enumerate(contradicted)
+        ]
+        path = tmp_path / f"generation-arms-dev-{name}.json"
+        path.write_text(json.dumps({"arm": name, "split": "dev", "cases": cases}))
+        return str(path)
+
+    # The challenger contradicts itself in c0..c3, the shipped choice in c4; c9's claims
+    # could not be judged for the challenger, so whether it has one is unknown.
+    shipped = report("fts5", [0] * 4 + [1] + [0] * 5)
+    challenger = report("dense", [1] * 4 + [0] * 6, failed=(9,))
+    out = tmp_path / "arm-choice-dev.json"
+
+    main(["compare", shipped, challenger, "--json", str(out)])
+
+    saved = json.loads(out.read_text())["comparisons"]["dense"]
+    clean = saved["contradicted_claims"]
+    assert (clean["paired"], clean["left_out"], clean["wins"], clean["losses"]) == (9, 1, 1, 4)
+    assert clean["verdict"] == "behind" and saved["fact_recall"]["verdict"] == "ahead"
+    assert not saved["qualifies"]
+    assert "No Contradicted Claim: behind (1 cases higher, 4 lower" in capsys.readouterr().out
+
+
+def test_a_version_1_report_leaves_contradicted_claims_unscored():
+    v1 = {"arm": "fts5", "cases": [{"case_id": "c0", "fact_recall": 1.0, "faithfulness": 1.0}]}
+
+    assert Candidate.from_report(v1).contradicted_claims == {"c0": None}
+
+
+def test_every_rule_shares_one_pair_of_thresholds():
+    from edgar_eval import selection
+
+    assert (selection.AHEAD_P, selection.BEHIND_P) == (0.10, 0.20)
+    for name, rule in selection.RULES.items():
+        guardrails = set(rule.behind_on_none)
+        assert {"faithfulness", "coverage_gaps", "contradicted_claims"} <= guardrails, name
+
+
+def test_the_cheapest_qualifying_challenger_wins_under_the_one_sided_rule():
+    shipped_recall = [0.0] * 7 + [1.0] * 2
+
+    def challenger(name, recall, cost):
+        return Candidate(**{**vars(_against(recall, shipped_recall, cost=cost)[0]), "name": name})
+
+    shipped = _against(shipped_recall, shipped_recall)[1]
+    dear = challenger("dear", [1.0] * 9, 0.003)  # 7 wins to 0: p = 0.008
+    cheap = challenger("cheap", [1.0] * 7 + [0.0] * 2, 0.001)  # 7 to 2: p = 0.090
+    cheapest = challenger("cheapest", [1.0] * 5 + [0.0] * 4, 0.0005)  # 5 to 2: p = 0.227
+
+    choice = choose(shipped, [dear, cheap, cheapest])
+
+    assert [n for n, c in choice.comparisons.items() if c.qualifies] == ["dear", "cheap"]
+    assert choice.chosen == "cheap"
+
+
+def test_each_score_reports_its_pairs_wins_losses_p_values_and_a_bootstrap_interval():
+    challenger, shipped = _against([1.0, 1.0, 0.5, 0.0, None], [0.0, 0.5, 0.5, 0.5, 1.0])
+
+    first = choose(shipped, [challenger]).comparisons["challenger"].fact_recall
+    again = choose(shipped, [challenger]).comparisons["challenger"].fact_recall
+
+    assert (first.paired, first.left_out, first.wins, first.losses) == (4, 1, 2, 1)
+    assert first.p_ahead == pytest.approx(0.5)  # P(X >= 2), X ~ Binomial(3, 1/2)
+    assert first.p_behind == pytest.approx(0.875)
+    assert first.difference.mean == pytest.approx(0.25)  # (1 + 0.5 + 0 - 0.5) / 4
+    assert first.difference.low <= 0.25 <= first.difference.high
+    assert (first.difference.resamples, first.difference.confidence) == (10_000, 0.95)
+    assert again.difference == first.difference  # a fixed seed
 
 
 # --- The generator rule -------------------------------------------------------------------

@@ -236,9 +236,11 @@ def _generator_choice(report: dict[str, Any]) -> dict[str, Any]:
 
 
 def _sign_test(result: dict[str, Any]) -> dict[str, Any]:
+    # A version 1 choice file names the wins and losses `challenger_only` and
+    # `shipped_only`; one written under ADR 0011's rule, `wins` and `losses`.
     return {
-        "challengerOnly": result["challenger_only"],
-        "shippedOnly": result["shipped_only"],
+        "challengerOnly": result.get("wins", result.get("challenger_only")),
+        "shippedOnly": result.get("losses", result.get("shipped_only")),
         "pValue": result["p_value"],
         "verdict": result["verdict"],
     }

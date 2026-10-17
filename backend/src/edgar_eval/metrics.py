@@ -1,4 +1,5 @@
-"""The harnesses' pure parts: ranking metrics, McNemar's exact test and the sign test.
+"""The harnesses' pure parts: ranking metrics, McNemar's exact test, the sign test and
+the bootstrap interval.
 
 A ranking is the list of (Filing ID, Section) pairs an Arm returns, best first, one per
 Source. `k=None` means the whole ranking: every Source that reaches the Answer Call.
@@ -9,6 +10,8 @@ from __future__ import annotations
 from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from math import comb
+from random import Random
+from statistics import fmean
 from typing import Literal
 
 Pair = tuple[str, str]
@@ -17,7 +20,12 @@ Pair = tuple[str, str]
 Verdict = Literal["ahead", "behind", "indistinguishable"]
 
 ALPHA = 0.05
-"""The significance level below which a challenger is called ahead or behind."""
+"""The two-sided significance level below which the retrieval harness calls a challenger
+ahead or behind."""
+
+BOOTSTRAP_SEED = 20261017
+"""The fixed seed of every bootstrap interval, so a report's interval is reproducible."""
+BOOTSTRAP_RESAMPLES = 10_000
 
 
 def hit_at_k(ranked: Sequence[Pair], expected: Collection[Pair], k: int | None) -> bool:
@@ -50,6 +58,14 @@ class McNemarResult:
     p_value: float
     """Two-sided exact p-value: a binomial test of the discordant cases at p = 1/2."""
     verdict: Verdict
+    """Two-sided, at ALPHA: the retrieval harness's verdict. The selection rules decide
+    on the one-sided p-values instead (`edgar_eval.selection`)."""
+    p_ahead: float = 1.0
+    """One-sided exact p-value that the challenger is ahead: the chance of at least
+    `challenger_only` wins among the discordant cases if both sides were equally good."""
+    p_behind: float = 1.0
+    """One-sided exact p-value that the challenger is behind: the chance of at most
+    `challenger_only` wins among the discordant cases if both sides were equally good."""
 
 
 def mcnemar_exact(challenger: Sequence[bool], shipped: Sequence[bool]) -> McNemarResult:
@@ -83,10 +99,61 @@ def sign_test(
 
 
 def _exact(b: int, c: int) -> McNemarResult:
-    """A two-sided binomial test at p = 1/2 of `b` wins against `c` losses."""
+    """Binomial tests at p = 1/2 of `b` wins against `c` losses: two-sided, and one-sided
+    in each direction."""
     n = b + c
-    p = min(1.0, 2 * sum(comb(n, i) for i in range(min(b, c) + 1)) / 2**n) if n else 1.0
+    p = min(1.0, 2 * _tail(n, min(b, c))) if n else 1.0
     verdict: Verdict = "indistinguishable"
     if p < ALPHA:
         verdict = "ahead" if b > c else "behind"
-    return McNemarResult(challenger_only=b, shipped_only=c, p_value=p, verdict=verdict)
+    return McNemarResult(
+        challenger_only=b,
+        shipped_only=c,
+        p_value=p,
+        verdict=verdict,
+        p_ahead=_tail(n, c),  # at least b wins is at most c losses
+        p_behind=_tail(n, b),
+    )
+
+
+def _tail(n: int, k: int) -> float:
+    """P(X <= k) for X ~ Binomial(n, 1/2)."""
+    return sum(comb(n, i) for i in range(k + 1)) / 2**n
+
+
+@dataclass(frozen=True)
+class Interval:
+    """The mean of paired differences with a percentile bootstrap interval around it."""
+
+    mean: float
+    low: float
+    high: float
+    confidence: float
+    resamples: int
+    seed: int
+
+
+def bootstrap_interval(
+    differences: Sequence[float],
+    *,
+    confidence: float = 0.95,
+    resamples: int = BOOTSTRAP_RESAMPLES,
+    seed: int = BOOTSTRAP_SEED,
+) -> Interval | None:
+    """The mean paired difference (challenger minus shipped, per case) and its percentile
+    bootstrap interval: the cases resampled with replacement `resamples` times, from a
+    generator seeded with `seed`. None with no pair. Shown beside a verdict, never decided
+    on (ADR 0011)."""
+    if not differences:
+        return None
+    rng, n = Random(seed), len(differences)
+    means = sorted(fmean(rng.choices(differences, k=n)) for _ in range(resamples))
+    cut = int((1 - confidence) / 2 * resamples)  # resampled means outside, on each side
+    return Interval(
+        mean=fmean(differences),
+        low=means[cut],
+        high=means[resamples - 1 - cut],
+        confidence=confidence,
+        resamples=resamples,
+        seed=seed,
+    )

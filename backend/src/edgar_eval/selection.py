@@ -1,17 +1,24 @@
 """The selection rules: which retrieval Arm, and which generator, ships, decided by the
 generation harness's scores on paired cases.
 
-Each score is compared case by case with the exact sign test (p < 0.05). Each score
-pairs only the cases both sides scored: a case one side could not score (its judgment
-failed, or it was not answered) is left out of that score's test, never counted as a
-zero, and each comparison reports how many cases each score paired and left out.
+Each score is compared case by case with the one-sided exact sign test, under one pair
+of thresholds for every rule (ADR 0011): a challenger is **ahead** on a score at
+one-sided p < `AHEAD_P` (0.10) and **behind** at one-sided p < `BEHIND_P` (0.20). The
+scores are Fact Recall, Faithfulness, Coverage Gaps and Contradicted Claims, the last
+paired per case on "has no Contradicted Claim"; the last three are the guardrails.
 
-- **Arms** (user story 54): the Shipped Arm stays unless a challenger is
-  **distinguishably better on Fact Recall** and **not worse on Faithfulness or Coverage
-  Gaps** (neither test says `behind`).
+Each score pairs only the cases both sides scored: a case one side could not score (its
+judgment failed, or it was not answered) is left out of that score's test, never counted
+as a zero. Each score's comparison reports the cases it paired and left out, the wins and
+losses, both one-sided p-values, and the mean paired difference with a 95% bootstrap
+interval (`edgar_eval.metrics.bootstrap_interval`: a fixed seed, 10,000 resamples), shown
+but never decided on.
+
+- **Arms** (user story 54): the Shipped Arm stays unless a challenger is **ahead on Fact
+  Recall** and **behind on no guardrail**.
 - **Generators** (user story 55): the shipped generator stays unless a challenger is
-  **distinguishably better on Fact Recall or on Coverage Gaps** and **worse on none of
-  Fact Recall, Faithfulness and Coverage Gaps**.
+  **ahead on Fact Recall or on Coverage Gaps** and **behind on none of Fact Recall and
+  the guardrails**.
 
 - **Settings** (ADR 0010): a chunk size and context budget replace the shipped ones under
   the Arm rule. Each setting's report comes from `make eval-generation` with
@@ -20,7 +27,8 @@ zero, and each comparison reports how many cases each score paired and left out.
 
 Under any rule, when several challengers qualify, the **cheapest** wins: the lowest
 mean answer cost, then the earliest listed. `RULES` states the rules, and is the only
-place they differ.
+place they differ. Choice files written under version 1's two-sided p < 0.05 rule are
+records and are not recomputed.
 
     python -m edgar_eval.selection arms [--split dev] [--reuse]
     python -m edgar_eval.selection generators [--split dev] [--reuse] [--model MODEL]...
@@ -49,21 +57,24 @@ import argparse
 import json
 import sys
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from statistics import fmean
 from typing import Any, Literal, TextIO
 
-from edgar_eval.metrics import McNemarResult, sign_test
+from edgar_eval.metrics import Interval, Verdict, bootstrap_interval, sign_test
 from edgar_rag.paths import DERIVED_DIR
 
 __all__ = [
+    "AHEAD_P",
+    "BEHIND_P",
     "RULES",
     "Candidate",
     "Choice",
     "Comparison",
     "Rule",
     "RuleName",
+    "ScoreComparison",
     "choose",
     "main",
     "sign_test",
@@ -72,7 +83,14 @@ __all__ = [
 _EVAL_DIR = DERIVED_DIR / "eval"
 
 RuleName = Literal["arms", "generators", "settings"]
-Score = Literal["fact_recall", "faithfulness", "coverage_gaps"]
+Score = Literal["fact_recall", "faithfulness", "coverage_gaps", "contradicted_claims"]
+
+AHEAD_P = 0.10
+"""A challenger is ahead on a score when the one-sided sign test gives p below this."""
+BEHIND_P = 0.20
+"""A challenger is behind on a score when the one-sided sign test gives p below this: a
+looser cut-off, so a drop is flagged sooner. Both are fixed before any run on Golden Set
+version 2 and are the same for every rule (ADR 0011)."""
 
 
 def _run_arms(split: str, reuse: bool, out: TextIO) -> list[Path]:
@@ -114,7 +132,8 @@ def _run_generators(split: str, reuse: bool, out: TextIO, only: Sequence[str] = 
 class Rule:
     """What one selection rule decides by. A challenger qualifies when the sign test
     puts it `ahead` on at least one of `ahead_on_any` and `behind` on none of
-    `behind_on_none`."""
+    `behind_on_none`. The thresholds are not the rule's: every rule uses `AHEAD_P` and
+    `BEHIND_P`."""
 
     ahead_on_any: tuple[Score, ...]
     behind_on_none: tuple[Score, ...]
@@ -132,21 +151,21 @@ class Rule:
 RULES: dict[RuleName, Rule] = {
     "arms": Rule(
         ahead_on_any=("fact_recall",),
-        behind_on_none=("faithfulness", "coverage_gaps"),
+        behind_on_none=("faithfulness", "coverage_gaps", "contradicted_claims"),
         named_by="arm",
         run=_run_arms,
         choice_file="arm-choice",
     ),
     "generators": Rule(
         ahead_on_any=("fact_recall", "coverage_gaps"),
-        behind_on_none=("fact_recall", "faithfulness", "coverage_gaps"),
+        behind_on_none=("fact_recall", "faithfulness", "coverage_gaps", "contradicted_claims"),
         named_by="model",
         run=_run_generators,
         choice_file="generator-choice",
     ),
     "settings": Rule(
         ahead_on_any=("fact_recall",),
-        behind_on_none=("faithfulness", "coverage_gaps"),
+        behind_on_none=("faithfulness", "coverage_gaps", "contradicted_claims"),
         named_by="settings",
         run=None,
         choice_file="settings-choice",
@@ -166,6 +185,9 @@ class Candidate:
     """Whether each case stated every expected Coverage Gap; None with none expected."""
     cost_usd: float | None
     """Mean answer cost; None when a case had no price."""
+    contradicted_claims: Mapping[str, bool | None] = field(default_factory=dict)
+    """Whether each case's answer has no Contradicted Claim; None when that is unknown
+    (its Faithfulness judgment failed, or a version 1 report, which did not record it)."""
 
     @classmethod
     def from_report(cls, report: Mapping[str, Any], rule: RuleName = "arms") -> Candidate:
@@ -185,7 +207,47 @@ class Candidate:
                 for c in cases
             },
             cost_usd=fmean(costs) if costs and None not in costs else None,
+            contradicted_claims={c["case_id"]: _no_contradiction(c) for c in cases},
         )
+
+
+def _no_contradiction(case: Mapping[str, Any]) -> bool | None:
+    """Whether a report's case has no Contradicted Claim, or None if that is unknown."""
+    contradictions = case.get("contradictions")
+    if contradictions is None:  # a version 1 report
+        return None
+    if contradictions["count"]:
+        return False
+    failures = case.get("judgments", {}).get("failures", ())
+    return None if any(f["judgment"] == "faithfulness" for f in failures) else True
+
+
+@dataclass(frozen=True)
+class ScoreComparison:
+    """One score of a challenger against the shipped choice, case by case."""
+
+    paired: int
+    """The cases both sides scored, which the test pairs."""
+    left_out: int
+    """The cases only one side scored, left out of the test. Cases neither side scored
+    (nothing to score, such as no expected Coverage Gap) are in neither count."""
+    wins: int
+    """Paired cases the challenger scored higher."""
+    losses: int
+    """Paired cases the shipped choice scored higher."""
+    p_ahead: float
+    """One-sided exact p-value that the challenger is ahead."""
+    p_behind: float
+    """One-sided exact p-value that the challenger is behind."""
+    verdict: Verdict
+    """`ahead` at p_ahead < AHEAD_P, `behind` at p_behind < BEHIND_P, else
+    `indistinguishable` (both cannot hold at once)."""
+    difference: Interval | None
+    """The mean paired difference, challenger minus shipped (a pass/fail score as 1 or
+    0), with its 95% bootstrap interval; None with no pair. Shown, never decided on."""
+    p_value: float
+    """The two-sided exact p-value version 1 decided by, kept for comparison with its
+    records; never decided on."""
 
 
 @dataclass(frozen=True)
@@ -194,16 +256,13 @@ class Comparison:
 
     cases: int
     """Cases both answered."""
-    fact_recall: McNemarResult
-    faithfulness: McNemarResult
-    coverage_gaps: McNemarResult
+    fact_recall: ScoreComparison
+    faithfulness: ScoreComparison
+    coverage_gaps: ScoreComparison
+    contradicted_claims: ScoreComparison
+    """Paired per case on "has no Contradicted Claim"."""
     qualifies: bool
     """Whether the challenger qualifies under the rule it was compared by."""
-    paired: dict[Score, int]
-    """Per score, the cases both sides scored, which its test pairs."""
-    left_out: dict[Score, int]
-    """Per score, the cases only one side scored, left out of its test. Cases neither
-    side scored (nothing to score, such as no expected Coverage Gap) are in neither."""
 
 
 @dataclass(frozen=True)
@@ -215,29 +274,44 @@ class Choice:
     costs: dict[str, float | None]
 
 
-_SCORES: tuple[Score, ...] = ("fact_recall", "faithfulness", "coverage_gaps")
+_SCORES: tuple[Score, ...] = ("fact_recall", "faithfulness", "coverage_gaps", "contradicted_claims")
+
+
+def _compare_score(
+    challenger: Mapping[str, float | bool | None], shipped: Mapping[str, float | bool | None]
+) -> ScoreComparison:
+    scored_a = {c for c, v in challenger.items() if v is not None}
+    scored_b = {c for c, v in shipped.items() if v is not None}
+    both = sorted(scored_a & scored_b)
+    a = [float(challenger[c]) for c in both]  # type: ignore[arg-type]
+    b = [float(shipped[c]) for c in both]  # type: ignore[arg-type]
+    test = sign_test(a, b)
+    verdict: Verdict = "indistinguishable"
+    if test.p_ahead < AHEAD_P:
+        verdict = "ahead"
+    elif test.p_behind < BEHIND_P:
+        verdict = "behind"
+    return ScoreComparison(
+        paired=len(both),
+        left_out=len(scored_a ^ scored_b),
+        wins=test.challenger_only,
+        losses=test.shipped_only,
+        p_ahead=test.p_ahead,
+        p_behind=test.p_behind,
+        verdict=verdict,
+        difference=bootstrap_interval([x - y for x, y in zip(a, b, strict=True)]),
+        p_value=test.p_value,
+    )
 
 
 def compare(challenger: Candidate, shipped: Candidate, rule: RuleName = "arms") -> Comparison:
-    answered = set(challenger.fact_recall) & set(shipped.fact_recall)
-    tests: dict[Score, McNemarResult] = {}
-    paired: dict[Score, int] = {}
-    left_out: dict[Score, int] = {}
-    for field in _SCORES:
-        a, b = getattr(challenger, field), getattr(shipped, field)
-        scored_a = {c for c, v in a.items() if v is not None}
-        scored_b = {c for c, v in b.items() if v is not None}
-        both = sorted(scored_a & scored_b)
-        tests[field] = sign_test([a[c] for c in both], [b[c] for c in both])
-        paired[field], left_out[field] = len(both), len(scored_a ^ scored_b)
+    scores = {f: _compare_score(getattr(challenger, f), getattr(shipped, f)) for f in _SCORES}
     spec = RULES[rule]
     return Comparison(
-        cases=len(answered),
-        **tests,
-        qualifies=any(tests[f].verdict == "ahead" for f in spec.ahead_on_any)
-        and all(tests[f].verdict != "behind" for f in spec.behind_on_none),
-        paired=paired,
-        left_out=left_out,
+        cases=len(set(challenger.fact_recall) & set(shipped.fact_recall)),
+        **scores,
+        qualifies=any(scores[f].verdict == "ahead" for f in spec.ahead_on_any)
+        and all(scores[f].verdict != "behind" for f in spec.behind_on_none),
     )
 
 
@@ -305,20 +379,31 @@ def main(argv: list[str] | None = None, *, out: TextIO | None = None) -> int:
 
 
 def _print(choice: Choice, out: TextIO) -> None:
-    print(f"\nEach challenger against {choice.shipped}, case by case (exact sign test):", file=out)
+    print(
+        f"\nEach challenger against {choice.shipped}, case by case (one-sided exact sign "
+        f"test: ahead at p < {AHEAD_P:.2f}, behind at p < {BEHIND_P:.2f}):",
+        file=out,
+    )
     for name, c in choice.comparisons.items():
         cost = choice.costs[name]
         print(f"\n{name} ({c.cases} cases, ${cost or 0:.4f} per answer)", file=out)
-        for label, field in (
+        for label, score in (
             ("Fact Recall", "fact_recall"),
             ("Faithfulness", "faithfulness"),
             ("Coverage Gaps", "coverage_gaps"),
+            ("No Contradicted Claim", "contradicted_claims"),
         ):
-            r = getattr(c, field)
+            r: ScoreComparison = getattr(c, score)
+            d = r.difference
+            shift = (
+                f"; mean difference {d.mean:+.3f}, 95% interval [{d.low:+.3f}, {d.high:+.3f}]"
+                if d
+                else ""
+            )
             print(
-                f"  {label}: {r.verdict} ({r.challenger_only} cases higher, "
-                f"{r.shipped_only} lower, exact p = {r.p_value:.3f}; "
-                f"{c.paired[field]} cases paired, {c.left_out[field]} left out)",
+                f"  {label}: {r.verdict} ({r.wins} cases higher, {r.losses} lower, "
+                f"p ahead = {r.p_ahead:.3f}, p behind = {r.p_behind:.3f}; "
+                f"{r.paired} cases paired, {r.left_out} left out{shift})",
                 file=out,
             )
         print(f"  Qualifies: {'yes' if c.qualifies else 'no'}", file=out)
