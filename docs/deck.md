@@ -125,8 +125,9 @@ computed and labelled as derived, which the check fails by design.
 - **Retrieval: FTS5 stays.** Dense embeddings, a hybrid and a cross-encoder re-ranker all reach hit@10 0.88, the same as FTS5, on the same cases (p = 1.000). None was ahead on Fact Recall, and FTS5 adds no model, no embedding call and no 300 MB matrix.
 - **Generator: `gpt-6-luna` stays.** `gpt-6.1-sol`, Claude Sonnet and Claude Opus state more Required Facts (0.73 to 0.75 against 0.62), but on too few cases (p = 0.062), at 20 to 65 times the cost: $0.049, $0.081 and $0.164 per answer against $0.0025.
 - **Prompt: v1 to v14, v7 kept.** Each version was written for named failing dev cases and kept only if it fixed them and fell behind on nothing. From v1 to v7: Fact Recall 0.45 to 0.65, Coverage Gaps stated 0.67 to 1.00, citations valid 0.75 to 0.90. v11 to v14 tried to keep comparisons within 600 words: the structure was followed by 0.79 of dev answers against v7's 0.80, so v7 stays.
+- **Version 2, 60 dev cases: every choice confirmed.** Directional: one-sided p < 0.10, fixed before running, each comparison beside a Control Run. No Arm, setting or Claude Haiku 5.5 was ahead on Fact Recall; Haiku was behind (0.38 against 0.72), with 27 of 60 answers cut off at its token cap.
 
-> Sources: [Arm comparison](evaluation.md#arm-comparison), [generator comparison](evaluation.md#generator-comparison), [prompt log](prompt-iterations.md), [ADR 0008](adr/0008-fts5-stays-the-shipped-arm.md), [ADR 0009](adr/0009-gpt-6-luna-stays-the-generator.md)
+> Sources: [Arm comparison](evaluation.md#arm-comparison), [generator comparison](evaluation.md#generator-comparison), [prompt log](prompt-iterations.md), [version 2 comparisons](evaluation.md#the-version-2-comparisons-on-dev), [ADR 0008](adr/0008-fts5-stays-the-shipped-arm.md), [ADR 0009](adr/0009-gpt-6-luna-stays-the-generator.md), [ADR 0011](adr/0011-one-sided-thresholds-and-a-control-run.md)
 
 <!--
 The point for the panel: every choice was made by a rule written before the run, with an
@@ -140,13 +141,14 @@ scores as much as the hybrid and the re-ranker did.
 
 - **Small evaluation.** 10 holdout cases: one case moves a share by 0.10. The numbers show the system works, not its exact rate.
 - **Answers miss facts.** Fact Recall 0.67: outlook and trend answers leave out specifics, mostly when retrieval ranks the right MD&A passage too low.
+- **The brief's questions fail the Brief Suite.** 1 of 15 cases pass on version 2. 49 of the 57 must-state facts missed never reach the Answer Call, so the gap is retrieval, not the generator: every must-state fact the pharmaceutical question misses has evidence that never reaches the prompt.
 - **Follow-ups that change topic without naming a Company** inherit the earlier Companies. The Query Scope chips show it; the Golden Set measures it.
 - **Computed figures.** The model sometimes computes a growth rate rather than quoting the Filing; it labels it as derived.
 - **Thin coverage.** Trends only for 13 Companies; Financial Facts only revenue, net income and segment revenue; guidance mostly sits outside the Filings.
 - **No human in the loop.** Claude drafted the evaluation's labels and labelled the judge study, with no human review. Accepted for a demo; production would use hand-labelled data.
 - **Our own inputs and a hosted model.** The Sector table and the list of missing Companies are curated and disclosed, not yet confirmed by the Client. The Answer Call goes to a hosted API, behind one interface a local model can replace.
 
-> Sources: [the holdout run](evaluation.md#the-holdout-run), [ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md), [assumptions 4, 5, 9 and 10](assumptions.md), [EDA findings](findings.md), [ADR 0013](adr/0013-jev-stays-the-judge-checked-by-a-judge-study.md)
+> Sources: [the holdout run](evaluation.md#the-holdout-run), [the Brief Suite](evaluation.md#the-brief-suite), [ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md), [assumptions 4, 5, 9 and 10](assumptions.md), [EDA findings](findings.md), [ADR 0013](adr/0013-jev-stays-the-judge-checked-by-a-judge-study.md)
 
 <!--
 Lead with the limits before the panel finds them. Each one is either measured (the

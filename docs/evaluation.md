@@ -2,7 +2,7 @@
 
 How the system's quality is measured. Everything is scored against the [Golden Set](golden-set.md): choices are tuned on its dev split, and the holdout split is scored once per final setup, after every choice is made on dev, and never used to choose ([the holdout rule](#the-holdout-rule)). Two harnesses do the measuring: the [retrieval harness](#retrieval-harness) asks whether the right Sections reach the Answer Call; the [generation harness](#generation-harness) asks whether the answers are right, and what they cost. `make eval-export` puts their latest results in the workspace's "How it works" page ([Showing the results](#showing-the-results)).
 
-Everything below describes Golden Set version 1 as measured. A review of this setup on 2026-10-17 found that it cannot see most real differences, and that some of its scores are measurement errors. Golden Set version 2 is built, with its split frozen at 60 dev and 20 holdout cases, and is now the harnesses' default, though nothing has been measured on it yet; the Brief Suite is built, with the brief's three questions ([The Brief Suite run](#the-brief-suite-run)): see [Evaluation version 2](#evaluation-version-2).
+Everything below describes Golden Set version 1 as measured. A review of this setup on 2026-10-17 found that it cannot see most real differences, and that some of its scores are measurement errors. Golden Set version 2 is built, with its split frozen at 60 dev and 20 holdout cases, and is now the harnesses' default; its dev split has been measured, and the comparisons on it confirm every shipped choice ([The version 2 comparisons on dev](#the-version-2-comparisons-on-dev)); the Brief Suite is built, with the brief's three questions ([The Brief Suite run](#the-brief-suite-run)): see [Evaluation version 2](#evaluation-version-2).
 
 ## Retrieval harness
 
@@ -564,7 +564,7 @@ The page shows what the reports hold, nothing more: per Arm, hit@k, recall@k at 
 
 ## Evaluation version 2
 
-Decided on 2026-10-17 and not built yet, except where a change below is marked built. Version 1's harnesses and results above stay as they are until it is.
+Decided on 2026-10-17 and not built yet, except where a change below is marked built. Version 1's harnesses and results above stay as they are until it is. The comparisons on version 2's dev split have been run, and confirm every shipped choice ([The version 2 comparisons on dev](#the-version-2-comparisons-on-dev)).
 
 ### What the review found
 
@@ -614,7 +614,7 @@ Built for version 2 (issue #56), in `backend/src/edgar_eval/selection.py`. Every
 
 The comparisons of one **round** share one shipped run and one Control Run. A round is the same code, prompt and Golden Set version on one split; every Golden Set report records all three (`code_version`, a digest of the backend's source, `prompt_version` and `golden_set_version`, from `edgar_eval.generation.current_round`). The shipped run is written to `generation-<split>.json` and the Control Run to `generation-control-<split>.json`, each on the shipped setup: the Shipped Arm, `gpt-6-luna`, 600-token chunks and the 32k budget. `make eval-arms`, `make eval-settings` and `make eval-generators` reuse both when they record the shipped setup and the current round, and run them first otherwise, so a round pays for the shipped choice twice, not once per comparison. Any change to the code, the prompt or the Golden Set starts a new round. `make eval-settings CANDIDATES="450:32000 600:48000"` screens each named chunk size and context budget on Evidence Reached, answers the ones kept (building an index of another chunk size when missing) and applies the Arm rule; `compare` takes the Control Run's report with `--control`, and without one, as for version 1's reports, says the noise is not shown.
 
-**The Brief Suite is built** with the brief's three questions, rewritten in one-claim, tiered facts, and four variants of each: a rephrasing, other Companies (for the pharmaceutical question, another Health Care Sector phrase), another time window, Section angle or a single Company, and a follow-up ([Golden Set](golden-set.md#the-brief-suite)). **Golden Set version 2's file is built**, with all 27 of version 1's other cases rewritten into it ([Golden Set](golden-set.md#the-rewritten-version-1-cases)) and all six slices of its 53 new cases: nine multi-Company risk comparisons, then seven risk questions on financials, industrials, energy, health care and consumer staples Companies and two follow-ups, then nine figure trends on Tracked Companies, then four outlook questions and five sector questions on industrials, energy and financials Companies, then eight sector questions on health care, information technology, consumer and communication services Companies and a Coverage Gap case comparing Companies whose latest fiscal years differ, then five Coverage Gap cases, one of each kind, and three follow-ups, 80 cases in all ([Golden Set](golden-set.md#the-new-cases)): each case records its split, and **the split is frozen** (issue #72): of the 53 new cases, the 20 with the lowest SHA-256 digests are holdout and the other 33 dev, with the 27 rewrites, so 60 dev and 20 holdout cases, none pending, and the file lists the holdout ids, which the loader checks every recorded split against ([Golden Set, the frozen split](golden-set.md#the-frozen-split), with the mix by kind of question). **Version 2 is the harnesses' default:** `make eval-retrieval`, `make eval-generation` and the selection commands run it, a version 1 run names its file (`--golden-set ../data/eval/golden_set.json`), `make eval-rescore` reads each saved report against the version it records, and a harness refuses a set while any case is pending ([Golden Set, version 2](golden-set.md#the-file)). Nothing has been measured on version 2 yet, and its holdout has not been scored. **Required Fact tiers are built:** a fact is `must_state` or `detail`, the loader checks it, and the generation harness scores Fact Recall on the must-state facts and reports detail recall beside it ([Method](#method), [Golden Set fields](golden-set.md#fields)). Version 1's facts all load as must-state, so its scores are unchanged.
+**The Brief Suite is built** with the brief's three questions, rewritten in one-claim, tiered facts, and four variants of each: a rephrasing, other Companies (for the pharmaceutical question, another Health Care Sector phrase), another time window, Section angle or a single Company, and a follow-up ([Golden Set](golden-set.md#the-brief-suite)). **Golden Set version 2's file is built**, with all 27 of version 1's other cases rewritten into it ([Golden Set](golden-set.md#the-rewritten-version-1-cases)) and all six slices of its 53 new cases: nine multi-Company risk comparisons, then seven risk questions on financials, industrials, energy, health care and consumer staples Companies and two follow-ups, then nine figure trends on Tracked Companies, then four outlook questions and five sector questions on industrials, energy and financials Companies, then eight sector questions on health care, information technology, consumer and communication services Companies and a Coverage Gap case comparing Companies whose latest fiscal years differ, then five Coverage Gap cases, one of each kind, and three follow-ups, 80 cases in all ([Golden Set](golden-set.md#the-new-cases)): each case records its split, and **the split is frozen** (issue #72): of the 53 new cases, the 20 with the lowest SHA-256 digests are holdout and the other 33 dev, with the 27 rewrites, so 60 dev and 20 holdout cases, none pending, and the file lists the holdout ids, which the loader checks every recorded split against ([Golden Set, the frozen split](golden-set.md#the-frozen-split), with the mix by kind of question). **Version 2 is the harnesses' default:** `make eval-retrieval`, `make eval-generation` and the selection commands run it, a version 1 run names its file (`--golden-set ../data/eval/golden_set.json`), `make eval-rescore` reads each saved report against the version it records, and a harness refuses a set while any case is pending ([Golden Set, version 2](golden-set.md#the-file)). Its dev split has been measured ([The version 2 comparisons on dev](#the-version-2-comparisons-on-dev)); its holdout has not been scored. **Required Fact tiers are built:** a fact is `must_state` or `detail`, the loader checks it, and the generation harness scores Fact Recall on the must-state facts and reports detail recall beside it ([Method](#method), [Golden Set fields](golden-set.md#fields)). Version 1's facts all load as must-state, so its scores are unchanged.
 
 #### The gate and the screen
 
@@ -634,7 +634,7 @@ Built for version 2 (issue #84), in `backend/src/edgar_eval/arms.py`, `retrieval
 - **An Arm that does is never sent to a paid run by the screen**, and doesn't take one of its three places: its reason says it makes an API call at query time and can't ship. **It is never chosen by the Arm rule** either, and `make eval-arms` skips it even if a screen saved earlier kept it.
 - **It is still reported, unconstrained.** It is scored and gated like any other Arm, and its comparison still says whether it would qualify (`qualifies`, with `shippable` false). Reports label it "available if the one-call limit is lifted".
 - **Two local Arms**, `dense-local` and `hybrid-local`, embed both the chunks and the question with `BAAI/bge-small-en-v1.5`, pinned to Hugging Face commit `5c38ec7c`, run by ONNX Runtime on the CPU with the `tokenizers` stack the `rerank` Arm already uses. A question gets the model's query instruction. A text is embedded as its CLS token, truncated to the model's 512 tokens, so a 600-token chunk is embedded on its opening. A query embedding only matches chunk embeddings from the same model, so `make local-embeddings` embeds the whole index again, locally and for free, into `data/derived/embeddings/bge-small-en-v1.5.npy` (48,448 chunks, about 30 minutes on 16 CPU threads). The model downloads once, then loads from the local cache with no network call, and a test refuses every socket while the model loads and ranks a question. `hybrid-local` fuses with FTS5 as `hybrid` does (weighted reciprocal-rank fusion, k = 1, equal weights).
-- **If a local Arm ships** (decided by the version 2 comparisons, #73), its embeddings join `make index` and its ranker and packages move from `edgar_eval` into the product. Until then they stay in the dev dependency group.
+- **If a local Arm ships**, its embeddings join `make index` and its ranker and packages move from `edgar_eval` into the product. Neither did in the version 2 comparisons (#73: `dense-local` is behind on Evidence Reached, and `hybrid-local` is not ahead on Fact Recall; [The Arm comparison](#the-arm-comparison)), so they stay in the dev dependency group.
 
 **First numbers on dev**, free (`make eval-retrieval`, no LLM call and no API call for the local Arms): Golden Set version 1, dev split, 17 scored cases with 44 Required Facts, 600-token chunks and the 32k budget, 2026-10-17.
 
@@ -649,7 +649,7 @@ Built for version 2 (issue #84), in `backend/src/edgar_eval/arms.py`, `retrieval
 
 - **No Arm is distinguishable from FTS5 on Evidence Reached.** The local Arms reach a few facts fewer, but not enough to be behind at p < 0.20, so the screen keeps all three shippable challengers: `rerank`, `hybrid-local` and `dense-local`, in that order. Under the old screen the two hosted Arms would have taken places.
 - **The local model is weaker than OpenAI's here.** `dense-local` reaches 27 facts against `dense`'s 30 and drops to hit@10 0.82: it ranks `outlook-meta-capex-2026`'s expected MD&A 12th, outside the top 10, and leaves one of `sector-aerospace-government`'s three expected Sections out of its top 10. Fusing it with FTS5 brings hit@10 back to 0.88. Both local Arms lose `risk-aapl-tsla-jpm`'s one fact that FTS5 reaches, and `followup-regulatory-exposure`'s one.
-- These are version 1 dev numbers, recorded to show the Arms run. The choice between them is made on version 2 dev, by the version 2 comparisons (#73).
+- These are version 1 dev numbers, recorded to show the Arms run. The choice between them was made on version 2 dev, by the version 2 comparisons (#73): FTS5 stays ([The Arm comparison](#the-arm-comparison)).
 
 #### The judge study's sample
 
@@ -754,6 +754,163 @@ The LLM split agrees on 4 more answers (McNemar p = 0.388, shown, not decided on
 
 **No human is in the loop.** Claude labelled the judge study, and the developer did not review the drafted Golden Set and Brief Suite labels ([the review waiver](golden-set.md#what-is-decided)). The developer accepted this as a limitation of the demo (decided 2026-10-17, recorded on #43). In production, hand-labelled data would ideally be used.
 
+### The version 2 comparisons on dev
+
+Run on 2026-10-17 (issue #73): the first round on Golden Set version 2, with one code version, prompt v7, `gpt-6-luna` and `jev-1.13.0` at the fact cut-off 0.6, on the dev split's 60 cases (939 Required Facts, 316 of them must-state). The "How it works" page still shows version 1's results, as the export does until a later spec moves it to version 2 ([Showing the results](#showing-the-results)). **Every verdict below is directional: one-sided p < 0.10, fixed before running** ([ADR 0011](adr/0011-one-sided-thresholds-and-a-control-run.md)). Each comparison is shown beside the round's Control Run, and each score with its mean paired difference (challenger minus shipped) and 95% bootstrap interval, shown and not decided on.
+
+**Nothing changes what ships.** FTS5, `gpt-6-luna`, 600-token chunks and the 32k budget all stay ([ADR 0008](adr/0008-fts5-stays-the-shipped-arm.md), [ADR 0009](adr/0009-gpt-6-luna-stays-the-generator.md), [ADR 0010](adr/0010-chunk-size-and-context-budget.md)), so the Brief Suite was not run again on a new setup. The reports are in `data/derived/eval/`: `generation-dev.json` and `generation-control-dev.json`, `brief-suite.json`, `retrieval-dev.json` and `arm-choice-dev.json`, `retrieval-dev-chunks<N>-budget<B>.json` and `settings-choice-dev.json`, and `generator-choice-dev.json`, with each challenger's generation report beside them.
+
+#### The baseline and the Control Run
+
+`make eval-arms` ran the round's shipped run and Control Run first, and `make eval-settings` and `make eval-generators` reused both, since the code, prompt and Golden Set version had not changed.
+
+| Run | cases | citations valid | figures exact | gaps stated | structure followed | words | Fact Recall | detail recall | Faithfulness | answers with a Contradicted Claim | $ per answer | latency s |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **Shipped** (`fts5`, `gpt-6-luna`, 600 / 32k) | 60 | 0.87 | 0.90 | 1.00 | 0.72 | 459 | **0.72** | 0.48 | **0.93** | 7 | 0.0028 | 8.2 |
+| Control Run (the same, again) | 60 | 0.87 | 0.90 | 1.00 | 0.75 | 467 | 0.71 | 0.49 | 0.92 | 8 | 0.0028 | 8.5 |
+
+The shipped run by kind of question:
+
+| Kind | cases | Fact Recall | detail recall | Faithfulness | structure followed |
+|---|---|---|---|---|---|
+| Figure trends | 14 | 0.80 | 0.47 | 0.92 | 0.93 |
+| Missing Companies | 5 | 0.92 | 0.69 | 0.94 | 1.00 |
+| Outlooks | 6 | 0.69 | 0.42 | 0.85 | 0.83 |
+| Risk questions | 18 | 0.66 | 0.49 | 0.95 | 0.61 |
+| Sector questions | 14 | 0.66 | 0.45 | 0.93 | 0.43 |
+| The stale Filing | 3 | 0.83 | 0.50 | 0.94 | 1.00 |
+
+**The Control Run against the shipped run:**
+
+| Score | higher / lower | p ahead | p behind | paired (left out) | mean difference, 95% interval |
+|---|---|---|---|---|---|
+| Fact Recall | 11 / 10 | 0.500 | 0.668 | 57 (0) | −0.005 [−0.058, +0.039] |
+| Faithfulness | 17 / 23 | 0.866 | 0.215 | 56 (0) | −0.008 [−0.042, +0.028] |
+| Coverage Gaps | 0 / 0 | 1.000 | 1.000 | 36 (0) | +0.000 [+0.000, +0.000] |
+| No Contradicted Claim | 3 / 4 | 0.773 | 0.500 | 59 (0) | −0.017 [−0.102, +0.068] |
+
+- **The Control Run is not ahead on any ahead metric**, so every comparison of the round is conclusive. With nothing changed, Faithfulness moved 17 cases up and 23 down (p behind = 0.215), just short of the 0.20 cut-off for behind: a challenger's Faithfulness verdict within that spread is noise.
+- **Failed judgments:** in both runs Jev refused the Faithfulness of `trend-jpm-revenue-snapshot` (`max_tokens_exceeded`, as in every version 1 run). It is recorded against that judgment, so the case's code checks and Fact Recall still count, and Faithfulness pairs 56 cases. Fact Recall pairs 57, since three cases expect only Coverage Gaps. No answer was cut off at the token cap.
+- **Not comparable with version 1.** Fact Recall 0.72 is over one-claim, must-state facts at the 0.6 cut-off on 60 cases, against compound facts at 0.5 on 20; version 1's 0.62 to 0.65 measured something else.
+
+#### The Brief Suite
+
+`make eval-brief`, 5 runs a case on the shipped setup: **1 of 15 cases passes.** A case passes when every must-state Required Fact is stated in at least 4 of 5 runs and no run has a Contradicted Claim ([The Brief Suite run](#the-brief-suite-run)).
+
+| Case | Verdict | must-state facts | missed (stated in fewer than 4 runs) | of them, evidence never reached | runs with a Contradicted Claim |
+|---|---|---|---|---|---|
+| `brief-risk-aapl-tsla-jpm` (the brief's first question) | fail | 9 | 1 | 1 | 0 |
+| `brief-risk-aapl-tsla-jpm-rephrased` | fail | 9 | 3 | 2 | 0 |
+| `brief-risk-msft-xom-unh` | fail | 9 | 5 | 3 | 0 |
+| `brief-risk-aapl-tsla-jpm-fy2025-quarterly-updates` | fail | 5 | 5 | 5 | 1 |
+| `brief-followup-aapl-tsla-jpm-cybersecurity` | fail | 6 | 2 | 1 | 0 |
+| `brief-outlook-nvda-revenue-two-years` (the brief's second question) | fail | 7 | 3 | 2 | 0 |
+| `brief-outlook-nvda-revenue-rephrased` | fail | 7 | 1 | 0 | 0 |
+| `brief-outlook-unh-revenue-two-years` | fail | 5 | 1 | 0 | 2 |
+| `brief-outlook-nvda-revenue-fy2024` | fail | 5 | 2 | 2 | 0 |
+| `brief-followup-nvda-net-income` | **pass** | 3 | 0 | 0 | 0 |
+| `brief-sector-pharma-regulatory` (the brief's third question) | fail | 9 | 8 | 8 | 0 |
+| `brief-sector-pharma-regulatory-rephrased` | fail | 9 | 8 | 8 | 0 |
+| `brief-sector-health-care-regulatory` | fail | 13 | 10 | 9 | 0 |
+| `brief-pharma-regulatory-pfe` | fail | 4 | 3 | 3 | 0 |
+| `brief-followup-pharma-340b` | fail | 8 | 5 | 5 | 0 |
+
+- **Most misses are retrieval misses.** Of the 57 must-state facts missed across the 14 failing cases, 49 have evidence that never reached the Answer Context in any run, so no generator could have stated them from the Sources. Retrieval is deterministic, so a fact's evidence reaches the prompt in all 5 runs or in none.
+- **The pharmaceutical question and its variants fail on retrieval.** All 8 must-state facts the brief's own question misses (the Inflation Reduction Act's effects on each Company, their lawsuits against it and their pricing agreements) have evidence that never reaches the prompt, and so do 25 of the 26 its four variants miss. Some related passages do reach it, such as Eli Lilly's Jardiance being selected for Medicare price negotiation, a detail fact. The question scored 0.00 Fact Recall in most version 1 runs for the same reason ([What the review found](#what-the-review-found)). Fixing it is product work, outside this spec.
+- **The brief's first question misses one fact** (Apple's antitrust investigations, never reached). Its other eight must-state facts are stated in at least 4 of 5 runs.
+- **The other 8 are generation misses:** the evidence reached the prompt in all 5 runs, and the answer stated the fact in fewer than 4. For example NVIDIA's H20 charge (3 of 5 runs of the rephrasing), Blackwell's share of Data Center revenue (2 of 5) and, in the first question's rephrasing, JPMorgan's limit on capital distributions (0 of 5). No run was cut off, unanswered or lost a judgment.
+
+#### The Arm comparison
+
+`make eval-arms`. **The screen** (the retrieval harness, free) scores all six Arms on Evidence Reached, paired per Required Fact against FTS5 with McNemar's exact test, one-sided:
+
+| Arm | API call at query time | hit@10 | recall@10 | MRR | Evidence Reached | gained / lost vs `fts5` | gate (one-sided) | Source tokens | screen |
+|---|---|---|---|---|---|---|---|---|---|
+| `fts5` (shipped) | No | 0.93 | 0.85 | 0.78 | 740 of 939 | – | – | 27,321 | – |
+| `dense` | Yes | 0.91 | 0.82 | 0.74 | 737 of 939 | 79 / 82, p behind = 0.437 | indistinguishable | 28,477 | dropped: can't ship (available if the one-call limit is lifted) |
+| `hybrid` | Yes | 0.93 | 0.88 | 0.79 | 801 of 939 | 72 / 11, p ahead < 0.001 | ahead | 28,461 | dropped: can't ship (available if the one-call limit is lifted) |
+| `rerank` | No | 0.93 | 0.87 | 0.77 | 739 of 939 | 14 / 15, p behind = 0.500 | indistinguishable | 27,354 | kept, 2nd |
+| `dense-local` | No | 0.91 | 0.81 | 0.76 | 720 of 939 | 74 / 94, p behind = 0.071 | behind | 28,464 | dropped: behind on Evidence Reached |
+| `hybrid-local` | No | 0.95 | 0.88 | 0.79 | 774 of 939 | 56 / 22, p ahead < 0.001 | ahead | 28,387 | kept, 1st |
+
+Two shippable challengers pass the screen, `hybrid-local` and `rerank`; `dense-local` is behind on Evidence Reached and goes no further. **If the one-call limit were lifted**, the hosted `hybrid` Arm would be the strongest retrieval: it reaches 801 facts' evidence against FTS5's 740 (72 gained, 11 lost). It was not answered, since it can't ship, so whether that would move Fact Recall is not measured.
+
+**The answers**, against the shipped run:
+
+| Arm | Fact Recall | Faithfulness | answers with a Contradicted Claim | $ per answer | Fact Recall vs `fts5` (higher / lower, p ahead; difference) | Faithfulness vs `fts5` (p behind; difference) | No Contradicted Claim vs `fts5` (p behind; difference) | Qualifies |
+|---|---|---|---|---|---|---|---|---|
+| `fts5` (shipped) | 0.72 | 0.93 | 7 | 0.0028 | – | – | – | – |
+| Control Run | 0.71 | 0.92 | 8 | 0.0028 | 11 / 10, p = 0.500; −0.005 [−0.058, +0.039] | 17 / 23, p = 0.215; −0.008 [−0.042, +0.028] | 3 / 4, p = 0.500; −0.017 [−0.102, +0.068] | – |
+| `rerank` | 0.73 | 0.90 | 6 | 0.0028 | 15 / 10, p = 0.212; +0.012 [−0.031, +0.054] | 23 / 19, p = 0.780; +0.009 [−0.023, +0.045] | 3 / 1, p = 0.938; +0.034 [−0.034, +0.102] | no |
+| `hybrid-local` | 0.71 | 0.92 | 10 | 0.0029 | 13 / 15, p = 0.714; −0.007 [−0.057, +0.045] | 22 / 20, p = 0.678; +0.011 [−0.020, +0.046] | 5 / 8, p = 0.291; −0.051 [−0.169, +0.068] | no |
+
+Coverage Gaps tie for every Arm (0 / 0 over 36 cases). **Chosen: `fts5`.** Neither challenger is ahead on Fact Recall. `hybrid-local` reaches 34 more facts' evidence than FTS5, 15 of them must-state (20 gained and 5 lost, against FTS5's 248 of 316), but its answers state no more must-state facts (13 cases higher, 15 lower): evidence that reaches the prompt is not always stated. So no local Arm ships, and the local model, its embeddings and its packages stay in `edgar_eval` and the dev dependency group.
+
+#### The settings comparison
+
+`make eval-settings`, naming all 15 other settings of [ADR 0010's grid](adr/0010-chunk-size-and-context-budget.md#the-grid). **The screen**, on the `fts5` Arm, each against 600 / 32k:
+
+| Chunk size | Budget | Evidence Reached | gained / lost | p behind | Source tokens | screen |
+|---|---|---|---|---|---|---|
+| 300 | 16,000 | 621 of 939 | 15 / 134 | < 0.001 | 14,674 | dropped: behind |
+| 300 | 24,000 | 668 of 939 | 24 / 96 | < 0.001 | 20,699 | dropped: behind |
+| 300 | 32,000 | 691 of 939 | 31 / 80 | < 0.001 | 25,700 | dropped: behind |
+| 300 | 48,000 | 716 of 939 | 51 / 75 | 0.020 | 32,450 | dropped: behind |
+| 450 | 16,000 | 607 of 939 | 14 / 147 | < 0.001 | 14,815 | dropped: behind |
+| 450 | 24,000 | 685 of 939 | 21 / 76 | < 0.001 | 21,270 | dropped: behind |
+| 450 | 32,000 | 716 of 939 | 32 / 56 | 0.007 | 26,731 | dropped: behind |
+| 450 | 48,000 | 759 of 939 | 60 / 41 | 0.977 | 35,763 | kept, 3rd |
+| 600 | 16,000 | 634 of 939 | 0 / 106 | < 0.001 | 14,837 | dropped: behind |
+| 600 | 24,000 | 699 of 939 | 0 / 41 | < 0.001 | 21,505 | dropped: behind |
+| **600** | **32,000** (shipped) | **740 of 939** | – | – | 27,321 | – |
+| 600 | 48,000 | 780 of 939 | 40 / 0 | 1.000 | 36,922 | kept, 1st |
+| 800 | 16,000 | 619 of 939 | 20 / 141 | < 0.001 | 14,621 | dropped: behind |
+| 800 | 24,000 | 697 of 939 | 35 / 78 | < 0.001 | 21,468 | dropped: behind |
+| 800 | 32,000 | 729 of 939 | 38 / 49 | 0.142 | 27,481 | dropped: behind |
+| 800 | 48,000 | 780 of 939 | 63 / 23 | 1.000 | 37,846 | kept, 2nd |
+
+Only the three 48k budgets are not behind, so all three go on; 600 / 48k and 800 / 48k tie at 780 facts, and 600 / 48k goes first as the cheaper in Source tokens. Every smaller budget, and every other chunk size at 32k, reaches less.
+
+**The answers**, against the shipped run:
+
+| Setting | Fact Recall | Faithfulness | answers with a Contradicted Claim | $ per answer | Fact Recall vs 600 / 32k (higher / lower, p ahead; difference) | Faithfulness vs 600 / 32k (p ahead, p behind; difference) | No Contradicted Claim vs 600 / 32k (p behind; difference) | Qualifies |
+|---|---|---|---|---|---|---|---|---|
+| **600 / 32k** (shipped) | 0.72 | 0.93 | 7 | 0.0028 | – | – | – | – |
+| Control Run | 0.71 | 0.92 | 8 | 0.0028 | 11 / 10, p = 0.500; −0.005 [−0.058, +0.039] | 17 / 23, p behind = 0.215; −0.008 [−0.042, +0.028] | 3 / 4, p = 0.500; −0.017 [−0.102, +0.068] | – |
+| 600 / 48k | 0.73 | 0.94 | 6 | 0.0036 | 12 / 9, p = 0.332; +0.017 [−0.019, +0.057] | 21 / 17, p behind = 0.791; +0.015 [−0.019, +0.050] | 3 / 2, p = 0.812; +0.017 [−0.051, +0.085] | no |
+| 800 / 48k | 0.74 | 0.94 | 5 | 0.0036 | 14 / 13, p = 0.500; +0.021 [−0.026, +0.069] | 26 / 8, **p ahead = 0.001**; +0.033 [+0.009, +0.063] | 5 / 3, p = 0.855; +0.034 [−0.051, +0.136] | no |
+| 450 / 48k | 0.69 | 0.93 | 7 | 0.0035 | 10 / 13, p = 0.798; −0.025 [−0.067, +0.014] | 22 / 18, p behind = 0.785; +0.004 [−0.026, +0.038] | 3 / 3, p = 0.656; +0.000 [−0.085, +0.085] | no |
+
+Coverage Gaps tie for every setting (0 / 0 over 36 cases). **Chosen: 600-token chunks and the 32k budget.** No setting is ahead on Fact Recall, the one score the rule switches on.
+
+- **800-token chunks at 48k are ahead on Faithfulness** (26 cases higher, 8 lower, p = 0.001, interval wholly above zero), well outside the Control Run's spread (17 / 23). The rule does not switch on Faithfulness, so it does not qualify; it is the first candidate if Faithfulness ever becomes a reason to switch, at about $0.0008 more per answer (30% more).
+- **The 48k budget again adds evidence without adding stated facts.** At 600-token chunks it reaches 40 more facts' evidence and loses none, as in version 1, and Fact Recall moves 12 cases up and 9 down.
+
+#### The generator comparison
+
+`make eval-generators`: `claude-haiku-5-5` against `gpt-6-luna`, on the setup the Arm and settings comparisons kept (`fts5`, 600 / 32k).
+
+| Generator | citations valid | structure followed | words | Fact Recall | Faithfulness | answers with a Contradicted Claim | truncated | input tokens | output tokens | $ per answer | latency s | first text s |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **`gpt-6-luna`** (shipped) | 0.87 | 0.72 | 459 | **0.72** | **0.93** | 7 | 0 | 23,760 | 832 | 0.0028 | 8.2 | 2.2 |
+| `claude-haiku-5-5` | 0.42 | 0.50 | 423 | 0.38 | 0.82 | 10 | 27 | 36,650 | 2,094 | 0.0047 | 9.5 | 5.3 |
+
+| `claude-haiku-5-5` vs `gpt-6-luna` | higher / lower | p ahead | p behind | paired (left out) | mean difference, 95% interval | verdict |
+|---|---|---|---|---|---|---|
+| Fact Recall | 5 / 35 | 1.000 | < 0.001 | 57 (0) | −0.337 [−0.436, −0.241] | behind |
+| Faithfulness | 11 / 37 | 1.000 | < 0.001 | 55 (2) | −0.099 [−0.153, −0.048] | behind |
+| Coverage Gaps | 0 / 1 | 1.000 | 0.500 | 36 (0) | −0.028 [−0.083, +0.000] | indistinguishable |
+| No Contradicted Claim | 5 / 7 | 0.806 | 0.387 | 59 (1) | −0.034 [−0.153, +0.085] | indistinguishable |
+
+**Chosen: `gpt-6-luna`.** Claude Haiku 5.5 is behind on Fact Recall and Faithfulness, far outside the Control Run's spread (shown in the Arm table above), and costs 1.7 times as much per answer.
+
+- **Truncation drives the Fact Recall gap.** 27 of Haiku's 60 answers stopped at the 2,500-token cap, which includes thinking, and each fails with Fact Recall 0 ([Method](#method-1), step 1). On the 30 cases where Haiku's answer was not cut off and both sides scored Fact Recall, Haiku states 0.72 against Luna's 0.77 (5 cases higher, 8 lower; shown, not decided on). A fair second look would need a higher cap or a prompt pass for Claude's longer answers, as ADR 0009 found for Sonnet and Opus.
+- **Its price is the tokenizer and the thinking.** Both models list $0.10 in and $0.50 out per million tokens, but Haiku counts the same prompts as about 1.5 times as many input tokens and writes 2.5 times as many output tokens, thinking included.
+
+#### Spend
+
+Nine paid runs: the shipped run and Control Run, the Brief Suite (75 Answer Calls), two Arms, three settings and Claude Haiku 5.5. Each printed its estimate first (none above $0.51). **$1.84 in Answer Calls and $0.93 in Jev judging, $2.77 in all**, inside the $3 to $4 expected. The screens cost nothing; the hosted `dense` and `hybrid` Arms embedded the new questions once with OpenAI for the screen, at a fraction of a cent, and cached them. The holdout was not scored.
+
 ### Order and cost
 
 1. The Brief Suite and the label format.
@@ -763,4 +920,4 @@ The LLM split agrees on 4 more answers (McNemar p = 0.388, shown, not decided on
 5. Golden Set version 2's 53 new cases, drafted in slices of at most ten, one slice at a time, then the split frozen.
 6. The Arm, settings and generator comparisons on it, then the holdout, once.
 
-Labels are drafted in Claude Code, not through the API. The API spend is expected to be about $5 to $6, budgeted at $20 to allow for reruns: about $2 for the judge study and the rest for the comparisons and the Brief Suite, with `gpt-6-luna` and `claude-haiku-5-5` answering and Jev judging. The larger cost was to be the developer's time: about 4 to 7 hours labelling for the judge study. In the event the developer delegated that labelling to Claude ([The judge study's results](#the-judge-studys-results)). Reviewing Golden Set version 2's drafted facts would take about 7 hours more. Because this is a quick-turn demo, it is acceptable to skip it, and the developer chose to (decided 2026-10-17, recorded on #43): the mechanical checks (verbatim evidence against the Corpus, the SEC company-facts reference for figures, the duplicate-question check) and the implementer's read-back stand in for it.
+Labels are drafted in Claude Code, not through the API. The API spend is expected to be about $5 to $6, budgeted at $20 to allow for reruns: about $2 for the judge study and the rest for the comparisons and the Brief Suite, with `gpt-6-luna` and `claude-haiku-5-5` answering and Jev judging. The comparisons on dev and their Brief Suite run cost $2.77 ([Spend](#spend)). The larger cost was to be the developer's time: about 4 to 7 hours labelling for the judge study. In the event the developer delegated that labelling to Claude ([The judge study's results](#the-judge-studys-results)). Reviewing Golden Set version 2's drafted facts would take about 7 hours more. Because this is a quick-turn demo, it is acceptable to skip it, and the developer chose to (decided 2026-10-17, recorded on #43): the mechanical checks (verbatim evidence against the Corpus, the SEC company-facts reference for figures, the duplicate-question check) and the implementer's read-back stand in for it.
