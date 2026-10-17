@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import TechnicalDetails, { TechnicalSection } from '@/components/TechnicalDetails'
 import WhatsCovered from '@/components/WhatsCovered'
 import { coverageSummary } from '@/lib/coverage'
 import {
@@ -27,7 +28,8 @@ import {
 type Thresholds = EvalExport['thresholds']
 
 /**
- * The "How it works" page: the architecture, the evaluation scoreboard (the shipped run
+ * The "How it works" page: "What's covered", then the sections under "Technical details",
+ * each collapsed by default: the architecture, the evaluation scoreboard (the shipped run
  * beside its Control Run, the retrieval Arms and their screen, and the generator
  * comparison), the Brief Suite's verdicts, the holdout run beside dev and the Corpus
  * coverage grid, all read from the evaluation export so the evidence sits in the product.
@@ -50,43 +52,31 @@ export default function HowItWorks({ data }: { data: EvalExport }) {
         </Link>
       </header>
 
-      <main className="mx-auto flex max-w-5xl flex-col gap-20 px-5 py-14">
-        <WhatsCovered summary={coverageSummary(data.coverage)} />
-        <Architecture data={data} />
-        <Scoreboard data={data} />
-        {data.briefSuite && <BriefSuite brief={data.briefSuite} />}
-        {data.holdout && <Holdout holdout={data.holdout} dev={data} />}
-        <CoverageGrid data={data} />
+      <main className="flex flex-col gap-20 px-5 py-14">
+        <div className="mx-auto w-full max-w-5xl">
+          <WhatsCovered summary={coverageSummary(data.coverage)} />
+        </div>
+        <TechnicalDetails
+          heading={
+            <div>
+              <h2 className="headline text-3xl font-semibold tracking-[-0.02em] md:text-4xl">
+                Technical details
+              </h2>
+              <p className="mt-2 max-w-3xl text-[14px] leading-relaxed text-muted">
+                The architecture, the evaluation scores and the Filings behind every answer. Open a
+                section by its heading, or all of them at once.
+              </p>
+            </div>
+          }
+        >
+          <Architecture data={data} />
+          <Scoreboard data={data} />
+          {data.briefSuite && <BriefSuite brief={data.briefSuite} />}
+          {data.holdout && <Holdout holdout={data.holdout} dev={data} />}
+          <CoverageGrid data={data} />
+        </TechnicalDetails>
       </main>
     </div>
-  )
-}
-
-function Section({
-  id,
-  title,
-  intro,
-  children,
-}: {
-  id: string
-  title: string
-  intro: ReactNode
-  children: ReactNode
-}) {
-  return (
-    <section aria-labelledby={id} className="flex flex-col gap-4">
-      <div>
-        <div className="mb-3 flex items-center gap-3">
-          <span className="h-px w-10 bg-accent/50" aria-hidden="true" />
-          <span className="font-mono text-[11px] tracking-widest text-accent">{id}</span>
-        </div>
-        <h2 id={id} className="headline text-2xl font-semibold tracking-[-0.02em] md:text-3xl">
-          {title}
-        </h2>
-        <p className="mt-2 max-w-3xl text-[14px] leading-relaxed text-muted">{intro}</p>
-      </div>
-      {children}
-    </section>
   )
 }
 
@@ -176,7 +166,7 @@ function Architecture({ data }: { data: EvalExport }) {
   ]
 
   return (
-    <Section
+    <TechnicalSection
       id="architecture"
       title="Architecture"
       intro="Each question gets exactly one generative LLM request, the Answer Call. Everything before it is deterministic: the same conversation always gets the same Sources and the same Coverage Gaps, so every claim can be traced and every stage measured."
@@ -184,7 +174,7 @@ function Architecture({ data }: { data: EvalExport }) {
       <Lane label="Built once, from the Corpus" stages={builtOnce} />
       <Lane label="For every question" stages={perQuestion} emphasis />
       <Lane label="Measured on the Golden Set" stages={measured} />
-    </Section>
+    </TechnicalSection>
   )
 }
 
@@ -248,7 +238,7 @@ function verdictRule(thresholds: Thresholds): string {
 function Scoreboard({ data }: { data: EvalExport }) {
   const { retrieval, split, goldenSet, thresholds } = data
   return (
-    <Section
+    <TechnicalSection
       id="scoreboard"
       title="Evaluation scoreboard"
       intro={
@@ -284,7 +274,7 @@ function Scoreboard({ data }: { data: EvalExport }) {
       {data.generatorChoice && (
         <GeneratorChoiceTable choice={data.generatorChoice} thresholds={thresholds} />
       )}
-    </Section>
+    </TechnicalSection>
   )
 }
 
@@ -293,7 +283,7 @@ function BriefSuite({ brief }: { brief: BriefSuiteResults }) {
   const missed = failing.flatMap((c) => c.missed)
   const notReached = missed.filter((f) => f.evidenceReachedRuns === 0).length
   return (
-    <Section
+    <TechnicalSection
       id="brief-suite"
       title="The Brief Suite"
       intro={
@@ -347,7 +337,7 @@ function BriefSuite({ brief }: { brief: BriefSuiteResults }) {
           state from the Sources. Hover a case for its question.
         </p>
       </div>
-    </Section>
+    </TechnicalSection>
   )
 }
 
@@ -359,7 +349,7 @@ function Holdout({ holdout, dev }: { holdout: HoldoutResults; dev: EvalExport })
   )
   const devArm = dev.retrieval.arms.find((arm) => arm.shipped)
   return (
-    <Section
+    <TechnicalSection
       id="holdout"
       title="The holdout run"
       intro={
@@ -393,7 +383,7 @@ function Holdout({ holdout, dev }: { holdout: HoldoutResults; dev: EvalExport })
           }))}
         />
       )}
-    </Section>
+    </TechnicalSection>
   )
 }
 
@@ -891,7 +881,7 @@ function CoverageGrid({ data }: { data: EvalExport }) {
   const tracked = companies.filter((c) => c.coverage === 'tracked').length
   const skipped = periods.map((p, i) => i > 0 && !follows(periods[i - 1], p))
   return (
-    <Section
+    <TechnicalSection
       id="coverage"
       title="Corpus coverage"
       intro={
@@ -940,7 +930,7 @@ function CoverageGrid({ data }: { data: EvalExport }) {
           skip.
         </p>
       </div>
-    </Section>
+    </TechnicalSection>
   )
 }
 
