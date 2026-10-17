@@ -2,7 +2,7 @@
 
 The Golden Set is the evaluation's ground truth: 30 labelled questions that the retrieval and generation harnesses score the system against. It lives in [`data/eval/golden_set.json`](../data/eval/golden_set.json) and is read by `edgar_rag.golden_set.load_golden_set()`, which checks the schema. It was written before any retrieval Arm or prompt ran, so no label was written with results in view.
 
-This page describes version 1, the set every result so far was measured on, the Required Fact tiers that version 2 adds, and the [Brief Suite](#the-brief-suite), the brief's questions in a file of their own. Version 2's [file](#the-file) is built and holds all 27 of version 1's cases other than the brief's, [rewritten](#the-rewritten-version-1-cases); the rest of version 2 is decided but not built yet: see [Version 2](#version-2). Version 1's file stays unchanged as a record, and a test pins its digest.
+This page describes version 1, the set every result so far was measured on, the Required Fact tiers that version 2 adds, and the [Brief Suite](#the-brief-suite), the brief's questions in a file of their own. Version 2's [file](#the-file) is built and holds all 27 of version 1's cases other than the brief's, [rewritten](#the-rewritten-version-1-cases), and the first slice of its [new cases](#the-new-cases); the rest of version 2 is decided but not built yet: see [Version 2](#version-2). Version 1's file stays unchanged as a record, and a test pins its digest.
 
 ## What it covers
 
@@ -131,7 +131,7 @@ No id is in both files: the loader rejects one that is.
 
 ## Version 2
 
-Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions and four variants of each, and version 2's file, with all three batches of version 1's 27 other cases rewritten, are built so far.
+Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions and four variants of each, and version 2's file, with all three batches of version 1's 27 other cases rewritten and the first of six slices of new cases, are built so far.
 
 ### The file
 
@@ -211,6 +211,31 @@ The third batch, version 1's GE Capital, Citigroup and Bristol Myers Squibb case
 - **Figures from the reference.** Microsoft's revenue for each period matches the SEC company-facts reference, which the figure check confirms (RevenueFromContractWithCustomerExcludingAssessedTax: $245,122 million for FY2024, $281,724 million for FY2025, $77,673 million for Q1 FY2026 and $81,273 million for Q2 FY2026), with every growth rate agreeing with it. Each period's revenue and its growth are separate facts.
 - **No amount without a reference value.** GE Capital, AMD, Chevron and Merck are not in the reference, and NVIDIA's H20 charge and Microsoft Cloud's revenue have no company-facts value. So the facts on GE Capital's ending net investment and its target, NVIDIA's and AMD's charges and Microsoft Cloud's growth state no amount; the amount stays in the evidence quote. Seven of this batch's version 1 facts stated an amount like these, among them Microsoft's yearly increases in dollars.
 - **Must-state or detail.** The must-state facts are what any good answer gives: GE Capital's reduced ending net investment, its target and its strategy of exiting non-core businesses; Merck's pricing pressure from Medicare and Medicaid law, its expected Keytruda decline, increasing U.S. regulation and the need for approval; each period's Microsoft revenue and growth; each export control charge. Drivers, particular programs, taxes, sanctions and investigations, and each Company's later steps are details. The three cases that expect only a Coverage Gap keep no Required Facts.
+
+### The new cases
+
+Version 2's 53 new cases are drafted in six slices of at most ten, one slice at a time, each with its own kinds of question and Companies. Every new case is `pending` until the last slice is done and the split is frozen, and a test checks that every case version 1 does not hold is `pending`. Each is drafted by the same rules as the rewrites, from the whole of each relevant Section and never from what retrieval returns, after reading every case already in both Golden Set versions and the Brief Suite so that none asks the same Companies about the same topic.
+
+The first slice is nine multi-Company risk comparisons among information technology, communication services and consumer Companies: six compare two Companies and three compare three, across the Risk Factors, Legal Proceedings and Market Risk Sections. A test checks the slice's ids, kinds, Sectors and Sections.
+
+| Case | Companies | Topic | Required Facts (must-state / detail) | Sections drafted from |
+|---|---|---|---|---|
+| `risk-meta-amzn-legal-proceedings` | Meta, Amazon | Legal proceedings: antitrust, privacy, youth, AI training, patents | 8 / 13 | Legal Proceedings of Meta's FY2025 10-K; Amazon's Item 3 refers to its Financial Statements' Legal Proceedings note, which its facts cite |
+| `risk-goog-meta-ai` | Alphabet, Meta | AI | 7 / 13 | Risk Factors of both FY2025 10-Ks |
+| `risk-nflx-dis-streaming-competition` | Netflix, Disney | Competition in streaming | 6 / 12 | Risk Factors of Netflix's FY2025 and Disney's FY2025 10-Ks |
+| `risk-t-vz-cmcsa-regulation` | AT&T, Verizon, Comcast | Regulation | 9 / 14 | Risk Factors of the three FY2025 10-Ks |
+| `risk-amd-csco-supply-chain` | AMD, Cisco | Supply chain | 7 / 16 | Risk Factors of AMD's FY2025 and Cisco's FY2025 10-Ks |
+| `risk-nke-sbux-hd-consumer-demand` | Nike, Starbucks, Home Depot | Consumer demand | 9 / 14 | Risk Factors of Nike's FY2025, Starbucks' FY2025 and Home Depot's fiscal 2024 10-Ks |
+| `risk-aapl-msft-market-risk` | Apple, Microsoft | Interest rate and foreign exchange risk | 6 / 10 | Market Risk of Apple's FY2025 10-K and Q1 FY2026 10-Q, and of Microsoft's FY2025 10-K and Q2 FY2026 10-Q |
+| `risk-nvda-amd-competition` | NVIDIA, AMD | Competition, AI accelerators included | 6 / 12 | Risk Factors of NVIDIA's FY2025 10-K and Q3 FY2026 10-Q, and of AMD's FY2025 10-K |
+| `risk-nke-tsla-amzn-tariffs` | Nike, Tesla, Amazon | Tariffs and trade policy | 6 / 13 | Risk Factors of Nike's FY2025, Tesla's FY2025 and Amazon's FY2025 10-Ks |
+
+- **Not a repeat.** Apple, Tesla and JPMorgan together and Apple with NVIDIA on supply chain are already asked, and so are Apple's legal proceedings, Coca-Cola's market risk, the software companies' AI risks and NVIDIA's and AMD's export control charges. This slice's Companies and topics differ from each of them.
+- **Must-state or detail.** The must-state facts are each Company's headline risk on the question's topic and, for a comparison, what each side says about the theme they share: the FCC and state broadband rules for the three telecom and cable Companies, the lead-sheathed cable allegations for AT&T and Verizon, outsourced manufacturing and single or limited sources for AMD and Cisco. Dates, appeals, examples and the further risks of each passage are details.
+- **Coverage Gaps.** Six cases compare Companies whose latest 10-Ks cover different periods, so they expect the periods differ gap; the AI, regulation and legal proceedings cases compare Companies with the same fiscal year.
+- **No amount.** No fact states a dollar amount. The settlement, damages, sensitivity and value-at-risk amounts in these Sections have no SEC company-facts value, and the fines are in euros; the amounts stay in the evidence quotes.
+- **Fact wording.** The judge study measured Jev on one-claim facts and set the fact cut-off at 0.6 ([The judge study's results](evaluation.md#the-judge-studys-results)). Each fact here states one claim in the Filing's own terms and names its Company. None renames the Filing's period (a fiscal quarter given as a calendar date) or states a cause or change the Filing does not, the wordings of several study items on which Jev and the labels disagreed.
+- **Names.** The Sector table names Disney "The Walt Disney Company", so its facts name it Walt Disney, which the label test that a fact names its Company recognises.
 
 ### What is decided
 

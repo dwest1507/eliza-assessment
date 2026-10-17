@@ -578,6 +578,56 @@ def test_a_rewritten_version_1_case_keeps_its_question_and_history_and_is_dev(
         assert "brief_example" not in old.tags, case.id  # the brief's are in the Brief Suite
 
 
+def test_new_version_2_cases_are_pending_until_the_split_is_frozen(golden_set, golden_set_v2):
+    """A case version 1 does not hold is new, and stays pending until every new case is
+    drafted and the split is frozen (ADR 0012)."""
+    version_1 = {case.id for case in golden_set.cases}
+
+    new = [case for case in golden_set_v2.cases if case.id not in version_1]
+
+    assert all(case.split == "pending" for case in new), [c.id for c in new]
+
+
+NEW_SLICE_1 = {
+    "risk-meta-amzn-legal-proceedings",
+    "risk-goog-meta-ai",
+    "risk-nflx-dis-streaming-competition",
+    "risk-t-vz-cmcsa-regulation",
+    "risk-amd-csco-supply-chain",
+    "risk-nke-sbux-hd-consumer-demand",
+    "risk-aapl-msft-market-risk",
+    "risk-nvda-amd-competition",
+    "risk-nke-tsla-amzn-tariffs",
+}
+"""Version 2's first slice of new cases: multi-Company risk comparisons among information
+technology, communication services and consumer Companies (issue #66)."""
+
+_SLICE_1_SECTORS = {
+    "Information Technology",
+    "Communication Services",
+    "Consumer Discretionary",
+    "Consumer Staples",
+}
+
+
+def test_new_slice_1_holds_nine_multi_company_risk_comparisons(golden_set_v2, filings_by_id):
+    cases = {case.id: case for case in golden_set_v2.cases if case.id in NEW_SLICE_1}
+    sectors = {row.ticker: row.sector for row in load_sector_table()}
+
+    assert set(cases) == NEW_SLICE_1
+    sizes = []
+    for case in cases.values():
+        tickers = {filings_by_id[s.filing_id].ticker for s in case.expected_sources}
+        assert case.question_type == "risk", case.id
+        assert not case.history and case.starter is None, case.id
+        assert {sectors[t] for t in tickers} <= _SLICE_1_SECTORS, case.id
+        assert {filings_by_id[f.filing_id].ticker for f in case.required_facts} == tickers, case.id
+        sizes.append(len(tickers))
+    assert set(sizes) == {2, 3}  # two-Company and three-Company comparisons
+    sections = {s.section for case in cases.values() for s in case.expected_sources}
+    assert {"Risk Factors", "Legal Proceedings", "Market Risk"} <= sections
+
+
 def test_a_missing_evidence_quote_or_section_fails_the_label_checks(tmp_path, filings_by_id):
     case = _v2_case("risk-unh-cybersecurity")
     case["required_facts"][0]["evidence"] = "UnitedHealth sells ice cream on the moon."

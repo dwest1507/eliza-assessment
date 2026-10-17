@@ -3405,6 +3405,1558 @@
           ]
         }
       ]
+    },
+    {
+      "id": "risk-meta-amzn-legal-proceedings",
+      "question": "Compare the major legal proceedings that Meta and Amazon disclose in their latest annual reports.",
+      "history": [],
+      "question_type": "risk",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "Section hint: Legal Proceedings. Both latest 10-Ks are FY2025 (year to December 2025), so the periods match. Meta's Legal Proceedings Section (Item 3) describes each matter; Amazon's Item 3 only refers to Note 7 of its Financial Statements, so Amazon's facts cite that note's Legal Proceedings passage. Drafted from the whole of both: the FTC antitrust case and its outcome, the youth and AI training cases (Meta), and the antitrust cases, the Kove verdict and the EU decisions (Amazon) are must-state; dates, appeals and the other matters are details. The settlement, penalty and damages amounts ($725 million, $5.0 billion, $525 million) have no SEC company-facts value and the fines are in euros, so the facts state no amount.",
+      "expected_sources": [
+        {
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Legal Proceedings"
+        },
+        {
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Legal Proceedings"
+        },
+        {
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Financial Statements"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Meta says the FTC sued it alleging anticompetitive conduct, including its acquisitions of Instagram and WhatsApp.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Legal Proceedings",
+          "evidence": "alleging that we engaged in anticompetitive conduct and unfair methods of competition in violation of Section 5 of the Federal Trade Commission Act and Section 2 of the Sherman Act, including by acquiring Instagram in 2012 and WhatsApp in 2014",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Meta says the court granted judgment in its favor in the FTC's antitrust case on November 18, 2025.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Legal Proceedings",
+          "evidence": "Trial began on April 14, 2025 and concluded on May 27, 2025. On November 18, 2025, the court granted judgment in our favor.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Meta says it faces lawsuits alleging that Facebook and Instagram cause social media addiction in users.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Legal Proceedings",
+          "evidence": "alleging that Facebook and Instagram cause \"social media addiction\" in users",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Meta says it faces cases alleging that it improperly acquired and used copyrighted materials to train its artificial intelligence models.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Legal Proceedings",
+          "evidence": "multiple cases, including putative class actions, were filed against us in the United States and elsewhere, alleging that we improperly acquired, distributed, and used various copyrighted materials and/or other types of data to train our artificial intelligence models",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Meta says the FTC filed a notice of appeal of the antitrust ruling on January 20, 2026.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Legal Proceedings",
+          "evidence": "On January 20, 2026, the FTC filed a notice of appeal of that ruling.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta says the changes the FTC seeks to its privacy consent order include a prohibition on its use of minors' data for any commercial purposes.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Legal Proceedings",
+          "evidence": "The changes sought by the FTC are set forth in a proposed order and include, among others, a prohibition on our use of minors' data for any commercial purposes",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta says the European Commission decided in April 2025 that its subscription for no ads model does not comply with the Digital Markets Act and fined it.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Legal Proceedings",
+          "evidence": "In April 2025, the European Commission issued a final decision that our \"subscription for no ads\" model does not comply with such requirements and imposed a fine",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta says the European Commission decided that it infringed EU competition rules in relation to Facebook Marketplace.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Legal Proceedings",
+          "evidence": "the European Commission issued a decision that Meta infringed Article 102 on the Treaty of the Functioning of the European Union in relation to certain alleged business practices relating to Facebook Marketplace",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta says a jury returned a verdict on liability against it in the Flo Health case on August 1, 2025.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Legal Proceedings",
+          "evidence": "In Flo Health, on August 1, 2025, a jury returned a verdict on liability in favor of the plaintiffs",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta says the court granted its motion for summary judgment on fair use as to the named plaintiffs in the consolidated AI training case on June 25, 2025.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Legal Proceedings",
+          "evidence": "On June 25, 2025, the court granted our motion for summary judgment on fair use as to the named plaintiffs in the case.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta says the maximum aggregate damages or penalties sought across its legal proceedings could amount to up to hundreds of billions of dollars.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Legal Proceedings",
+          "evidence": "The maximum aggregate monetary damages or penalties sought across our various legal proceedings could amount to an aggregate of up to hundreds of billions of dollars",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon says private litigants, state Attorneys General and the FTC have filed cases alleging abuse of dominance, monopolization and attempted monopolization.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Financial Statements",
+          "evidence": "Since March 2020, private litigants, state Attorneys General, and the Federal Trade Commission have filed cases in the U.S., Canada, and the United Kingdom alleging, among other things: price fixing arrangements between each of Amazon and its vendors and Amazon and its third-party sellers; abuse of dominance, monopolization, and attempted monopolization",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Amazon says a jury found in April 2024 that it infringed the patents asserted by Kove.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Financial Statements",
+          "evidence": "In April 2024, a jury found that Amazon infringed the asserted patents and awarded Kove $525 million in damages.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Amazon says the Italian Competition Authority decided that certain of its marketplace and logistics practices in Italy infringe EU competition rules.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Financial Statements",
+          "evidence": "claiming that certain of our marketplace and logistics practices in Italy infringe EU competition rules",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Amazon says Luxembourg's data protection authority decided that its processing of personal data did not comply with the GDPR.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Financial Statements",
+          "evidence": "In July 2021, the Luxembourg National Commission for Data Protection (the “CNPD”) issued a decision against Amazon Europe Core S.à r.l. claiming that Amazon’s processing of personal data did not comply with the EU General Data Protection Regulation.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Amazon says the antitrust complaints against it seek billions of dollars of alleged damages as well as structural relief.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Financial Statements",
+          "evidence": "These complaints seek billions of dollars of alleged damages, treble damages, punitive damages, injunctive relief, structural relief, civil penalties, attorneys’ fees, and costs.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon says some of the antitrust cases allege that it has a monopoly in markets for online superstores, marketplace services or intermediation services.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Financial Statements",
+          "evidence": "Some of the cases include allegations that Amazon has a monopoly in markets for online superstores, marketplace services, or intermediation services",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon says an Italian administrative tribunal affirmed the Italian Competition Authority's decision in September 2025 but reduced the fine.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Financial Statements",
+          "evidence": "In September 2025, the Italian Administrative Tribunal (the “TAR”) affirmed the ICA’s decision but reduced the fine",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon says the Luxembourg Administrative Court dismissed its appeal of the data protection decision in March 2025.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Financial Statements",
+          "evidence": "In March 2025, the Luxembourg Administrative Court dismissed our appeal of the CNPD’s decision.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon says private litigants allege that its collection and use of biometric identifiers violated the Illinois Biometric Information Privacy Act.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Financial Statements",
+          "evidence": "alleging, among other things, that Amazon’s collection, storage, use, retention, and protection of biometric identifiers violated the Illinois Biometric Information Privacy Act.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon says InterDigital's complaints allege that certain Amazon Prime Video services infringe InterDigital's patents.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Financial Statements",
+          "evidence": "InterDigital’s complaints allege, among other things, that certain Amazon Prime Video services and features of Amazon devices carrying the Prime Video app infringe InterDigital’s patents.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "risk-goog-meta-ai",
+      "question": "How do the AI-related risks that Alphabet and Meta describe compare?",
+      "history": [],
+      "question_type": "risk",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "Both latest 10-Ks are FY2025 (year to December 2025), so the periods match. Drafted from every AI passage in each whole Risk Factors Section. Must-state: each Company's headline AI risk (Alphabet: a highly competitive field needing significant investment, reputational harm and liability, regulatory action; Meta: AI initiatives that may not succeed, rising infrastructure and headcount investment, harmful content, competition). The comparison rests on what both name: competition, heavy investment, legal and regulatory exposure and dependence on third-party infrastructure. Infrastructure, energy, EU AI Act, copyright and security passages are details.",
+      "expected_sources": [
+        {
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Alphabet says AI technology and services are highly competitive, rapidly evolving and require significant investment.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "AI technology and services are highly competitive, rapidly evolving, and require significant investment, including technical infrastructure, development, and operational costs.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Alphabet says issues in the development and use of AI may result in reputational harm and increased liability exposure.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Issues in the development and use of AI may result in reputational harm and increased liability exposure.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Alphabet says its development, use and commercialization of AI could subject it to regulatory action and legal liability.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our development, use, and commercialization of AI products and services (including our implementation of AI in our offerings and internal systems) could subject us to regulatory action and legal liability",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Alphabet says its ability to deploy certain AI technologies may depend on the availability and pricing of third-party equipment and infrastructure.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our ability to deploy certain AI technologies critical for our products and services and for our business strategy may depend on the availability and pricing of third-party equipment and other technical infrastructure operations costs",
+          "tier": "detail"
+        },
+        {
+          "fact": "Alphabet says the supply of servers and network equipment for specialized AI chips is limited to a small number of qualified suppliers.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "manufacturing and supply of servers and network equipment for our technical infrastructure, particularly for specialized AI chips, is limited to a small number of qualified suppliers.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Alphabet says energy supply is constrained globally by the increase in demand for energy to power AI compute.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "energy supply is constrained globally due to the significant increase in demand for and limited availability of energy to power AI compute.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Alphabet says its investments in new businesses and technologies, such as AI-optimized infrastructure, may not result in an adequate return of capital.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "The investments that we are making across our businesses — such as building AI-optimized infrastructure, including our custom TPUs, and integrating AI capabilities into new and existing products and services — reflect our ongoing efforts to innovate and provide products and services that are helpful to users, advertisers, publishers, customers, content providers, and distribution partners. Our investments ultimately may not be commercially viable or may not result in an adequate return of capital",
+          "tier": "detail"
+        },
+        {
+          "fact": "Alphabet says the EU AI Act introduces requirements for AI systems and models placed on the market in the EU.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "The EU AI Act introduces various requirements for AI systems and models placed on the market in the EU",
+          "tier": "detail"
+        },
+        {
+          "fact": "Alphabet says AI is quickly reshaping the advertising industry.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We believe AI is quickly reshaping the advertising industry",
+          "tier": "detail"
+        },
+        {
+          "fact": "Alphabet says AI technologies may increase its exposure to cyber attacks.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "The development and implementation of AI technologies may further increase our exposure to or exacerbate the risks of cyber attacks or other security incidents",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta says it may not be successful in its AI initiatives, which could adversely affect its business, reputation or financial results.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We may not be successful in our artificial intelligence initiatives, which could adversely affect our business, reputation, or financial results.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Meta expects its AI initiatives will require increased investment in infrastructure and headcount.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In particular, we expect our AI initiatives will require increased investment in infrastructure and headcount.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Meta says its AI efforts subject it to risks related to harmful or illegal content.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "our AI-related efforts, particularly those related to generative AI and superintelligence, subject us to risks related to harmful or illegal content",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Meta says it faces significant competition from other companies developing their own AI features and technologies.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "we face significant competition from other companies that are developing their own AI features and technologies",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Meta says its investments in AI initiatives reduce its operating margin and profitability.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "some of our investments, particularly our investments in our artificial intelligence initiatives as well as Reality Labs, have the effect of reducing our operating margin and profitability.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta says it has been the subject of government scrutiny relating to AI chatbots, including inquiries by the FTC.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "we have been the subject of media and government scrutiny relating to AI and AI chatbots, including inquiries and investigations by the FTC, members of Congress and state attorneys general.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta says its AI initiatives depend on access to data to train its models.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our AI initiatives also depend on our access to data to effectively train our models",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta says its ability to develop and deploy AI depends on third-party equipment and infrastructure, such as processing hardware and computing power, whose availability or pricing it cannot control.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "our ability to continue to develop and effectively deploy AI technologies is dependent on access to specific third-party equipment, technology, and other technical and physical infrastructure, such as processing hardware, network capacity, models, computing power, and related energy requirements, as to which we cannot control the availability or pricing",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta says it cannot guarantee that third parties will not use the AI technologies it makes available for improper purposes.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "we cannot guarantee that third parties will not use such AI technologies for improper purposes",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta says it is the subject of litigation alleging copyright infringement in the use of copyrighted materials for AI training.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "we and other companies are, and expect to continue to be, the subject of litigation in the United States, Europe, Canada, and elsewhere alleging copyright infringement in connection with the acquisition, distribution, and use of copyrighted materials for AI training",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "risk-nflx-dis-streaming-competition",
+      "question": "How do Netflix and Disney describe the competition they face in streaming?",
+      "history": [],
+      "question_type": "risk",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "Netflix's latest 10-K is FY2025 (year to December 2025); Disney's is FY2025 (year to September 2025), followed by a Q1 FY2026 10-Q whose updated risk factors cover programming contracts and intellectual property, not competition, so it is not an expected Source. The latest 10-Ks cover different periods. Drafted from every competition passage in both whole Risk Factors Sections. Must-state: an intensely competitive market, well-resourced competitors and piracy (Netflix); competitors for viewers and subscribers, pricing pressure on DTC and consumers' unwillingness to pay for more services (Disney). Programming costs, generative AI, advertising rates and subscriber losses are details. The Sector table names Disney 'The Walt Disney Company', so its facts name it Walt Disney.",
+      "expected_sources": [
+        {
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Netflix says the market for entertainment video is intensely competitive and subject to rapid change.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "The market for entertainment video is intensely competitive and subject to rapid change.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Netflix says several of its competitors have significant financial, marketing and other resources.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Several of these competitors have long operating histories, large customer bases, strong brand recognition, exclusive rights to certain content, large content libraries, and significant financial, marketing and other resources.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Netflix says piracy threatens to damage its business because it offers virtually all content for free.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Piracy also threatens to damage our business, as its fundamental proposition to consumers is so compelling and difficult to compete against: virtually all content for free.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Netflix says its competitors include streaming providers, video gaming providers and social media.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Competitors include other entertainment video providers, such as linear television, streaming entertainment providers (including those that provide pirated content), video gaming providers, open content platform providers, which provide access to user-generated and professionally produced content, as well as more broadly against other sources of entertainment, such as social media",
+          "tier": "detail"
+        },
+        {
+          "fact": "Netflix says competitors that use generative AI more effectively could hurt its ability to compete.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In addition, new technological developments, including the development and use of generative AI, are rapidly evolving. If our competitors gain an advantage by using such technologies more effectively to satisfy consumer demand, our ability to compete successfully and our results of operations could be adversely impacted.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Netflix says companies may enter into business combinations or alliances that strengthen their competitive positions.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Companies also may enter into business combinations or alliances that strengthen their competitive positions.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Netflix says the cost of certain programming increases as competition increases.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "As competition increases, we see the cost of certain programming increase.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Netflix says members cancel its service for reasons that include a preference for competitive services.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Members cancel our service for many reasons, including a perception that they do not use the service sufficiently, that they need to cut household expenses, dissatisfaction with content, including any advertisements that may appear on our service, a preference for competitive services",
+          "tier": "detail"
+        },
+        {
+          "fact": "Netflix says the retail side of Amazon competes with it.",
+          "filing_id": "NFLX_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "While the retail side of Amazon competes with us",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walt Disney says its linear networks and DTC streaming services compete for viewers and subscribers with an increasing number of competitors.",
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Our linear networks and DTC streaming services compete for viewers and subscribers with an increasing number of competitors",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Walt Disney says the highly competitive environment puts pricing pressure on its DTC offerings.",
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "The highly competitive environment in which we operate puts pricing pressure on our DTC offerings and may require us to lower our prices or not increase our prices to attract or retain customers or lead to higher churn rates.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Walt Disney says consumers may not be willing to pay for an expanding set of DTC services at increasing prices.",
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Consumers may not be willing to pay for an expanding set of DTC services at increasing prices",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Walt Disney says there are a number of competing DTC businesses.",
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "There are a number of competing DTC businesses.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walt Disney says increased competition raises the cost of programming, including sports.",
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Increased competition raises the cost of programming, including for sports and other products",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walt Disney says generative AI tools that can be used to create competing low-cost content increase competition.",
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Technological developments, including developments in generative AI tools that can be used to create competing low-cost content and products, and changes in market structure, including consolidation of suppliers of resources and distribution channels, increase competition in these areas.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walt Disney says it has experienced flat subscriber growth or net losses of subscribers in some periods.",
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "We have experienced flat subscriber growth or net losses of subscribers in periods.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walt Disney says the increased supply of advertising platforms depresses advertising rates across its DTC streaming services and linear networks.",
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "our advertising revenue is negatively impacted by the increased supply of advertising tools and platforms on which to place advertising, including search, social media, online marketplaces and other ad-supported DTC services, which depresses advertising rates across our DTC streaming services and linear networks",
+          "tier": "detail"
+        },
+        {
+          "fact": "Walt Disney says competition reduces or limits growth in its subscription fees.",
+          "filing_id": "DIS_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "Competition also reduces, or limits growth in, prices for our products and services, including advertising rates and subscription fees at our linear networks and DTC offerings",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "NFLX",
+            "DIS"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "risk-t-vz-cmcsa-regulation",
+      "question": "What regulatory risks do AT&T, Verizon and Comcast face, and how do they compare?",
+      "history": [],
+      "question_type": "risk",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "All three latest 10-Ks are FY2025 (year to December 2025), so the periods match. Drafted from every regulatory passage in each whole Risk Factors Section; Comcast's refers to its Business Section for more, which the question does not need. Must-state: each Company's core regulatory exposure (AT&T: heavier regulation than its competitors and adverse FCC and state rulings; Verizon: changes in its regulatory framework and its licenses; Comcast: regulation that adds costs and restrictions, the Communications Act and FCC, and rising broadband regulation), plus the lead-sheathed cable allegations both AT&T and Verizon face. The comparison rests on the FCC and the states, whose broadband rules all three name. Privacy, copper retirement, conflicting rules, antitrust and licences are details.",
+      "expected_sources": [
+        {
+          "filing_id": "T_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "VZ_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "CMCSA_10-K_2025-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "AT&T says its subsidiaries providing wired services are subject to significant federal and state regulation, while many of its competitors are not.",
+          "filing_id": "T_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our subsidiaries providing wired services are subject to significant federal and state regulation, while many of our competitors are not.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AT&T says adverse rulings by the courts, the FCC or states on broadband and wireless deployment could impede its ability to manage its networks and recover costs.",
+          "filing_id": "T_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Adverse regulations and rulings by the courts, the FCC or states relating to broadband and wireless deployment could impede our ability to manage our networks and recover costs and lessen incentives to invest in our networks.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AT&T says it is subject to litigation and government inquiries over allegations that lead-clad telecommunications cables are a health or environmental hazard.",
+          "filing_id": "T_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In 2023, The Wall Street Journal published a series of articles alleging that lead-clad telecommunications cables are a public health hazard or may pose environmental risks. We are currently subject to litigation and have received inquiries from government authorities as a result of these assertions.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AT&T says its wireless subsidiaries are regulated by the FCC and in some instances by state and local agencies.",
+          "filing_id": "T_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our wireless subsidiaries are regulated to varying degrees by the FCC and in some instances, by state and local agencies.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AT&T says the growth of IP-based services could create conflicting regulation between the FCC and state and local authorities.",
+          "filing_id": "T_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "The continuing growth of IP-based services, especially when accessed by wireless devices, has created or potentially could create conflicting regulation between the FCC and various state and local authorities",
+          "tier": "detail"
+        },
+        {
+          "fact": "AT&T says new privacy laws could adversely affect its ability to collect data and offer targeted advertisements.",
+          "filing_id": "T_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Enactment of new privacy laws and regulations could, among other things, adversely affect our ability to collect data and offer targeted advertisements",
+          "tier": "detail"
+        },
+        {
+          "fact": "AT&T says failing to obtain regulatory approvals for its transition from its copper-based network could cause it significant cost and competitive disadvantages.",
+          "filing_id": "T_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "If we do not obtain regulatory approvals for our network transition or obtain approvals with onerous conditions, we could experience significant cost and competitive disadvantages.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AT&T says its international operations, particularly in Mexico, require it to comply with complex local laws and regulations.",
+          "filing_id": "T_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We have international operations, particularly in Mexico, and other countries worldwide where we need to comply with a wide variety of complex local laws, regulations and treaties",
+          "tier": "detail"
+        },
+        {
+          "fact": "Verizon says changes in the regulatory framework under which it operates could adversely affect its business prospects or results of operations.",
+          "filing_id": "VZ_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Changes in the regulatory framework under which we operate could adversely affect our business prospects or results of operations.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Verizon says the loss of, or a material limitation on, certain of its licenses could have a material adverse effect on its business.",
+          "filing_id": "VZ_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "The loss of, or a material limitation on, certain of our licenses could have a material adverse effect on our business, results of operations and financial condition.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Verizon says allegations about lead sheathed copper cables in its network could expose it to regulatory scrutiny, litigation and penalties.",
+          "filing_id": "VZ_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Allegations related to lead sheathed copper cables in our copper network infrastructure could expose us to regulatory scrutiny, litigation, penalties, removal and compliance costs, operational impact or reputational damage.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Verizon says its broadband services are subject to light-touch regulation by the FCC at the federal level.",
+          "filing_id": "VZ_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "At the federal level, these broadband services are subject to light-touch regulation by the FCC.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Verizon says several states have adopted or are considering laws or executive orders that would regulate its broadband services.",
+          "filing_id": "VZ_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "At the state level, several states have adopted or are considering adopting laws or executive orders that would regulate our broadband services",
+          "tier": "detail"
+        },
+        {
+          "fact": "Verizon says governments globally are increasing their focus on privacy and data security requirements.",
+          "filing_id": "VZ_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Generally, governments globally are increasing their focus on privacy and data security requirements and privacy-related legislation",
+          "tier": "detail"
+        },
+        {
+          "fact": "Verizon says certain services could be subject to conflicting regulation by the FCC and other authorities.",
+          "filing_id": "VZ_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Certain services could be subject to conflicting regulation by the FCC and/or various federal, state, local and international authorities",
+          "tier": "detail"
+        },
+        {
+          "fact": "Verizon says its wireless business is subject to lawsuits relating to alleged adverse health effects of wireless phones.",
+          "filing_id": "VZ_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our wireless business is also subject to lawsuits relating to alleged adverse health effects of wireless phones and radio frequency transmitters.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Comcast says regulation by federal, state, local and foreign authorities imposes additional costs and restrictions on its businesses.",
+          "filing_id": "CMCSA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We are subject to regulation by federal, state, local and foreign authorities, which impose additional costs and restrictions on our businesses.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Comcast says the Communications Act and FCC regulations and policies affect significant aspects of its communications businesses.",
+          "filing_id": "CMCSA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In the United States in particular, the Communications Act and FCC regulations and policies affect significant aspects of our communications businesses.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Comcast says legislative and regulatory activity has increased in recent years, particularly with respect to broadband networks.",
+          "filing_id": "CMCSA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Legislative and regulatory activity has increased in recent years, particularly with respect to broadband networks.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Comcast says state initiatives can create a patchwork of conflicting requirements, such as on privacy and net neutrality.",
+          "filing_id": "CMCSA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "State legislative and regulatory initiatives can create a patchwork of different and/or conflicting state requirements, such as with respect to privacy and Open Internet/net neutrality regulations",
+          "tier": "detail"
+        },
+        {
+          "fact": "Comcast says regulators could adopt new interpretations of competition or antitrust laws that could negatively impact its businesses.",
+          "filing_id": "CMCSA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "United States and foreign regulators and courts could adopt new interpretations of existing competition or antitrust laws or enact new competition or antitrust laws or regulatory tools that could negatively impact our businesses.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Comcast says agencies such as the FCC or DOJ may impose restrictions on its businesses when it seeks approval for significant acquisitions.",
+          "filing_id": "CMCSA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "federal regulatory or antitrust agencies such as the FCC or DOJ or international regulators may impose restrictions on the operation of our businesses as a result of our seeking regulatory approvals for any significant acquisitions and strategic initiatives",
+          "tier": "detail"
+        },
+        {
+          "fact": "Comcast says failure to comply with applicable laws could result in enforcement actions, fines and civil and criminal liability.",
+          "filing_id": "CMCSA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Failure to comply with the laws and regulations applicable to our businesses could result in administrative enforcement actions, fines, and civil and criminal liability.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "risk-amd-csco-supply-chain",
+      "question": "How do AMD and Cisco depend on outside manufacturers and suppliers, and what supply risks does that create?",
+      "history": [],
+      "question_type": "risk",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "AMD's latest 10-K is FY2025 (year to December 2025); Cisco's is FY2025 (year to July 2025), so the periods differ. Drafted from every manufacturing and supply passage in both whole Risk Factors Sections. Both outsource manufacturing and depend on components from limited or single sources; that is what the comparison rests on. Must-state: AMD's third-party foundries, TSMC for its leading nodes, sole or limited suppliers and the China and Taiwan risk; Cisco's reliance on its extended supply chain, single or limited sources and the exposure its purchase commitments created. Back-end testing, memory, the GF agreement, past shortages, the supplier settlement and inventory charges are details.",
+      "expected_sources": [
+        {
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "CSCO_10-K_2025-07-26",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "AMD uses third-party wafer foundries to fabricate the silicon wafers for all of its products.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "We utilize third-party wafer foundries to fabricate the silicon wafers for all of our products.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AMD relies on TSMC for the production of all wafers for its microprocessor and GPU products at 7 nanometer or smaller nodes.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "We rely on Taiwan Semiconductor Manufacturing Company Limited (TSMC) for the production of all wafers for microprocessor and GPU products at 7 nanometer (nm) or smaller nodes",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AMD says certain equipment and materials used to manufacture its products are available only from a limited number of suppliers, or in some cases a sole supplier.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "Certain equipment and materials that are used in the manufacture of our products are available only from a limited number of suppliers, or in some cases, a sole supplier.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AMD says geopolitical changes between China and Taiwan could disrupt its Taiwan-based third-party wafer foundries.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "geopolitical changes between China and Taiwan could disrupt the operations of our Taiwan-based third-party wafer foundries, manufacturing facilities and subcontractors",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AMD relies primarily on GLOBALFOUNDRIES for wafers for microprocessor and GPU products at process nodes larger than 7 nanometers.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "we rely primarily on GLOBALFOUNDRIES Inc. (GF) for wafers for microprocessor and GPU products manufactured at process nodes larger than 7 nm.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AMD says nearly all assembly and final testing of its products is performed at third-party facilities in China, Malaysia and Taiwan.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "Nearly all product assembly and final testing of our products is performed at third-party operated manufacturing facilities, in China, Malaysia and Taiwan.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AMD says there is currently an industry-wide memory shortage.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "there is currently an industry-wide memory shortage as the demand for such components has outpaced supply.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AMD says it does not have long-term commitment contracts with some of its third-party manufacturing suppliers.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "We do not have long-term commitment contracts with some of our third-party manufacturing suppliers.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AMD has a wafer supply agreement under which GF provides a minimum annual capacity allocation and sets pricing through 2026.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "We are party to a wafer supply agreement with GF where GF will provide a minimum annual capacity allocation to us and set pricing through 2026.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AMD says supply constraints could require it to allocate reduced quantities of products among its customers.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "If we experience supply constraints from our third-party manufacturing suppliers, we may be required to allocate the reduced quantities of affected products amongst our customers",
+          "tier": "detail"
+        },
+        {
+          "fact": "AMD says the manufacturers it uses also fabricate wafers for certain of its competitors.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "The manufacturers we use also fabricate wafers and ATMP products for other companies, including certain of our competitors.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AMD says the U.S. adding companies to the Entity List may require it to suspend purchasing from such suppliers.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "as the U.S. government continues adding companies to the Entity List, our supply chain may be negatively impacted as we may be required to suspend purchasing from such suppliers",
+          "tier": "detail"
+        },
+        {
+          "fact": "Cisco says it does not own or operate the bulk of its manufacturing facilities and relies on its extended supply chain.",
+          "filing_id": "CSCO_10-K_2025-07-26",
+          "section": "Risk Factors",
+          "evidence": "The fact that we do not own or operate the bulk of our manufacturing facilities and that we are reliant on our extended supply chain could have an adverse impact on the supply of our products and on our business and operating results.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Cisco says certain components are presently available only from a single source or limited sources.",
+          "filing_id": "CSCO_10-K_2025-07-26",
+          "section": "Risk Factors",
+          "evidence": "certain components are presently available only from a single source or limited sources",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Cisco says its additional purchase commitments with contract manufacturers and suppliers significantly increased its supply chain exposure.",
+          "filing_id": "CSCO_10-K_2025-07-26",
+          "section": "Risk Factors",
+          "evidence": "These past efforts and additional purchase commitments significantly increased our supply chain exposure",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Cisco says its increased supply chain exposure has hurt its product gross margin in recent periods.",
+          "filing_id": "CSCO_10-K_2025-07-26",
+          "section": "Risk Factors",
+          "evidence": "These past efforts and additional purchase commitments significantly increased our supply chain exposure, which resulted in negative impacts to our product gross margin in recent periods and may result in further negative impacts in future periods.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Cisco says financial problems of contract manufacturers or component suppliers could limit supply or increase costs.",
+          "filing_id": "CSCO_10-K_2025-07-26",
+          "section": "Risk Factors",
+          "evidence": "Financial problems of either contract manufacturers or component suppliers, reservation of manufacturing capacity at our contract manufacturers by other companies, and industry consolidation occurring within one or more component supplier markets, such as the semiconductor market, in each case, could either limit supply or increase costs.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Cisco says it has experienced component shortages in the past that caused longer than normal lead times.",
+          "filing_id": "CSCO_10-K_2025-07-26",
+          "section": "Risk Factors",
+          "evidence": "We have experienced component shortages in the past, including shortages caused by manufacturing process issues, that have affected our operations, including longer than normal lead times.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Cisco says binding price or purchase commitments may oblige it to buy components at prices higher than those in the current market.",
+          "filing_id": "CSCO_10-K_2025-07-26",
+          "section": "Risk Factors",
+          "evidence": "as a result of binding price or purchase commitments with suppliers, we may be obligated to purchase components at prices that are higher than those available in the current market.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Cisco entered into additional purchase commitments in fiscal 2025 related to manufacturing Cisco Silicon One and other products.",
+          "filing_id": "CSCO_10-K_2025-07-26",
+          "section": "Risk Factors",
+          "evidence": "In fiscal 2025, we entered into additional purchase commitments with contract manufacturers and suppliers related to manufacturing Cisco Silicon One and other products to meet demand from webscale and other customers.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Cisco says it settled a legal dispute with a supplier over purchase obligations under long-term supply arrangements on August 26, 2025.",
+          "filing_id": "CSCO_10-K_2025-07-26",
+          "section": "Risk Factors",
+          "evidence": "On August 26, 2025, we settled a legal dispute with a supplier relating to purchase obligations arising under long-term supply arrangements",
+          "tier": "detail"
+        },
+        {
+          "fact": "Cisco says its supply chain exposures could lead to excess and obsolete inventory charges if product demand significantly decreases.",
+          "filing_id": "CSCO_10-K_2025-07-26",
+          "section": "Risk Factors",
+          "evidence": "The remaining and new supply chain exposures include potential material excess and obsolete or other charges if product demand significantly decreases for a sustained duration",
+          "tier": "detail"
+        },
+        {
+          "fact": "Cisco says it faces competition for certain supply-constrained components.",
+          "filing_id": "CSCO_10-K_2025-07-26",
+          "section": "Risk Factors",
+          "evidence": "we face competition for certain components that are supply-constrained",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "AMD",
+            "CSCO"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "risk-nke-sbux-hd-consumer-demand",
+      "question": "How exposed are Nike, Starbucks and Home Depot to weaker consumer demand?",
+      "history": [],
+      "question_type": "risk",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "Nike's latest 10-K is FY2025 (year to May 2025), Starbucks' FY2025 (year to September 2025) and Home Depot's fiscal 2024 (year to February 2, 2025), so the periods differ. Drafted from every consumer demand and spending passage in the three whole Risk Factors Sections. Must-state: each Company's dependence on discretionary spending or, for Home Depot, on the housing and home improvement markets, and the demand risk each names (Nike: changing consumer preferences; Starbucks: evolving tastes; Home Depot: high interest rates and delayed purchases). Forecasting, inventory, pricing, traffic and competition passages are details.",
+      "expected_sources": [
+        {
+          "filing_id": "NKE_10-K_2025-05-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "SBUX_10-K_2025-09-28",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "HD_10-K_2025-02-02",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Nike says its sales are impacted by discretionary spending by consumers.",
+          "filing_id": "NKE_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "Our sales are impacted by discretionary spending by consumers.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Nike says declines in consumer spending have in the past resulted in reduced demand for its products.",
+          "filing_id": "NKE_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "Declines in consumer spending have in the past resulted in and may in the future result in reduced demand for our products",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Nike says its products are subject to changing consumer preferences that cannot be predicted with certainty.",
+          "filing_id": "NKE_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "All of our products are subject to changing consumer preferences that cannot be predicted with certainty.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Nike says declines in consumer spending can lead to higher discounts and lower gross margins.",
+          "filing_id": "NKE_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "Declines in consumer spending have in the past resulted in and may in the future result in reduced demand for our products, increased inventories, reduced orders from retailers for our products, order cancellations or returns, lower revenues, higher discounts and lower gross margins.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Nike says lead times for many of its products make it harder to respond rapidly to changing product trends.",
+          "filing_id": "NKE_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "However, lead times for many of our products make it more difficult for us to respond rapidly to new or changing product trends",
+          "tier": "detail"
+        },
+        {
+          "fact": "Nike says failing to respond to shifts in consumer preferences could lead to lower sales, excess inventories or lower profit margins.",
+          "filing_id": "NKE_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "If we fail to anticipate accurately and respond to trends and shifts in consumer preferences by adjusting the mix of existing product offerings, developing new products, designs, styles and categories, and influencing sports and fitness preferences through extensive marketing, we could experience lower sales, excess inventories or lower profit margins",
+          "tier": "detail"
+        },
+        {
+          "fact": "Nike says the popularity of sports and fitness activities and changing design trends affect demand for its products.",
+          "filing_id": "NKE_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "NIKE is a consumer products company and the relative popularity of various sports and fitness activities and changing design trends affect the demand for our products, services and experiences.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Nike says a failure to accurately predict demand for its products could adversely affect its net revenues and net income.",
+          "filing_id": "NKE_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "A failure to accurately predict the level of demand for our products could adversely affect our net revenues and net income",
+          "tier": "detail"
+        },
+        {
+          "fact": "Starbucks says that, as a retailer reliant on discretionary spending, its financial results are sensitive to macroeconomic conditions.",
+          "filing_id": "SBUX_10-K_2025-09-28",
+          "section": "Risk Factors",
+          "evidence": "As a retailer reliant on discretionary spending, our financial results are sensitive to macroeconomic conditions.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Starbucks says a prolonged downturn or slow recovery may reduce consumer spending, leading to lower demand or shifts to lower-priced products.",
+          "filing_id": "SBUX_10-K_2025-09-28",
+          "section": "Risk Factors",
+          "evidence": "A prolonged downturn or slow recovery may reduce consumer spending, leading to lower demand or shifts to lower-priced products.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Starbucks says evolving consumer preferences and tastes may adversely affect its business.",
+          "filing_id": "SBUX_10-K_2025-09-28",
+          "section": "Risk Factors",
+          "evidence": "Evolving consumer preferences and tastes, as well as adverse public or medical opinions about the health effects of consuming our products, may adversely affect our business.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Starbucks says it has previously been unable to accurately predict consumer demand for its products.",
+          "filing_id": "SBUX_10-K_2025-09-28",
+          "section": "Risk Factors",
+          "evidence": "We have previously been, and may in the future be, unable to accurately predict consumer demand for our products.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Starbucks says shifts in consumer behavior, including dietary changes or the use of weight-loss drugs, may impact its sales.",
+          "filing_id": "SBUX_10-K_2025-09-28",
+          "section": "Risk Factors",
+          "evidence": "Shifts in consumer behavior, including dietary changes or use of weight-loss drugs, may also impact sales.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Starbucks says reduced customer traffic or transaction value without corresponding cost reductions could pressure its margins.",
+          "filing_id": "SBUX_10-K_2025-09-28",
+          "section": "Risk Factors",
+          "evidence": "Reduced customer traffic or transaction value without corresponding cost reductions could pressure margins.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Starbucks says consumers may adopt lasting changes in spending habits if economic uncertainty persists.",
+          "filing_id": "SBUX_10-K_2025-09-28",
+          "section": "Risk Factors",
+          "evidence": "If economic uncertainty persists, consumers may adopt lasting changes in spending habits, potentially affecting our sales, profitability, and growth plans.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Starbucks says large quick-service competitors offering coffee and tea in the U.S. may reduce its customer traffic and transaction value.",
+          "filing_id": "SBUX_10-K_2025-09-28",
+          "section": "Risk Factors",
+          "evidence": "In the U.S., large quick-service competitors offering coffee, tea, and other competitive products may reduce customer traffic and transaction value.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Home Depot says its financial performance depends significantly on the stability of the housing and home improvement markets.",
+          "filing_id": "HD_10-K_2025-02-02",
+          "section": "Risk Factors",
+          "evidence": "Our financial performance depends significantly on the stability of the housing and home improvement markets, as well as general economic conditions, including changes in gross domestic product.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Home Depot says the high interest rate environment of fiscal 2024 adversely impacted demand for larger remodeling projects.",
+          "filing_id": "HD_10-K_2025-02-02",
+          "section": "Risk Factors",
+          "evidence": "the high interest rate environment that persisted throughout fiscal 2024 has adversely impacted and may continue to adversely impact demand for larger remodeling projects.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Home Depot says adverse economic conditions or uncertainty could cause customers to decide against or delay purchasing home improvement products and services.",
+          "filing_id": "HD_10-K_2025-02-02",
+          "section": "Risk Factors",
+          "evidence": "causing them to decide against purchasing home improvement products and services, causing them to delay purchasing decisions",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Home Depot says it is difficult to predict the products and services its customers will demand.",
+          "filing_id": "HD_10-K_2025-02-02",
+          "section": "Risk Factors",
+          "evidence": "It is difficult to successfully predict the products and services our customers will demand.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Home Depot says it may not be able to offset product cost inflation without negatively impacting consumer demand.",
+          "filing_id": "HD_10-K_2025-02-02",
+          "section": "Risk Factors",
+          "evidence": "If product cost inflation exceeds our ability to manage related expenses, we may not be able to offset the increases without negatively impacting consumer demand.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Home Depot says strong competition could adversely affect prices and demand for its products and services.",
+          "filing_id": "HD_10-K_2025-02-02",
+          "section": "Risk Factors",
+          "evidence": "Strong competition could adversely affect prices and demand for our products and services and could decrease our market share.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Home Depot says changes in tariffs or trade relations could significantly adversely impact demand for the retail products it sources outside the U.S.",
+          "filing_id": "HD_10-K_2025-02-02",
+          "section": "Risk Factors",
+          "evidence": "For the retail products we source, directly or indirectly, outside of the U.S., including Mexico, Canada and China, major changes in tax or trade policies, tariffs or trade relations could significantly adversely impact the cost of, demand for, and profitability of retail product sales",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "NKE",
+            "SBUX",
+            "HD"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "risk-aapl-msft-market-risk",
+      "question": "How do Apple's and Microsoft's disclosures of interest rate and foreign exchange risk compare?",
+      "history": [],
+      "question_type": "risk",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "Section hint: Market Risk (10-K Item 7A, 10-Q Item 3). Apple's latest 10-K is FY2025 (year to September 2025), followed by a Q1 FY2026 10-Q reporting no material changes; Microsoft's is FY2025 (year to June 2025), followed by two 10-Qs that restate the same risks with updated sensitivities, of which the latest (Q2 FY2026) is the expected Source. The periods differ. Drafted from the whole Market Risk Section of each Filing. Must-state: the risks each names and how each moves its results (Apple: interest rates on its portfolio, a stronger dollar on its net sales; Microsoft: foreign exchange, interest rates, credit and equity prices, managed with derivatives). The sensitivity estimates and Apple's value-at-risk figures have no SEC company-facts value, so no fact states an amount; the amounts stay in the Sections.",
+      "expected_sources": [
+        {
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Market Risk"
+        },
+        {
+          "filing_id": "AAPL_10-Q_2025-12-27",
+          "section": "Market Risk"
+        },
+        {
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Market Risk"
+        },
+        {
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "Market Risk"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Apple says it is exposed to economic risk from interest rates and foreign exchange rates.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Market Risk",
+          "evidence": "The Company is exposed to economic risk from interest rates and foreign exchange rates.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple says increases in interest rates will negatively affect the fair value of its investment portfolio.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Market Risk",
+          "evidence": "Increases in interest rates will negatively affect the fair value of the Company’s investment portfolio",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple says a strengthening of the U.S. dollar will negatively affect its net sales and gross margins as expressed in U.S. dollars.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Market Risk",
+          "evidence": "Changes in exchange rates, and in particular a strengthening of the U.S. dollar, will negatively affect the Company’s net sales and gross margins as expressed in U.S. dollars.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple says increases in interest rates will increase the interest expense on its term debt.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Market Risk",
+          "evidence": "Increases in interest rates will negatively affect the fair value of the Company’s investment portfolio and increase the interest expense on the Company’s term debt.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says its foreign exchange rate risk relates primarily to its being a net receiver of currencies other than the U.S. dollar.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Market Risk",
+          "evidence": "The Company’s exposure to foreign exchange rate risk relates primarily to the Company being a net receiver of currencies other than the U.S. dollar.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says it may choose not to hedge certain foreign currency exposures, for reasons including accounting considerations or prohibitive cost.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Market Risk",
+          "evidence": "However, the Company may choose to not hedge certain foreign currency exposures for a variety of reasons, including accounting considerations or prohibitive cost.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple applies a value-at-risk model to its foreign currency derivative positions.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Market Risk",
+          "evidence": "The Company applied a value-at-risk (“VAR”) model to its foreign currency derivative positions to assess the potential impact of fluctuations in exchange rates.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple's 10-Q for its first quarter of fiscal 2026 reports no material changes to its market risk.",
+          "filing_id": "AAPL_10-Q_2025-12-27",
+          "section": "Market Risk",
+          "evidence": "There have been no material changes to the Company’s market risk during the first three months of 2026.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says it is exposed to economic risk from foreign exchange rates, interest rates, credit risk and equity prices.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Market Risk",
+          "evidence": "We are exposed to economic risk from foreign exchange rates, interest rates, credit risk, and equity prices.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft says it uses derivative instruments to manage its market risks.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Market Risk",
+          "evidence": "We use derivatives instruments to manage these risks, however, they may still impact our consolidated financial statements.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft says securities in its fixed-income portfolio are subject to interest rate risks based on their maturities.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Market Risk",
+          "evidence": "Securities held in our fixed-income portfolio are subject to different interest rate risks based on their maturities.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft names the Euro, Japanese yen, British pound, Canadian dollar and Australian dollar as its principal currency exposures.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Market Risk",
+          "evidence": "Principal currency exposures include the Euro, Japanese yen, British pound, Canadian dollar, and Australian dollar.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says it monitors its foreign currency exposures daily.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Market Risk",
+          "evidence": "We monitor our foreign currency exposures daily to maximize the economic effectiveness of our foreign currency positions, including hedges.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says its fixed-income portfolio consists primarily of investment-grade securities.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Market Risk",
+          "evidence": "Our fixed-income portfolio is diversified and consists primarily of investment-grade securities.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says securities in its equity investments portfolio are subject to price risk.",
+          "filing_id": "MSFT_10-K_2025-06-30",
+          "section": "Market Risk",
+          "evidence": "Securities held in our equity investments portfolio are subject to price risk.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft's 10-Q for the quarter ended December 31, 2025 again says it is exposed to economic risk from foreign exchange rates, interest rates, credit risk and equity prices.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "Market Risk",
+          "evidence": "We are exposed to economic risk from foreign exchange rates, interest rates, credit risk, and equity prices.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "AAPL",
+            "MSFT"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "risk-nvda-amd-competition",
+      "question": "How do NVIDIA and AMD describe the competition they face, including from each other?",
+      "history": [],
+      "question_type": "risk",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "NVIDIA's latest 10-K is FY2025 (year to January 2025), followed by three 10-Qs, the latest of which (Q3 FY2026) restates every updated risk factor; AMD's is FY2025 (year to December 2025). The periods differ. Drafted from every competition passage in each whole Risk Factors Section; the export control passages count where they speak of competition. Must-state: NVIDIA's competition risk, competitors' cheaper or better products and its effective foreclosure from China's data center market; AMD's highly competitive markets, Nvidia's market position and customers building their own AI products. AMD names Nvidia and Intel; NVIDIA names no competitor in its Risk Factors. The other competition passages are details.",
+      "expected_sources": [
+        {
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "NVIDIA says competition could adversely impact its market share and financial results.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Risk Factors",
+          "evidence": "Competition could adversely impact our market share and financial results.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA says its competitors' products may be cheaper or provide better functionality or features than its own.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Risk Factors",
+          "evidence": "Our competitors’ products, services and technologies, including those mentioned above in this Annual Report on Form 10-K, may be cheaper or provide better functionality or features than ours",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA says it has effectively been foreclosed from competing in China's data center compute market.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "Risk Factors",
+          "evidence": "We have effectively been foreclosed from competing in China's data center computing/compute market",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA says competition in its target markets may intensify with new entrants and consolidations.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Risk Factors",
+          "evidence": "Our target markets remain competitive, and competition may intensify with expanding and changing product and service offerings, industry standards, customer and market needs, new entrants and consolidations.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says some of its competitors operate their own fabrication facilities.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Risk Factors",
+          "evidence": "Some of our competitors operate their own fabrication facilities",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says others may offer cloud-based services that compete with its AI cloud service offerings.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Risk Factors",
+          "evidence": "others may offer cloud-based services that compete with our AI cloud service offerings",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says its partners or customers may develop their own solutions.",
+          "filing_id": "NVDA_10-K_2025-01-26",
+          "section": "Risk Factors",
+          "evidence": "Our partners or customers may develop their own solutions",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says its effective foreclosure from the China market will help its competitors build larger developer and customer ecosystems.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "Risk Factors",
+          "evidence": "our effective foreclosure from the China market will help our competitors build larger developer and customer ecosystems to challenge us worldwide.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says export controls may disadvantage it against competitors that sell chips outside the scope of such controls.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "Risk Factors",
+          "evidence": "Export controls have and are likely in the future to have a disproportionate impact on NVIDIA and may disadvantage us against certain of our competitors that sell chips that are outside the scope of such control.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AMD says the markets in which its products are sold are highly competitive and rapidly evolving.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "The markets in which our products are sold are highly competitive and rapidly evolving.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AMD says Nvidia leverages its market position in data center GPU, its financial resources and its proprietary software ecosystem to promote its systems.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "Nvidia Corporation (Nvidia) leverages its market position in data center GPU, financial resources, and proprietary software ecosystem to promote its systems and influences customers who do business with us.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AMD says it may face competition from customers who internally develop products to support AI workloads similar to those its products support.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "we may encounter competition from customers who internally develop products to support similar AI workloads to those supported by ours.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AMD says Intel uses its microprocessor market position to price its products aggressively and target AMD's customers with special incentives.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "Intel Corporation (Intel) uses its microprocessor market position to price its products aggressively and target our customers and channel partners with special incentives.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AMD says Nvidia announced a partnership with and investment in Intel in September 2025.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "in September 2025, Nvidia announced a partnership and investment in Intel to partner on new data center and client platform products.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AMD says the Nvidia and Intel partnership may result in increased competition and pricing pressure for its products.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "This partnership may result in increased competition and pricing pressure for our products",
+          "tier": "detail"
+        },
+        {
+          "fact": "AMD says competitors pursuing alternative computing architectures, such as Arm, could increase competition in data center.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "Some competitors are pursuing alternative computing architectures, such as Arm, which could grow the Arm ecosystem and increase competition in consumer, commercial and data center, reducing demand for our products.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AMD says some of its competitors may possess stronger market positions and greater financial, sales, marketing and distribution resources.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "Some of our competitors may possess stronger market positions, larger customer bases, more design wins, and greater financial, sales, marketing, and distribution resources than us.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AMD says U.S. export restrictions to China make it easier for its China-based competitors to develop and sell their own solutions.",
+          "filing_id": "AMD_10-K_2025-12-27",
+          "section": "Risk Factors",
+          "evidence": "restrictions on semiconductors and semiconductor technology to China and Chinese customers negatively impact our ability to sell to customers in China and make it easier for our China-based competitors to develop and sell their own solutions and reduce the need for our products.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "NVDA",
+            "AMD"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "risk-nke-tsla-amzn-tariffs",
+      "question": "What tariff and trade policy risks do Nike, Tesla and Amazon describe?",
+      "history": [],
+      "question_type": "risk",
+      "split": "pending",
+      "starter": null,
+      "tags": [],
+      "notes": "Nike's latest 10-K is FY2025 (year to May 2025); Tesla's and Amazon's are FY2025 (year to December 2025), so the periods differ. Drafted from every tariff and trade passage in the three whole Risk Factors Sections. Must-state: what each says tariffs have done or could do (Nike: trade policy changes with a significant impact and duties on its imported products; Tesla: higher supply chain costs and product pricing; Amazon: its dependence on China-based sellers and suppliers). Retaliation, uncertainty, sourcing, inventory and demand passages are details.",
+      "expected_sources": [
+        {
+          "filing_id": "NKE_10-K_2025-05-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Nike says changes in U.S. trade policies, including modifications to import tariffs, have had a significant impact on its activities.",
+          "filing_id": "NKE_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "Changes in U.S. trade policies, including modifications to import tariffs and existing trade policies and agreements, have also had, and could continue to have a significant impact on our activities in domestic and foreign jurisdictions, and could adversely affect our reputation or results of operations.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Nike says many of its imported products are subject to duties, tariffs or quotas that affect the cost and quantity of goods imported.",
+          "filing_id": "NKE_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "many of our imported products are subject to duties, tariffs or quotas that affect the cost and quantity of various types of goods imported into the United States and other countries.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Nike says tariffs and other changes in U.S. trade policy could trigger retaliatory actions by affected countries.",
+          "filing_id": "NKE_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "Tariffs and other changes in U.S. trade policy have in the past and could in the future trigger retaliatory actions by affected countries",
+          "tier": "detail"
+        },
+        {
+          "fact": "Nike says it may be time-consuming and expensive to alter its business operations to adapt to trade policy changes.",
+          "filing_id": "NKE_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "It may be time-consuming and expensive for us to alter our business operations in order to adapt to or comply with any such changes.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Nike says tariffs and trade policies have impacted the availability, pricing and timing for obtaining commodities and raw materials.",
+          "filing_id": "NKE_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "supply chain issues caused by factors, including geopolitical conflicts, tariffs and trade policies and pandemics, have impacted and may in the future impact the availability, pricing and timing for obtaining commodities and raw materials.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Nike says increased tariffs or quotas could require it to change the way it conducts business.",
+          "filing_id": "NKE_10-K_2025-05-31",
+          "section": "Risk Factors",
+          "evidence": "including trade restrictions, sanctions and countersanctions, increased tariffs or quotas, trade agreement enforcement practices, embargoes or safeguards, could require us to change the way we conduct business and adversely affect our results of operations.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says U.S. trade policy alterations in 2025, including heightened import tariffs, have impacted its supply chain costs.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "U.S. trade policy alterations in 2025, including heightened import tariffs and subsequent retaliatory measures, have impacted our supply chain costs",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla says uncertainties surrounding domestic and foreign tariffs have impacted the pricing for its products, which could adversely impact demand.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "the uncertainties surrounding domestic and foreign tariffs have impacted the pricing for our products, which could adversely impact demand.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla says the exact scope of the tariffs that will ultimately be implemented, and their impact on its business, is uncertain.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "The exact scope of any such tariffs that will ultimately be implemented is not known at this time, and the impacts on our business and costs of our products is uncertain.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says U.S. special tariff actions have historically increased its costs for vehicles manufactured in the United States.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Historically, U.S. special tariff actions have increased our costs for vehicles manufactured in the United States",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says certain parts and components for its electric vehicles and batteries are difficult or impossible to source within the United States.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "certain parts and components are difficult or impossible to source within the United States.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says it cannot predict whether international trade agreements, such as those with China, will change.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We cannot predict whether, and to what extent, there may be changes to international trade agreements, such as those with China",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says its products contain thousands of parts purchased globally from hundreds of suppliers, including single-source direct suppliers.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our products contain thousands of parts purchased globally from hundreds of suppliers, including single-source direct suppliers",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon says tariff policy changes and trade disputes that negatively impact China-based sellers and suppliers could adversely affect its operating results.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "regulatory and trade restrictions, tariff policy changes and trade disputes, data protection and cybersecurity laws, economic factors, geopolitical events, security issues, or other factors negatively impacting China-based sellers and suppliers could adversely affect our operating results.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Amazon says China-based sellers account for significant portions of its third-party seller services and advertising revenues.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "China-based sellers account for significant portions of our third-party seller services and advertising revenues",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Amazon says China-based suppliers provide significant portions of its components and finished goods.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "China-based suppliers provide significant portions of our components and finished goods",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon says its international operations are subject to restrictive governmental actions such as tariffs and retaliatory measures.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "restrictive governmental actions (such as trade protection or retaliatory measures, including export duties and quotas and custom duties and tariffs",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon says demand for its products and services can fluctuate significantly with rising inflation, including inflation caused by tariff policy changes.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Demand for our products and services can fluctuate significantly for many reasons, including as a result of seasonality, promotions, product launches, or unforeseeable events, such as in response to global economic conditions such as recessionary fears or rising inflation (including as a result of tariff policy changes)",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon says tariff policy changes may negatively affect its ability to receive inbound inventory and ship completed orders.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "our ability to receive inbound inventory efficiently and ship completed orders to customers also may be negatively affected by natural or human-caused disasters (including public health crises) or extreme weather (including as a result of climate change), geopolitical events and security issues, labor or trade disputes, tariff policy changes, and similar events.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "NKE",
+            "TSLA",
+            "AMZN"
+          ]
+        }
+      ]
     }
   ]
 }
