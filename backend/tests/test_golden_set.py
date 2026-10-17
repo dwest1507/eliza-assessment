@@ -378,11 +378,18 @@ def test_brief_suite_cases_are_not_valid_golden_set_cases():
 
 VARIANT_ANGLES = {"rephrasing", "other_companies", "other_angle", "follow_up"}
 """The four kinds of variant each brief question gets (ADR 0012): a rephrasing, other
-Companies in the same shape, another time window or Section angle, and a follow-up."""
+Companies in the same shape (for the pharmaceutical question, another Health Care Sector
+phrase), another time window or Section angle (for the pharmaceutical question, a single
+Company), and a follow-up."""
 
 
 @pytest.mark.parametrize(
-    "brief_case", ["brief-risk-aapl-tsla-jpm", "brief-outlook-nvda-revenue-two-years"]
+    "brief_case",
+    [
+        "brief-risk-aapl-tsla-jpm",
+        "brief-outlook-nvda-revenue-two-years",
+        "brief-sector-pharma-regulatory",
+    ],
 )
 def test_a_brief_question_has_four_variants_one_per_angle(brief_suite, brief_case):
     variants = [case for case in brief_suite.cases if case.variant_of == brief_case]

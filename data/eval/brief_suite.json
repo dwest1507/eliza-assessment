@@ -2218,6 +2218,1161 @@
         }
       ],
       "expected_coverage_gaps": []
+    },
+    {
+      "id": "brief-sector-pharma-regulatory-rephrased",
+      "variant_of": "brief-sector-pharma-regulatory",
+      "question": "Which regulatory risks do the big drugmakers disclose, and what are they doing in response?",
+      "history": [],
+      "question_type": "sector",
+      "starter": null,
+      "tags": [
+        "brief_variant",
+        "rephrasing"
+      ],
+      "notes": "Variant of brief example 3: the same question in other words. 'The big drugmakers' is another Sector phrase for the same Pharmaceuticals and Biotechnology industries, so the Sector table resolves it to the same five Companies (AbbVie, Johnson & Johnson, Eli Lilly, Merck and Pfizer), and 'what are they doing in response' asks the 'how are they addressing them' half without the words. Same Query Scope, so the same expected Sources, Required Facts and Coverage Gap as brief-sector-pharma-regulatory.",
+      "expected_sources": [
+        {
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Business"
+        },
+        {
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Business"
+        },
+        {
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Business"
+        },
+        {
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business"
+        },
+        {
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "AbbVie says the Inflation Reduction Act will reduce prices and reimbursements for certain of its products.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "In particular, the IRA will have the effect of reducing prices and reimbursements for certain of our products, which could significantly impact AbbVie’s results of operations.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AbbVie says Imbruvica was selected as one of the first 10 medicines subject to government-set Medicare prices beginning in 2026.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "In August 2023, HHS, through the CMS, selected Imbruvica as one of the first 10 medicines subject to government-set prices beginning in 2026.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AbbVie says Vraylar and Linzess were selected as two of the 15 medicines subject to government-set Medicare Part D prices beginning in 2027.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "HHS, through the CMS, selected Vraylar and Linzess as two of the 15 medicines subject to government-set prices in Medicare Part D beginning in 2027.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AbbVie says violations of health care fraud and abuse laws can be punished by sanctions including exclusion from federal and state health care programs.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Violations of such laws and regulations may be punishable by criminal and/or civil sanctions, including, in some instances, substantial fines, imprisonment and exclusion from participation in federal and state health care programs",
+          "tier": "detail"
+        },
+        {
+          "fact": "AbbVie says it continues to evaluate the impact the Inflation Reduction Act may have on the company.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "AbbVie continues to evaluate the impact that the IRA may have on the company.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AbbVie says it must incur expense and spend time and effort to ensure compliance with complex regulations.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "AbbVie must incur expense and spend time and effort to ensure compliance with these complex regulations.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says the Inflation Reduction Act has subjected certain of its products to government-established pricing beginning in 2026.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "the Inflation Reduction Act of 2022 (IRA) has changed Medicare Part D benefit design and has subjected certain of the Company's products to government-established pricing beginning in 2026",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Johnson & Johnson says increased third-party use of the 340B drug discount program may hurt its financial performance.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "increased third-party utilization of the 340B Federal Drug Discount Program from expanded interpretations of the statute and program abuse may have a negative impact on the Company's financial performance",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says reductions to the FDA's budget and staff may delay the development and regulatory approval of new products.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "the development and regulatory approval of new products may be delayed due to limits on federal agency budgets or personnel, including reductions to the U.S. FDA’s budget, employees, and operations",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says compliance issues with current Good Manufacturing Practices can lead to fines, product recalls and product shortages.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "Regulatory issues regarding compliance with current Good Manufacturing Practices (cGMP) (and comparable quality regulations in foreign countries) by manufacturers of drugs and devices can lead to fines and penalties, product recalls, product shortages",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson's Janssen unit filed litigation in July 2023 challenging the constitutionality of the IRA's Medicare Drug Price Negotiation Program.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Business",
+          "evidence": "In July 2023, Janssen Pharmaceuticals, Inc. (Janssen) filed litigation against the U.S. Department of Health and Human Services as well as the Centers for Medicare and Medicaid Services challenging the constitutionality of the IRA's Medicare Drug Price Negotiation Program.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Johnson & Johnson maintains a policy that no end customer is permitted direct delivery of product to a location other than the billing location.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "MD&A",
+          "evidence": "The Company maintains a policy that no end customer will be permitted direct delivery of product to a location other than the billing location.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says it will continue to offer 340B discounts to covered entities on all of its covered outpatient drugs.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "MD&A",
+          "evidence": "The Company has been and will continue to offer 340B discounts to covered entities on all of its covered outpatient drugs",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson has established privacy compliance programs and controls that its businesses worldwide must follow.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "The Company has established privacy compliance programs and controls with which our businesses worldwide are required to comply.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly says its business is subject to government price controls and other restrictions on pricing, reimbursement and access for its drugs.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our business is subject to government price controls and other public and private restrictions on pricing, reimbursement, and access for our drugs",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Eli Lilly says HHS selected Jardiance as one of the first ten medicines subject to government-set Medicare prices, effective beginning in 2026.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "in August 2023, HHS selected Jardiance, which is part of our collaboration with Boehringer Ingelheim, as one of the first ten medicines subject to government-set prices in Medicare (effective beginning in 2026)",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly says HHS selected Trulicity and Verzenio in January 2026 for government-set prices effective in 2028.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In January 2026, HHS selected Trulicity and Verzenio as additional medicines subject to government-set prices to be effective in 2028.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly says the continued expansion of the 340B program impacts its revenue on an increasing percentage of sales.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Continued expansion of the 340B program and growth of entities claiming entitlement to 340B pricing, including in ways that may be inconsistent with the statutory scheme and through state laws that purport to mandate 340B sales to contract pharmacies, impact our revenue on an increasing percentage of sales.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly says counterfeit, misbranded, adulterated and mass-compounded incretins continue to be produced and sold in the U.S. and other markets.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "we continue to see the production, marketing, and sale of counterfeit, misbranded, adulterated, and mass-compounded incretins in the U.S. and other markets",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly announced preliminary voluntary agreements with the U.S. government in November 2025 under which it agreed to lower Medicaid and certain other drug prices for U.S. patients.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In November 2025, we announced preliminary voluntary agreements with the U.S. government in which, among other arrangements, we agreed to implement measures to lower Medicaid and certain other drug prices for U.S. patients",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Eli Lilly says its preliminary agreements with the U.S. government give it a three-year grace period from Section 232 tariffs if it meets U.S. manufacturing investment commitments.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Business",
+          "evidence": "The preliminary agreements also provide a three-year grace period during which time our products under a Section 232 investigation will not face tariffs, provided that we meet U.S. manufacturing investment commitments.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly says it will participate in a government direct-to-patient purchasing platform offering certain of its medicines at significant discounts to list prices.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Business",
+          "evidence": "We will also participate in a government direct-to-patient purchasing platform that will direct people in the U.S. to offerings to purchase certain medicines from us at significant discounts to current list prices.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly has implemented a Contract Pharmacy Limited Distribution System for sales through the 340B program.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Business",
+          "evidence": "We have implemented a Contract Pharmacy Limited Distribution System applicable to sales through the 340B program",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly says it has filed lawsuits and taken other legal actions to protect its intellectual property and address unlawful practices.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We have also filed lawsuits and taken other legal actions to protect our intellectual property and address unlawful practices.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck expects U.S. sales of Keytruda to decline beginning in January 2028 when government pricing under the Inflation Reduction Act takes effect.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "the Company expects U.S. sales of Keytruda to decline beginning in January 2028 upon implementation of government pricing under the IRA",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Merck says HHS selected Januvia for the first year of IRA price setting, with a government-set price effective January 1, 2026.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "in 2023, HHS selected Januvia for the first year of the IRA’s price setting program, which will result in a government set price becoming effective on January 1, 2026",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says increased utilization of the 340B program is having a negative impact on its performance.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "increased utilization of the 340B Federal Drug Discount Program and restrictions on the Company’s ability to identify inappropriate discounts are having a negative impact on the Company’s performance",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says changes at HHS could make it more difficult for the FDA to grant regulatory approvals for drugs and vaccines.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "HHS could undergo changes that could make it more difficult for the FDA to grant regulatory approvals for drugs and vaccines",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says the American Rescue Plan Act eliminated the statutory cap on the rebates drug manufacturers pay to Medicaid beginning in January 2024.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "in 2021, Congress passed the American Rescue Plan Act, which included a provision that eliminates the statutory cap on rebates drug manufacturers pay to Medicaid beginning in January 2024",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck has sued the U.S. government over the IRA's Drug Price Negotiation Program.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "The Company has sued the U.S. government regarding the IRA’s Program",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Merck says it is working to mitigate the potentially harmful effects of the Inflation Reduction Act.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "Merck is working to mitigate the potentially harmful effects that the law could have",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says it remains committed to the 340B Program and to providing 340B discounts to eligible covered entities.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Merck remains committed to the 340B Program and to providing 340B discounts to eligible covered entities.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says changes in U.S. and international regulations that mandate price controls could adversely affect its future results.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our future results could be adversely affected by changes in U.S. and international governmental regulations that mandate price controls, create coverage criteria, or limit patient access to our products.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Pfizer says Eliquis was among the first ten medicines subject to the IRA's Medicare drug price negotiation program.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "In August 2023, CMS published the first ten medicines subject to the MDPNP, which included Eliquis.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says Ibrance and Xtandi were among the 15 Medicare Part D drugs CMS selected in January 2025 for maximum fair prices.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "On January 17, 2025, CMS announced the selection of another 15 drugs from Medicare Part D for the maximum fair price, with prices to be set and effective on January 1, 2027. Ibrance and Xtandi were included in the list of 15 drugs selected.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says it may face greater pricing pressure from private payors as Inflation Reduction Act prices become publicly available.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "as the IRA prices become publicly available, we may face greater pricing pressure from private third-party payors",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says failure to comply with current Good Manufacturing Practices may subject it to warning letters, suspension of manufacturing or product recalls.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Failure to comply with these requirements may subject us to possible legal or regulatory actions, such as warning letters, suspension of manufacturing, seizure of product, injunctions, debarment, product recalls",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says executive orders or other changes in policy regarding tariffs could have a material adverse effect on its business.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "issued or future executive orders or other new or changes in laws, regulations or policy regarding tariffs, could have a material adverse effect on our business, earnings and financial guidance",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says it has engaged with major payors and the U.S. government to explore opportunities to improve access and reimbursement.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "We have engaged with major payors and the U.S. government to explore opportunities to improve access and reimbursement in an effort to drive pro-patient policies.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Pfizer says it continues to evaluate the impact of the Inflation Reduction Act on its business.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "We continue to evaluate the impact of the IRA on our business, operations and financial condition and results as the full effect of the IRA on our business and the pharmaceutical industry remains uncertain.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer implemented a policy in 2022 to help improve contract pharmacy integrity under the 340B Program.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "In 2022, we implemented a policy to help improve contract pharmacy integrity.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says it is actively engaging with regulatory authorities on the potential presence of nitrosamines in its products.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "manufacturers across the pharmaceutical industry, including Pfizer, are evaluating their product portfolios for the potential presence or formation of nitrosamines and we are actively engaging with regulatory authorities on this topic",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says it is evaluating opportunities and developing plans that may help mitigate the potential impact of tariffs.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "We are evaluating opportunities and developing plans which may help mitigate the potential impact of tariffs on our business and operations.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "ABBV",
+            "JNJ",
+            "LLY",
+            "MRK",
+            "PFE"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brief-sector-health-care-regulatory",
+      "variant_of": "brief-sector-pharma-regulatory",
+      "question": "What regulatory risks do the major health care companies face, and how are they addressing them?",
+      "history": [],
+      "question_type": "sector",
+      "starter": null,
+      "tags": [
+        "brief_variant",
+        "other_companies"
+      ],
+      "notes": "Variant of brief example 3: another Health Care Sector phrase. 'Health care companies' is read against the Sector table's sector column, not its industry column, so it covers all seven Health Care Companies: the five pharmaceutical Companies plus Thermo Fisher (Life Sciences Tools & Services) and UnitedHealth (Health Care Providers & Services). The five pharmaceutical Companies keep the brief case's nine must-state facts, with fewer details. Thermo Fisher's facts are drafted from the whole Risk Factors Section of its FY2024 10-K and the Government Regulation part of its Business Section; its 10-K names regulation changes such as the IRA as a demand risk, and its internal controls and compliance systems as its response. UnitedHealth's are drafted from the whole Risk Factors Section of its FY2024 10-K (its 2025 10-Qs report no material change to them) and the Regulatory Trends and Uncertainties part of its Q3 2025 10-Q's MD&A; its must-state facts are the Medicare Advantage benchmark cuts and its response to them. Pfizer's Q3 2025 10-Q, inside the latest window, adds its September 2025 agreements with the U.S. government as a detail. Latest 10-Ks: FY2024 for AbbVie, Merck, Pfizer, Thermo Fisher and UnitedHealth, FY2025 for J&J and Lilly.",
+      "expected_sources": [
+        {
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Business"
+        },
+        {
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Business"
+        },
+        {
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Business"
+        },
+        {
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business"
+        },
+        {
+          "filing_id": "PFE_10-Q_2025-09-28",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "TMO_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "TMO_10-K_2024-12-31",
+          "section": "Business"
+        },
+        {
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "UNH_10-Q_2025-09-30",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "AbbVie says the Inflation Reduction Act will reduce prices and reimbursements for certain of its products.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "In particular, the IRA will have the effect of reducing prices and reimbursements for certain of our products, which could significantly impact AbbVie’s results of operations.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "AbbVie says it continues to evaluate the impact the Inflation Reduction Act may have on the company.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "AbbVie continues to evaluate the impact that the IRA may have on the company.",
+          "tier": "detail"
+        },
+        {
+          "fact": "AbbVie says it must incur expense and spend time and effort to ensure compliance with complex regulations.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "AbbVie must incur expense and spend time and effort to ensure compliance with these complex regulations.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says the Inflation Reduction Act has subjected certain of its products to government-established pricing beginning in 2026.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "the Inflation Reduction Act of 2022 (IRA) has changed Medicare Part D benefit design and has subjected certain of the Company's products to government-established pricing beginning in 2026",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Johnson & Johnson's Janssen unit filed litigation in July 2023 challenging the constitutionality of the IRA's Medicare Drug Price Negotiation Program.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Business",
+          "evidence": "In July 2023, Janssen Pharmaceuticals, Inc. (Janssen) filed litigation against the U.S. Department of Health and Human Services as well as the Centers for Medicare and Medicaid Services challenging the constitutionality of the IRA's Medicare Drug Price Negotiation Program.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Johnson & Johnson says compliance issues with current Good Manufacturing Practices can lead to fines, product recalls and product shortages.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "Regulatory issues regarding compliance with current Good Manufacturing Practices (cGMP) (and comparable quality regulations in foreign countries) by manufacturers of drugs and devices can lead to fines and penalties, product recalls, product shortages",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says it will continue to offer 340B discounts to covered entities on all of its covered outpatient drugs.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "MD&A",
+          "evidence": "The Company has been and will continue to offer 340B discounts to covered entities on all of its covered outpatient drugs",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly says its business is subject to government price controls and other restrictions on pricing, reimbursement and access for its drugs.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our business is subject to government price controls and other public and private restrictions on pricing, reimbursement, and access for our drugs",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Eli Lilly announced preliminary voluntary agreements with the U.S. government in November 2025 under which it agreed to lower Medicaid and certain other drug prices for U.S. patients.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In November 2025, we announced preliminary voluntary agreements with the U.S. government in which, among other arrangements, we agreed to implement measures to lower Medicaid and certain other drug prices for U.S. patients",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Eli Lilly says its preliminary agreements with the U.S. government give it a three-year grace period from Section 232 tariffs if it meets U.S. manufacturing investment commitments.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Business",
+          "evidence": "The preliminary agreements also provide a three-year grace period during which time our products under a Section 232 investigation will not face tariffs, provided that we meet U.S. manufacturing investment commitments.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly has implemented a Contract Pharmacy Limited Distribution System for sales through the 340B program.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Business",
+          "evidence": "We have implemented a Contract Pharmacy Limited Distribution System applicable to sales through the 340B program",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck expects U.S. sales of Keytruda to decline beginning in January 2028 when government pricing under the Inflation Reduction Act takes effect.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "the Company expects U.S. sales of Keytruda to decline beginning in January 2028 upon implementation of government pricing under the IRA",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Merck has sued the U.S. government over the IRA's Drug Price Negotiation Program.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "The Company has sued the U.S. government regarding the IRA’s Program",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Merck says it is working to mitigate the potentially harmful effects of the Inflation Reduction Act.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "Merck is working to mitigate the potentially harmful effects that the law could have",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says it remains committed to the 340B Program and to providing 340B discounts to eligible covered entities.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Merck remains committed to the 340B Program and to providing 340B discounts to eligible covered entities.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says changes in U.S. and international regulations that mandate price controls could adversely affect its future results.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our future results could be adversely affected by changes in U.S. and international governmental regulations that mandate price controls, create coverage criteria, or limit patient access to our products.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Pfizer says it has engaged with major payors and the U.S. government to explore opportunities to improve access and reimbursement.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "We have engaged with major payors and the U.S. government to explore opportunities to improve access and reimbursement in an effort to drive pro-patient policies.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Pfizer implemented a policy in 2022 to help improve contract pharmacy integrity under the 340B Program.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "In 2022, we implemented a policy to help improve contract pharmacy integrity.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer announced preliminary agreements with the Trump Administration in September 2025 to make certain drug prices for U.S. patients more comparable to those in other developed countries.",
+          "filing_id": "PFE_10-Q_2025-09-28",
+          "section": "MD&A",
+          "evidence": "In September 2025, we announced preliminary agreements with the Trump Administration in which we voluntarily agreed to implement measures designed to make certain drug prices for U.S. patients more comparable to those in other developed countries.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Thermo Fisher says changes in regulations such as the Inflation Reduction Act's drug price negotiation provisions could reduce demand for its products or increase its expenses.",
+          "filing_id": "TMO_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Any significant change in regulations, such as the Inflation Reduction Act of 2022 (IRA), which contains drug price negotiation provisions, or change in the interpretation of existing regulations, could reduce demand for our products or increase our expenses.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Thermo Fisher says changes in the FDA's regulation of the drug discovery and development process could reduce demand for its products.",
+          "filing_id": "TMO_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Changes in the U.S. Food and Drug Administration’s (the FDA) regulation of the drug discovery and development process could have an adverse effect on the demand for these products",
+          "tier": "detail"
+        },
+        {
+          "fact": "Thermo Fisher says failing to comply with the requirements of regulators such as the FDA, the DEA and the EMA could result in warning letters, product recalls or monetary sanctions.",
+          "filing_id": "TMO_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Failure by us or by our customers to comply with the requirements of these regulatory authorities, including without limitation, remediating any inspectional observations to the satisfaction of these regulatory authorities, could result in warning letters, product recalls or seizures, monetary sanctions",
+          "tier": "detail"
+        },
+        {
+          "fact": "Thermo Fisher says export control and economic sanctions regulations may prohibit the export of certain of its products, services and technologies.",
+          "filing_id": "TMO_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "In certain circumstances, export control and economic sanctions regulations may prohibit the export of certain products, services and technologies.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Thermo Fisher has internal controls and compliance systems to protect it against acts by employees, agents or acquired businesses that would violate U.S. or non-U.S. laws.",
+          "filing_id": "TMO_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "We have internal controls and compliance systems to protect the company against acts committed by employees, agents or businesses that we acquire that would violate U.S. and/or non-U.S. laws",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Thermo Fisher says it develops, configures and markets its products to meet customer needs created by regulations.",
+          "filing_id": "TMO_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "We develop, configure and market our products to meet customer needs created by those regulations.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Thermo Fisher believes it is in compliance in all material respects with the laws and regulations governing its chemicals, drugs and distribution activities.",
+          "filing_id": "TMO_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "While we believe we are in compliance in all material respects with such laws and regulations, any noncompliance could result in substantial fines",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says CMS has in the past reduced or frozen Medicare Advantage benchmarks and additional cuts are possible.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "For example, CMS in the past has reduced or frozen Medicare Advantage benchmarks and additional cuts to Medicare Advantage benchmarks are possible.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UnitedHealth says risk adjustment data validation audits by CMS could result in retrospective adjustments to payments made to its health plans and fines.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Some of our local plans have been selected for such audits, which in the past have resulted and in future periods could result in retrospective adjustments to payments made to our health plans, fines, corrective action plans or other adverse action by CMS.",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says government investigations, audits and reviews could result in sanctions including exclusion from participation in government programs.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Government investigations, audits, reviews and assessments could lead to government actions, which have resulted and in future periods could result in adverse publicity, the assessment of damages, civil or criminal fines or penalties, or other sanctions, including restrictions or changes in the way we conduct business, loss of licensure or exclusion from participation in government programs",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says government investigations into PBM practices have resulted in PBMs agreeing to civil penalties and could materially impact the PBM business model.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "various governmental agencies have conducted and continue to conduct investigations and studies into certain PBM practices, which have resulted and in future periods may result in PBMs agreeing to civil penalties, including the payment of money and entry into corporate integrity agreements, or could materially and adversely impact the PBM business model",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says revisions to the Medicare Advantage risk adjustment model have resulted and will continue to result in reduced funding.",
+          "filing_id": "UNH_10-Q_2025-09-30",
+          "section": "MD&A",
+          "evidence": "Further, substantial revisions to the risk adjustment model, which serves to adjust rates to reflect a patient’s health status and care resource needs, have resulted and will continue to result in reduced funding",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says it has intensified its medical and operating cost management in response to Medicare Advantage benchmark reductions and other funding pressures.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Although we have adjusted members’ benefits and premiums on a selective basis, ceased to offer benefit plans in certain counties, and intensified both our medical and operating cost management in response to the benchmark reductions and other funding pressures",
+          "tier": "must_state"
+        },
+        {
+          "fact": "UnitedHealth says it has ceased to offer benefit plans in certain counties in response to Medicare Advantage benchmark reductions and other funding pressures.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Although we have adjusted members’ benefits and premiums on a selective basis, ceased to offer benefit plans in certain counties, and intensified both our medical and operating cost management in response to the benchmark reductions and other funding pressures",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says it has adjusted members' benefits and premiums on a selective basis in response to Medicare Advantage benchmark reductions and other funding pressures.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Although we have adjusted members’ benefits and premiums on a selective basis, ceased to offer benefit plans in certain counties, and intensified both our medical and operating cost management in response to the benchmark reductions and other funding pressures",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth says it continues to advocate for actuarially sound Medicaid rates commensurate with its medical cost trends.",
+          "filing_id": "UNH_10-Q_2025-09-30",
+          "section": "MD&A",
+          "evidence": "We continue to advocate for actuarially sound rates commensurate with our medical cost trends",
+          "tier": "detail"
+        },
+        {
+          "fact": "UnitedHealth has developed and implemented policies and procedures intended to promote the responsible design, development and use of AI/ML.",
+          "filing_id": "UNH_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "With respect to AI/ML, we have developed and implemented policies and procedures intended to promote and sustain responsible design, development, and use of AI/ML, consistent with industry best practices.",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "ABBV",
+            "JNJ",
+            "LLY",
+            "MRK",
+            "PFE",
+            "TMO",
+            "UNH"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "brief-pharma-regulatory-pfe",
+      "variant_of": "brief-sector-pharma-regulatory",
+      "question": "What regulatory risks does Pfizer face, and how is it addressing them?",
+      "history": [],
+      "question_type": "risk",
+      "starter": null,
+      "tags": [
+        "brief_variant",
+        "other_angle"
+      ],
+      "notes": "Variant of brief example 3: the same question about a single Company, so the answer goes deeper than one Company's share of the Sector answer. Pfizer's latest Filings are its FY2024 10-K and the three 2025 10-Qs after it; the 10-Qs' Risk Factors only point back to the 10-K, so their regulatory updates sit in MD&A. Facts drafted from the whole Risk Factors Section of the 10-K, its Business Section's Pricing Pressures and Government Regulation and Price Constraints parts, and the Q3 2025 10-Q's MD&A, whose Operating Environment and Global Trade Environment parts carry the Q1 and Q2 10-Qs' updates forward and add the September 2025 agreements with the U.S. government. The must-state facts: price controls and the IRA (Eliquis) as the risks, and the agreements and Pfizer's engagement with payors and the government as the responses. The Part D redesign's $1 billion revenue impact has no SEC company-facts value, so its fact states no amount.",
+      "expected_sources": [
+        {
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business"
+        },
+        {
+          "filing_id": "PFE_10-Q_2025-09-28",
+          "section": "MD&A"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Pfizer says changes in U.S. and international regulations that mandate price controls could adversely affect its future results.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our future results could be adversely affected by changes in U.S. and international governmental regulations that mandate price controls, create coverage criteria, or limit patient access to our products.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Pfizer says Eliquis was among the first ten medicines subject to the IRA's Medicare drug price negotiation program.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "In August 2023, CMS published the first ten medicines subject to the MDPNP, which included Eliquis.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Pfizer says Ibrance and Xtandi were among the 15 Medicare Part D drugs CMS selected in January 2025 for maximum fair prices.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "On January 17, 2025, CMS announced the selection of another 15 drugs from Medicare Part D for the maximum fair price, with prices to be set and effective on January 1, 2027. Ibrance and Xtandi were included in the list of 15 drugs selected.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer expects the IRA's Medicare Part D redesign to have a net unfavorable impact on its revenue in 2025.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "We anticipate a net unfavorable impact to revenue in 2025 of approximately $1 billion, year-over-year, related to the Medicare Part D redesign changes that take effect in 2025.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says it may face greater pricing pressure from private payors as Inflation Reduction Act prices become publicly available.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "as the IRA prices become publicly available, we may face greater pricing pressure from private third-party payors",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says changes to the Medicaid Drug Rebate Program or the 340B Program could have a material impact on its business.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "Changes to the MDRP or the 340B Program could have a material impact on our business.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer expects continued U.S. government focus on regulating drug pricing, including Most-Favored-Nation drug pricing.",
+          "filing_id": "PFE_10-Q_2025-09-28",
+          "section": "MD&A",
+          "evidence": "In the U.S., we expect to see continued focus by the U.S. government and states on regulating drug pricing and access to medicine, including but not limited to, international reference pricing, including Most-Favored-Nation (MFN) drug pricing.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says new policy or regulatory changes from the U.S. administration, Congress and states, including changes to recommendations and regulatory approvals for its vaccines and medicines, could have a material adverse effect on its business.",
+          "filing_id": "PFE_10-Q_2025-09-28",
+          "section": "MD&A",
+          "evidence": "New and potential policy, regulatory or other changes from the U.S. Presidential administration, Congress and states, including, among others, increased or new regulatory requirements, including heightened requirements for licensure, changes, delays or failure to receive recommendations, reimbursement and regulatory approvals",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says executive orders or other changes in policy regarding tariffs could have a material adverse effect on its business.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "issued or future executive orders or other new or changes in laws, regulations or policy regarding tariffs, could have a material adverse effect on our business, earnings and financial guidance",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says failure to comply with current Good Manufacturing Practices may subject it to warning letters, suspension of manufacturing or product recalls.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Failure to comply with these requirements may subject us to possible legal or regulatory actions, such as warning letters, suspension of manufacturing, seizure of product, injunctions, debarment, product recalls",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says government investigations and actions could result in substantial criminal and civil fines and corporate integrity or deferred prosecution agreements.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Government investigations and actions have and could result in substantial criminal and civil fines and/or criminal charges, limitations on our ability to conduct business in applicable jurisdictions, corporate integrity or deferred prosecution agreements and other disciplinary actions",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says the European Commission proposed the largest reform of EU pharmaceutical legislation in 20 years.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "Additionally, in the EU, the EC proposed the largest reform of EU pharmaceutical legislation in 20 years.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says China's QCE and VBP tender process has resulted in significant price cuts for off-patent medicines.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "For example, the QCE and VBP tender process in China has resulted in significant price cuts for off-patent medicines.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer announced preliminary agreements with the Trump Administration in September 2025 to make certain drug prices for U.S. patients more comparable to those in other developed countries.",
+          "filing_id": "PFE_10-Q_2025-09-28",
+          "section": "MD&A",
+          "evidence": "In September 2025, we announced preliminary agreements with the Trump Administration in which we voluntarily agreed to implement measures designed to make certain drug prices for U.S. patients more comparable to those in other developed countries.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Pfizer will participate in TrumpRx.gov, a direct purchasing platform through which U.S. patients can buy certain of its medicines at significant discounts.",
+          "filing_id": "PFE_10-Q_2025-09-28",
+          "section": "MD&A",
+          "evidence": "We will also participate in a direct purchasing platform, TrumpRx.gov, that will allow American patients to purchase certain medicines from us at significant discounts to current retail prices",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says its agreements with the U.S. government give it a three-year grace period from Section 232 tariffs, provided it further invests in U.S. manufacturing.",
+          "filing_id": "PFE_10-Q_2025-09-28",
+          "section": "MD&A",
+          "evidence": "The agreements also provide a three-year grace period during which time our products under a Section 232 investigation will not face tariffs, provided the Company further invests in manufacturing in the U.S.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says it is developing plans intended to help mitigate the potential long-term impact of tariffs on its business.",
+          "filing_id": "PFE_10-Q_2025-09-28",
+          "section": "MD&A",
+          "evidence": "We are continuing to evaluate opportunities and developing plans which are intended to help mitigate the potential long-term impact of tariffs on our business and operations.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says it has engaged with major payors and the U.S. government to explore opportunities to improve access and reimbursement.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "We have engaged with major payors and the U.S. government to explore opportunities to improve access and reimbursement in an effort to drive pro-patient policies.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Pfizer says it works with lawmakers and advocates for solutions that improve patient health outcomes and lower costs to the healthcare system.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "We work with law makers and advocate for solutions that effectively improve patient health outcomes, lower costs to the healthcare system, and help ensure access to medicines and vaccines within an efficient and affordable healthcare system.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says it continues to evaluate the impact of the Inflation Reduction Act on its business.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "We continue to evaluate the impact of the IRA on our business, operations and financial condition and results as the full effect of the IRA on our business and the pharmaceutical industry remains uncertain.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says the Eliquis Medicare price is factored into its long-term financial planning.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "The Eliquis Medicare price is factored into our long-term financial planning, in accordance with our standard financial reporting and forecasting protocols.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer implemented a policy in 2022 to help improve contract pharmacy integrity under the 340B Program.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "In 2022, we implemented a policy to help improve contract pharmacy integrity.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer believes its 340B contract pharmacy policy is consistent with the statute.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "We believe that our policy is consistent with the statute.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says it is actively engaging with regulatory authorities on the potential presence of nitrosamines in its products.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "manufacturers across the pharmaceutical industry, including Pfizer, are evaluating their product portfolios for the potential presence or formation of nitrosamines and we are actively engaging with regulatory authorities on this topic",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": []
+    },
+    {
+      "id": "brief-followup-pharma-340b",
+      "variant_of": "brief-sector-pharma-regulatory",
+      "question": "How are they dealing with the 340B drug discount program?",
+      "history": [
+        {
+          "role": "user",
+          "content": "What regulatory risks do the major pharmaceutical companies face, and how are they addressing them?"
+        },
+        {
+          "role": "assistant",
+          "content": "The major pharmaceutical companies (AbbVie, Johnson & Johnson, Eli Lilly, Merck and Pfizer) all face drug pricing regulation under the Inflation Reduction Act. Johnson & Johnson's Janssen unit is challenging the constitutionality of the IRA's Medicare Drug Price Negotiation Program in court (JNJ_10-K_2025-12-28, Business), and Merck has sued the U.S. government over the program (MRK_10-K_2024-12-31, MD&A). Eli Lilly announced preliminary voluntary agreements with the U.S. government in November 2025 to lower certain drug prices (LLY_10-K_2025-12-31, Risk Factors), and Pfizer has engaged with major payors and the U.S. government to improve access and reimbursement (PFE_10-K_2024-12-31, Business). AbbVie says it continues to evaluate the IRA's impact (ABBV_10-K_2024-12-31, Risk Factors). AbbVie's, Merck's and Pfizer's latest 10-Ks are for FY2024; Johnson & Johnson's and Eli Lilly's are for FY2025."
+        }
+      ],
+      "question_type": "sector",
+      "starter": null,
+      "tags": [
+        "brief_variant",
+        "follow_up",
+        "inherits_companies"
+      ],
+      "notes": "Variant of brief example 3: a follow-up that names no Company and inherits the five pharmaceutical Companies from the brief question (ADR 0003), narrowing the topic to the 340B program. The scripted answer does not mention 340B. Facts drafted from every 340B passage in each latest 10-K's Risk Factors, Business and MD&A Sections, and from the 340B Program Litigation note in Merck's Financial Statements, to which its MD&A points. The must-state facts give each Company with a response its risk and its response: J&J's delivery policy, Lilly's Contract Pharmacy Limited Distribution System, Merck's commitment to the program and Pfizer's 2022 contract pharmacy integrity policy. AbbVie's 10-K only describes the program and names no response, so its one fact is a detail.",
+      "expected_sources": [
+        {
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Business"
+        },
+        {
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Business"
+        },
+        {
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "MD&A"
+        },
+        {
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Financial Statements"
+        },
+        {
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "AbbVie says the 340B drug discount program requires pharmaceutical manufacturers to provide products at reduced prices to designated health care entities.",
+          "filing_id": "ABBV_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "The Veterans Health Care Act of 1992 also established the 340B drug discount program, which requires pharmaceutical manufacturers to provide products at reduced prices to various designated health care entities and facilities.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says increased third-party use of the 340B drug discount program may hurt its financial performance.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "Risk Factors",
+          "evidence": "increased third-party utilization of the 340B Federal Drug Discount Program from expanded interpretations of the statute and program abuse may have a negative impact on the Company's financial performance",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Johnson & Johnson maintains a policy that no end customer is permitted direct delivery of product to a location other than the billing location.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "MD&A",
+          "evidence": "The Company maintains a policy that no end customer will be permitted direct delivery of product to a location other than the billing location.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Johnson & Johnson says its delivery policy affects contract pharmacy transactions involving non-grantee 340B covered entities for most of its drugs.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "MD&A",
+          "evidence": "This policy impacts contract pharmacy transactions involving non-grantee 340B covered entities for most of the Company’s drugs, subject to multiple exceptions.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson says it will continue to offer 340B discounts to covered entities on all of its covered outpatient drugs.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "MD&A",
+          "evidence": "The Company has been and will continue to offer 340B discounts to covered entities on all of its covered outpatient drugs",
+          "tier": "detail"
+        },
+        {
+          "fact": "Johnson & Johnson believes its policy will improve its ability to identify inappropriate duplicate discounts and diversion prohibited by the 340B statute.",
+          "filing_id": "JNJ_10-K_2025-12-28",
+          "section": "MD&A",
+          "evidence": "it believes its policy will improve its ability to identify inappropriate duplicate discounts and diversion prohibited by the 340B statute",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly says the continued expansion of the 340B program impacts its revenue on an increasing percentage of sales.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Business",
+          "evidence": "continued expansion of the 340B program and growth of entities claiming entitlement to 340B pricing, including in ways that may be inconsistent with the statutory scheme and through state laws that purport to mandate 340B sales to contract pharmacies, impacts our revenue on an increasing percentage of sales",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Eli Lilly says states continue to adopt laws that purport to compel manufacturers to sell at 340B prices to an unlimited number of contract pharmacies.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Business",
+          "evidence": "states continue to adopt laws that, among other things, expand the 340B program by purporting to compel manufacturers to sell their medicines at 340B prices to an unlimited number of contract pharmacies",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly has implemented a Contract Pharmacy Limited Distribution System for sales through the 340B program.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Business",
+          "evidence": "We have implemented a Contract Pharmacy Limited Distribution System applicable to sales through the 340B program",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Eli Lilly's Contract Pharmacy Limited Distribution System generally limits distribution of 340B-priced product to covered entities or a single contract pharmacy each covered entity designates.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Business",
+          "evidence": "which generally limits distribution of 340B-priced product to: (i) covered entities and their child sites; or (ii) if a covered entity lacks an in-house outpatient pharmacy, a single contract pharmacy designated by a covered entity to establish a 340B bill to/ship to arrangement",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly believes its Contract Pharmacy Limited Distribution System complies with the 340B statute.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Business",
+          "evidence": "We believe our Contract Pharmacy Limited Distribution System complies with the 340B statute",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly sued the Health Resources and Services Administration in November 2024 over its purported rejection of Lilly's plan for a 340B cash replenishment model.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Business",
+          "evidence": "in November 2024, Lilly sued the Health Resources and Services Administration (HRSA) over its purported rejection of Lilly’s plan to implement a cash replenishment model to make 340B pricing available to 340B covered entities",
+          "tier": "detail"
+        },
+        {
+          "fact": "Eli Lilly appealed a May 2025 district court ruling that the government must preapprove its 340B cash replenishment model.",
+          "filing_id": "LLY_10-K_2025-12-31",
+          "section": "Business",
+          "evidence": "The U.S. District Court for the District of Columbia agreed with HRSA in May 2025 that the government must preapprove Lilly’s cash replenishment model, which HRSA has not done. Lilly appealed that decision to the U.S. Court of Appeals for the District of Columbia.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says increased utilization of the 340B program is having a negative impact on its performance.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "increased utilization of the 340B Federal Drug Discount Program and restrictions on the Company’s ability to identify inappropriate discounts are having a negative impact on the Company’s performance",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Merck says the expansion of the 340B program negatively affected its sales performance in 2024.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Risk Factors",
+          "evidence": "the Company’s sales performance in 2024 was negatively affected by other cost-reduction measures taken by governments and other third parties to lower health care costs, including in the U.S., the expansion of the Federal 340B Drug Discount Program",
+          "tier": "detail"
+        },
+        {
+          "fact": "Merck says it remains committed to the 340B Program and to providing 340B discounts to eligible covered entities.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "MD&A",
+          "evidence": "Merck remains committed to the 340B Program and to providing 340B discounts to eligible covered entities.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Merck won a consent judgment in September 2024 declaring that HRSA's May 2022 letter about its 340B Program integrity initiative was unlawful.",
+          "filing_id": "MRK_10-K_2024-12-31",
+          "section": "Financial Statements",
+          "evidence": "On September 17, 2024, the court entered a consent judgment granting Merck the relief it had sought in the litigation, including declarations that HRSA’s May 2022 letter was unlawful",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says changes to the Medicaid Drug Rebate Program or the 340B Program could have a material impact on its business.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "Changes to the MDRP or the 340B Program could have a material impact on our business.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Pfizer says it may face enforcement action or penalties depending on legal or legislative developments affecting its 340B integrity initiative.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "Additional legal or legislative developments at the federal or state level with respect to the 340B Program may have an adverse impact on our integrity initiative, and we may face enforcement action or penalties, depending upon such developments.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says the Eliquis Medicare price must be offered to 340B covered entities that dispense Eliquis to a Medicare beneficiary when it is lower than their 340B price.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "will be required to be offered to all Medicare beneficiaries and to covered entities participating in the 340B Program that dispense Eliquis to a Medicare beneficiary if that maximum fair price is lower than the discounted price such entities are offered under the 340B Program ceiling price calculation",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer implemented a policy in 2022 to help improve contract pharmacy integrity under the 340B Program.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "In 2022, we implemented a policy to help improve contract pharmacy integrity.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Pfizer believes its 340B contract pharmacy policy is consistent with the statute.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "We believe that our policy is consistent with the statute.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Pfizer says HRSA sent letters to numerous manufacturers, not including Pfizer, saying their contract pharmacy policies violated the 340B statute.",
+          "filing_id": "PFE_10-K_2024-12-31",
+          "section": "Business",
+          "evidence": "sent letters to numerous manufacturers (not including Pfizer) that have also implemented contract pharmacy policies and integrity initiatives; the letters expressed HRSA’s view that those manufacturers’ policies were in violation of the 340B Program statute",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "ABBV",
+            "JNJ",
+            "LLY",
+            "MRK",
+            "PFE"
+          ]
+        }
+      ]
     }
   ]
 }

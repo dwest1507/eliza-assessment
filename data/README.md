@@ -68,7 +68,7 @@ Version 2 of the Golden Set, beside version 1 and empty until its cases are draf
 
 ## Brief Suite (`eval/brief_suite.json`)
 
-The brief's example questions and variants of them (a rephrasing, other Companies, another time window or Section angle, a follow-up), outside the Golden Set's dev/holdout split: a must-pass check, each case answered 5 times by `make eval-brief`. Same case schema as the Golden Set's, with no split, a tier on every Required Fact, `replaces` naming the version 1 case a case was rewritten from, and `variant_of` naming the brief question a variant varies. Three of its cases (the brief's three questions) are front-end starter prompts. The same tests check its labels against the Corpus; see [`docs/golden-set.md`](../docs/golden-set.md#the-brief-suite).
+The brief's example questions and variants of them (a rephrasing, other Companies, another time window, Section angle or a single Company, a follow-up), outside the Golden Set's dev/holdout split: a must-pass check, each case answered 5 times by `make eval-brief`. Same case schema as the Golden Set's, with no split, a tier on every Required Fact, `replaces` naming the version 1 case a case was rewritten from, and `variant_of` naming the brief question a variant varies. Three of its cases (the brief's three questions) are front-end starter prompts. The same tests check its labels against the Corpus; see [`docs/golden-set.md`](../docs/golden-set.md#the-brief-suite).
 
 ## Derived files
 
