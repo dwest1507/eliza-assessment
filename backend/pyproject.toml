@@ -1,6 +1,6 @@
 [project]
 name = "edgar-rag"
-version = "0.1.0" # x-release-please-version
+version = "0.2.0" # x-release-please-version
 description = "SEC Filings RAG: the edgar_rag core package (standard library only), edgar_answer (the Answer Call's provider implementations and command line) and edgar_api (the chat API)."
 requires-python = ">=3.12"
 dependencies = [
