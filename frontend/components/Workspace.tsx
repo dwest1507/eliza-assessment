@@ -6,13 +6,7 @@ import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import AnswerMessage from '@/components/AnswerMessage'
 import SourcesPanel from '@/components/SourcesPanel'
-import {
-  messageCoverageGaps,
-  messageQueryScope,
-  messageSources,
-  messageText,
-  type ResearchMessage,
-} from '@/lib/chat'
+import { messageDataPart, messageSources, messageText, type ResearchMessage } from '@/lib/chat'
 import { loadConversation, saveConversation } from '@/lib/conversation'
 import { STARTERS } from '@/lib/starters'
 
@@ -122,8 +116,8 @@ export default function Workspace() {
                       key={message.id}
                       text={messageText(message)}
                       sources={messageSources(message)}
-                      scope={messageQueryScope(message)}
-                      gaps={messageCoverageGaps(message)}
+                      scope={messageDataPart(message, 'query-scope')}
+                      gaps={messageDataPart(message, 'coverage-gaps')?.gaps ?? []}
                       openTag={open?.messageId === message.id ? open.tag : null}
                       onCite={(tag) => setOpen({ messageId: message.id, tag })}
                     />

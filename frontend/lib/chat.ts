@@ -82,36 +82,55 @@ export type ResearchDataParts = {
 
 export type ResearchMessage = UIMessage<unknown, ResearchDataParts>
 
+/**
+ * A message as these helpers read it. The workspace passes its `useChat` messages; the
+ * chat proxy passes what the browser posted, so every helper checks the shape it reads
+ * and never throws on a malformed message.
+ */
+export type MessageLike = Pick<ResearchMessage, 'parts'> | { parts?: unknown }
+
+function partsOf(message: MessageLike): unknown[] {
+  return Array.isArray(message.parts) ? message.parts : []
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
 /** The text of a message: its text parts, joined. */
-export function messageText(message: Pick<UIMessage, 'parts'>): string {
-  return message.parts
-    .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
-    .map((p) => p.text)
+export function messageText(message: MessageLike): string {
+  return partsOf(message)
+    .map((p) => (isRecord(p) && p.type === 'text' && typeof p.text === 'string' ? p.text : ''))
     .join('')
 }
 
+/**
+ * The data of a message's data part of the given type (`sources` reads the
+ * `data-sources` part), or null when it has none.
+ */
+export function messageDataPart<K extends keyof ResearchDataParts>(
+  message: MessageLike,
+  type: K
+): ResearchDataParts[K] | null {
+  const part = partsOf(message).find((p) => isRecord(p) && p.type === `data-${type}`)
+  return isRecord(part) && isRecord(part.data) ? (part.data as ResearchDataParts[K]) : null
+}
+
 /** The Sources an answer may cite, from its `data-sources` part. */
-export function messageSources(message: ResearchMessage): Source[] {
-  for (const part of message.parts) {
-    if (part.type === 'data-sources') return part.data.sources
-  }
-  return []
+export function messageSources(message: MessageLike): Source[] {
+  const sources = messageDataPart(message, 'sources')?.sources
+  return Array.isArray(sources) ? sources : []
 }
 
-/** The Query Scope an answer was given, from its `data-query-scope` part. */
-export function messageQueryScope(message: ResearchMessage): QueryScope | null {
-  for (const part of message.parts) {
-    if (part.type === 'data-query-scope') return part.data
+/** The Filing ID each Source tag of an answer cited, from its `data-sources` part. */
+export function messageCitedFilings(message: MessageLike): Record<string, string> {
+  const cited: Record<string, string> = {}
+  for (const source of messageSources(message) as unknown[]) {
+    if (isRecord(source) && typeof source.tag === 'string' && typeof source.filingId === 'string') {
+      cited[source.tag] = source.filingId
+    }
   }
-  return null
-}
-
-/** The Coverage Gaps an answer must state, from its `data-coverage-gaps` part. */
-export function messageCoverageGaps(message: ResearchMessage): CoverageGap[] {
-  for (const part of message.parts) {
-    if (part.type === 'data-coverage-gaps') return part.data.gaps
-  }
-  return []
+  return cited
 }
 
 /** A gap's wording without its leading label, which the callout shows as a heading. */

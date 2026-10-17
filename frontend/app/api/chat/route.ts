@@ -12,12 +12,11 @@
  * validation statuses.
  */
 
+import { messageCitedFilings, messageText, type MessageLike } from '@/lib/chat'
+
 const DEFAULT_BACKEND_URL = 'http://127.0.0.1:8000'
 
-interface IncomingMessage {
-  role?: unknown
-  parts?: unknown
-}
+type IncomingMessage = MessageLike & { role?: unknown }
 
 export async function POST(request: Request): Promise<Response> {
   let body: { messages?: unknown }
@@ -30,10 +29,10 @@ export async function POST(request: Request): Promise<Response> {
     return Response.json({ detail: 'The request has no messages.' }, { status: 400 })
   }
   const messages = (body.messages as IncomingMessage[]).map((m) => {
-    const cited = citedFilings(m.parts)
+    const cited = messageCitedFilings(m)
     return {
       role: m.role,
-      content: textOf(m.parts),
+      content: messageText(m),
       ...(Object.keys(cited).length > 0 && { sources: cited }),
     }
   })
@@ -70,27 +69,4 @@ export async function POST(request: Request): Promise<Response> {
 
 function backendUrl(): string {
   return (process.env.BACKEND_URL || DEFAULT_BACKEND_URL).replace(/\/+$/, '')
-}
-
-function textOf(parts: unknown): string {
-  if (!Array.isArray(parts)) return ''
-  return parts
-    .filter((p) => p?.type === 'text' && typeof p.text === 'string')
-    .map((p) => p.text as string)
-    .join('')
-}
-
-/** The Filing ID each Source tag of a message cited, from its `data-sources` part. */
-function citedFilings(parts: unknown): Record<string, string> {
-  const cited: Record<string, string> = {}
-  if (!Array.isArray(parts)) return cited
-  for (const part of parts) {
-    if (part?.type !== 'data-sources' || !Array.isArray(part.data?.sources)) continue
-    for (const source of part.data.sources) {
-      if (typeof source?.tag === 'string' && typeof source?.filingId === 'string') {
-        cited[source.tag] = source.filingId
-      }
-    }
-  }
-  return cited
 }
