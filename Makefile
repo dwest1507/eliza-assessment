@@ -165,7 +165,7 @@ eval-settings: $(INDEX) ## Screen each chunk size and context budget named on Ev
 SPLIT ?= dev
 RETRIEVAL_REPORT = data/derived/eval/retrieval-$(SPLIT).json
 
-eval-export: $(RETRIEVAL_REPORT) ## Export the latest eval results and Corpus coverage for the "How it works" page [SPLIT=...]
+eval-export: $(RETRIEVAL_REPORT) ## Export the latest eval results (Golden Set version 2) and Corpus coverage for the "How it works" page [SPLIT=...]
 	$(UV) python -m edgar_eval.export --split $(SPLIT)
 
 judge-study-sample: $(INDEX) ## Draw the judge study's items from the saved reports and write its blind labelling sheet to data/eval/judge_study/ (no provider call) [SEED=...]
@@ -226,11 +226,10 @@ $(LOCAL_EMBEDDINGS):
 
 # `make eval-export` runs the retrieval harness first when its report is missing, on the
 # Shipped Arm only (it makes no LLM call and needs no embeddings), and on Golden Set
-# version 1, which the export describes. The generation harness costs money, so it only
+# version 2, which the export describes. The generation harness costs money, so it only
 # ever runs when asked for.
 $(RETRIEVAL_REPORT):
-	@$(MAKE) --no-print-directory eval-retrieval SPLIT=$(SPLIT) ARMS=fts5 \
-		GOLDEN_SET=data/eval/golden_set.json
+	@$(MAKE) --no-print-directory eval-retrieval SPLIT=$(SPLIT) ARMS=fts5
 
 # The EDA reads the cached company-facts; fetch them only when the cache is missing.
 $(SEC_FACTS_INDEX):

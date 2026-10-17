@@ -22,10 +22,21 @@ describe('the "How it works" page', () => {
     // The live choices come from the export: the Shipped Arm, the generator and its prompt.
     expect(architecture).toHaveTextContent('fts5')
     expect(architecture).toHaveTextContent('gpt-6-luna')
-    expect(architecture).toHaveTextContent('prompt v2')
+    expect(architecture).toHaveTextContent('prompt v7')
   })
 
-  it('shows each retrieval Arm on the scoreboard, with its comparison to the Shipped Arm', () => {
+  it('says which Golden Set it describes and words its verdicts as directional', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const scoreboard = section('Evaluation scoreboard')
+    expect(scoreboard).toHaveTextContent('Golden Set version 2’s dev split')
+    expect(scoreboard).toHaveTextContent(
+      'Verdicts are directional: one-sided p < 0.10 for ahead and p < 0.20 for behind, fixed before running'
+    )
+    expect(section('Architecture')).toHaveTextContent('80 labelled questions (version 2)')
+  })
+
+  it('gates retrieval on Evidence Reached, with each Arm’s one-sided verdict', () => {
     render(<HowItWorks data={EXPORT} />)
 
     const table = within(section('Evaluation scoreboard')).getByRole('table', {
@@ -33,43 +44,116 @@ describe('the "How it works" page', () => {
     })
     const shipped = within(table).getByRole('row', { name: /fts5/ })
     expect(shipped).toHaveTextContent('shipped')
-    expect(shipped).toHaveTextContent('0.71') // hit@10, the gating metric
-    expect(shipped).toHaveTextContent('0.59') // MRR
-    const dense = within(table).getByRole('row', { name: /dense/ })
-    expect(dense).toHaveTextContent('indistinguishable')
-    expect(section('Evaluation scoreboard')).toHaveTextContent('17 of 20 dev cases')
+    expect(shipped).toHaveTextContent('740 of 939') // Evidence Reached, the gate
+    expect(shipped).toHaveTextContent('0.93') // hit@10, still reported
+    expect(shipped).toHaveTextContent('0.78') // MRR
+    const local = within(table).getByRole('row', { name: /dense-local/ })
+    expect(local).toHaveTextContent('behind (74 facts gained, 94 lost')
+    expect(local).toHaveTextContent('p behind = 0.071')
+    const hosted = within(table).getByRole('row', { name: /^hybrid/ })
+    expect(hosted).toHaveTextContent('can’t ship')
+    expect(hosted).toHaveTextContent('ahead (72 facts gained, 11 lost, p ahead = < 0.001')
+    expect(section('Evaluation scoreboard')).toHaveTextContent('57 of 60 dev cases')
+    expect(section('Evaluation scoreboard')).toHaveTextContent('The gate is Evidence Reached')
   })
 
-  it('shows each generator on the scoreboard with its scores, cost and latency', () => {
+  it('shows the screen: which challengers went on, and why each was kept or dropped', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const table = within(section('Evaluation scoreboard')).getByRole('table', {
+      name: /The screen/,
+    })
+    const hosted = within(table).getByRole('row', { name: /^hybrid/ })
+    expect(hosted).toHaveTextContent('no: API call at query time')
+    expect(hosted).toHaveTextContent('available if the one-call limit is lifted')
+    expect(within(table).getByRole('row', { name: /dense-local/ })).toHaveTextContent(
+      'dropped: behind on Evidence Reached'
+    )
+    expect(within(table).getByRole('row', { name: /rerank/ })).toHaveTextContent('kept')
+    expect(section('Evaluation scoreboard')).toHaveTextContent('Go on: hybrid-local, rerank.')
+  })
+
+  it('shows a version 1 export as version 1 gated it, with its two-sided rule', () => {
+    const v1Retrieval = {
+      ...EXPORT.retrieval,
+      gatingMetric: 'hit@10',
+      screen: null,
+      comparisons: [
+        {
+          ...EXPORT.retrieval.comparisons[1],
+          metric: 'hit@10',
+          facts: null,
+          pAhead: null,
+          pBehind: null,
+          challengerOnly: 0,
+          shippedOnly: 0,
+          pValue: 1,
+          verdict: 'indistinguishable',
+        },
+      ],
+    }
+    render(
+      <HowItWorks
+        data={{
+          ...EXPORT,
+          goldenSet: { version: 1, cases: 30, splitCases: 20 },
+          thresholds: null,
+          retrieval: v1Retrieval,
+          generatorChoice: null,
+        }}
+      />
+    )
+
+    const scoreboard = section('Evaluation scoreboard')
+    expect(scoreboard).toHaveTextContent('Version 1’s rule: verdicts are two-sided')
+    expect(scoreboard).toHaveTextContent('Gating metric hit@10, as version 1 gated it')
+    const table = within(scoreboard).getByRole('table', { name: /Retrieval/ })
+    expect(within(table).getByRole('row', { name: /rerank/ })).toHaveTextContent(
+      'indistinguishable (0 won, 0 lost, p = 1.00)'
+    )
+    expect(within(scoreboard).queryByRole('table', { name: /The screen/ })).not.toBeInTheDocument()
+  })
+
+  it('shows the shipped run beside its Control Run, with each generator’s scores and cost', () => {
     render(<HowItWorks data={EXPORT} />)
 
     const table = within(section('Evaluation scoreboard')).getByRole('table', {
       name: /Answers/,
     })
-    const luna = within(table).getByRole('row', { name: /gpt-6-luna/ })
-    expect(luna).toHaveTextContent('0.55') // Fact Recall
-    expect(luna).toHaveTextContent('0.93') // Faithfulness
-    expect(luna).toHaveTextContent('$0.0026')
-    expect(luna).toHaveTextContent('6.1 s')
+    const [shipped, control] = within(table).getAllByRole('row', { name: /gpt-6-luna/ })
+    expect(shipped).toHaveTextContent('shipped')
+    expect(shipped).toHaveTextContent('0.72') // Fact Recall
+    expect(shipped).toHaveTextContent('0.48') // detail recall
+    expect(shipped).toHaveTextContent('0.93') // Faithfulness
+    expect(shipped).toHaveTextContent('$0.0028')
+    expect(shipped).toHaveTextContent('8.2 s')
+    expect(control).toHaveTextContent('Control Run')
+    expect(control).not.toHaveTextContent('shipped')
+    expect(control).toHaveTextContent('0.71')
     expect(section('Evaluation scoreboard')).toHaveTextContent('jev-1.13.0')
+    expect(section('Evaluation scoreboard')).toHaveTextContent('probability 0.6 or more')
   })
 
-  it('shows the generator comparison: each challenger’s sign tests and the generator chosen', () => {
+  it('shows the generator comparison with its Control Run and bootstrap intervals', () => {
     render(<HowItWorks data={EXPORT} />)
 
     const scoreboard = section('Evaluation scoreboard')
     const answers = within(scoreboard).getByRole('table', { name: /Answers/ })
-    expect(within(answers).getByRole('row', { name: /gpt-6-luna/ })).toHaveTextContent('shipped')
-    expect(within(answers).getByRole('row', { name: /gpt-6.1-sol/ })).not.toHaveTextContent(
+    expect(within(answers).getByRole('row', { name: /claude-haiku-5-5/ })).not.toHaveTextContent(
       'shipped'
     )
 
     const table = within(scoreboard).getByRole('table', { name: /Choosing the generator/ })
-    const sol = within(table).getByRole('row', { name: /gpt-6.1-sol/ })
-    expect(sol).toHaveTextContent('4 higher, 1 lower, p = 0.38') // Fact Recall
-    expect(sol).toHaveTextContent('8 higher, 4 lower, p = 0.39') // Faithfulness
-    expect(sol).toHaveTextContent('0 higher, 0 lower, p = 1.00') // Coverage Gaps
-    expect(sol).toHaveTextContent('no')
+    const haiku = within(table).getByRole('row', { name: /claude-haiku-5-5/ })
+    expect(haiku).toHaveTextContent(
+      'behind (5 higher, 35 lower, p ahead = 1.000, p behind = < 0.001)'
+    )
+    expect(haiku).toHaveTextContent('−0.337 [−0.436, −0.241]') // Fact Recall's interval
+    expect(haiku).toHaveTextContent('no')
+    const control = within(table).getByRole('row', { name: /Control Run/ })
+    expect(control).toHaveTextContent('indistinguishable (11 higher, 10 lower')
+    expect(control).toHaveTextContent('−0.005 [−0.058, +0.039]')
+    expect(scoreboard).toHaveTextContent('These verdicts are directional')
     expect(scoreboard).toHaveTextContent('Chosen: gpt-6-luna')
   })
 
@@ -79,21 +163,49 @@ describe('the "How it works" page', () => {
     expect(screen.queryByRole('table', { name: /Choosing the generator/ })).not.toBeInTheDocument()
   })
 
-  it('shows the holdout run beside the dev results, with its small-sample caveat', () => {
+  it('shows the Brief Suite’s verdict case by case', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const brief = section('The Brief Suite')
+    expect(brief).toHaveTextContent('1 of 3 cases pass')
+    expect(brief).toHaveTextContent('at least 4 of 5 runs')
+    const table = within(brief).getByRole('table', { name: /Brief Suite/ })
+    const first = within(table).getByRole('row', { name: /brief-risk-aapl-tsla-jpm/ })
+    expect(first).toHaveTextContent('brief')
+    expect(first).toHaveTextContent('fail')
+    const pharma = within(table).getByRole('row', { name: /brief-sector-pharma-regulatory/ })
+    expect(pharma).toHaveTextContent('fail' + '9' + '8' + '8')
+    const variant = within(table).getByRole('row', { name: /brief-followup-nvda-net-income/ })
+    expect(variant).toHaveTextContent('pass')
+    expect(variant).not.toHaveTextContent('brief ')
+  })
+
+  it('leaves the Brief Suite out until it has run', () => {
+    render(<HowItWorks data={{ ...EXPORT, briefSuite: null }} />)
+
+    expect(screen.queryByRole('region', { name: 'The Brief Suite' })).not.toBeInTheDocument()
+  })
+
+  it('shows the holdout run beside dev, with its small-sample caveat', () => {
     render(<HowItWorks data={EXPORT} />)
 
     const holdout = section('The holdout run')
-    expect(holdout).toHaveTextContent('one case moves a share by 0.10')
+    expect(holdout).toHaveTextContent('one case moves a share by 0.05')
     const retrieval = within(holdout).getByRole('table', { name: /Retrieval/ })
-    const fts5 = within(retrieval).getByRole('row', { name: /fts5/ })
-    expect(fts5).toHaveTextContent('0.90') // hit@10
-    expect(fts5).toHaveTextContent('0.72') // MRR
-    expect(holdout).toHaveTextContent('10 of 10 holdout cases')
+    const fts5 = within(retrieval).getByRole('row', { name: /^fts5/ })
+    expect(fts5).toHaveTextContent('0.89') // hit@10
+    expect(fts5).toHaveTextContent('261 of 319') // Evidence Reached
+    expect(within(retrieval).getByRole('row', { name: /dev, fts5/ })).toHaveTextContent(
+      '740 of 939'
+    )
+    expect(holdout).toHaveTextContent('19 of 20 holdout cases')
     const answers = within(holdout).getByRole('table', { name: /Answers/ })
     const luna = within(answers).getByRole('row', { name: /gpt-6-luna/ })
-    expect(luna).toHaveTextContent('0.67') // Fact Recall
+    expect(luna).toHaveTextContent('0.74') // Fact Recall
     expect(luna).toHaveTextContent('0.95') // Faithfulness
     expect(luna).toHaveTextContent('prompt v7')
+    expect(within(answers).getByRole('row', { name: /dev, shipped run/ })).toHaveTextContent('0.72')
+    expect(within(answers).getByRole('row', { name: /dev, Control Run/ })).toHaveTextContent('0.71')
   })
 
   it('leaves the holdout out until it has been scored', () => {
