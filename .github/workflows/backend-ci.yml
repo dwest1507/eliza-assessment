@@ -1,0 +1,116 @@
+name: Backend CI
+
+# All check logic lives in scripts/ (shared with `make ci-cd`); jobs here only
+# provision the environment and run the scripts.
+#
+# Nothing here calls a paid API. The tests fake every answer model and the Jev judge, and
+# the retrieval eval makes no LLM call. The generation harnesses (`make eval-generation`,
+# `make eval-arms`, `make eval-generators`) cost money and never run in CI, so no job has
+# a provider key.
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      # The Corpus, the Sector table and the Golden Set, which tests and the eval read
+      - 'data/**'
+      # backend/tests/test_deck.py checks every figure on a slide against the docs
+      - 'docs/**'
+      - 'scripts/backend-*.sh'
+      - '.github/workflows/backend-ci.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'data/**'
+      - 'docs/**'
+      - 'scripts/backend-*.sh'
+      - '.github/workflows/backend-ci.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  # Pinned so CI checks uv.lock with the same uv as local development; an unpinned uv can
+  # disagree on the lockfile format and fail `uv lock --check` on that alone. Bump it
+  # together with the uv that last wrote backend/uv.lock.
+  UV_VERSION: "0.11.32"
+
+concurrency:
+  group: backend-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint:
+    name: Ruff lint & format
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install dependencies
+        run: uv sync --frozen
+        working-directory: backend
+
+      - name: Lint checks
+        run: ./scripts/backend-lint.sh
+
+  test:
+    name: Pytest
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install dependencies
+        run: uv sync --frozen
+        working-directory: backend
+
+      - name: Tests
+        run: ./scripts/backend-test.sh
+
+  eval:
+    name: Retrieval eval
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: ${{ env.UV_VERSION }}
+          enable-cache: true
+          cache-dependency-glob: backend/uv.lock
+
+      - name: Install dependencies
+        run: uv sync --frozen
+        working-directory: backend
+
+      # Rebuilds the index, scores FTS5 on dev and checks the Floors (ADR 0014).
+      - name: Retrieval quality gate
+        run: ./scripts/backend-eval.sh
+
+      # Every case's ranking, to see which cases a failing run lost.
+      - name: Upload the retrieval report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: retrieval-report
+          path: data/derived/eval/retrieval-gate.json
+          if-no-files-found: ignore

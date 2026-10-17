@@ -45,7 +45,8 @@ for key in $(1); do \
 	done
 endef
 
-.PHONY: help install test lint format eda sec-facts index embeddings local-embeddings ask api eval-retrieval eval-generation eval-brief eval-rescore eval-arms eval-generators eval-settings eval-export judge-study-sample judge-study-judge judge-study-score deck dev frontend-deps
+.PHONY: help install test lint format eda sec-facts index embeddings local-embeddings ask api eval-retrieval eval-generation eval-brief eval-rescore eval-arms eval-generators eval-settings eval-export judge-study-sample judge-study-judge judge-study-score deck dev frontend-deps \
+	ci-cd backend-lint backend-test eval-gate eval-floors frontend-quality frontend-test frontend-build security-audit lighthouse
 
 help: ## List targets
 	@grep -hE '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{printf "  %-15s %s\n", $$1, $$2}'
@@ -194,6 +195,40 @@ dev: $(INDEX) frontend-deps ## Run the API and the front-end together on http://
 	echo "A server exited, so the other one is being stopped."; \
 	kill -- -$$api -$$web 2>/dev/null; \
 	wait $$api $$web 2>/dev/null; true
+
+# CI checks: thin wrappers over scripts/, which .github/workflows/ runs too, so a check
+# behaves the same locally and in CI. None of them calls a paid API: the generation
+# harness never runs in CI.
+
+ci-cd: backend-lint backend-test eval-gate frontend-quality frontend-test frontend-build security-audit lighthouse ## Run every CI check locally (no paid API call)
+	@echo "ci-cd: all checks passed"
+
+backend-lint: ## CI: uv lockfile check, ruff check and ruff format check
+	./scripts/backend-lint.sh
+
+backend-test: ## CI: pytest, with every provider key blanked
+	./scripts/backend-test.sh
+
+eval-gate: ## CI: rebuild the index and check the Shipped Arm's retrieval on dev against its Floors (no LLM call)
+	./scripts/backend-eval.sh
+
+eval-floors: ## Re-record the retrieval Floors (data/eval/retrieval_floors.json) after a Golden Set or settings change
+	RECORD_FLOORS=1 ./scripts/backend-eval.sh
+
+frontend-quality: frontend-deps ## CI: ESLint, Prettier check and TypeScript check
+	./scripts/frontend-quality.sh
+
+frontend-test: frontend-deps ## CI: Vitest
+	./scripts/frontend-test.sh
+
+frontend-build: frontend-deps ## CI: Next.js production build
+	./scripts/frontend-build.sh
+
+security-audit: frontend-deps ## CI: npm audit and pip-audit of the production dependencies
+	./scripts/security-audit.sh all
+
+lighthouse: frontend-deps ## CI: Lighthouse budget check of the production build (needs Chrome)
+	./scripts/lighthouse.sh
 
 # Installs the front-end's dependencies when node_modules is missing or package-lock.json
 # changed since the last install. The stamp holds the lockfile's hash, not its mtime, so
