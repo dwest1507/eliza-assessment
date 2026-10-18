@@ -382,11 +382,33 @@ describe('the "How it works" overview', () => {
     const numbers = section('How well it answers')
     expect(numbers).toHaveTextContent('60 test questions')
     expect(numbers).toHaveTextContent('a rough guide')
-    expect(numbers).toHaveTextContent('about 2 points')
     expect(within(numbers).getByRole('link', { name: /full scoreboard/i })).toHaveAttribute(
       'href',
       '#scoreboard'
     )
+  })
+
+  it('claims no per-question precision, since the gaps number rests on only some questions', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const numbers = section('How well it answers')
+    // Fact Recall and Faithfulness average every question, but Coverage Gaps stated is a
+    // share of only the questions with a Coverage Gap, so no one step size holds for all.
+    expect(numbers).not.toHaveTextContent(/points?\b/)
+    expect(numbers).toHaveTextContent(
+      'The share of missing information flagged is the roughest: it counts only the questions where the filings lack part of the answer, just some of the 60.'
+    )
+  })
+
+  it('leaves the gaps caveat out when the gaps number is not shown', () => {
+    const [shipped, ...rest] = EXPORT.generation
+    const noGaps = { ...shipped, overall: { ...shipped.overall, coverageGapsStated: null } }
+    render(<HowItWorks data={{ ...EXPORT, generation: [noGaps, ...rest] }} />)
+
+    const numbers = section('How well it answers')
+    expect(within(numbers).queryByRole('listitem', { name: /missing information/i })).toBeNull()
+    expect(numbers).not.toHaveTextContent('missing information')
+    expect(numbers).toHaveTextContent('a rough guide')
   })
 
   it('leaves the headline numbers out until answers have been scored', () => {

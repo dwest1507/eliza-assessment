@@ -46,12 +46,19 @@ function isTableLine(line: string): boolean {
 }
 
 /**
- * A line that marks text left out between two passages: `[...]`, or `[…]` with the
- * ellipsis character, which is the gap the retrieval writes (`GAP` in
- * `backend/src/edgar_rag/_repeats.py`).
+ * What the retrieval writes between two runs of a chunk that are not contiguous in the
+ * Filing: a copy of `GAP` in `backend/src/edgar_rag/_repeats.py`, which a test keeps in
+ * sync.
+ */
+export const GAP = '\n[…]\n'
+
+/**
+ * A line that marks text left out between two passages: the retrieval's own gap
+ * (`GAP`'s line), or `[...]` written with three dots.
  */
 function isElision(line: string): boolean {
-  return /^\[(?:\.\.\.|…)\]$/.test(line.trim())
+  const trimmed = line.trim()
+  return trimmed === GAP.trim() || trimmed === '[...]'
 }
 
 /**

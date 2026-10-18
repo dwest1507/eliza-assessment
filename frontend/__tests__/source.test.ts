@@ -1,6 +1,8 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { Source } from '@/lib/chat'
-import { passageBlocks, sourceHeading } from '@/lib/source'
+import { GAP, passageBlocks, sourceHeading } from '@/lib/source'
 
 const nvidiaSource: Source = {
   tag: 'S3',
@@ -132,5 +134,27 @@ describe('passageBlocks', () => {
       { kind: 'paragraph', text: 'Outro.' },
     ])
     expect(passageBlocks('')).toEqual([])
+  })
+})
+
+describe("the copy of the retrieval's gap marker", () => {
+  it('is GAP in _repeats.py, read from the backend', () => {
+    const repeats = readFileSync(
+      join(__dirname, '../../backend/src/edgar_rag/_repeats.py'),
+      'utf-8'
+    )
+    const match = repeats.match(/^GAP = ("[^"\n]*")$/m)
+
+    expect(match).not.toBeNull()
+    // A plain Python string literal escapes "\n" as JSON does.
+    expect(GAP).toBe(JSON.parse(match![1]))
+  })
+
+  it('shows as an elision between the two runs it joins', () => {
+    expect(passageBlocks(`Before.${GAP}After.`)).toEqual([
+      { kind: 'paragraph', text: 'Before.' },
+      { kind: 'elision' },
+      { kind: 'paragraph', text: 'After.' },
+    ])
   })
 })

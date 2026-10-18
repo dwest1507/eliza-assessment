@@ -78,8 +78,8 @@ answer is checkable (every citation opens the passage) and honest about what is 
 
 question → **rules** resolve the Query Scope (Companies, Sector phrase, time window, Section, metric) → **FTS5 retrieval** of deduplicated passages per Company → **Financial Facts** for exact figures → **one Answer Call**
 
-1. **The brief's first question** (Apple, Tesla, JPMorgan risks): a comparison table, click `[S3]` to open the passage, then open "How this was answered" for the Query Scope chips. Follow up: "Which of them has the most regulatory exposure?"
-2. **NVIDIA's revenue and outlook**: figures from the Financial Facts table, and the gap that guidance is not in the Filings.
+1. **The brief's first question** (Apple, Tesla, JPMorgan risks): the short answer first, then "Show full analysis" for the comparison table, click `[S3]` to open the passage, then open "How this was answered" for the Query Scope chips. Follow up: "Which of them has the most regulatory exposure?"
+2. **NVIDIA's revenue and outlook**: the short answer, and the callout's gap that guidance is not in the Filings; then "Show full analysis" for the figures from the Financial Facts table.
 3. **JPMorgan's revenue over two years**: a Snapshot Company, so the answer says it cannot show a trend.
 4. **JPMorgan and Wells Fargo**: Wells Fargo is named as missing, never answered from memory.
 5. **The panel's own question**, then the "How it works" page.
@@ -88,9 +88,11 @@ question → **rules** resolve the Query Scope (Companies, Sector phrase, time w
 
 <!--
 Run `make dev` before the meeting and open http://localhost:3000. Items 1 to 4 are starter
-prompts, and every starter is a Golden Set or Brief Suite case, so each one is measured. For the panel's
-own question, open "How this was answered" under the answer first: its Query Scope chips show what
-the rules understood.
+prompts, and every starter is a Golden Set or Brief Suite case, so each one is measured. Each answer
+opens on its short answer, the two or three sentence direct answer; click "Show full analysis" before
+pointing at a table or a figure, since they sit in the rest of the answer. The Sources list and "How
+this was answered" appear once the answer is complete. For the panel's own question, open "How this
+was answered" under the answer first: its Query Scope chips show what the rules understood.
 -->
 
 ---

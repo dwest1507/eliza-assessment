@@ -1,6 +1,8 @@
+import { readFileSync } from 'node:fs'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import type { QueryScope } from '@/lib/chat'
-import { followUps } from '@/lib/followUps'
+import { followUps, LEADING_THE, LEGAL_SUFFIX } from '@/lib/followUps'
 
 const LATEST = { kind: 'latest', count: null, label: 'latest' }
 
@@ -141,5 +143,40 @@ describe('followUps', () => {
 
   it('suggests nothing when the question names no Company or group', () => {
     expect(followUps(scope({}), 'What are the main risks?')).toEqual([])
+  })
+})
+
+describe("the copy of the backend's company-name shortening", () => {
+  const queryScope = readFileSync(
+    join(__dirname, '../../backend/src/edgar_rag/_query_scope.py'),
+    'utf-8'
+  )
+
+  /** A Python `NAME = re.compile(r"..." r"...", re.I)`: its joined pattern and its flags. */
+  function pythonRegex(name: string): { pattern: string; ignoreCase: boolean } {
+    const match = queryScope.match(new RegExp(`^${name} = re\\.compile\\(([\\s\\S]*?)\\)\\n`, 'm'))
+    expect(match, `${name} in _query_scope.py`).not.toBeNull()
+    const args = match![1]
+    const pieces = [...args.matchAll(/r"([^"]*)"/g)].map((piece) => piece[1])
+    return { pattern: pieces.join(''), ignoreCase: /\bre\.I\b/.test(args) }
+  }
+
+  it('drops the same legal suffixes as _SUFFIX', () => {
+    const suffix = pythonRegex('_SUFFIX')
+    expect(LEGAL_SUFFIX.source).toBe(suffix.pattern)
+    expect(LEGAL_SUFFIX.ignoreCase).toBe(suffix.ignoreCase)
+  })
+
+  it('drops the same leading "The" as _THE', () => {
+    const the = pythonRegex('_THE')
+    expect(LEADING_THE.source).toBe(the.pattern)
+    expect(LEADING_THE.ignoreCase).toBe(the.ignoreCase)
+  })
+
+  it('applies them as short_name does, suffix first, and drops ".com" as the name matching does', () => {
+    expect(queryScope).toContain(
+      'return _THE.sub("", _SUFFIX.sub("", name.strip())).strip() or name'
+    )
+    expect(queryScope).toContain('names.add(short.removesuffix(".com"))')
   })
 })

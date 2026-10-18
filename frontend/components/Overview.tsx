@@ -107,6 +107,11 @@ const HEADLINES: Headline[] = [
 /**
  * The headline quality numbers of the round's shipped run, each with one plain sentence,
  * worded as directional: a rough guide on a few dozen test questions, not an exact rate.
+ *
+ * The caveat makes no per-question claim. Fact Recall and Faithfulness average every
+ * question, but Coverage Gaps stated is a share of only the questions that have a Coverage
+ * Gap, a count the export doesn't record, so one question moves it by more; the caveat
+ * says so whenever that number is shown.
  */
 export function HeadlineNumbers({ run }: { run: GenerationRun }) {
   const { cases } = run.overall
@@ -114,6 +119,7 @@ export function HeadlineNumbers({ run }: { run: GenerationRun }) {
     const value = h.value(run.overall)
     return value === null ? [] : [{ ...h, value }]
   })
+  const showsGaps = headlines.some((h) => h.term === 'Coverage Gaps stated')
   return (
     <OverviewSection
       id="how-well-it-answers"
@@ -121,8 +127,14 @@ export function HeadlineNumbers({ run }: { run: GenerationRun }) {
       intro={
         <>
           Measured on {cases} test questions written in advance, answered by the setup you are
-          using. With that few questions, read each number as a rough guide, not an exact rate: one
-          question more or less moves it by about {Math.round(100 / cases)} points.
+          using. With that few questions, read each number as a rough guide, not an exact rate.
+          {showsGaps && (
+            <>
+              {' '}
+              The share of missing information flagged is the roughest: it counts only the questions
+              where the filings lack part of the answer, just some of the {cases}.
+            </>
+          )}
         </>
       }
     >

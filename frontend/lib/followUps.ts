@@ -61,20 +61,22 @@ function group(phrase: string): string {
     : lower
 }
 
-/** A Company's legal suffixes, as the backend's `short_name` drops them. */
-const SUFFIX =
+/**
+ * A Company's legal suffixes, as the backend's `short_name` drops them: a copy of
+ * `_SUFFIX` in `backend/src/edgar_rag/_query_scope.py`, which a test keeps in sync.
+ */
+export const LEGAL_SUFFIX =
   /(?:,?\s+(?:(?:&|and)\s+)?(?:Inc|Incorporated|Corp|Corporation|Company|Co|Group|Holdings|plc|Ltd)\.?)+$/i
+
+/** A leading "The": a copy of the backend's `_THE`, kept in sync by the same test. */
+export const LEADING_THE = /^The\s+/i
 
 /**
  * A Company's name without its legal suffix, a leading "The" or a ".com", as the
  * backend's Query Scope rules also match it: "JPMorgan Chase & Co" → "JPMorgan Chase".
  */
 function shortName(name: string): string {
-  const short = name
-    .trim()
-    .replace(SUFFIX, '')
-    .replace(/^The\s+/i, '')
-    .trim()
+  const short = name.trim().replace(LEGAL_SUFFIX, '').replace(LEADING_THE, '').trim()
   return short.replace(/\.com$/i, '') || name
 }
 
