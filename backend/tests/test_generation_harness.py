@@ -398,6 +398,66 @@ def test_an_answer_cut_off_at_the_token_cap_fails_with_no_fact_recall(index):
     assert finished.overall.truncated == 0
 
 
+def test_a_cut_off_answer_whose_fact_judgment_failed_scores_0_and_is_paired(index):
+    """Truncation comes from the stop reason, not from Jev, so a cut-off answer's Fact
+    Recall is 0 even when its Fact Recall judgment failed, and the selection rule pairs
+    it as 0 instead of leaving it out."""
+    import json
+
+    from edgar_eval.generation import evaluate
+    from edgar_eval.selection import Candidate, compare
+
+    fact = "Apple uses outsourcing partners."
+    case = _case("cut-off", "What are the primary risk factors facing Apple?", facts=[fact])
+
+    report = evaluate(
+        [case],
+        FakeModel("Apple relies on outsourcing partners in Asia [S1]. Apple also", "token_cap"),
+        JevJudge(client=FakeJev(fail_on={fact})),
+        index,
+        names={},
+        fact_values=lambda filing_id: [],
+        log_path=None,
+    )
+
+    [result] = report.cases
+    assert result.truncated
+    assert [f.judgment for f in result.judgments.failures] == ["fact_recall"]
+    assert result.fact_recall == 0.0
+    assert report.overall.fact_recall == 0.0
+    data = json.loads(json.dumps(report.to_dict()))
+    assert data["cases"][0]["fact_recall"] == 0.0
+    # The selection rule pairs it as 0 against a shipped run that stated the fact.
+    challenger = Candidate.from_report(data)
+    shipped = Candidate("shipped", {"cut-off": 1.0}, {}, {}, cost_usd=None)
+    comparison = compare(challenger, shipped).fact_recall
+    assert (comparison.paired, comparison.left_out, comparison.losses) == (1, 0, 1)
+
+
+def test_a_cut_off_answer_to_a_case_with_no_must_state_fact_has_no_fact_recall(index):
+    from edgar_eval.generation import evaluate
+
+    details = ["Apple uses outsourcing partners."]
+    cases = [
+        _case("details-only", "What are the primary risk factors facing Apple?", details=details),
+        _case("no-facts", "What are the primary risk factors facing Apple?"),
+    ]
+
+    report = evaluate(
+        cases,
+        FakeModel("Apple relies on outsourcing partners in Asia [S1]. Apple also", "token_cap"),
+        JevJudge(client=FakeJev(fail_on=set(details))),
+        index,
+        names={},
+        fact_values=lambda filing_id: [],
+        log_path=None,
+    )
+
+    assert [r.truncated for r in report.cases] == [True, True]
+    assert [r.fact_recall for r in report.cases] == [None, None]
+    assert report.overall.fact_recall is None
+
+
 def test_a_jev_failure_on_one_fact_keeps_the_cases_checks_and_other_judgments(index):
     from edgar_eval.generation import evaluate
 

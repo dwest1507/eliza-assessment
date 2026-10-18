@@ -202,25 +202,50 @@ class CaseResult:
         return not self.truncated and self.citations.passed and gaps and self.contradictions.passed
 
     @property
+    def facts_stated(self) -> tuple[bool, ...] | None:
+        """Whether the answer counts as stating each Required Fact, in the case's order,
+        or None when their judgment failed. A truncated answer states none, judged or
+        not: a cut-off answer can't score as complete, and truncation comes from the stop
+        reason, not from Jev. The truncation rule is stated here only: Fact Recall and
+        the Brief Suite read it."""
+        if self.truncated:
+            return (False,) * len(self._tiers)
+        return self._judged
+
+    @property
     def fact_recall(self) -> float | None:
-        """The share of must-state Required Facts stated, or None if the case has none
-        or their judgment failed. A truncated answer's is 0: a cut-off answer can't
-        score as complete."""
-        recall = self._recall("must_state")
-        return 0.0 if self.truncated and recall is not None else recall
+        """The share of must-state Required Facts stated (`facts_stated`), so 0 for a
+        truncated answer. None if the case has none, or if their judgment failed for an
+        answer that was not cut off."""
+        return self._share(self.facts_stated, "must_state")
 
     @property
     def detail_recall(self) -> float | None:
-        """The share of detail Required Facts stated, or None if the case has none or
-        their judgment failed."""
-        return self._recall("detail")
+        """The share of detail Required Facts Jev judged stated, or None if the case has
+        none or their judgment failed."""
+        return self._share(self._judged, "detail")
 
-    def _recall(self, tier: Tier) -> float | None:
-        if self.judgments.fact_recall is None:  # no fact, or their judgment failed
+    @property
+    def _judged(self) -> tuple[bool, ...] | None:
+        """Jev's verdict on each Required Fact, or None when their judgment failed."""
+        if any(f.judgment == "fact_recall" for f in self.judgments.failures):
             return None
-        tiers = self.fact_tiers or ("must_state",) * len(self.judgments.facts)
-        stated = [f.stated for f, t in zip(self.judgments.facts, tiers, strict=True) if t == tier]
-        return sum(stated) / len(stated) if stated else None
+        return tuple(f.stated for f in self.judgments.facts)
+
+    @property
+    def _tiers(self) -> tuple[Tier, ...]:
+        """Each Required Fact's tier, in the case's order: every one must-state in a
+        version 1 report, which recorded none."""
+        if self.fact_tiers:
+            return self.fact_tiers
+        failed = [f.items for f in self.judgments.failures if f.judgment == "fact_recall"]
+        return ("must_state",) * len(failed[0] if failed else self.judgments.facts)
+
+    def _share(self, stated: tuple[bool, ...] | None, tier: Tier) -> float | None:
+        if stated is None:
+            return None
+        in_tier = [s for s, t in zip(stated, self._tiers, strict=True) if t == tier]
+        return sum(in_tier) / len(in_tier) if in_tier else None
 
     @property
     def faithfulness(self) -> float | None:

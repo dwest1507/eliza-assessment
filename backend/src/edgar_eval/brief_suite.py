@@ -247,11 +247,11 @@ def _verdict(case: GoldenCase, reports: Sequence[GenerationReport]) -> BriefCase
 
 
 def _stated(result: CaseResult, i: int) -> bool:
-    """Whether the run's answer states the case's i-th Required Fact. A truncated answer
-    states none, as its Fact Recall is 0, and so does one whose Fact Recall judgment
-    failed, which judged no fact."""
-    facts = result.judgments.facts
-    return not result.truncated and i < len(facts) and facts[i].stated
+    """Whether the run's answer states the case's i-th Required Fact, by the harness's
+    rule (`CaseResult.facts_stated`: a truncated answer states none). One whose Fact
+    Recall judgment failed judged no fact, and so states none either."""
+    stated = result.facts_stated
+    return stated is not None and stated[i]
 
 
 def _reached(result: CaseResult, i: int) -> bool:

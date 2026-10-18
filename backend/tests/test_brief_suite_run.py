@@ -217,6 +217,37 @@ def test_a_run_whose_fact_judgment_failed_states_no_fact_and_is_listed(index):
     assert [(f.run, f.error) for f in case.judgment_failures] == [(5, "fact_recall: Timeout: slow")]
 
 
+def test_a_cut_off_run_states_no_fact_by_the_harness_rule(index):
+    """The Brief Suite counts a fact stated by `CaseResult.facts_stated`, so a run cut off
+    at the token cap states none, even one Jev judged stated."""
+
+    class CutOffInRun5(RunModel):
+        def stream(self, messages):
+            for part in super().stream(messages):
+                if isinstance(part, Usage) and self.calls[messages[-1].content] == 5:
+                    part = Usage(part.input_tokens, part.output_tokens, stop_reason="token_cap")
+                yield part
+
+    from edgar_eval.brief_suite import evaluate_brief_suite
+
+    report = evaluate_brief_suite(
+        [_case("brief-apple", [(OUTSOURCES, REACHED)])],
+        CutOffInRun5(),
+        RunJudge(stated={OUTSOURCES: {1, 2, 3, 5}}),
+        index,
+        runs=5,
+        names={},
+        fact_values=lambda filing_id: [],
+        log_path=None,
+        workers=1,
+    )
+
+    [case] = report.cases
+    assert case.truncated_runs == (5,)
+    assert case.facts[0].stated_runs == 3  # run 5 was judged stated, but was cut off
+    assert not case.passed
+
+
 def _suite_file(tmp_path):
     """A Brief Suite file of two made-up cases, so the command runs no drafted case."""
 
