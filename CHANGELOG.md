@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.3.0](https://github.com/dwest1507/eliza-assessment/compare/eliza-assessment-v0.2.0...eliza-assessment-v0.3.0) (2026-10-18)
+
+
+### Features
+
+* **frontend:** a plain error with "Try again" when an answer can't load ([525c889](https://github.com/dwest1507/eliza-assessment/commit/525c889603af7f8441d3f1a7b5c6ca17d901d5b7)), closes [#99](https://github.com/dwest1507/eliza-assessment/issues/99)
+* **frontend:** a simpler default workspace, with depth on demand ([b1c9a26](https://github.com/dwest1507/eliza-assessment/commit/b1c9a2684a2cf55428ffb68bc8b6036fde66f55d))
+* **frontend:** a Sources panel a non-technical reader can follow ([1af65c8](https://github.com/dwest1507/eliza-assessment/commit/1af65c85086047c4b591907a5ed2859598c5c5c4)), closes [#98](https://github.com/dwest1507/eliza-assessment/issues/98)
+* **frontend:** collapse "How it works" technical sections by default ([eb8975e](https://github.com/dwest1507/eliza-assessment/commit/eb8975eda029607180f286bee87eee1dd2096526)), closes [#102](https://github.com/dwest1507/eliza-assessment/issues/102)
+* **frontend:** fit the coverage grid to the screen, with its header and Company columns fixed ([440b7a1](https://github.com/dwest1507/eliza-assessment/commit/440b7a1897747e5f4540cac7b4a5e64d5ec07699)), closes [#104](https://github.com/dwest1507/eliza-assessment/issues/104)
+* **frontend:** keep the reader's place while an answer streams ([69118eb](https://github.com/dwest1507/eliza-assessment/commit/69118eb21227d9397f13e1be2a0bd3ee487d5db5)), closes [#95](https://github.com/dwest1507/eliza-assessment/issues/95)
+* **frontend:** open "How it works" with a plain overview ([8ce53c7](https://github.com/dwest1507/eliza-assessment/commit/8ce53c75224df9df1d907b08499e512fba785ce3)), closes [#103](https://github.com/dwest1507/eliza-assessment/issues/103) [#94](https://github.com/dwest1507/eliza-assessment/issues/94)
+* **frontend:** readable text and plain wording in the default view ([f5cf027](https://github.com/dwest1507/eliza-assessment/commit/f5cf027c242b8715b183c792e6394dc85dd582d2)), closes [#105](https://github.com/dwest1507/eliza-assessment/issues/105)
+* **frontend:** show an answer's short answer first, with "Show full analysis" ([5b28104](https://github.com/dwest1507/eliza-assessment/commit/5b2810456a77fd294bedb41353e3b5b7e0b96c60)), closes [#97](https://github.com/dwest1507/eliza-assessment/issues/97)
+* **frontend:** show an answer's Sources and Query Scope only once complete ([c991b36](https://github.com/dwest1507/eliza-assessment/commit/c991b36401598869f6f1331a79aef508dc7300ef)), closes [#96](https://github.com/dwest1507/eliza-assessment/issues/96)
+* **frontend:** show what's covered on the empty workspace and "How it works" ([7fd7bee](https://github.com/dwest1507/eliza-assessment/commit/7fd7bee62f09c2b4fbf63149de1092a4d0002570)), closes [#100](https://github.com/dwest1507/eliza-assessment/issues/100)
+* **frontend:** suggest follow-up questions from templates ([05913ea](https://github.com/dwest1507/eliza-assessment/commit/05913ea0ea0c01563cb45eedfaa209fd21fa477e)), closes [#101](https://github.com/dwest1507/eliza-assessment/issues/101) [#94](https://github.com/dwest1507/eliza-assessment/issues/94)
+
+
+### Bug Fixes
+
+* **frontend:** close the gaps the review found after the default-view tasks ([9d7cf78](https://github.com/dwest1507/eliza-assessment/commit/9d7cf781570deb58e23abe63f5c6fc25cb0587eb)), closes [#106](https://github.com/dwest1507/eliza-assessment/issues/106)
+
 ## [0.2.0](https://github.com/dwest1507/eliza-assessment/compare/eliza-assessment-v0.1.0...eliza-assessment-v0.2.0) (2026-10-17)
 
 
