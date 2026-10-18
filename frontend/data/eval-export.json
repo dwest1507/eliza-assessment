@@ -1856,34 +1856,34 @@
       "name": "Control Run",
       "cases": 60,
       "factRecall": {
-        "challengerOnly": 11,
-        "shippedOnly": 10,
-        "pValue": 1.0,
-        "pAhead": 0.5,
-        "pBehind": 0.6681880950927734,
+        "challengerOnly": 15,
+        "shippedOnly": 12,
+        "pValue": 0.7011080384254456,
+        "pAhead": 0.3505540192127228,
+        "pBehind": 0.7789658308029175,
         "paired": 57,
         "leftOut": 0,
         "verdict": "indistinguishable",
         "difference": {
-          "mean": -0.005346700083542193,
-          "low": -0.05788081314397105,
-          "high": 0.038923698134224444,
+          "mean": 0.0015769318400897362,
+          "low": -0.04178501810080757,
+          "high": 0.043329282802967016,
           "confidence": 0.95
         }
       },
       "faithfulness": {
-        "challengerOnly": 17,
-        "shippedOnly": 23,
-        "pValue": 0.42959050784338615,
-        "pAhead": 0.8659063744726154,
-        "pBehind": 0.21479525392169307,
-        "paired": 56,
-        "leftOut": 0,
+        "challengerOnly": 19,
+        "shippedOnly": 12,
+        "pValue": 0.28104151505976915,
+        "pAhead": 0.14052075752988458,
+        "pBehind": 0.9251936078071594,
+        "paired": 57,
+        "leftOut": 1,
         "verdict": "indistinguishable",
         "difference": {
-          "mean": -0.008322765708042754,
-          "low": -0.04164079377908387,
-          "high": 0.02792601559727977,
+          "mean": 0.014552054035922368,
+          "low": -0.0036911388691574557,
+          "high": 0.0332734452133181,
           "confidence": 0.95
         }
       },
@@ -1904,131 +1904,108 @@
         }
       },
       "contradictedClaims": {
-        "challengerOnly": 3,
-        "shippedOnly": 4,
-        "pValue": 1.0,
-        "pAhead": 0.7734375,
-        "pBehind": 0.5,
-        "paired": 59,
+        "challengerOnly": 8,
+        "shippedOnly": 2,
+        "pValue": 0.109375,
+        "pAhead": 0.0546875,
+        "pBehind": 0.9892578125,
+        "paired": 60,
         "leftOut": 0,
-        "verdict": "indistinguishable",
+        "verdict": "ahead",
         "difference": {
-          "mean": -0.01694915254237288,
-          "low": -0.1016949152542373,
-          "high": 0.06779661016949153,
+          "mean": 0.1,
+          "low": 0.0,
+          "high": 0.2,
           "confidence": 0.95
         }
       },
       "qualifies": false,
       "shippable": true,
-      "statedFacts": null,
-      "byEvidence": null
+      "statedFacts": {
+        "paired": 57,
+        "leftOut": 0,
+        "facts": 316,
+        "challengerStated": 226,
+        "shippedStated": 227,
+        "totalDifference": -1,
+        "pAhead": 0.595040495950405,
+        "pBehind": 0.46025397460253975,
+        "verdict": "indistinguishable",
+        "difference": {
+          "mean": -0.017543859649122806,
+          "low": -0.2631578947368421,
+          "high": 0.21052631578947367,
+          "confidence": 0.95
+        },
+        "resamples": 10000,
+        "seed": 20261017
+      },
+      "byEvidence": [
+        {
+          "status": "challenger_only",
+          "facts": 0,
+          "challengerStated": 0,
+          "shippedStated": 0
+        },
+        {
+          "status": "shipped_only",
+          "facts": 0,
+          "challengerStated": 0,
+          "shippedStated": 0
+        },
+        {
+          "status": "both",
+          "facts": 270,
+          "challengerStated": 208,
+          "shippedStated": 210
+        },
+        {
+          "status": "neither",
+          "facts": 46,
+          "challengerStated": 18,
+          "shippedStated": 17
+        },
+        {
+          "status": "unrecorded",
+          "facts": 0,
+          "challengerStated": 0,
+          "shippedStated": 0
+        }
+      ]
     },
     "comparisons": [
-      {
-        "name": "rerank",
-        "cases": 60,
-        "factRecall": {
-          "challengerOnly": 15,
-          "shippedOnly": 10,
-          "pValue": 0.42435622215270996,
-          "pAhead": 0.21217811107635498,
-          "pBehind": 0.885238528251648,
-          "paired": 57,
-          "leftOut": 0,
-          "verdict": "indistinguishable",
-          "difference": {
-            "mean": 0.012038887038887038,
-            "low": -0.03074922153869522,
-            "high": 0.05414546467178046,
-            "confidence": 0.95
-          }
-        },
-        "faithfulness": {
-          "challengerOnly": 23,
-          "shippedOnly": 19,
-          "pValue": 0.6439689563703723,
-          "pAhead": 0.32198447818518616,
-          "pBehind": 0.7796004663287022,
-          "paired": 56,
-          "leftOut": 2,
-          "verdict": "indistinguishable",
-          "difference": {
-            "mean": 0.009363991963373253,
-            "low": -0.023212777779611664,
-            "high": 0.044990299902816985,
-            "confidence": 0.95
-          }
-        },
-        "coverageGaps": {
-          "challengerOnly": 0,
-          "shippedOnly": 0,
-          "pValue": 1.0,
-          "pAhead": 1.0,
-          "pBehind": 1.0,
-          "paired": 36,
-          "leftOut": 0,
-          "verdict": "indistinguishable",
-          "difference": {
-            "mean": 0.0,
-            "low": 0.0,
-            "high": 0.0,
-            "confidence": 0.95
-          }
-        },
-        "contradictedClaims": {
-          "challengerOnly": 3,
-          "shippedOnly": 1,
-          "pValue": 0.625,
-          "pAhead": 0.3125,
-          "pBehind": 0.9375,
-          "paired": 59,
-          "leftOut": 1,
-          "verdict": "indistinguishable",
-          "difference": {
-            "mean": 0.03389830508474576,
-            "low": -0.03389830508474576,
-            "high": 0.1016949152542373,
-            "confidence": 0.95
-          }
-        },
-        "qualifies": false,
-        "shippable": true,
-        "statedFacts": null,
-        "byEvidence": null
-      },
       {
         "name": "hybrid-local",
         "cases": 60,
         "factRecall": {
-          "challengerOnly": 13,
-          "shippedOnly": 15,
-          "pValue": 0.8505540192127228,
-          "pAhead": 0.7142059057950974,
-          "pBehind": 0.4252770096063614,
+          "challengerOnly": 17,
+          "shippedOnly": 10,
+          "pValue": 0.24778856337070465,
+          "pAhead": 0.12389428168535233,
+          "pBehind": 0.9389609396457672,
           "paired": 57,
           "leftOut": 0,
           "verdict": "indistinguishable",
           "difference": {
-            "mean": -0.007180003232634814,
-            "low": -0.057082537345695246,
-            "high": 0.04506171216697532,
+            "mean": 0.04686356528461791,
+            "low": -0.0034809245335561158,
+            "high": 0.10413027518290677,
             "confidence": 0.95
           }
         },
         "faithfulness": {
-          "challengerOnly": 22,
-          "shippedOnly": 20,
-          "pValue": 0.8776143287523155,
-          "pAhead": 0.43880716437615774,
-          "pBehind": 0.6780155218148138,
-          "paired": 56,
+          "challengerOnly": 15,
+          "shippedOnly": 15,
+          "pValue": 1.0,
+          "pAhead": 0.572232224047184,
+          "pBehind": 0.572232224047184,
+          "paired": 55,
           "leftOut": 2,
           "verdict": "indistinguishable",
           "difference": {
-            "mean": 0.01108981760311371,
-            "low": -0.019979607518998282,
-            "high": 0.045564424804805166,
+            "mean": -0.007662674650003187,
+            "low": -0.02920165505445551,
+            "high": 0.0130537784793527,
             "confidence": 0.95
           }
         },
@@ -2049,25 +2026,74 @@
           }
         },
         "contradictedClaims": {
-          "challengerOnly": 5,
-          "shippedOnly": 8,
-          "pValue": 0.5810546875,
-          "pAhead": 0.8665771484375,
-          "pBehind": 0.29052734375,
-          "paired": 59,
-          "leftOut": 1,
+          "challengerOnly": 6,
+          "shippedOnly": 2,
+          "pValue": 0.2890625,
+          "pAhead": 0.14453125,
+          "pBehind": 0.96484375,
+          "paired": 58,
+          "leftOut": 2,
           "verdict": "indistinguishable",
           "difference": {
-            "mean": -0.05084745762711865,
-            "low": -0.1694915254237288,
-            "high": 0.06779661016949153,
+            "mean": 0.06896551724137931,
+            "low": -0.017241379310344827,
+            "high": 0.1724137931034483,
             "confidence": 0.95
           }
         },
         "qualifies": false,
         "shippable": true,
-        "statedFacts": null,
-        "byEvidence": null
+        "statedFacts": {
+          "paired": 57,
+          "leftOut": 0,
+          "facts": 316,
+          "challengerStated": 235,
+          "shippedStated": 227,
+          "totalDifference": 8,
+          "pAhead": 0.18018198180181982,
+          "pBehind": 0.8488151184881512,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": 0.14035087719298245,
+            "low": -0.14035087719298245,
+            "high": 0.42105263157894735,
+            "confidence": 0.95
+          },
+          "resamples": 10000,
+          "seed": 20261017
+        },
+        "byEvidence": [
+          {
+            "status": "challenger_only",
+            "facts": 15,
+            "challengerStated": 11,
+            "shippedStated": 3
+          },
+          {
+            "status": "shipped_only",
+            "facts": 5,
+            "challengerStated": 2,
+            "shippedStated": 2
+          },
+          {
+            "status": "both",
+            "facts": 265,
+            "challengerStated": 208,
+            "shippedStated": 208
+          },
+          {
+            "status": "neither",
+            "facts": 31,
+            "challengerStated": 14,
+            "shippedStated": 14
+          },
+          {
+            "status": "unrecorded",
+            "facts": 0,
+            "challengerStated": 0,
+            "shippedStated": 0
+          }
+        ]
       }
     ]
   },

@@ -666,7 +666,7 @@ Built for version 2 (issue #84), in `backend/src/edgar_eval/arms.py`, `retrieval
 - **An Arm that does is never sent to a paid run by the screen**, and doesn't take one of its three places: its reason says it makes an API call at query time and can't ship. **It is never chosen by the Arm rule** either, and `make eval-arms` skips it even if a screen saved earlier kept it.
 - **It is still reported, unconstrained.** It is scored and gated like any other Arm, and its comparison still says whether it would qualify (`qualifies`, with `shippable` false). Reports label it "available if the one-call limit is lifted".
 - **Two local Arms**, `dense-local` and `hybrid-local`, embed both the chunks and the question with `BAAI/bge-small-en-v1.5`, pinned to Hugging Face commit `5c38ec7c`, run by ONNX Runtime on the CPU with the `tokenizers` stack the `rerank` Arm already uses. A question gets the model's query instruction. A text is embedded as its CLS token, truncated to the model's 512 tokens, so a 600-token chunk is embedded on its opening. A query embedding only matches chunk embeddings from the same model, so `make local-embeddings` embeds the whole index again, locally and for free, into `data/derived/embeddings/bge-small-en-v1.5.npy` (48,448 chunks, about 30 minutes on 16 CPU threads). The model downloads once, then loads from the local cache with no network call, and a test refuses every socket while the model loads and ranks a question. `hybrid-local` fuses with FTS5 as `hybrid` does (weighted reciprocal-rank fusion, k = 1, equal weights).
-- **If a local Arm ships**, its embeddings join `make index` and its ranker and packages move from `edgar_eval` into the product. Neither did in the version 2 comparisons (#73: `dense-local` is behind on Evidence Reached, and `hybrid-local` is not ahead on Fact Recall; [The Arm comparison](#the-arm-comparison)), so they stay in the dev dependency group.
+- **If a local Arm ships**, its embeddings join `make index` and its ranker and packages move from `edgar_eval` into the product. Neither did in the version 2 comparisons (#73: `dense-local` is behind on Evidence Reached, and `hybrid-local` is not ahead on Fact Recall; [The Arm comparison](#the-arm-comparison)), nor on spec #116's new retrieval (#127: `hybrid-local` states 8 more must-state facts in each of two runs, not ahead by the fact-level test; [The Arm comparison on the new retrieval](#the-arm-comparison-on-the-new-retrieval-127-2026-10-18)), so they stay in the dev dependency group.
 
 **First numbers on dev**, free (`make eval-retrieval`, no LLM call and no API call for the local Arms): Golden Set version 1, dev split, 17 scored cases with 44 Required Facts, 600-token chunks and the 32k budget, 2026-10-17.
 
@@ -876,7 +876,7 @@ Two shippable challengers pass the screen, `hybrid-local` and `rerank`; `dense-l
 | `rerank` | 0.73 | 0.90 | 6 | 0.0028 | 15 / 10, p = 0.212; +0.012 [−0.031, +0.054] | 23 / 19, p = 0.780; +0.009 [−0.023, +0.045] | 3 / 1, p = 0.938; +0.034 [−0.034, +0.102] | no |
 | `hybrid-local` | 0.71 | 0.92 | 10 | 0.0029 | 13 / 15, p = 0.714; −0.007 [−0.057, +0.045] | 22 / 20, p = 0.678; +0.011 [−0.020, +0.046] | 5 / 8, p = 0.291; −0.051 [−0.169, +0.068] | no |
 
-Coverage Gaps tie for every Arm (0 / 0 over 36 cases). **Chosen: `fts5`.** Neither challenger is ahead on Fact Recall. `hybrid-local` reaches 34 more facts' evidence than FTS5, 15 of them must-state (20 gained and 5 lost, against FTS5's 248 of 316), but its answers state no more must-state facts (13 cases higher, 15 lower): evidence that reaches the prompt is not always stated. So no local Arm ships, and the local model, its embeddings and its packages stay in `edgar_eval` and the dev dependency group.
+Coverage Gaps tie for every Arm (0 / 0 over 36 cases). **Chosen: `fts5`.** Neither challenger is ahead on Fact Recall. `hybrid-local` reaches 34 more facts' evidence than FTS5, 15 of them must-state (20 gained and 5 lost, against FTS5's 248 of 316), but its answers state no more must-state facts (13 cases higher, 15 lower): evidence that reaches the prompt is not always stated. So no local Arm ships, and the local model, its embeddings and its packages stay in `edgar_eval` and the dev dependency group. This comparison stands as recorded; on spec #116's new retrieval it was run again under the fact-level test, and FTS5 stays ([#127](#the-arm-comparison-on-the-new-retrieval-127-2026-10-18)).
 
 #### The settings comparison
 
@@ -1419,9 +1419,59 @@ By kind of question, Fact Recall in the shipped run and Control Run, against #92
 - **The brief's second question misses one fact**, NVIDIA's Blackwell share of Data Center revenue (3 of 5 runs), now that its two retrieval misses are reached. **Its first question misses three:** Apple's antitrust investigations (never reached), and Tesla's dependence on its autonomous driving work and on Elon Musk (3 of 5 runs each), both reached.
 - **Contradicted Claims appear in 6 runs, against 3**, two of them in `brief-outlook-unh-revenue-two-years` and two in the quarterly updates case, so those cases would fail on them even with every fact stated. Each is a summary sentence, such as UnitedHealth's revenue growth "accelerated from 15% in FY2023 to 8% in FY2024". One judgment failed: Jev refused the Faithfulness of `brief-outlook-unh-revenue-two-years`'s run 5 (`max_tokens_exceeded`), recorded against that judgment. No run was cut off.
 
-**Reports.** The new reports replace #92's in `data/derived/eval/` (`retrieval-dev.json`, `generation-dev.json`, `generation-control-dev.json` and `brief-suite.json`), and #92's are kept as written in `data/derived/eval-issue92/`. The "How it works" page is regenerated from them (`make eval-export`): it shows this round's shipped run, Control Run and Brief Suite, beside #73's Arm, settings and generator comparisons, which stand as recorded until #127 and #129 run.
+**Reports.** The new reports replace #92's in `data/derived/eval/` (`retrieval-dev.json`, `generation-dev.json`, `generation-control-dev.json` and `brief-suite.json`), and #92's are kept as written in `data/derived/eval-issue92/`. The "How it works" page is regenerated from them (`make eval-export`): it shows this round's shipped run, Control Run and Brief Suite, beside #73's settings and generator comparisons, which stand as recorded until #129 runs, and, since #127, this round's Arm comparison ([below](#the-arm-comparison-on-the-new-retrieval-127-2026-10-18)).
 
 **Spend.** Each run printed its estimate first: up to $0.38, $0.38 and $0.47, $1.23 in all, inside the $1.25 the developer approved. They cost $0.262 (the shipped run: $0.169 in Answer Calls, $0.093 in Jev judging), $0.257 (the Control Run: $0.169 and $0.088) and $0.416 (the Brief Suite: $0.254 and $0.162), **$0.94 in all** ($0.59 in Answer Calls, $0.34 in Jev judging). The retrieval harness embedded 42 questions missing from the hosted Arms' cache with OpenAI, under $0.0001.
+
+#### The Arm comparison on the new retrieval (#127, 2026-10-18)
+
+`make eval-arms` on this round (code version `f767b0ca96c041ad`), decided by [the fact-level test](#the-fact-level-test-for-retrieval-comparisons) of [ADR 0015](adr/0015-fact-level-fact-recall-for-retrieval-comparisons.md), with the round's shipped run and Control Run ([above](#a-new-round-on-the-new-retrieval-126-2026-10-18)) reused, not run again. `hybrid-local` was then answered a second time, to see how much of its result is answer noise, and compared offline by the same rule. How the two runs would be read was fixed before either ran (posted on #127): the choice file is the first run's, and the second is recorded beside it.
+
+```sh
+make eval-arms                                        # the screen, hybrid-local's run, the rule
+python -m edgar_eval.generation --split dev --arm hybrid-local \
+    --json ../data/derived/eval/generation-arms-dev-hybrid-local-run2.json   # the second run (from backend/)
+python -m edgar_eval.selection compare ../data/derived/eval/generation-dev.json \
+    ../data/derived/eval/generation-arms-dev-hybrid-local-run2.json \
+    --control ../data/derived/eval/generation-control-dev.json \
+    --json ../data/derived/eval/arm-choice-dev-run2.json
+```
+
+**The screen** (free), every Arm against `fts5`, paired per Required Fact with McNemar's exact test, one-sided. Its report is byte for byte the one #126 wrote, so the screen is deterministic on this code. Both the hosted and the local embeddings still matched the index, so nothing was rebuilt.
+
+| Arm | API call at query time | hit@10 | recall@10 | MRR | Evidence Reached | gained / lost vs `fts5` | Source tokens | screen |
+|---|---|---|---|---|---|---|---|---|
+| `fts5` (shipped) | No | 0.96 | 0.88 | 0.77 | 797 of 939 | – | 27,431 | – |
+| `dense` | Yes | 0.93 | 0.84 | 0.77 | 775 of 939 | 60 / 82, p behind = 0.039 | 29,634 | dropped: can't ship (available if the one-call limit is lifted), and behind |
+| `hybrid` | Yes | 0.95 | 0.88 | 0.79 | 835 of 939 | 55 / 17, p ahead < 0.001 | 29,646 | dropped: can't ship (available if the one-call limit is lifted) |
+| `rerank` | No | 0.95 | 0.87 | 0.80 | 786 of 939 | 4 / 15, p behind = 0.010 | 27,414 | dropped: behind on Evidence Reached |
+| `dense-local` | No | 0.95 | 0.85 | 0.76 | 753 of 939 | 54 / 98, p behind < 0.001 | 29,625 | dropped: behind on Evidence Reached |
+| `hybrid-local` | No | 0.96 | 0.88 | 0.79 | 820 of 939 | 47 / 24, p ahead = 0.004 | 29,643 | kept |
+
+`rerank`, kept in #73, is now behind: the new Section plan and search terms gave FTS5 most of what the cross-encoder used to add. Planning misses (a must-state fact whose Section was not searched) are 3 on every Arm, so what is left is ranking: 43 must-state ranking misses on `fts5`, 33 on `hybrid-local`, 45 on `rerank`, 51 on `dense-local`, 28 on `hybrid` and 44 on `dense`.
+
+**The answers**, against the shipped run:
+
+| Run | Fact Recall | detail recall | Faithfulness | answers with a Contradicted Claim | must-state facts stated, of 316 | vs the shipped run, fact by fact (p ahead) | Fact Recall case by case (higher / lower, p behind) | Faithfulness (higher / lower, p behind) | No Contradicted Claim (higher / lower, p behind) | Qualifies |
+|---|---|---|---|---|---|---|---|---|---|---|
+| `fts5` (shipped) | 0.72 | 0.49 | 0.95 | 8 | 227 | – | – | – | – | – |
+| Control Run | 0.73 | 0.49 | 0.95 | 2 | 226 | −1, p ahead = 0.595 | 15 / 12, p = 0.779 | 19 / 12, p = 0.925 | 8 / 2, p = 0.989 | – |
+| `hybrid-local`, run 1 (the choice file's) | 0.77 | 0.51 | 0.94 | 4 | 235 | +8, p ahead = 0.180 | 17 / 10, p = 0.939 | 15 / 15, p = 0.572 | 6 / 2, p = 0.965 | no |
+| `hybrid-local`, run 2 | 0.75 | 0.46 | 0.95 | 6 | 235 | +8, p ahead = 0.189 | 18 / 13, p = 0.859 | 14 / 19, p = 0.243 | 6 / 4, p = 0.828 | no |
+
+Coverage Gaps tie in every comparison (0 / 0 over 36 cases), and 57 cases pair on Fact Recall in each. **Chosen: `fts5`.** The comparison is conclusive: the Control Run is not ahead on the fact-level test (−1, p ahead = 0.595), the Arm rule's one ahead score. `hybrid-local` is behind on no guardrail in either run, and not ahead on Fact Recall in either.
+
+- **The two runs agree.** Each states 235 of 316 must-state facts, 8 more than the shipped run's 227, a mean of +0.14 facts a case (95% intervals −0.14 to +0.42 and −0.14 to +0.44). Ahead would need p < 0.10. Pooled over the two runs a side for reference (the rule decides on one run): 470 against 453, +17, p ahead = 0.103 by the same bootstrap over 57 cases.
+- **The gain is evidence only `hybrid-local` reached.** Of the 15 must-state facts it alone reached (280 of 316 against 270), it stated 11 in each run, against 3 for the shipped run. On the 265 both reached, it stated 208 and 209 against 208: the generator uses the same evidence the same way, so the retrieval gain is real but only 8 facts wide. The 5 facts only `fts5` reached were stated 2 and 1 times against 2.
+- **Where it gains and loses, over both runs a side:** `risk-meta-amzn-legal-proceedings` (2 and 2 must-state facts stated by `fts5`, 5 and 5 by `hybrid-local`), `stale-gecc-main-risks` (3 and 4, now 6 and 5) and `risk-t-vz-cmcsa-regulation` (5 and 6, now 6 and 8). Against them, `sector-industrials-tariffs` (10 and 8, now 6 and 6), `sector-banks-risks` (6 and 6, now 4 and 5) and `sector-communication-services-advertising` (8 and 7, now 6 and 6), five- to seven-Company questions where its larger Sources (29,643 tokens against 27,431) did not turn into more facts stated.
+- **Contradicted Claims, read beside the Control Run.** This round's shipped run is at the high end of that score's noise ([above](#a-new-round-on-the-new-retrieval-126-2026-10-18): 8 answers against the Control Run's 2, p = 0.055), so `hybrid-local`'s 4 and 6 look better against it than they are. Against the Control Run instead, run 1 has 2 cases better and 4 worse (p behind = 0.344) and run 2 has 1 better and 5 worse (p behind = 0.109), so run 2 would be behind on that guardrail at p < 0.20. Read that way, `hybrid-local` is no better on Contradicted Claims and perhaps worse. Against the Control Run on the fact-level test, the two runs state 9 more facts (p ahead = 0.143 and 0.100), still not ahead. Neither reading changes the choice.
+- **Two judgments failed in run 1:** Jev refused the Faithfulness of `trend-jpm-revenue-snapshot` and `stale-gecc-eni-2014` (`max_tokens_exceeded`), so those two cases are left out of the Faithfulness and Contradicted Claims pairings of run 1 (55 and 58 cases paired). Run 2 had none. No answer stopped at the token cap.
+
+So no local Arm ships, again, and #128 (moving `hybrid-local` into the product) is closed as not needed. The local model, its embeddings and its packages stay in `edgar_eval` and the dev dependency group, and ADR 0008 gains a dated note.
+
+**Reports.** `arm-choice-dev.json` (the choice, from run 1, with the screen), `generation-arms-dev-hybrid-local.json` (run 1, replacing the earlier round's), `generation-arms-dev-hybrid-local-run2.json` and `arm-choice-dev-run2.json` (run 2's comparison, for reference) are in `data/derived/eval/`. #73's Arm reports stay in `data/derived/eval-issue73/` and #92's copies in `data/derived/eval-issue92/`. The "How it works" page is regenerated (`make eval-export`) and shows this comparison, run 1's, decided fact by fact.
+
+**Spend.** Each run printed its estimate first, up to $0.38 each, $0.76 in all, inside the $1.00 the developer approved. Run 1 cost $0.278 ($0.182 in Answer Calls, $0.096 in Jev judging) and run 2 $0.280 ($0.181 and $0.099), **$0.56 in all** ($0.36 in Answer Calls, $0.20 in Jev judging). The screen made no new embedding call: every question was in the hosted Arms' cache.
 
 ### The version 2 holdout run
 
