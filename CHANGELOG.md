@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.3.1](https://github.com/dwest1507/eliza-assessment/compare/eliza-assessment-v0.3.0...eliza-assessment-v0.3.1) (2026-10-18)
+
+
+### Bug Fixes
+
+* **eval:** fix version 2's measurement and re-baseline dev before the retrieval work ([bd1cf91](https://github.com/dwest1507/eliza-assessment/commit/bd1cf916bc151018ca0e643c26a65217f546ced1))
+* **eval:** keep expected Coverage Gap sentences from Jev's Faithfulness judgment ([01641be](https://github.com/dwest1507/eliza-assessment/commit/01641be80e213cc99880ad6b7561f1829a4bf89f)), closes [#86](https://github.com/dwest1507/eliza-assessment/issues/86)
+* **eval:** keep uncited refusals in no-Source answers out of Faithfulness ([139372d](https://github.com/dwest1507/eliza-assessment/commit/139372dbdf8013c3c5a73abd30e28c97e4463b53)), closes [#109](https://github.com/dwest1507/eliza-assessment/issues/109)
+* **eval:** keep uncited sentences that name the records in passing as claims ([b7170cd](https://github.com/dwest1507/eliza-assessment/commit/b7170cd6b85d7309da77a7a267be08b8a9749601)), closes [#111](https://github.com/dwest1507/eliza-assessment/issues/111)
+* **eval:** narrow Faithfulness's claim exemption to stated Coverage Gaps ([987bb7f](https://github.com/dwest1507/eliza-assessment/commit/987bb7f1d05e1704362d8625e6ae3e9e42a49949)), closes [#89](https://github.com/dwest1507/eliza-assessment/issues/89)
+* **eval:** score a truncated answer's Fact Recall 0 when its judgment failed ([793430d](https://github.com/dwest1507/eliza-assessment/commit/793430de93b6171b542ee90f173c5adbb1dc3c6e)), closes [#90](https://github.com/dwest1507/eliza-assessment/issues/90)
+* **eval:** state the default generator comparison once, in generators.py ([0545320](https://github.com/dwest1507/eliza-assessment/commit/0545320d21312a3d3ebce8b4d8bd6264d5890d08)), closes [#91](https://github.com/dwest1507/eliza-assessment/issues/91)
+
 ## [0.3.0](https://github.com/dwest1507/eliza-assessment/compare/eliza-assessment-v0.2.0...eliza-assessment-v0.3.0) (2026-10-18)
 
 
