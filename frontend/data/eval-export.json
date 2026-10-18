@@ -1,5 +1,5 @@
 {
-  "exportedOn": "2026-10-17",
+  "exportedOn": "2026-10-18",
   "split": "dev",
   "goldenSet": {
     "version": 2,
@@ -1852,6 +1852,528 @@
           }
         },
         "qualifies": false
+      }
+    ]
+  },
+  "armChoice": {
+    "rule": "arms",
+    "shipped": "fts5",
+    "chosen": "fts5",
+    "inconclusive": false,
+    "reason": null,
+    "control": {
+      "name": "Control Run",
+      "cases": 60,
+      "factRecall": {
+        "challengerOnly": 11,
+        "shippedOnly": 10,
+        "pValue": 1.0,
+        "pAhead": 0.5,
+        "pBehind": 0.6681880950927734,
+        "paired": 57,
+        "leftOut": 0,
+        "verdict": "indistinguishable",
+        "difference": {
+          "mean": -0.005346700083542193,
+          "low": -0.05788081314397105,
+          "high": 0.038923698134224444,
+          "confidence": 0.95
+        }
+      },
+      "faithfulness": {
+        "challengerOnly": 17,
+        "shippedOnly": 23,
+        "pValue": 0.42959050784338615,
+        "pAhead": 0.8659063744726154,
+        "pBehind": 0.21479525392169307,
+        "paired": 56,
+        "leftOut": 0,
+        "verdict": "indistinguishable",
+        "difference": {
+          "mean": -0.008322765708042754,
+          "low": -0.04164079377908387,
+          "high": 0.02792601559727977,
+          "confidence": 0.95
+        }
+      },
+      "coverageGaps": {
+        "challengerOnly": 0,
+        "shippedOnly": 0,
+        "pValue": 1.0,
+        "pAhead": 1.0,
+        "pBehind": 1.0,
+        "paired": 36,
+        "leftOut": 0,
+        "verdict": "indistinguishable",
+        "difference": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "confidence": 0.95
+        }
+      },
+      "contradictedClaims": {
+        "challengerOnly": 3,
+        "shippedOnly": 4,
+        "pValue": 1.0,
+        "pAhead": 0.7734375,
+        "pBehind": 0.5,
+        "paired": 59,
+        "leftOut": 0,
+        "verdict": "indistinguishable",
+        "difference": {
+          "mean": -0.01694915254237288,
+          "low": -0.1016949152542373,
+          "high": 0.06779661016949153,
+          "confidence": 0.95
+        }
+      },
+      "qualifies": false,
+      "shippable": true,
+      "statedFacts": null,
+      "byEvidence": null
+    },
+    "comparisons": [
+      {
+        "name": "rerank",
+        "cases": 60,
+        "factRecall": {
+          "challengerOnly": 15,
+          "shippedOnly": 10,
+          "pValue": 0.42435622215270996,
+          "pAhead": 0.21217811107635498,
+          "pBehind": 0.885238528251648,
+          "paired": 57,
+          "leftOut": 0,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": 0.012038887038887038,
+            "low": -0.03074922153869522,
+            "high": 0.05414546467178046,
+            "confidence": 0.95
+          }
+        },
+        "faithfulness": {
+          "challengerOnly": 23,
+          "shippedOnly": 19,
+          "pValue": 0.6439689563703723,
+          "pAhead": 0.32198447818518616,
+          "pBehind": 0.7796004663287022,
+          "paired": 56,
+          "leftOut": 2,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": 0.009363991963373253,
+            "low": -0.023212777779611664,
+            "high": 0.044990299902816985,
+            "confidence": 0.95
+          }
+        },
+        "coverageGaps": {
+          "challengerOnly": 0,
+          "shippedOnly": 0,
+          "pValue": 1.0,
+          "pAhead": 1.0,
+          "pBehind": 1.0,
+          "paired": 36,
+          "leftOut": 0,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "confidence": 0.95
+          }
+        },
+        "contradictedClaims": {
+          "challengerOnly": 3,
+          "shippedOnly": 1,
+          "pValue": 0.625,
+          "pAhead": 0.3125,
+          "pBehind": 0.9375,
+          "paired": 59,
+          "leftOut": 1,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": 0.03389830508474576,
+            "low": -0.03389830508474576,
+            "high": 0.1016949152542373,
+            "confidence": 0.95
+          }
+        },
+        "qualifies": false,
+        "shippable": true,
+        "statedFacts": null,
+        "byEvidence": null
+      },
+      {
+        "name": "hybrid-local",
+        "cases": 60,
+        "factRecall": {
+          "challengerOnly": 13,
+          "shippedOnly": 15,
+          "pValue": 0.8505540192127228,
+          "pAhead": 0.7142059057950974,
+          "pBehind": 0.4252770096063614,
+          "paired": 57,
+          "leftOut": 0,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": -0.007180003232634814,
+            "low": -0.057082537345695246,
+            "high": 0.04506171216697532,
+            "confidence": 0.95
+          }
+        },
+        "faithfulness": {
+          "challengerOnly": 22,
+          "shippedOnly": 20,
+          "pValue": 0.8776143287523155,
+          "pAhead": 0.43880716437615774,
+          "pBehind": 0.6780155218148138,
+          "paired": 56,
+          "leftOut": 2,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": 0.01108981760311371,
+            "low": -0.019979607518998282,
+            "high": 0.045564424804805166,
+            "confidence": 0.95
+          }
+        },
+        "coverageGaps": {
+          "challengerOnly": 0,
+          "shippedOnly": 0,
+          "pValue": 1.0,
+          "pAhead": 1.0,
+          "pBehind": 1.0,
+          "paired": 36,
+          "leftOut": 0,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "confidence": 0.95
+          }
+        },
+        "contradictedClaims": {
+          "challengerOnly": 5,
+          "shippedOnly": 8,
+          "pValue": 0.5810546875,
+          "pAhead": 0.8665771484375,
+          "pBehind": 0.29052734375,
+          "paired": 59,
+          "leftOut": 1,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": -0.05084745762711865,
+            "low": -0.1694915254237288,
+            "high": 0.06779661016949153,
+            "confidence": 0.95
+          }
+        },
+        "qualifies": false,
+        "shippable": true,
+        "statedFacts": null,
+        "byEvidence": null
+      }
+    ]
+  },
+  "settingsChoice": {
+    "rule": "settings",
+    "shipped": "chunks-600-budget-32000",
+    "chosen": "chunks-600-budget-32000",
+    "inconclusive": false,
+    "reason": null,
+    "control": {
+      "name": "Control Run",
+      "cases": 60,
+      "factRecall": {
+        "challengerOnly": 11,
+        "shippedOnly": 10,
+        "pValue": 1.0,
+        "pAhead": 0.5,
+        "pBehind": 0.6681880950927734,
+        "paired": 57,
+        "leftOut": 0,
+        "verdict": "indistinguishable",
+        "difference": {
+          "mean": -0.005346700083542193,
+          "low": -0.05788081314397105,
+          "high": 0.038923698134224444,
+          "confidence": 0.95
+        }
+      },
+      "faithfulness": {
+        "challengerOnly": 17,
+        "shippedOnly": 23,
+        "pValue": 0.42959050784338615,
+        "pAhead": 0.8659063744726154,
+        "pBehind": 0.21479525392169307,
+        "paired": 56,
+        "leftOut": 0,
+        "verdict": "indistinguishable",
+        "difference": {
+          "mean": -0.008322765708042754,
+          "low": -0.04164079377908387,
+          "high": 0.02792601559727977,
+          "confidence": 0.95
+        }
+      },
+      "coverageGaps": {
+        "challengerOnly": 0,
+        "shippedOnly": 0,
+        "pValue": 1.0,
+        "pAhead": 1.0,
+        "pBehind": 1.0,
+        "paired": 36,
+        "leftOut": 0,
+        "verdict": "indistinguishable",
+        "difference": {
+          "mean": 0.0,
+          "low": 0.0,
+          "high": 0.0,
+          "confidence": 0.95
+        }
+      },
+      "contradictedClaims": {
+        "challengerOnly": 3,
+        "shippedOnly": 4,
+        "pValue": 1.0,
+        "pAhead": 0.7734375,
+        "pBehind": 0.5,
+        "paired": 59,
+        "leftOut": 0,
+        "verdict": "indistinguishable",
+        "difference": {
+          "mean": -0.01694915254237288,
+          "low": -0.1016949152542373,
+          "high": 0.06779661016949153,
+          "confidence": 0.95
+        }
+      },
+      "qualifies": false,
+      "shippable": true,
+      "statedFacts": null,
+      "byEvidence": null
+    },
+    "comparisons": [
+      {
+        "name": "chunks-450-budget-48000",
+        "cases": 60,
+        "factRecall": {
+          "challengerOnly": 10,
+          "shippedOnly": 13,
+          "pValue": 0.6776394844055176,
+          "pAhead": 0.7975635528564453,
+          "pBehind": 0.3388197422027588,
+          "paired": 57,
+          "leftOut": 0,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": -0.02527599106546475,
+            "low": -0.06711100790048158,
+            "high": 0.014230555020028705,
+            "confidence": 0.95
+          }
+        },
+        "faithfulness": {
+          "challengerOnly": 22,
+          "shippedOnly": 18,
+          "pValue": 0.6358280026288412,
+          "pAhead": 0.3179140013144206,
+          "pBehind": 0.7852047460783069,
+          "paired": 56,
+          "leftOut": 1,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": 0.003783231921362177,
+            "low": -0.025975650171940527,
+            "high": 0.0376436149593768,
+            "confidence": 0.95
+          }
+        },
+        "coverageGaps": {
+          "challengerOnly": 0,
+          "shippedOnly": 0,
+          "pValue": 1.0,
+          "pAhead": 1.0,
+          "pBehind": 1.0,
+          "paired": 36,
+          "leftOut": 0,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "confidence": 0.95
+          }
+        },
+        "contradictedClaims": {
+          "challengerOnly": 3,
+          "shippedOnly": 3,
+          "pValue": 1.0,
+          "pAhead": 0.65625,
+          "pBehind": 0.65625,
+          "paired": 59,
+          "leftOut": 1,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": 0.0,
+            "low": -0.0847457627118644,
+            "high": 0.0847457627118644,
+            "confidence": 0.95
+          }
+        },
+        "qualifies": false,
+        "shippable": true,
+        "statedFacts": null,
+        "byEvidence": null
+      },
+      {
+        "name": "chunks-600-budget-48000",
+        "cases": 60,
+        "factRecall": {
+          "challengerOnly": 12,
+          "shippedOnly": 9,
+          "pValue": 0.6636238098144531,
+          "pAhead": 0.33181190490722656,
+          "pBehind": 0.808344841003418,
+          "paired": 57,
+          "leftOut": 0,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": 0.01744405691774113,
+            "low": -0.01898077555972292,
+            "high": 0.057099820257714984,
+            "confidence": 0.95
+          }
+        },
+        "faithfulness": {
+          "challengerOnly": 21,
+          "shippedOnly": 17,
+          "pValue": 0.6271025701571489,
+          "pAhead": 0.31355128507857444,
+          "pBehind": 0.7911539045817335,
+          "paired": 56,
+          "leftOut": 1,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": 0.014821607368461642,
+            "low": -0.018596522412588308,
+            "high": 0.050437219575598616,
+            "confidence": 0.95
+          }
+        },
+        "coverageGaps": {
+          "challengerOnly": 0,
+          "shippedOnly": 0,
+          "pValue": 1.0,
+          "pAhead": 1.0,
+          "pBehind": 1.0,
+          "paired": 36,
+          "leftOut": 0,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "confidence": 0.95
+          }
+        },
+        "contradictedClaims": {
+          "challengerOnly": 3,
+          "shippedOnly": 2,
+          "pValue": 1.0,
+          "pAhead": 0.5,
+          "pBehind": 0.8125,
+          "paired": 59,
+          "leftOut": 1,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": 0.01694915254237288,
+            "low": -0.05084745762711865,
+            "high": 0.0847457627118644,
+            "confidence": 0.95
+          }
+        },
+        "qualifies": false,
+        "shippable": true,
+        "statedFacts": null,
+        "byEvidence": null
+      },
+      {
+        "name": "chunks-800-budget-48000",
+        "cases": 60,
+        "factRecall": {
+          "challengerOnly": 14,
+          "shippedOnly": 13,
+          "pValue": 1.0,
+          "pAhead": 0.5,
+          "pBehind": 0.6494459807872772,
+          "paired": 57,
+          "leftOut": 0,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": 0.020569927148874515,
+            "low": -0.025724032302979673,
+            "high": 0.06884358331726753,
+            "confidence": 0.95
+          }
+        },
+        "faithfulness": {
+          "challengerOnly": 26,
+          "shippedOnly": 8,
+          "pValue": 0.0029350556433200836,
+          "pAhead": 0.0014675278216600418,
+          "pBehind": 0.9995893023442477,
+          "paired": 56,
+          "leftOut": 2,
+          "verdict": "ahead",
+          "difference": {
+            "mean": 0.033449766766192025,
+            "low": 0.008691835524542288,
+            "high": 0.06323260248155207,
+            "confidence": 0.95
+          }
+        },
+        "coverageGaps": {
+          "challengerOnly": 0,
+          "shippedOnly": 0,
+          "pValue": 1.0,
+          "pAhead": 1.0,
+          "pBehind": 1.0,
+          "paired": 36,
+          "leftOut": 0,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": 0.0,
+            "low": 0.0,
+            "high": 0.0,
+            "confidence": 0.95
+          }
+        },
+        "contradictedClaims": {
+          "challengerOnly": 5,
+          "shippedOnly": 3,
+          "pValue": 0.7265625,
+          "pAhead": 0.36328125,
+          "pBehind": 0.85546875,
+          "paired": 59,
+          "leftOut": 1,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": 0.03389830508474576,
+            "low": -0.05084745762711865,
+            "high": 0.13559322033898305,
+            "confidence": 0.95
+          }
+        },
+        "qualifies": false,
+        "shippable": true,
+        "statedFacts": null,
+        "byEvidence": null
       }
     ]
   },
