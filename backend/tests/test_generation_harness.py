@@ -1593,3 +1593,34 @@ def test_a_brief_suite_run_beside_golden_set_version_2_still_loads_the_suite(
     )
 
     assert code == 0
+
+
+def test_both_harnesses_count_evidence_reached_by_the_one_function(index, tmp_path):
+    """The retrieval and generation harnesses record the same Evidence Reached for the same
+    Answer Context: the brief's risk comparison at a budget that leaves some facts out."""
+    from edgar_eval import generation, retrieval
+    from edgar_rag.golden_set import load_golden_set
+    from edgar_rag.retrieval import prepare_answer_context
+
+    case = next(c for c in load_golden_set(GOLDEN_SET_V1).cases if c.id == "risk-aapl-tsla-jpm")
+    context = prepare_answer_context(retrieval.conversation(case), index, context_budget=3_000)
+
+    def prepare(messages, path, **settings):
+        return context
+
+    expected = retrieval.evidence_reached(context, case.required_facts)
+    arm = retrieval.Arm("fts5", "", lambda m, i, **s: [], shipped=True, prepare=prepare)
+    by_retrieval = retrieval.evaluate([case], [arm], index).arms["fts5"].cases[0]
+    by_generation = generation.evaluate(
+        [case],
+        FakeModel(ANSWER),
+        FakeJudge(),
+        index,
+        names={},
+        fact_values=lambda filing_id: [],
+        log_path=None,
+        prepare=prepare,
+    ).cases[0]
+
+    assert True in expected and False in expected
+    assert by_retrieval.evidence_reached == by_generation.evidence_reached == expected

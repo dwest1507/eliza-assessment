@@ -549,6 +549,59 @@ def test_a_missing_section_falls_back_to_the_whole_filing(index):
     assert {s.section for s in context.sources} - {"MD&A"}
 
 
+# --- The places searched -----------------------------------------------------------------
+
+
+def _searched(context):
+    return [(p.ticker, p.filing_id, p.section) for p in context.query_scope.searched]
+
+
+def test_a_hinted_question_records_the_hinted_section_of_each_filing_searched(index):
+    context = _ask(index, "What does Tesla's latest MD&A say about deliveries?")
+
+    assert _searched(context) == [("TSLA", "TSLA_10-K_2025-12-31", "MD&A")]
+
+
+def test_a_risk_question_records_each_risk_factors_searched_and_not_the_pointer(index):
+    context = _ask(index, BRIEF_QUESTION)
+
+    # Apple's Q1 FY2026 10-Q points back to the 10-K: it is cited as it stands, not
+    # searched.
+    assert _searched(context) == [
+        ("AAPL", "AAPL_10-K_2025-09-27", "Risk Factors"),
+        ("TSLA", "TSLA_10-K_2025-12-31", "Risk Factors"),
+        ("JPM", "JPM_10-K_2025-12-31", "Risk Factors"),
+    ]
+    assert ("AAPL_10-Q_2025-12-27", "Risk Factors") in {
+        (s.filing_id, s.section) for s in context.sources
+    }
+
+
+def test_a_filing_searched_whole_is_recorded_with_no_section(index):
+    stub = _ask(index, "What legal proceedings does Tesla disclose in its latest Filings?")
+    unhinted = _ask(index, "How does Apple describe its services business?")
+
+    assert _searched(stub) == [("TSLA", "TSLA_10-K_2025-12-31", None)]
+    assert _searched(unhinted) == [
+        ("AAPL", f.filing_id, None) for f in unhinted.query_scope.filings
+    ]
+    assert len(_searched(unhinted)) == 16
+
+
+def test_a_question_naming_no_company_records_every_filing_searched_whole(index, indexed_filings):
+    context = _ask(index, "Which companies discuss artificial intelligence?")
+
+    assert {(p.filing_id, p.section) for p in context.query_scope.searched} == {
+        (f.filing_id, None) for f in indexed_filings
+    }
+
+
+def test_a_question_about_only_missing_companies_searches_nowhere(index):
+    context = _ask(index, "What are Citigroup's main risk factors?")
+
+    assert context.query_scope.searched == ()
+
+
 # --- Risk routing ------------------------------------------------------------------------
 
 

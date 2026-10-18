@@ -58,6 +58,18 @@ export interface QueryScope {
   sections: string[]
   /** `revenue`, `net_income`, or null when the question names no metric. */
   metric: string | null
+  /**
+   * Where retrieval searched, by Company and then oldest Filing first. Absent from an
+   * answer saved before the chat API sent it.
+   */
+  searched?: SearchedPlace[]
+}
+
+/** One place retrieval searched: a Section of a Filing, or (`section` null) all of it. */
+export interface SearchedPlace {
+  ticker: string
+  filingId: string
+  section: string | null
 }
 
 /**

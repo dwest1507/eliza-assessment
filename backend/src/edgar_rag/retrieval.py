@@ -46,7 +46,8 @@ hint is a preference: each Filing in the window is searched in the hinted Sectio
 whole when that Section is missing or a stub (finding 14). A risk question is routed to
 the latest 10-K's Risk Factors plus any later 10-Q that states risk text; a later 10-Q
 whose Risk Factors only point back to the 10-K is cited as it stands, never ranked
-(finding 16).
+(finding 16). The Query Scope records the places searched (`QueryScope.searched`), so
+the answer's reader, and the evaluation, can see where retrieval looked.
 
 Repeated text costs the budget once (finding 17). A chunk repeated across a Company's
 Filings is stored once and cited from the most recent Filing in the plan that holds it,
@@ -136,6 +137,7 @@ __all__ = [
     "Ranker",
     "STUB_TOKENS",
     "ScopeCompany",
+    "SearchedPlace",
     "ScopeFiling",
     "SectorPhrase",
     "Source",
@@ -291,6 +293,22 @@ class QueryScope:
     """Companies the question names that are not in the Corpus, from the curated list
     of notable missing Companies, in the order it names them. They are Coverage Gaps,
     never answered."""
+    searched: tuple[SearchedPlace, ...] = ()
+    """Where retrieval searched: the Section plan's places, by Company in the order the
+    question names them (every Company, by ticker, for a question naming none) and then
+    oldest Filing first. A Filing searched whole has a Section of None. A risk pointer
+    cited as it stands is not searched, so it is not listed. Empty when nothing was
+    searched (a question naming only Companies missing from the Corpus)."""
+
+
+@dataclass(frozen=True)
+class SearchedPlace:
+    """One place retrieval searched: a Section of a Filing, or the whole Filing."""
+
+    ticker: str
+    filing_id: str
+    section: str | None
+    """The Section searched, or None for the whole Filing."""
 
 
 @dataclass(frozen=True)
@@ -534,7 +552,7 @@ def prepare_answer_context(
         facts = _facts.lookup(db, companies, metrics, segments, scope.filings, scope.periods)
         fact_sources, rows = _facts_sources(db, facts)
         terms = _terms(*(n.words for n in inherited.asked))
-        sources = fact_sources + _sources(
+        text_sources, searched = _sources(
             db,
             scope,
             filings,
@@ -543,6 +561,8 @@ def prepare_answer_context(
             explicit=bool(left_out),
             first_number=len(fact_sources) + 1,
         )
+        sources = fact_sources + text_sources
+        scope = replace(scope, searched=searched)
     by_ticker = {c.ticker: c for c in known}
     covered = list(companies) or [by_ticker[t] for t in dict.fromkeys(s.ticker for s in sources)]
     coverage = tuple(
@@ -751,18 +771,20 @@ def _sources(
     context_budget: int,
     explicit: bool = False,
     first_number: int = 1,
-) -> tuple[Source, ...]:
-    """The numbered Sources for the Query Scope. `filings` holds the Filings retrieval
-    may use; with `explicit`, some were left out (a stale Filing), so retrieval is held
-    to the Filings listed even when the scope would otherwise search anywhere. A
-    question that names only Companies missing from the Corpus gets no Sources."""
+) -> tuple[tuple[Source, ...], tuple[SearchedPlace, ...]]:
+    """The numbered Sources for the Query Scope, and the places searched for them.
+    `filings` holds the Filings retrieval may use; with `explicit`, some were left out
+    (a stale Filing), so retrieval is held to the Filings listed even when the scope
+    would otherwise search anywhere. A question that names only Companies missing from
+    the Corpus gets no Sources and searches nowhere."""
     tickers: list[str | None] = [c.ticker for c in scope.companies]
     if not tickers:
         if scope.missing_companies:
-            return ()
+            return (), ()
         tickers = [None]
     budget = context_budget // len(tickers)
     sources: list[Source] = []
+    searched: list[SearchedPlace] = []
     for ticker in tickers:
         windowed = [
             f
@@ -775,6 +797,9 @@ def _sources(
         plan = _plan(db, scope, windowed)
         if explicit and plan.places is None:
             plan = _Plan(places=[(f.filing_id, None) for f in windowed], pointers=[])
+        owner = {f.filing_id: f.ticker for f in windowed}
+        places = plan.places if plan.places is not None else [(f.filing_id, None) for f in windowed]
+        searched += [SearchedPlace(owner[f], f, section) for f, section in places]
         pointers = _pointer_rows(db, plan.pointers)
         chosen: list[_Row] = []
         spent = sum(row["tokens"] for row in pointers)
@@ -784,7 +809,7 @@ def _sources(
             spent += row["tokens"]
             chosen.append(row)
         sources += _group(chosen + pointers, first_number=first_number + len(sources))
-    return tuple(sources)
+    return tuple(sources), tuple(searched)
 
 
 def _pointer_rows(db: sqlite3.Connection, pointers: list[tuple[str, str]]) -> list[sqlite3.Row]:

@@ -19,6 +19,7 @@ from edgar_eval.export import coverage_grid, main
 from edgar_eval.judge import JEV_MODEL
 from edgar_eval.retrieval import Arm
 from edgar_rag.golden_set import GOLDEN_SET_V1, GOLDEN_SET_V2, load_golden_set
+from edgar_rag.retrieval import SearchedPlace
 
 TODAY = date(2026, 10, 16)
 V1 = ("--golden-set", str(GOLDEN_SET_V1))
@@ -52,8 +53,8 @@ def _every_fact_reached(messages, index, **settings):
     """The Answer Context of `_first_expected`: one Source holding every evidence quote."""
     case = _case_by_question(messages[-1].content)
     text = " ".join(f.evidence for f in case.required_facts)
-    return SimpleNamespace(
-        sources=tuple(
+    return _context(
+        *(
             SimpleNamespace(
                 kind="text",
                 ticker=s.filing_id.split("_")[0],
@@ -67,7 +68,13 @@ def _every_fact_reached(messages, index, **settings):
 
 
 def _nothing_reached(messages, index, **settings):
-    return SimpleNamespace(sources=())
+    return _context()
+
+
+def _context(*sources):
+    """A fake Answer Context of these Sources, searched in each one's Section."""
+    searched = tuple(SearchedPlace(s.ticker, s.filing_id, s.section) for s in sources)
+    return SimpleNamespace(sources=sources, query_scope=SimpleNamespace(searched=searched))
 
 
 def _write_retrieval_report(eval_dir, split="dev", golden_set=GOLDEN_SET_V2, evidence=True):

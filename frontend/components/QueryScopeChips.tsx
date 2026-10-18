@@ -1,4 +1,4 @@
-import type { QueryScope } from '@/lib/chat'
+import type { QueryScope, SearchedPlace } from '@/lib/chat'
 
 interface Chip {
   text: string
@@ -35,22 +35,54 @@ export function scopeChips(scope: QueryScope): Chip[] {
   return chips
 }
 
+const WHOLE = 'Whole Filing'
+
 /**
- * What the rules resolved from the question, shown under its answer's "How this was
- * answered" so it can be disputed.
+ * The chips for where retrieval searched: one per Section, in the order it was first
+ * searched, then the Filings searched whole, each counting its Filings and naming them
+ * in its title.
  */
-export default function QueryScopeChips({ scope }: { scope: QueryScope }) {
+export function searchedChips(searched: SearchedPlace[]): Chip[] {
+  const filings = new Map<string, string[]>()
+  for (const place of searched) {
+    const name = place.section ?? WHOLE
+    filings.set(name, [...(filings.get(name) ?? []), place.filingId])
+  }
+  const names = [...filings.keys()].filter((name) => name !== WHOLE)
+  if (filings.has(WHOLE)) names.push(WHOLE)
+  return names.map((name) => {
+    const ids = filings.get(name) ?? []
+    const count = `${ids.length} Filing${ids.length === 1 ? '' : 's'}`
+    const searchedIn = name === WHOLE ? 'Searched whole' : 'Searched in'
+    return { text: `${name} · ${count}`, title: `${searchedIn}: ${ids.join(', ')}` }
+  })
+}
+
+const CHIP =
+  'rounded-full border border-white/[0.10] px-2.5 py-0.5 font-mono text-[12px] tracking-wide text-muted'
+
+function ChipList({ label, chips }: { label: string; chips: Chip[] }) {
   return (
-    <ul aria-label="Query Scope" className="flex flex-wrap gap-1.5">
-      {scopeChips(scope).map((chip) => (
-        <li
-          key={`${chip.title}:${chip.text}`}
-          title={chip.title}
-          className="rounded-full border border-white/[0.10] px-2.5 py-0.5 font-mono text-[12px] tracking-wide text-muted"
-        >
+    <ul aria-label={label} className="flex flex-wrap gap-1.5">
+      {chips.map((chip) => (
+        <li key={`${chip.title}:${chip.text}`} title={chip.title} className={CHIP}>
           {chip.text}
         </li>
       ))}
     </ul>
+  )
+}
+
+/**
+ * What the rules resolved from the question, and where retrieval searched for it, shown
+ * under its answer's "How this was answered" so it can be disputed.
+ */
+export default function QueryScopeChips({ scope }: { scope: QueryScope }) {
+  const searched = searchedChips(scope.searched ?? [])
+  return (
+    <div className="flex flex-col gap-1.5">
+      <ChipList label="Query Scope" chips={scopeChips(scope)} />
+      {searched.length > 0 && <ChipList label="Searched in" chips={searched} />}
+    </div>
   )
 }

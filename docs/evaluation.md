@@ -25,7 +25,8 @@ It needs the index (`make index`, built automatically when missing) and no LLM c
    - **hit@all, recall@all**: the same over every Source, so whether the pair reached the Answer Call at all.
    - **MRR**: the mean over cases of one over the rank of the first expected pair (0 when none is found).
    - **Sources**: the mean number of Sources returned, so a gain from simply returning more is visible.
-   - **Tokens** and **evidence reached**, for an Arm that prepares the whole Answer Context (every Arm in `ARMS`): the mean tokens of Source text per Answer Context, and how many of the cases' Required Facts have their evidence quote, whitespace aside, in that text. The report records Evidence Reached per Required Fact (each case's `evidence_reached`, in the case's fact order), and the printout lists the cases with a fact not reached. The labels above are Sections, so a change of chunk size or context budget barely moves them; evidence reached shows whether the passages stating the facts reach the prompt, which no prompt can make up for ([ADR 0010](adr/0010-chunk-size-and-context-budget.md)).
+   - **Tokens** and **evidence reached**, for an Arm that prepares the whole Answer Context (every Arm in `ARMS`): the mean tokens of Source text per Answer Context, and how many of the cases' Required Facts have their evidence quote, whitespace aside, in that text. The report records Evidence Reached per Required Fact (each case's `evidence_reached`, in the case's fact order), and the printout lists the cases with a fact not reached. One function, `edgar_eval.retrieval.evidence_reached`, decides it for both this harness and the generation harness, so the two can never count it differently. The labels above are Sections, so a change of chunk size or context budget barely moves them; evidence reached shows whether the passages stating the facts reach the prompt, which no prompt can make up for ([ADR 0010](adr/0010-chunk-size-and-context-budget.md)).
+   - **Planning and ranking misses**, for the same Arms: each case records every Required Fact whose evidence did not reach the Answer Context (`unreached`: its place in the case's fact order, its tier, the Filing and Section its quote is in, and `searched`), where `searched` says whether retrieval searched that Section of that Filing, or that Filing whole. The places searched are the ones the Answer Context's Query Scope records (`searched`: the Section plan's (Filing ID, Section) pairs, a Filing searched whole having no Section). A fact not searched is a **planning miss**: the Section plan left it out. One searched but not reached is a **ranking miss**: its passage did not rank into the Company's share of the budget. The printout gives each Arm's must-state planning and ranking misses, case by case.
 4. **Scores are averaged overall and per question type.** Cases with no expected pair have nothing to find (a Company missing from the Corpus, General Electric today); they are listed as unscored. Whether those answers state their Coverage Gaps is the generation harness's job.
 5. **Challengers are gated on Evidence Reached, fact by fact** (built for version 2: see [The gate and the screen](#the-gate-and-the-screen)). For each challenger, every Required Fact of the scored cases is paired with the Shipped Arm's, and McNemar's exact test is run on the discordant ones (facts only one Arm's Answer Context reached), one-sided, under the selection rules' thresholds: **ahead** at p < 0.10, **behind** at p < 0.20, **indistinguishable** otherwise. hit@k, recall@k and MRR are still reported, but not gated on. Until this was built the gate was hit@10, paired per case and two-sided at p < 0.05; that gate gave the same result for every Arm and every chunk size and context budget, and the version 1 results below were recorded under it.
 
@@ -260,7 +261,7 @@ It runs each Golden Set case through the whole pipeline, one real Answer Call pe
    - **A failed judgment** (built for version 2, issue #50): each Jev request is one judgment, the Fact Recall of an answer or the Faithfulness of one group of claims. A request that fails, such as `max_tokens_exceeded` on long Sources, is recorded in the case's judgments with its error, and the case keeps its code checks and its other judgments. The score that depends on the failed judgment is missing for that case (shown as `–`, never 0, except a truncated answer's Fact Recall, which is 0 regardless), and the run counts the failed judgments in its summary (`judgments_failed`) and prints each one. Before this, a Jev failure dropped the whole case into the report's errors, code checks included, which is why `trend-jpm-revenue-snapshot` has no row in several runs below. A response from another Jev version still fails the case.
 4. **Cost and latency** come from each Answer Call's logged record: input and output tokens priced at the model's list price per million tokens (`GENERATORS` in `generators.py`: `gpt-6-luna` $0.10 in, $0.50 out; `gpt-6.1-sol` $2.00 in, $10.00 out, OpenAI's standard tier; `claude-sonnet-5-5` $2.00 in, $10.00 out; `claude-opus-5-5` $4.00 in, $20.00 out, Anthropic's API; all on 2026-10-16; and `claude-haiku-5-5` $0.10 in, $0.50 out, Anthropic's API for prompts under 100k tokens, on 2026-10-17), and the latency to the first text and to the end of the stream. Every input token is priced at the full rate, ignoring cached input, so the cost is an upper bound. Jev's own cost ($0.042 per million input tokens) is reported separately, since it is the evaluation's cost, not the product's.
 5. **Scores are averaged overall and per question type**, and each failing case is listed by check, so a score can be traced to the answers behind it. A score with nothing to score (no Required Fact, no expected gap) is shown as `–`, not 0.
-6. **Evidence Reached** is recorded per case for each Required Fact (`evidence_reached`, in the case's fact order): whether the fact's evidence quote is in the text of the Answer Context's Sources, compared after collapsing whitespace, as the retrieval harness's "evidence" column counts it. A fact Jev finds missing although its evidence reached the prompt is a generation miss; one whose evidence never reached it is a retrieval miss. Reports saved before it was recorded have none.
+6. **Evidence Reached** is recorded per case for each Required Fact (`evidence_reached`, in the case's fact order): whether the fact's evidence quote is in the text of the Answer Context's Sources, compared after collapsing whitespace, by the same function (`edgar_eval.retrieval.evidence_reached`) that the retrieval harness's "evidence" column counts with. A fact Jev finds missing although its evidence reached the prompt is a generation miss; one whose evidence never reached it is a retrieval miss. Reports saved before it was recorded have none.
 
 ### The Brief Suite run
 
@@ -1041,6 +1042,38 @@ Each states something about a Filing's content or a Company in a clause that doe
 **Reports.** The new reports replace #73's in `data/derived/eval/` (`generation-dev.json`, `generation-control-dev.json` and `brief-suite.json`). #73's are kept as written in `data/derived/eval-issue73/`. The "How it works" page shows the new shipped run, Control Run and Brief Suite, beside #73's generator comparison, which stands as recorded.
 
 **Spend.** The three runs printed their estimates first (up to $0.38, $0.38 and $0.47). They cost $0.25 (the shipped run: $0.168 in Answer Calls, $0.082 in Jev judging), $0.26 (the Control Run: $0.169 and $0.087) and $0.39 (the Brief Suite: $0.240 and $0.153), **$0.90 in all**. A version 2 dev run costs about $0.25, not version 1's $0.07: it has 60 cases, not 20.
+
+#### Where the evidence is missed: the starting point for #116 (2026-10-18)
+
+Issue #117, the prefactor of spec #116, which works on getting the Required Facts' evidence into the Answer Context. It changes no retrieval: `make eval-retrieval` on dev gives exactly the Evidence Reached of #92's `retrieval-dev.json` for every Arm it ran, case by case and fact by fact (FTS5 740 of 939 facts, 248 of the 316 must-state ones), and the Floors pass unchanged (hit@10 0.930, recall@10 0.852, MRR 0.784). It now also records, for each fact not reached, whether its Section was searched ([Method](#method), "Planning and ranking misses"). The split below is the shipped setup's (`fts5`, 600-token chunks, the 32k budget), the starting point the rule fixes of #116 are measured against.
+
+**68 must-state facts are not reached: 9 planning misses and 59 ranking misses.**
+
+| Question type | must-state facts | reached | planning misses | ranking misses |
+|---|---|---|---|---|
+| risk | 110 | 87 | 9 | 14 |
+| sector | 111 | 96 | 0 | 15 |
+| figure_trend | 55 | 34 | 0 | 21 |
+| outlook | 21 | 14 | 0 | 7 |
+| missing_company | 10 | 9 | 0 | 1 |
+| stale_filing | 9 | 8 | 0 | 1 |
+| **all** | **316** | **248** | **9** | **59** |
+
+| Section of the fact | planning misses | ranking misses |
+|---|---|---|
+| MD&A | 3 | 26 |
+| Risk Factors | 0 | 20 |
+| Market Risk | 6 | 0 |
+| Financial Statements | 0 | 5 |
+| Business | 0 | 3 |
+| Legal Proceedings | 0 | 3 |
+| Other | 0 | 2 |
+
+- **The planning misses are three cases.** `risk-aapl-msft-market-risk` (6: "interest rate and foreign exchange risk" sets no Market Risk hint, so only Risk Factors is searched), `followup-topic-change-export-controls` (2: ADR 0003's known weakness, which inherits the wrong Companies and is out of #116's scope) and `risk-unh-cybersecurity` (1: the Change Healthcare account in the FY2024 10-K's MD&A, outside the risk route's latest 10-K Risk Factors).
+- **Spec #116's estimate of 12 counts more as planning.** Where a hinted Section is a stub, the Filing is searched whole, so a fact in its Financial Statements, such as the contingencies note that Amazon's and Meta's Legal Proceedings point to, counts here as searched, a ranking miss. So do the outlook questions, which today search every Filing of the Company whole. Their fix is still a planning change (a narrower or added Section), but what failed under today's plan was ranking.
+- **The ranking misses lead.** 26 of the 59 are in MD&A, 24 of them from figure trends and outlook questions, which set no Section hint and so search each Filing in their window whole. 20 are in Risk Factors, 18 of them from risk and sector questions on the risk route, where a Company's Risk Factors can run past its share of the budget. Among the other Arms `hybrid-local` has the fewest ranking misses (44, against `rerank`'s 58 and `dense-local`'s 56); none changes the 9 planning misses, since every Arm ranks inside the same plan.
+- **Details** (reported, not scored as Fact Recall): 26 planning misses and 105 ranking misses.
+- **Not re-run:** the hosted `dense` and `hybrid` Arms, which can't ship under the one-call rule and need an OpenAI key to embed the questions their cache lacks; #92's report stands for them.
 
 ### The version 2 holdout run
 

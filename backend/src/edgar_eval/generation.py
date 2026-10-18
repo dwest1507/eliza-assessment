@@ -41,7 +41,8 @@ Sources per Answer Call (ADR 0010); the report records both, and names the setti
 (`edgar_eval.brief_suite`; `make eval-brief`). A Golden Set run answers each case once.
 Every paid run prints its estimated cost (`edgar_eval.brief_suite.estimate_cost`) before
 the first Answer Call. Each case result records Evidence Reached for each Required Fact:
-whether its evidence quote is in the text of the Answer Context's Sources.
+whether its evidence quote is in the text of the Answer Context's Sources, decided by the
+retrieval harness's `evidence_reached`.
 
 `--model` takes a generator from `edgar_eval.generators.GENERATORS`, which says which
 provider answers with it. It calls the generator and Jev, so it needs `JEV_API_KEY` and
@@ -89,7 +90,7 @@ from edgar_eval.answer_checks import (
 )
 from edgar_eval.generators import answer_cost, answer_model
 from edgar_eval.judge import FACT_CUTOFF, Evidence, Judgments
-from edgar_eval.retrieval import Arm, Prepare, conversation
+from edgar_eval.retrieval import Arm, Prepare, conversation, evidence_reached
 from edgar_rag.answer_model import DEFAULT_ANSWER_LOG, AnswerCall, AnswerModel, StopReason
 from edgar_rag.corpus import DEFAULT_SECTOR_TABLE
 from edgar_rag.golden_set import (
@@ -101,7 +102,6 @@ from edgar_rag.golden_set import (
     Tier,
     load_brief_suite,
     load_golden_set,
-    normalise_whitespace,
 )
 from edgar_rag.paths import REPO_ROOT
 from edgar_rag.retrieval import (
@@ -461,7 +461,6 @@ def _run_case(
 
     passages = {s.number: s.text for s in context.sources}
     evidence = {s.tag: Evidence(s.tag, s.label, s.text) for s in context.sources}
-    source_text = normalise_whitespace("\n".join(s.text for s in context.sources))
     covered = {s.ticker: names.get(s.ticker, (s.ticker,)) for s in context.sources}
     gaps = case.expected_coverage_gaps
     judged, gap_claims = split_gap_claims(claims(answer), gaps)
@@ -485,9 +484,7 @@ def _run_case(
         fact_tiers=tuple(f.tier for f in case.required_facts),
         stop_reason=record.stop_reason,
         raw_stop_reason=record.raw_stop_reason,
-        evidence_reached=tuple(
-            normalise_whitespace(f.evidence) in source_text for f in case.required_facts
-        ),
+        evidence_reached=evidence_reached(context, case.required_facts),
         gap_claims=tuple(gap_claims),
     )
 

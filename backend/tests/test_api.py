@@ -120,6 +120,27 @@ def test_the_query_scope_carries_time_window_sections_and_metric(client):
     assert scope["metric"] == "revenue"
 
 
+def test_the_query_scope_carries_the_sections_searched(client):
+    question = "What legal proceedings does Apple disclose in its latest Filings?"
+
+    scope = part_of(events(chat(client, user(question))), "data-query-scope")["data"]
+
+    assert scope["searched"] == [
+        {"ticker": "AAPL", "filingId": "AAPL_10-K_2025-09-27", "section": "Legal Proceedings"},
+        {"ticker": "AAPL", "filingId": "AAPL_10-Q_2025-12-27", "section": "Legal Proceedings"},
+    ]
+
+
+def test_the_query_scope_marks_a_filing_searched_whole(client):
+    question = "What legal proceedings does Tesla disclose in its latest Filings?"
+
+    scope = part_of(events(chat(client, user(question))), "data-query-scope")["data"]
+
+    assert scope["searched"] == [
+        {"ticker": "TSLA", "filingId": "TSLA_10-K_2025-12-31", "section": None}
+    ]
+
+
 def test_the_query_scope_carries_the_companies_a_sector_phrase_resolved_to(sector_index):
     client = TestClient(create_app(index=sector_index, model=FakeModel(), log_path=None))
 
