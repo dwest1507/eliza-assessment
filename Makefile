@@ -130,14 +130,11 @@ eval-brief: $(EVAL_INDEX) $(if $(filter dense hybrid,$(ARM)),$(EMBEDDINGS)) $(if
 		$(if $(MODEL),--model $(MODEL)) $(if $(ARM),--arm $(ARM)) $(SETTINGS_ARGS) \
 		--json ../data/derived/eval/brief-suite$(if $(ARM),-$(ARM))$(if $(MODEL),-$(MODEL))$(SETTINGS).json
 
-# Every saved generation report, the prompt iterations' included, and every saved Brief
-# Suite report.
-GENERATION_REPORTS = $(wildcard data/derived/eval/generation-*.json data/derived/eval/prompt-iterations/generation-*.json)
-BRIEF_REPORTS = $(wildcard data/derived/eval/brief-suite*.json)
-
-eval-rescore: $(INDEX) ## Redo the figure check of every saved generation report, and drop Jev's verdicts on expected Coverage Gap sentences and the uncited claims the claim split no longer makes from it and every saved Brief Suite report, in place (no Answer Call, no Jev call)
-	@if [ -z "$(GENERATION_REPORTS)$(BRIEF_REPORTS)" ]; then echo 'No saved generation reports in data/derived/eval/.'; exit 0; fi
-	$(UV) python -m edgar_eval.generation --rescore $(addprefix ../,$(GENERATION_REPORTS) $(BRIEF_REPORTS))
+# REPORTS picks the reports eval-rescore re-scores. Unset, they are the current round's
+# shipped run, Control Run and Brief Suite. It takes paths, or names in data/derived/eval/,
+# and REPORTS=all means every saved generation and Brief Suite report.
+eval-rescore: $(INDEX) ## Re-score saved reports from their stored answers, in place, with no Answer Call and no Jev call. By default it re-scores the current round's shipped run, Control Run and Brief Suite; REPORTS="..." names other reports, and REPORTS=all re-scores every saved one
+	$(UV) python -m edgar_eval.rescore --split $(SPLIT) $(if $(filter all,$(REPORTS)),--all,$(REPORTS))
 
 # The comparison commands share a round's shipped run (generation-<split>.json) and Control
 # Run (generation-control-<split>.json), reusing them while the code, prompt and Golden Set

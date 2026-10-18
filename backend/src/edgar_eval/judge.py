@@ -62,6 +62,7 @@ __all__ = [
     "JevJudge",
     "JudgmentFailure",
     "Judgments",
+    "faithfulness_score",
 ]
 
 JEV_MODEL = "jev-1.13.0"
@@ -159,6 +160,16 @@ class JudgmentFailure:
     error: str
 
 
+def faithfulness_score(verdicts: Sequence[str], *, failed: bool) -> float | None:
+    """Faithfulness from Jev's verdicts on an answer's claims: the share judged
+    supported, or None if there is no claim or the judgment `failed`. The rule is stated
+    here only: `Judgments.faithfulness` and the offline re-score (`edgar_eval.rescore`)
+    read it."""
+    if not verdicts or failed:
+        return None
+    return sum(v == "supported" for v in verdicts) / len(verdicts)
+
+
 @dataclass(frozen=True)
 class Judgments:
     facts: tuple[FactJudgment, ...]
@@ -185,9 +196,9 @@ class Judgments:
     def faithfulness(self) -> float | None:
         """The share of claims their cited Sources support, or None if there is no claim
         or any claim's judgment failed."""
-        if not self.claims or self._failed("faithfulness"):
-            return None
-        return sum(c.verdict == "supported" for c in self.claims) / len(self.claims)
+        return faithfulness_score(
+            [c.verdict for c in self.claims], failed=self._failed("faithfulness")
+        )
 
     @property
     def cost_usd(self) -> float:

@@ -439,7 +439,7 @@ def test_rescoring_a_brief_suite_report_drops_jevs_verdicts_on_its_gap_claims(
     Jev: its gap sentence was judged contradicted in every run, failing the case. The
     rescore drops those verdicts, with no Answer Call and no Jev call, and the case
     passes."""
-    from edgar_eval import generation
+    from edgar_eval import generation, rescore
 
     suite = json.loads(_suite_file(tmp_path).read_text())
     [apple] = [c for c in suite["cases"] if c["id"] == "brief-apple"]
@@ -462,8 +462,8 @@ def test_rescoring_a_brief_suite_report_drops_jevs_verdicts_on_its_gap_claims(
     assert [c["run"] for c in before["cases"][0]["contradicted"]] == [1, 2, 3, 4, 5]
 
     out = io.StringIO()
-    code = generation.main(
-        ["--rescore", str(path), "--brief-suite", str(suite_path), "--index", str(index)],
+    code = rescore.main(
+        [str(path), "--brief-suite", str(suite_path), "--index", str(index)],
         fact_values=lambda filing_id: [],
         out=out,
     )
