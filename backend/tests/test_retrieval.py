@@ -526,6 +526,76 @@ def test_market_risk_phrases_are_not_read_as_risk_factors(index):
     assert context.query_scope.sections == ("Market Risk",)
 
 
+@pytest.mark.parametrize(
+    "question",
+    [
+        # One "risk" closing a list of risk kinds.
+        "How do Apple's and Tesla's interest rate and foreign exchange risk compare?",
+        "What interest rate, currency and commodity price risks does Tesla report?",
+        "What currency risk does Apple disclose?",
+        "What FX risk does Apple report?",
+        "What foreign exchange risk does Apple disclose?",
+        "What exchange risk does Apple face?",
+        "What foreign exchange exposure does Apple report?",
+        "How large is Apple's interest rate exposure?",
+        "What interest rate sensitivity does Apple disclose?",
+        "What commodity price risk does Tesla disclose?",
+    ],
+)
+def test_market_risk_phrasings_search_market_risk_not_risk_factors(index, question):
+    context = _ask(index, question)
+
+    assert context.query_scope.sections == ("Market Risk",)
+    assert "Market Risk" in {p.section for p in context.query_scope.searched}
+    # A 10-Q whose Item 3 is a stub ("no material changes") is searched whole, so other
+    # Sections may join; the hint still plans Market Risk, never Risk Factors alone.
+    assert "Market Risk" in {s.section for s in context.sources}
+
+
+CYBER_SECTIONS = ("Cybersecurity", "Risk Factors", "MD&A")
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "What cybersecurity risks does Tesla describe?",
+        "How does Apple describe cyber threats to its systems?",
+        "What does Apple say about a data breach?",
+        "How does Tesla guard against a cyberattack?",
+        "How does Apple manage information security?",
+    ],
+)
+def test_a_cybersecurity_question_searches_cybersecurity_risk_factors_and_mdna(index, question):
+    context = _ask(index, question)
+
+    assert context.query_scope.sections == CYBER_SECTIONS
+    assert context.query_scope.time_window.label == "latest"
+    assert context.sources
+    assert {s.section for s in context.sources} <= set(CYBER_SECTIONS)
+    assert {s.filing_id for s in context.sources if s.kind == "text"} <= {
+        f.filing_id for f in context.query_scope.filings
+    }
+
+
+def test_a_cybersecurity_question_finds_the_cybersecurity_section_of_the_latest_10k(index):
+    context = _ask(index, "What cybersecurity risks does Tesla describe?")
+
+    assert _scope_filings(context, "TSLA") == ["TSLA_10-K_2025-12-31"]
+    assert ("TSLA_10-K_2025-12-31", "Cybersecurity") in {
+        (s.filing_id, s.section) for s in context.sources
+    }
+    assert {p.section for p in context.query_scope.searched} == set(CYBER_SECTIONS)
+
+
+def test_a_cybersecurity_question_with_a_time_phrase_keeps_its_window(index):
+    context = _ask(
+        index, "How has Tesla's cybersecurity disclosure changed over the last two years?"
+    )
+
+    assert context.query_scope.time_window.label == "last 2 years"
+    assert {s.section for s in context.sources} <= set(CYBER_SECTIONS)
+
+
 def test_a_stub_section_falls_back_to_the_whole_filing(index):
     stub = _chunks(index, filing_id="TSLA_10-K_2025-12-31", section="Legal Proceedings")
     assert sum(c["tokens"] for c in stub) < STUB_TOKENS  # "see Note 15" and little else
@@ -639,6 +709,20 @@ def test_a_risk_question_with_a_time_phrase_keeps_its_window(index):
     assert len(_scope_filings(context, "TSLA")) == 8
     assert {s.section for s in context.sources} == {"Risk Factors"}
     assert {s.filing_id for s in context.sources} & {"TSLA_10-Q_2025-03-31", "TSLA_10-Q_2025-06-30"}
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "What risk factors did Tesla state in FY2023?",
+        "What cybersecurity risks did Tesla describe in FY2023?",
+    ],
+)
+def test_a_risk_question_naming_a_fiscal_period_is_not_held_to_the_latest_filings(index, question):
+    context = _ask(index, question)
+
+    assert context.query_scope.time_window.label == "all Filings"
+    assert "TSLA_10-K_2023-12-31" in {s.filing_id for s in context.sources}
 
 
 def test_each_company_gets_an_even_share_of_the_budget_on_the_risk_route(index):

@@ -1077,6 +1077,23 @@ Issue #117, the prefactor of spec #116, which works on getting the Required Fact
 - **Details** (reported, not scored as Fact Recall): 26 planning misses and 105 ranking misses.
 - **Not re-run:** the hosted `dense` and `hybrid` Arms, which can't ship under the one-call rule and need an OpenAI key to embed the questions their cache lacks; #92's report stands for them.
 
+#### Market Risk phrasings and a cybersecurity route (#119, 2026-10-18)
+
+The first of #116's rule fixes. The Market Risk hint now reads a kind of market risk (interest rates; currency, foreign exchange, FX or exchange rates; commodity prices) followed by "risk", "exposure" or "sensitivity", and a list of kinds closed by one of them, as in "interest rate and foreign exchange risk". A new Cybersecurity hint ("cybersecurity", "cyber", "cyberattack", "data breach", "information security") plans the Cybersecurity Section (Item 1C), Risk Factors and MD&A. Both are read before Risk Factors, and with no time phrase the cybersecurity route, like the risk route, reads the latest Filings. Both routes now keep every Filing in the window when the question names a Fiscal Period ("in FY2023"), so the named period's Filing can be cited; before, the latest window left it out.
+
+`make eval-retrieval` on dev, FTS5 (free), before and after:
+
+| | all facts reached | must-state facts reached | must-state planning misses | must-state ranking misses | hit@10 | recall@10 | MRR |
+|---|---|---|---|---|---|---|---|
+| before (#117) | 740 of 939 (78.8%) | 248 of 316 (78.5%) | 9 | 59 | 0.930 | 0.852 | 0.784 |
+| after | 759 of 939 (80.8%) | 255 of 316 (80.7%) | 2 | 59 | 0.947 | 0.873 | 0.788 |
+
+- **`risk-aapl-msft-market-risk`: 0 to 16 of 16 facts reached** (all 6 must-state). "Interest rate and foreign exchange risk" now sets the Market Risk hint, so Apple's and Microsoft's Item 7A is searched instead of their Risk Factors.
+- **`risk-unh-cybersecurity`: 10 to 17 of 18** (must-state 3 to 4 of 4). The MD&A account of the Change Healthcare cyberattack (about 190 million individuals affected, the response costs, the loans to care providers) and Item 1C's governance passages now reach the prompt. One detail, a Risk Factors passage on breach fines, no longer fits UnitedHealth's budget beside them.
+- **No must-state fact reached before is lost.** Five details are: the UnitedHealth one above, and four of `sector-software-cybersecurity`'s (Microsoft's and Oracle's Risk Factors passages), whose share of the budget now also holds Item 1C and MD&A passages. The case's must-state facts are reached as before (4 of 8, its four other must-state facts ranking misses then and now).
+- **The 2 planning misses left** are `followup-topic-change-export-controls`'s, ADR 0003's known weakness, out of #116's scope. The ranking misses are unchanged.
+- **The Floors** were re-recorded with `make eval-floors` (hit@10 0.92 to 0.94, recall@10 0.85 to 0.87, MRR 0.78 unchanged), since hit@10 and recall@10 rose.
+
 ### The version 2 holdout run
 
 Run once on 2026-10-17 (issue #74), after [the version 2 comparisons on dev](#the-version-2-comparisons-on-dev) had confirmed every shipped choice, on Golden Set version 2's 20 holdout cases. It is the same round as those comparisons (code version `756bfadca63122a9`, prompt v7, Golden Set version 2) and the setup that ships: the `fts5` Arm, 600-token chunks and the 32k budget, `gpt-6-luna` at reasoning effort `low`, judged by `jev-1.13.0` at the fact cut-off 0.6. Under [the holdout rule](#the-holdout-rule) it reports and decides nothing: nothing was changed after it, and no case was relabelled. [Version 1's holdout run](#the-holdout-run) stands as recorded.

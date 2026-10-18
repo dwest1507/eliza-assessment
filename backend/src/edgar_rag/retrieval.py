@@ -46,8 +46,11 @@ hint is a preference: each Filing in the window is searched in the hinted Sectio
 whole when that Section is missing or a stub (finding 14). A risk question is routed to
 the latest 10-K's Risk Factors plus any later 10-Q that states risk text; a later 10-Q
 whose Risk Factors only point back to the 10-K is cited as it stands, never ranked
-(finding 16). The Query Scope records the places searched (`QueryScope.searched`), so
-the answer's reader, and the evaluation, can see where retrieval looked.
+(finding 16). A cybersecurity question is routed the same way, to the Cybersecurity
+Section, Risk Factors and MD&A of the latest Filings. A hint may plan several Sections:
+`QueryScope.sections` lists every Section planned. The Query Scope records the places
+searched (`QueryScope.searched`), so the answer's reader, and the evaluation, can see
+where retrieval looked.
 
 Repeated text costs the budget once (finding 17). A chunk repeated across a Company's
 Filings is stored once and cited from the most recent Filing in the plan that holds it,
@@ -267,10 +270,11 @@ class QueryScope:
     """The Sector phrases the question uses, each with the Sector table rows and the
     Companies it resolved to, so the answer and the front-end can name them."""
     time_window: TimeWindow
-    """The window each Company's Filings are filtered to. A risk question that names no
-    time phrase gets the latest window."""
+    """The window each Company's Filings are filtered to. A risk or cybersecurity
+    question that names no time phrase and no Fiscal Period gets the latest window."""
     sections: tuple[str, ...]
-    """The Sections the question hints at, preferred over the rest of each Filing."""
+    """The Sections the question's hints plan, preferred over the rest of each Filing
+    (a cybersecurity question plans Cybersecurity, Risk Factors and MD&A)."""
     filings: tuple[ScopeFiling, ...]
     """The named Companies' Filings inside the window, by Company and then oldest
     first. A question naming no Company searches every Company's window."""
@@ -509,10 +513,12 @@ def prepare_answer_context(
         who = inherited.companies_from
         companies, sector_phrases, missing = who.companies, who.sector_phrases, who.missing
         sections = inherited.sections_from.sections
-        window = inherited.period_from.window or (
-            LATEST if RISK_FACTORS in sections else TimeWindow("all")
-        )
         periods = inherited.period_from.periods
+        # A risk or cybersecurity question (whose hint plans Risk Factors) that names no
+        # time phrase and no Fiscal Period reads the latest Filings.
+        window = inherited.period_from.window or (
+            LATEST if RISK_FACTORS in sections and not periods else TimeWindow("all")
+        )
         # The question as retrieval reads it: its own words, plus the words of the
         # message whose topic it inherits ("And what about Microsoft?").
         focus = "\n".join(n.text for n in inherited.asked)

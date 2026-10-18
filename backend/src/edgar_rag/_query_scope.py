@@ -12,7 +12,10 @@ Rule-based, with no LLM (ADR 0003). It recognises:
   majors"), resolved only through the sector and industry columns of the curated Sector
   table (assumption 5). Each phrase names table values, never Companies, so the Companies
   it covers are whatever the table says.
-- Section hints: risk factors, legal proceedings, MD&A, market risk and business.
+- Section hints: risk factors, legal proceedings, MD&A, market risk (its own name, or
+  a kind of market risk with "risk", "exposure" or "sensitivity": "interest rate and
+  foreign exchange risk", "FX exposure"), business, and cybersecurity, which plans the
+  Cybersecurity Section, Risk Factors and MD&A.
 - Named periods: "FY2024", "fiscal 2024", "Q2 FY2025", or a bare year ("in 2023"), read
   as Fiscal Periods. A named period decides which copy of a repeated passage is cited.
 - Change questions: "how has it changed", "how did that change", "what is new", "how
@@ -386,40 +389,59 @@ def in_window(window: TimeWindow, filings: Sequence[ScopeFiling]) -> list[ScopeF
 
 # --- Section hints -----------------------------------------------------------------------
 
-# In order: a phrase matched by an earlier hint is not read again by a later one, so
-# "interest rate risk" is Market Risk, not Risk Factors.
-_SECTION_HINTS: tuple[tuple[str, re.Pattern[str]], ...] = tuple(
-    (section, re.compile(pattern, re.I))
-    for section, pattern in (
+# A kind of market risk Item 7A discloses: interest rates, currencies (foreign exchange,
+# FX, exchange rates) and commodity prices.
+_MARKET_RISK_KIND = (
+    r"(?:interest[\s-]+rates?|(?:foreign[\s-]+)?(?:currency|exchange)(?:[\s-]+exchange)?"
+    r"(?:[\s-]+rates?)?|fx|commodity(?:[\s-]+prices?)?)"
+)
+# "interest rate, currency and commodity": one word after the list closes it.
+_MARKET_RISK_KINDS = (
+    rf"{_MARKET_RISK_KIND}(?:(?:\s*,\s*(?:(?:and|or)\s+)?|\s+(?:and|or|&)\s+){_MARKET_RISK_KIND})*"
+)
+
+# Each hint plans one or more Sections. In order: a phrase matched by an earlier hint is
+# not read again by a later one, so "interest rate risk" is Market Risk and "cybersecurity
+# risks" the Cybersecurity hint, neither of them Risk Factors alone.
+_SECTION_HINTS: tuple[tuple[tuple[str, ...], re.Pattern[str]], ...] = tuple(
+    (sections, re.compile(pattern, re.I))
+    for sections, pattern in (
         (
-            "Market Risk",
-            r"\bmarket\s+risks?\b|\binterest[\s-]+rates?\s+risks?\b"
-            r"|\b(?:currency|exchange[\s-]+rates?|commodity(?:\s+prices?)?)\s+risks?\b"
+            ("Market Risk",),
+            r"\bmarket\s+risks?\b"
+            rf"|\b{_MARKET_RISK_KINDS}\s+(?:risks?|exposures?|sensitivit(?:y|ies))\b"
             r"|\bquantitative\s+and\s+qualitative\s+disclosures?\b",
         ),
-        ("Legal Proceedings", r"\blegal\s+proceedings?\b|\blitigation\b|\blawsuits?\b"),
+        (("Legal Proceedings",), r"\blegal\s+proceedings?\b|\blitigation\b|\blawsuits?\b"),
         (
-            "MD&A",
+            ("MD&A",),
             r"\bMD&A\b|\bmanagement[’']?s\s+discussion\b|\bresults\s+of\s+operations\b",
         ),
         (
-            "Business",
+            ("Business",),
             r"\bbusiness\s+(?:section|overview|description)\b"
             r"|\bdescription\s+of\s+(?:the|its|their)\s+business(?:es)?\b",
         ),
-        ("Risk Factors", r"\brisk\s+factors?\b|\brisks?\b"),
+        (
+            # Item 1C states the risk management and governance, Risk Factors the risks,
+            # and the MD&A any incident and its cost (UnitedHealth's Change Healthcare).
+            ("Cybersecurity", "Risk Factors", "MD&A"),
+            r"\b(?:cyber(?:[\s-]?(?:security|attacks?|threats?|incidents?))?"
+            r"|data\s+breach(?:es)?|information\s+security)(?:\s+risks?)?\b",
+        ),
+        (("Risk Factors",), r"\brisk\s+factors?\b|\brisks?\b"),
     )
 )
 
 
 def find_section_hints(question: str) -> tuple[str, ...]:
-    """The Sections a question hints at, in the order of `_SECTION_HINTS`."""
+    """The Sections a question's hints plan, each once, in the order of `_SECTION_HINTS`."""
     found: list[str] = []
-    for section, pattern in _SECTION_HINTS:
+    for sections, pattern in _SECTION_HINTS:
         question, n = pattern.subn(" ", question)
         if n:
-            found.append(section)
-    return tuple(found)
+            found += sections
+    return tuple(dict.fromkeys(found))
 
 
 # --- Named periods -----------------------------------------------------------------------

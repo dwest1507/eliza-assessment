@@ -6,8 +6,8 @@
   "chunk_tokens": 600,
   "context_budget": 32000,
   "floors": {
-    "hit@10": 0.92,
-    "recall@10": 0.85,
+    "hit@10": 0.94,
+    "recall@10": 0.87,
     "mrr": 0.78
   }
 }
