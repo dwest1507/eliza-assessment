@@ -1186,6 +1186,51 @@ On top of #119, #120 and #123. A risk question (one the Risk Factors hint itself
 
   The screen now sends only `hybrid-local` on to paid runs; on #123's code it sent `rerank` too. `hybrid`, the hosted hybrid, reaches the most evidence of any Arm (819 of 939, 279 of 316 must-state), 19 facts more than `hybrid-local`, which is what lifting the one-call rule would buy on this measure.
 
+#### The context budget passes to Companies that can use it (#124, 2026-10-18)
+
+On top of #119, #120, #121 and #123. Each Company still starts with an even share of the context budget, and risk pointers still count against it first. Two changes spend it on text rather than leaving it unused:
+
+- **A Company that runs out passes the rest on.** When a Company's ranked candidates within its plan are all taken before its share is spent, the unspent tokens go to the Companies still retrieving, shared evenly among them (any remainder to the first named), and they take more. This repeats until no Company runs out with tokens to spare. A Company whose every Filing is left out (the stale GE Capital 10-K) has no candidates, so its whole share passes on. Only a Company that has run out gives tokens away; one still holding candidates too large for what is left keeps its remainder.
+- **A candidate too large for what is left is skipped,** and the next one tried, instead of ending that Company's retrieval. A skipped chunk is tried again, in rank order, if the Company is later given more.
+
+`CONTEXT_BUDGET_TOKENS` (32,000) and `CHUNK_TOKENS` (600) are unchanged. `make eval-retrieval` on dev, `fts5`, before (#121's code) and after (free):
+
+| Question type | all facts before | after | must-state before | after | Source tokens before | after |
+|---|---|---|---|---|---|---|
+| risk | 288 of 340 | 290 | 94 of 110 | 95 | 25,766 | 27,147 |
+| sector | 277 of 313 | 279 | 99 of 111 | 100 | 29,761 | 31,131 |
+| figure_trend | 104 of 159 | 104 | 34 of 55 | 34 | 32,150 | 32,449 |
+| outlook | 44 of 61 | 44 | 14 of 21 | 14 | 29,577 | 29,618 |
+| missing_company | 36 of 39 | 36 | 9 of 10 | 9 | 20,931 | 20,931 |
+| stale_filing | 22 of 27 | 22 | 8 of 9 | 8 | 18,706 | 18,706 |
+| **all** | **771 of 939 (82.1%)** | **775 (82.5%)** | **258 of 316 (81.6%)** | **260 (82.3%)** | **28,214** | **29,065** |
+
+hit@10 (0.947), recall@10 (0.870) and MRR (0.739) are unchanged, as are the 3 must-state planning misses; the ranking misses fall from 55 to 53.
+
+| Case | Company that runs out | Sources of the others, before → after | facts gained |
+|---|---|---|---|
+| `followup-regulatory-exposure` | Apple (9,008 tokens), Tesla (9,744) | JPMorgan 10,507 → 13,023 | 2 (1 must-state) |
+| `sector-energy-operational-risks` | ExxonMobil (10,094) | Chevron 15,498 → 21,934 | 1 must-state |
+| `followup-pharma-to-oil-majors` | ExxonMobil (8,176) | Chevron 15,988 → 18,875 | 1 detail |
+| `risk-aapl-msft-market-risk` | Microsoft (3,638) | Apple 15,943 → 28,374 | 0 (all 16 reached before) |
+
+- **Evidence Reached rises by 4 facts and none is lost, so the step is kept.** All four are Risk Factors passages of the Company the others' unused share passes to: JPMorgan's heightened regulatory scrutiny (must-state) and its resolution plan's capital requirements; Chevron's operational disruptions (must-state) and the congressional requests on climate change and methane. The two Chevron facts are the ones #121's response route lost, when "how do they manage them" split each Company's share between Risk Factors, Business and the MD&A: ExxonMobil's plan doesn't fill its share, so Chevron's now holds both.
+- **The budget is spent more fully: 851 more Source tokens per case on average.** 39 of the 57 cases gain tokens and none loses any; most gain a few hundred, from the smaller chunks that now fill what a larger one left. Cases still well under 32k, such as the missing-Company and stale-Filing questions and `risk-wmt-tgt-legal-proceedings` (23,258), are ones where every Company runs out.
+- **The gain is small because few plans are small.** Most multi-Company questions plan Sections larger than a Company's share (Risk Factors, MD&A, a Filing searched whole), so no Company runs out; the remaining misses are still ranking inside a Company's share (#116's cause 2).
+- **The Floors are unchanged** (hit@10 0.94, recall@10 0.86, MRR 0.73), since none of the three metrics moved, so they are not re-recorded.
+- **Every Arm, the hosted ones included, and the "How it works" page.** `retrieval-dev.json` was run again on all six Arms (free, but for a fraction of a cent to embed the questions the hosted Arms' cache lacked, approved by the developer) and exported with `make eval-export`. Evidence Reached, before (#121's code) and after:
+
+| Arm | before | after | Source tokens after | screen |
+|---|---|---|---|---|
+| `fts5` (shipped) | 771 | 775 | 29,065 | |
+| `hybrid` (hosted) | 819 | 822 | 30,578 | can't ship (one-call rule); ahead of `fts5` (67 gained, 20 lost, p ahead < 0.001) |
+| `dense` (hosted) | 761 | 761 | 30,576 | can't ship (one-call rule); behind `fts5` (73 / 87, p behind = 0.152) |
+| `hybrid-local` | 800 | 805 | 30,583 | kept (57 / 27, p ahead = 0.001) |
+| `rerank` | 765 | 770 | 29,039 | kept (10 / 15, p behind = 0.212) |
+| `dense-local` | 737 | 744 | 30,567 | dropped (69 / 100, p behind = 0.010) |
+
+  Every Arm gains, since every Arm ranks inside the same budget. The screen sends `rerank` on to paid runs again beside `hybrid-local` (#121's code dropped it at p behind = 0.154). `hybrid`, the hosted hybrid, still reaches the most evidence of any Arm, 17 facts more than `hybrid-local`, which is what lifting the one-call rule would buy on this measure.
+
 ### The version 2 holdout run
 
 Run once on 2026-10-17 (issue #74), after [the version 2 comparisons on dev](#the-version-2-comparisons-on-dev) had confirmed every shipped choice, on Golden Set version 2's 20 holdout cases. It is the same round as those comparisons (code version `756bfadca63122a9`, prompt v7, Golden Set version 2) and the setup that ships: the `fts5` Arm, 600-token chunks and the 32k budget, `gpt-6-luna` at reasoning effort `low`, judged by `jev-1.13.0` at the fact cut-off 0.6. Under [the holdout rule](#the-holdout-rule) it reports and decides nothing: nothing was changed after it, and no case was relabelled. [Version 1's holdout run](#the-holdout-run) stands as recorded.

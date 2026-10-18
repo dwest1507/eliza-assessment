@@ -125,8 +125,9 @@ function Architecture({ data }: { data: EvalExport }) {
       text: (
         <>
           <code className="font-mono text-[12.5px]">bm25()</code> search inside hard filters on
-          Company and period, each Company with its own share of the context budget. Risk and change
-          questions are routed; repeated text is dropped.
+          Company and period, each Company with its own share of the context budget, which a Company
+          that can&apos;t use it passes to the others. Risk and change questions are routed;
+          repeated text is dropped.
           {shipped && (
             <>
               {' '}

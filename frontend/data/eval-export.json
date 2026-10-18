@@ -44,10 +44,10 @@
           "hitAll": 0.9824561403508771,
           "recallAll": 0.9535087719298246,
           "mrr": 0.7394110275689223,
-          "meanSources": 12.298245614035087,
+          "meanSources": 12.75438596491228,
           "facts": 939,
-          "factsReached": 771,
-          "meanSourceTokens": 28214.280701754386
+          "factsReached": 775,
+          "meanSourceTokens": 29064.59649122807
         },
         "byType": [
           {
@@ -66,10 +66,10 @@
             "hitAll": 1.0,
             "recallAll": 0.9821428571428571,
             "mrr": 0.514030612244898,
-            "meanSources": 24.214285714285715,
+            "meanSources": 24.428571428571427,
             "facts": 159,
             "factsReached": 104,
-            "meanSourceTokens": 32150.0
+            "meanSourceTokens": 32449.0
           },
           {
             "questionType": "missing_company",
@@ -111,7 +111,7 @@
             "meanSources": 13.666666666666666,
             "facts": 61,
             "factsReached": 44,
-            "meanSourceTokens": 29576.833333333332
+            "meanSourceTokens": 29617.666666666668
           },
           {
             "questionType": "risk",
@@ -129,10 +129,10 @@
             "hitAll": 0.9444444444444444,
             "recallAll": 0.925925925925926,
             "mrr": 0.8101851851851852,
-            "meanSources": 8.0,
+            "meanSources": 8.777777777777779,
             "facts": 340,
-            "factsReached": 288,
-            "meanSourceTokens": 25766.333333333332
+            "factsReached": 290,
+            "meanSourceTokens": 27147.055555555555
           },
           {
             "questionType": "sector",
@@ -150,10 +150,10 @@
             "hitAll": 1.0,
             "recallAll": 0.9238095238095239,
             "mrr": 0.7880952380952381,
-            "meanSources": 8.5,
+            "meanSources": 9.142857142857142,
             "facts": 313,
-            "factsReached": 277,
-            "meanSourceTokens": 29761.0
+            "factsReached": 279,
+            "meanSourceTokens": 31131.285714285714
           },
           {
             "questionType": "stale_filing",
@@ -197,15 +197,15 @@
           "recallAt": {
             "5": 0.7233500417710944,
             "10": 0.8450292397660818,
-            "20": 0.9125730994152047
+            "20": 0.9108187134502923
           },
           "hitAll": 0.9824561403508771,
           "recallAll": 0.941812865497076,
           "mrr": 0.7393259589854018,
-          "meanSources": 11.614035087719298,
+          "meanSources": 12.017543859649123,
           "facts": 939,
           "factsReached": 761,
-          "meanSourceTokens": 29791.122807017542
+          "meanSourceTokens": 30575.57894736842
         },
         "byType": [
           {
@@ -224,10 +224,10 @@
             "hitAll": 1.0,
             "recallAll": 0.9583333333333333,
             "mrr": 0.4384008148714031,
-            "meanSources": 20.857142857142858,
+            "meanSources": 21.214285714285715,
             "facts": 159,
             "factsReached": 82,
-            "meanSourceTokens": 32172.714285714286
+            "meanSourceTokens": 32468.714285714286
           },
           {
             "questionType": "missing_company",
@@ -248,7 +248,7 @@
             "meanSources": 3.3333333333333335,
             "facts": 39,
             "factsReached": 38,
-            "meanSourceTokens": 27352.0
+            "meanSourceTokens": 27392.333333333332
           },
           {
             "questionType": "outlook",
@@ -266,10 +266,10 @@
             "hitAll": 1.0,
             "recallAll": 1.0,
             "mrr": 0.5978835978835979,
-            "meanSources": 16.0,
+            "meanSources": 16.5,
             "facts": 61,
             "factsReached": 40,
-            "meanSourceTokens": 31822.0
+            "meanSourceTokens": 32031.666666666668
           },
           {
             "questionType": "risk",
@@ -287,10 +287,10 @@
             "hitAll": 0.9444444444444444,
             "recallAll": 0.9074074074074073,
             "mrr": 0.8009259259259259,
-            "meanSources": 7.5,
+            "meanSources": 7.722222222222222,
             "facts": 340,
             "factsReached": 307,
-            "meanSourceTokens": 28459.222222222223
+            "meanSourceTokens": 29532.277777777777
           },
           {
             "questionType": "sector",
@@ -303,15 +303,15 @@
             "recallAt": {
               "5": 0.7784013605442176,
               "10": 0.880952380952381,
-              "20": 0.9238095238095239
+              "20": 0.9166666666666667
             },
             "hitAll": 1.0,
             "recallAll": 0.9238095238095239,
             "mrr": 0.9642857142857143,
-            "meanSources": 8.714285714285714,
+            "meanSources": 9.5,
             "facts": 313,
             "factsReached": 267,
-            "meanSourceTokens": 30270.64285714286
+            "meanSourceTokens": 31666.928571428572
           },
           {
             "questionType": "stale_filing",
@@ -332,7 +332,7 @@
             "meanSources": 3.5,
             "facts": 27,
             "factsReached": 27,
-            "meanSourceTokens": 19316.5
+            "meanSourceTokens": 19480.5
           }
         ],
         "missed": [
@@ -361,10 +361,10 @@
           "hitAll": 0.9824561403508771,
           "recallAll": 0.941812865497076,
           "mrr": 0.763126882863725,
-          "meanSources": 11.807017543859649,
+          "meanSources": 12.403508771929825,
           "facts": 939,
-          "factsReached": 819,
-          "meanSourceTokens": 29724.964912280702
+          "factsReached": 822,
+          "meanSourceTokens": 30577.754385964912
         },
         "byType": [
           {
@@ -383,10 +383,10 @@
             "hitAll": 1.0,
             "recallAll": 0.9345238095238095,
             "mrr": 0.5082070707070707,
-            "meanSources": 22.357142857142858,
+            "meanSources": 22.571428571428573,
             "facts": 159,
             "factsReached": 110,
-            "meanSourceTokens": 32229.35714285714
+            "meanSourceTokens": 32470.5
           },
           {
             "questionType": "missing_company",
@@ -404,10 +404,10 @@
             "hitAll": 1.0,
             "recallAll": 1.0,
             "mrr": 1.0,
-            "meanSources": 2.6666666666666665,
+            "meanSources": 3.0,
             "facts": 39,
             "factsReached": 39,
-            "meanSourceTokens": 27386.666666666668
+            "meanSourceTokens": 27389.0
           },
           {
             "questionType": "outlook",
@@ -425,10 +425,10 @@
             "hitAll": 1.0,
             "recallAll": 1.0,
             "mrr": 0.7666666666666666,
-            "meanSources": 14.666666666666666,
+            "meanSources": 15.0,
             "facts": 61,
             "factsReached": 46,
-            "meanSourceTokens": 31759.833333333332
+            "meanSourceTokens": 31992.333333333332
           },
           {
             "questionType": "risk",
@@ -446,10 +446,10 @@
             "hitAll": 0.9444444444444444,
             "recallAll": 0.925925925925926,
             "mrr": 0.8305555555555555,
-            "meanSources": 7.444444444444445,
+            "meanSources": 8.333333333333334,
             "facts": 340,
             "factsReached": 315,
-            "meanSourceTokens": 28453.722222222223
+            "meanSourceTokens": 29544.61111111111
           },
           {
             "questionType": "sector",
@@ -467,10 +467,10 @@
             "hitAll": 1.0,
             "recallAll": 0.9238095238095239,
             "mrr": 0.880952380952381,
-            "meanSources": 8.642857142857142,
+            "meanSources": 9.5,
             "facts": 313,
-            "factsReached": 282,
-            "meanSourceTokens": 29981.64285714286
+            "factsReached": 285,
+            "meanSourceTokens": 31677.071428571428
           },
           {
             "questionType": "stale_filing",
@@ -491,7 +491,7 @@
             "meanSources": 4.5,
             "facts": 27,
             "factsReached": 27,
-            "meanSourceTokens": 19241.5
+            "meanSourceTokens": 19471.0
           }
         ],
         "missed": [
@@ -519,10 +519,10 @@
           "hitAll": 0.9824561403508771,
           "recallAll": 0.9535087719298246,
           "mrr": 0.7704615073036125,
-          "meanSources": 12.192982456140351,
+          "meanSources": 12.631578947368421,
           "facts": 939,
-          "factsReached": 765,
-          "meanSourceTokens": 28228.0
+          "factsReached": 770,
+          "meanSourceTokens": 29038.614035087718
         },
         "byType": [
           {
@@ -541,10 +541,10 @@
             "hitAll": 1.0,
             "recallAll": 0.9821428571428571,
             "mrr": 0.5731034838177695,
-            "meanSources": 24.214285714285715,
+            "meanSources": 24.428571428571427,
             "facts": 159,
             "factsReached": 104,
-            "meanSourceTokens": 32150.0
+            "meanSourceTokens": 32449.0
           },
           {
             "questionType": "missing_company",
@@ -586,7 +586,7 @@
             "meanSources": 13.666666666666666,
             "facts": 61,
             "factsReached": 44,
-            "meanSourceTokens": 29576.833333333332
+            "meanSourceTokens": 29617.666666666668
           },
           {
             "questionType": "risk",
@@ -604,10 +604,10 @@
             "hitAll": 0.9444444444444444,
             "recallAll": 0.925925925925926,
             "mrr": 0.8611111111111112,
-            "meanSources": 7.888888888888889,
+            "meanSources": 8.722222222222221,
             "facts": 340,
-            "factsReached": 288,
-            "meanSourceTokens": 25754.38888888889
+            "factsReached": 290,
+            "meanSourceTokens": 27139.777777777777
           },
           {
             "questionType": "sector",
@@ -625,10 +625,10 @@
             "hitAll": 1.0,
             "recallAll": 0.9238095238095239,
             "mrr": 0.880952380952381,
-            "meanSources": 8.214285714285714,
+            "meanSources": 8.714285714285714,
             "facts": 313,
-            "factsReached": 271,
-            "meanSourceTokens": 29832.214285714286
+            "factsReached": 274,
+            "meanSourceTokens": 31034.85714285714
           },
           {
             "questionType": "stale_filing",
@@ -677,10 +677,10 @@
           "hitAll": 0.9824561403508771,
           "recallAll": 0.9432748538011696,
           "mrr": 0.7329887218045112,
-          "meanSources": 11.614035087719298,
+          "meanSources": 12.087719298245615,
           "facts": 939,
-          "factsReached": 737,
-          "meanSourceTokens": 29739.40350877193
+          "factsReached": 744,
+          "meanSourceTokens": 30567.385964912282
         },
         "byType": [
           {
@@ -699,10 +699,10 @@
             "hitAll": 1.0,
             "recallAll": 0.9821428571428571,
             "mrr": 0.519345238095238,
-            "meanSources": 22.642857142857142,
+            "meanSources": 22.928571428571427,
             "facts": 159,
-            "factsReached": 71,
-            "meanSourceTokens": 32221.14285714286
+            "factsReached": 72,
+            "meanSourceTokens": 32461.14285714286
           },
           {
             "questionType": "missing_company",
@@ -720,10 +720,10 @@
             "hitAll": 1.0,
             "recallAll": 1.0,
             "mrr": 1.0,
-            "meanSources": 3.0,
+            "meanSources": 3.3333333333333335,
             "facts": 39,
             "factsReached": 39,
-            "meanSourceTokens": 27381.0
+            "meanSourceTokens": 27403.333333333332
           },
           {
             "questionType": "outlook",
@@ -741,10 +741,10 @@
             "hitAll": 1.0,
             "recallAll": 1.0,
             "mrr": 0.7083333333333334,
-            "meanSources": 13.5,
+            "meanSources": 13.666666666666666,
             "facts": 61,
             "factsReached": 46,
-            "meanSourceTokens": 31817.333333333332
+            "meanSourceTokens": 32036.166666666668
           },
           {
             "questionType": "risk",
@@ -762,10 +762,10 @@
             "hitAll": 0.9444444444444444,
             "recallAll": 0.8935185185185185,
             "mrr": 0.7625661375661376,
-            "meanSources": 7.166666666666667,
+            "meanSources": 7.722222222222222,
             "facts": 340,
-            "factsReached": 290,
-            "meanSourceTokens": 28452.166666666668
+            "factsReached": 291,
+            "meanSourceTokens": 29565.5
           },
           {
             "questionType": "sector",
@@ -783,10 +783,10 @@
             "hitAll": 1.0,
             "recallAll": 0.9238095238095239,
             "mrr": 0.8238095238095238,
-            "meanSources": 8.5,
+            "meanSources": 9.285714285714286,
             "facts": 313,
-            "factsReached": 264,
-            "meanSourceTokens": 30026.285714285714
+            "factsReached": 269,
+            "meanSourceTokens": 31592.714285714286
           },
           {
             "questionType": "stale_filing",
@@ -807,7 +807,7 @@
             "meanSources": 3.5,
             "facts": 27,
             "factsReached": 27,
-            "meanSourceTokens": 19248.0
+            "meanSourceTokens": 19490.5
           }
         ],
         "missed": [
@@ -836,10 +836,10 @@
           "hitAll": 0.9824561403508771,
           "recallAll": 0.9491228070175439,
           "mrr": 0.7655179615705933,
-          "meanSources": 11.56140350877193,
+          "meanSources": 12.12280701754386,
           "facts": 939,
-          "factsReached": 800,
-          "meanSourceTokens": 29690.43859649123
+          "factsReached": 805,
+          "meanSourceTokens": 30583.087719298244
         },
         "byType": [
           {
@@ -858,10 +858,10 @@
             "hitAll": 1.0,
             "recallAll": 0.9821428571428571,
             "mrr": 0.5566326530612244,
-            "meanSources": 22.428571428571427,
+            "meanSources": 23.0,
             "facts": 159,
-            "factsReached": 104,
-            "meanSourceTokens": 32132.785714285714
+            "factsReached": 107,
+            "meanSourceTokens": 32459.285714285714
           },
           {
             "questionType": "missing_company",
@@ -882,7 +882,7 @@
             "meanSources": 3.0,
             "facts": 39,
             "factsReached": 39,
-            "meanSourceTokens": 27280.666666666668
+            "meanSourceTokens": 27400.666666666668
           },
           {
             "questionType": "outlook",
@@ -900,10 +900,10 @@
             "hitAll": 1.0,
             "recallAll": 1.0,
             "mrr": 0.7041666666666666,
-            "meanSources": 13.666666666666666,
+            "meanSources": 14.166666666666666,
             "facts": 61,
             "factsReached": 46,
-            "meanSourceTokens": 31800.5
+            "meanSourceTokens": 32028.0
           },
           {
             "questionType": "risk",
@@ -921,10 +921,10 @@
             "hitAll": 0.9444444444444444,
             "recallAll": 0.9120370370370371,
             "mrr": 0.8287037037037037,
-            "meanSources": 7.111111111111111,
+            "meanSources": 7.611111111111111,
             "facts": 340,
             "factsReached": 299,
-            "meanSourceTokens": 28400.777777777777
+            "meanSourceTokens": 29561.0
           },
           {
             "questionType": "sector",
@@ -942,10 +942,10 @@
             "hitAll": 1.0,
             "recallAll": 0.9238095238095239,
             "mrr": 0.8357142857142856,
-            "meanSources": 8.428571428571429,
+            "meanSources": 9.285714285714286,
             "facts": 313,
-            "factsReached": 287,
-            "meanSourceTokens": 29979.14285714286
+            "factsReached": 289,
+            "meanSourceTokens": 31669.0
           },
           {
             "questionType": "stale_filing",
@@ -966,7 +966,7 @@
             "meanSources": 4.0,
             "facts": 27,
             "factsReached": 25,
-            "meanSourceTokens": 19464.5
+            "meanSourceTokens": 19486.0
           }
         ],
         "missed": [
@@ -981,23 +981,23 @@
         "shippedArm": "fts5",
         "metric": "evidence reached",
         "facts": 939,
-        "challengerOnly": 77,
+        "challengerOnly": 73,
         "shippedOnly": 87,
-        "pValue": 0.4823062881447227,
-        "pAhead": 0.8047849160186471,
-        "pBehind": 0.24115314407236135,
-        "verdict": "indistinguishable"
+        "pValue": 0.3040598777154111,
+        "pAhead": 0.8822087867653651,
+        "pBehind": 0.15202993885770555,
+        "verdict": "behind"
       },
       {
         "arm": "hybrid",
         "shippedArm": "fts5",
         "metric": "evidence reached",
         "facts": 939,
-        "challengerOnly": 68,
+        "challengerOnly": 67,
         "shippedOnly": 20,
-        "pValue": 2.770265657008097e-07,
-        "pAhead": 1.3851328285040486e-07,
-        "pBehind": 0.9999999608168768,
+        "pValue": 4.3053681250011924e-07,
+        "pAhead": 2.1526840625005962e-07,
+        "pBehind": 0.9999999382418405,
         "verdict": "ahead"
       },
       {
@@ -1005,23 +1005,23 @@
         "shippedArm": "fts5",
         "metric": "evidence reached",
         "facts": 939,
-        "challengerOnly": 9,
+        "challengerOnly": 10,
         "shippedOnly": 15,
-        "pValue": 0.30745625495910645,
-        "pAhead": 0.9242051839828491,
-        "pBehind": 0.15372812747955322,
-        "verdict": "behind"
+        "pValue": 0.42435622215270996,
+        "pAhead": 0.885238528251648,
+        "pBehind": 0.21217811107635498,
+        "verdict": "indistinguishable"
       },
       {
         "arm": "dense-local",
         "shippedArm": "fts5",
         "metric": "evidence reached",
         "facts": 939,
-        "challengerOnly": 70,
-        "shippedOnly": 104,
-        "pValue": 0.012138156118372994,
-        "pAhead": 0.9961060351111605,
-        "pBehind": 0.006069078059186497,
+        "challengerOnly": 69,
+        "shippedOnly": 100,
+        "pValue": 0.02074104038358712,
+        "pAhead": 0.9932018228466346,
+        "pBehind": 0.01037052019179356,
         "verdict": "behind"
       },
       {
@@ -1029,11 +1029,11 @@
         "shippedArm": "fts5",
         "metric": "evidence reached",
         "facts": 939,
-        "challengerOnly": 54,
-        "shippedOnly": 25,
-        "pValue": 0.001466071947342336,
-        "pAhead": 0.000733035973671168,
-        "pBehind": 0.9996803011163178,
+        "challengerOnly": 57,
+        "shippedOnly": 27,
+        "pValue": 0.001404494631113956,
+        "pAhead": 0.000702247315556978,
+        "pBehind": 0.9996860263642091,
         "verdict": "ahead"
       }
     ],
@@ -1041,27 +1041,28 @@
       "shipped": "fts5",
       "limit": 3,
       "kept": [
-        "hybrid-local"
+        "hybrid-local",
+        "rerank"
       ],
       "candidates": [
         {
           "name": "dense",
           "facts": 939,
           "factsReached": 761,
-          "gained": 77,
+          "gained": 73,
           "lost": 87,
-          "pBehind": 0.24115314407236135,
+          "pBehind": 0.15202993885770555,
           "kept": false,
           "shippable": false,
-          "reason": "dropped: makes an API call at query time, so it can't ship (indistinguishable on Evidence Reached, p behind = 0.241; available if the one-call limit is lifted)"
+          "reason": "dropped: makes an API call at query time, so it can't ship (behind on Evidence Reached, p behind = 0.152; available if the one-call limit is lifted)"
         },
         {
           "name": "hybrid",
           "facts": 939,
-          "factsReached": 819,
-          "gained": 68,
+          "factsReached": 822,
+          "gained": 67,
           "lost": 20,
-          "pBehind": 0.9999999608168768,
+          "pBehind": 0.9999999382418405,
           "kept": false,
           "shippable": false,
           "reason": "dropped: makes an API call at query time, so it can't ship (ahead on Evidence Reached, p behind = 1.000; available if the one-call limit is lifted)"
@@ -1069,35 +1070,35 @@
         {
           "name": "rerank",
           "facts": 939,
-          "factsReached": 765,
-          "gained": 9,
+          "factsReached": 770,
+          "gained": 10,
           "lost": 15,
-          "pBehind": 0.15372812747955322,
-          "kept": false,
+          "pBehind": 0.21217811107635498,
+          "kept": true,
           "shippable": true,
-          "reason": "dropped: behind on Evidence Reached (p behind = 0.154 < 0.20)"
+          "reason": "kept: not behind (p behind = 0.212), 2 of 2 not behind on Evidence Reached"
         },
         {
           "name": "dense-local",
           "facts": 939,
-          "factsReached": 737,
-          "gained": 70,
-          "lost": 104,
-          "pBehind": 0.006069078059186497,
+          "factsReached": 744,
+          "gained": 69,
+          "lost": 100,
+          "pBehind": 0.01037052019179356,
           "kept": false,
           "shippable": true,
-          "reason": "dropped: behind on Evidence Reached (p behind = 0.006 < 0.20)"
+          "reason": "dropped: behind on Evidence Reached (p behind = 0.010 < 0.20)"
         },
         {
           "name": "hybrid-local",
           "facts": 939,
-          "factsReached": 800,
-          "gained": 54,
-          "lost": 25,
-          "pBehind": 0.9996803011163178,
+          "factsReached": 805,
+          "gained": 57,
+          "lost": 27,
+          "pBehind": 0.9996860263642091,
           "kept": true,
           "shippable": true,
-          "reason": "kept: not behind (p behind = 1.000), 1 of 1 not behind on Evidence Reached"
+          "reason": "kept: not behind (p behind = 1.000), 1 of 2 not behind on Evidence Reached"
         }
       ]
     }

@@ -778,18 +778,27 @@ def test_a_missing_section_falls_back_to_the_whole_filing(index):
     ],
 )
 def test_on_the_risk_route_the_topic_word_outranks_risk_and_generic_words(index, question, topic):
-    context = prepare_answer_context([Message("user", question)], index, context_budget=2000)
+    # The ranker given the shipped ranking keeps it, and shows it to the test.
+    ranker = _Recorder()
+    context = prepare_answer_context(
+        [Message("user", question)], index, ranker=ranker, context_budget=2000
+    )
 
     assert context.query_scope.sections == ("Risk Factors",)
     in_scope = {f.filing_id for f in context.query_scope.filings}
+    text = {c["id"]: c["text"] for c in _chunks(index, section="Risk Factors")}
     on_topic = {
         c["id"]
         for c in _chunks(index, section="Risk Factors")
         if c["filing_id"] in in_scope and topic in c["text"].lower()
     }
-    passages = [p for _, p in _passages(context)]
-    assert 0 < len(passages) < len(on_topic)  # more passages on the topic than fit
-    assert all(topic in p.lower() for p in passages), [p[:80] for p in passages]
+    passages = {p for _, p in _passages(context)}
+    (request,) = ranker.requests
+    # The passages retrieved, best first: the ones on the topic rank before any other,
+    # which only fill what is left of the budget once a larger one on the topic doesn't.
+    retrieved = [topic in text[i].lower() for i in request.lexical if text[i] in passages]
+    assert 0 < sum(retrieved) < len(on_topic)  # more passages on the topic than fit
+    assert retrieved == sorted(retrieved, reverse=True)
 
 
 @pytest.mark.parametrize(
@@ -923,6 +932,44 @@ def test_each_company_gets_an_even_share_of_the_budget_on_the_risk_route(index):
     assert set(spent) == {"AAPL", "TSLA", "JPM", "NVDA"}
     share = CONTEXT_BUDGET_TOKENS / 4
     assert all(share * 0.8 <= t <= share * 1.05 for t in spent.values())
+
+
+def test_a_company_that_cannot_use_its_share_passes_the_rest_to_the_others(index):
+    # Tesla's Market Risk Sections hold under 1,000 tokens of distinct text, far less
+    # than half the budget; Apple's Market Risk, and the 10-Qs searched whole where it is
+    # a stub, hold far more.
+    context = _ask(index, "How do Apple's and Tesla's interest rate risk disclosures compare?")
+
+    spent = {}
+    for source in context.sources:
+        spent[source.ticker] = spent.get(source.ticker, 0) + count_tokens(source.text)
+    assert set(spent) == {"AAPL", "TSLA"}
+    share = CONTEXT_BUDGET_TOKENS / 2
+    assert spent["TSLA"] < share / 4
+    assert spent["AAPL"] > share * 1.5
+    assert sum(spent.values()) <= CONTEXT_BUDGET_TOKENS * 1.05
+
+
+def test_a_candidate_too_large_for_what_is_left_is_skipped_and_a_smaller_one_kept(index):
+    chunks = {
+        c["id"]: c
+        for c in _chunks(index, filing_id="TSLA_10-K_2025-12-31", section="Risk Factors")
+        if c["kind"] != "risk_pointer"
+    }
+    by_size = sorted(chunks.values(), key=lambda c: c["tokens"])
+    small, first, second = by_size[0], by_size[-1], by_size[-2]
+    assert second["tokens"] > small["tokens"] + 10
+    budget = first["tokens"] + small["tokens"] + 10
+
+    context = prepare_answer_context(
+        [Message("user", "What are Tesla's risk factors?")],
+        index,
+        ranker=_Recorder(lambda r: [first["id"], second["id"], small["id"]]),
+        context_budget=budget,
+    )
+
+    passages = [p for _, p in _passages(context)]
+    assert sorted(passages) == sorted([first["text"], small["text"]])
 
 
 def test_an_index_built_by_an_older_version_says_to_rebuild_it(tmp_path, index):

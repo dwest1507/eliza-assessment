@@ -41,9 +41,14 @@ one Facts Source, numbered before the text Sources. A Company and metric the sto
 answer falls back to the text, and the prompt says the answer must say so.
 
 Retrieval applies the Query Scope's Companies and time window as hard filters before
-`bm25()` ranking, and each Company gets an even share of the context budget. A Section
-hint is a preference: each Filing in the window is searched in the hinted Sections, or
-whole when every one of them is missing or a stub (finding 14). A hint may plan several
+`bm25()` ranking, and each Company starts with an even share of the context budget. A
+Company whose ranked chunks run out before its share is spent passes the rest to the
+Companies still retrieving, shared evenly among them, and a chunk too large for what is
+left of a Company's share is skipped for the next one rather than ending its retrieval.
+Risk pointers count against a Company's share first.
+
+A Section hint is a preference: each Filing in the window is searched in the hinted
+Sections, or whole when every one of them is missing or a stub (finding 14). A hint may plan several
 Sections, and `QueryScope.sections` lists every Section planned. A legal proceedings
 question also searches the Financial Statements, whose contingencies note is where a stub
 Item 3 points ("see Note 15"), so a Filing whose Item 3 is a stub is searched in its
@@ -171,8 +176,8 @@ CHUNK_TOKENS = TARGET_TOKENS
 above four thirds of it (ADR 0010)."""
 
 CONTEXT_BUDGET_TOKENS = 32_000
-"""Tokens of Source text per Answer Call, split evenly across the Companies in scope
-(ADR 0010)."""
+"""Tokens of Source text per Answer Call, split evenly across the Companies in scope, a
+Company that can't use its share passing the rest to the others (ADR 0010)."""
 
 STUB_TOKENS = 250
 """A Section with less text than this (about 1,000 characters) is a stub, usually a
@@ -511,7 +516,7 @@ def prepare_answer_context(
     one does not name, and the last turns go into the prompt as history. `ranker`
     replaces the `bm25()` ranking inside the hard filters; None keeps it.
     `context_budget` is the tokens of Source text retrieved, split evenly across the
-    Companies in scope.
+    Companies in scope; a Company that can't use its share passes the rest to the others.
     """
     if not messages or messages[-1].role != "user" or not messages[-1].content.strip():
         raise ValueError("the conversation must end with a non-empty user message")
@@ -813,9 +818,8 @@ def _sources(
         if scope.missing_companies:
             return (), ()
         tickers = [None]
-    budget = context_budget // len(tickers)
-    sources: list[Source] = []
     searched: list[SearchedPlace] = []
+    retrievals: list[_Retrieval] = []
     for ticker in tickers:
         windowed = [
             f
@@ -824,6 +828,7 @@ def _sources(
             for f in in_window(scope.time_window, own)
         ]
         if not windowed:
+            retrievals.append(_Retrieval(candidates=[], pointers=[]))
             continue  # every Filing of the Company was left out
         plan = _plan(db, scope, windowed)
         if explicit and plan.places is None:
@@ -831,16 +836,76 @@ def _sources(
         owner = {f.filing_id: f.ticker for f in windowed}
         places = plan.places if plan.places is not None else [(f.filing_id, None) for f in windowed]
         searched += [SearchedPlace(owner[f], f, section) for f, section in places]
-        pointers = _pointer_rows(db, plan.pointers)
-        chosen: list[_Row] = []
-        spent = sum(row["tokens"] for row in pointers)
-        for row in _without_near_duplicates(_candidates(db, scope, ticker, search, plan)):
-            if spent + row["tokens"] > budget:
-                break
-            spent += row["tokens"]
-            chosen.append(row)
-        sources += _group(chosen + pointers, first_number=first_number + len(sources))
+        retrievals.append(
+            _Retrieval(
+                candidates=_without_near_duplicates(_candidates(db, scope, ticker, search, plan)),
+                pointers=_pointer_rows(db, plan.pointers),
+            )
+        )
+    _spend(retrievals, context_budget)
+    sources: list[Source] = []
+    for retrieval in retrievals:
+        sources += _group(
+            retrieval.chosen() + retrieval.pointers, first_number=first_number + len(sources)
+        )
     return tuple(sources), tuple(searched)
+
+
+@dataclass
+class _Retrieval:
+    """One Company's retrieval: its ranked candidates, best first, the risk pointers it
+    cites, and the candidates it has taken so far."""
+
+    candidates: list[_Row]
+    pointers: list[sqlite3.Row]
+    taken: set[int] = field(default_factory=set)
+    """The positions in `candidates` of the chunks taken."""
+    spent: int = 0
+
+    def __post_init__(self) -> None:
+        # Risk pointers count against the budget first.
+        self.spent = sum(row["tokens"] for row in self.pointers)
+
+    def take(self, budget: int) -> bool:
+        """Take, best first, every candidate left that fits in what is left of `budget`,
+        skipping one that doesn't fit and trying the next. True when every candidate is
+        taken: the Company has run out and can use no more of the budget."""
+        for i, row in enumerate(self.candidates):
+            if i not in self.taken and self.spent + row["tokens"] <= budget:
+                self.spent += row["tokens"]
+                self.taken.add(i)
+        return len(self.taken) == len(self.candidates)
+
+    def chosen(self) -> list[_Row]:
+        """The candidates taken, best first."""
+        return [row for i, row in enumerate(self.candidates) if i in self.taken]
+
+
+def _spend(retrievals: Sequence[_Retrieval], context_budget: int) -> None:
+    """Spend the context budget on the Companies' candidates.
+
+    Each Company starts with an even share. A Company whose candidates run out before
+    its share is spent gives the unspent tokens to the Companies still retrieving,
+    shared evenly among them (any remainder to the first named), and they take more,
+    until no Company runs out with tokens to spare or none is left retrieving.
+    """
+    if not retrievals:
+        return
+    shares = [context_budget // len(retrievals)] * len(retrievals)
+    retrieving = list(range(len(retrievals)))
+    while retrieving:
+        unspent, still = 0, []
+        for i in retrieving:
+            if retrievals[i].take(shares[i]):
+                unspent += max(0, shares[i] - retrievals[i].spent)
+            else:
+                still.append(i)
+        retrieving = still
+        if not unspent or not retrieving:
+            return
+        each, rest = divmod(unspent, len(retrieving))
+        for n, i in enumerate(retrieving):
+            shares[i] += each + (n < rest)
 
 
 def _pointer_rows(db: sqlite3.Connection, pointers: list[tuple[str, str]]) -> list[sqlite3.Row]:

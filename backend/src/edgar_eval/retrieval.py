@@ -482,9 +482,10 @@ def source_ranking(context: AnswerContext) -> list[Pair]:
     """The Answer Context's text Sources as ranked (Filing ID, Section) pairs.
 
     Each Company in scope is retrieved separately with its own share of the context
-    budget, and its Sources are numbered after the previous Company's. Ranking them by
-    number would put the last Company's best Source behind every other Company's worst,
-    so the ranking takes each Company's next-best Source in turn instead.
+    budget (the share of a Company that can't use it passing to the others), and its
+    Sources are numbered after the previous Company's. Ranking them by number would put
+    the last Company's best Source behind every other Company's worst, so the ranking
+    takes each Company's next-best Source in turn instead.
 
     Facts Sources are left out: they are Financial Facts looked up by rule, not text
     retrieved by an Arm, and the Golden Set labels Sections.
