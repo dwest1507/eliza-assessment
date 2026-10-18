@@ -17,7 +17,11 @@ Rule-based, with no LLM (ADR 0003). It recognises:
   foreign exchange risk", "FX exposure"), business, and cybersecurity, which plans the
   Cybersecurity Section, Risk Factors and MD&A. Legal proceedings plans Legal
   Proceedings and the Financial Statements, where the contingencies note a stub Item 3
-  points to is.
+  points to is. A risk question asking how Companies address, manage, mitigate, handle or
+  respond to their risks adds Business and MD&A; a question about what Companies depend
+  on ("dependent on", "reliance on", "largest customers", "suppliers", "sole source",
+  "government contracts") adds Business, and Risk Factors when no other hint is present.
+  Those phrases stay search terms, since they name the topic inside the added Sections.
   The phrase that sets a hint, and the generic words "main", "major", "key", "primary",
   "principal", "biggest" and "important", leave the message's search terms
   (`ScopeNamedInMessage.terms`), except the parts of a hint phrase its pattern captures
@@ -466,24 +470,67 @@ def _cut(m: re.Match[str]) -> list[tuple[int, int]]:
     return spans
 
 
+RISK_FACTORS = "Risk Factors"
+
+# Asking what Companies do about their risks: the answer is in Business (risk management,
+# compliance, strategy) and the MD&A, not only in Risk Factors.
+_RESPONSE = re.compile(
+    r"\baddress(?:es|ed|ing)?\b|\bmanag(?:e|es|ed|ing)\b|\bmitigat(?:e|es|ed|ing)\b"
+    r"|\bhandl(?:e|es|ed|ing)\b|\bdeal(?:s|t|ing)?\s+with\b|\brespon(?:d|ds|ded|ding|ses?)\b",
+    re.I,
+)
+# Asking what Companies depend on: customers, suppliers, contracts. Business states the
+# concentration ("sales to Walmart were 16% of net sales") and Risk Factors the risk.
+_DEPENDENCE = re.compile(
+    r"\b(?:depend(?:s|ed|ing|ent|ence|ency)?|rel(?:y|ies|ied|ying|iance|iant))"
+    r"(?:\s+[\w’'&.-]+){0,8}?\s+(?:on|upon)\b"
+    r"|\b(?:largest|large|key|major|biggest|top|significant)\s+customers?\b"
+    r"|\bcustomer\s+concentration\b|\bconcentration\s+of\s+(?:customers|suppliers)\b"
+    r"|\bsuppliers?\b|\bsole[\s-]+sourc(?:e|ed|es|ing)\b|\bsingle[\s-]+sourc(?:e|ed|es|ing)\b"
+    r"|\bgovernment\s+contracts?\b",
+    re.I,
+)
+
+
 def find_section_hints(question: str) -> tuple[str, ...]:
-    """The Sections a question's hints plan, each once, in the order of `_SECTION_HINTS`."""
+    """The Sections a question's hints plan, each once, in the order of `_SECTION_HINTS`,
+    then those its response and dependence phrases add: a risk question (one the Risk
+    Factors hint itself reads) asking how Companies address, manage or respond to their
+    risks adds Business and the MD&A, and a question about what Companies depend on adds
+    Business, and Risk Factors when no other hint is present. A cybersecurity question
+    asking how a Company manages its risks already plans the Cybersecurity Section, which
+    states that."""
     return _section_hints(question)[0]
+
+
+def reads_latest_filings(question: str) -> bool:
+    """Whether a question's hints read the latest Filings when it names no time phrase
+    and no Fiscal Period: a risk question (one whose hints plan Risk Factors, a
+    cybersecurity question among them) and a question about what Companies depend on."""
+    return RISK_FACTORS in find_section_hints(question) or bool(_DEPENDENCE.search(question))
 
 
 def _section_hints(question: str) -> tuple[tuple[str, ...], list[tuple[int, int]]]:
     """`find_section_hints`, plus the character spans of the words that set them: each
-    hint phrase, less the parts its pattern captures."""
+    hint phrase, less the parts its pattern captures. The response and dependence phrases
+    set no span: they stay search terms."""
+    text = question
     found: list[str] = []
     spans: list[tuple[int, int]] = []
+    risk_route = False
     for sections, pattern in _SECTION_HINTS:
-        matches = list(pattern.finditer(question))
+        matches = list(pattern.finditer(text))
         if matches:
             found += sections
+            risk_route = risk_route or sections == (RISK_FACTORS,)
         for m in matches:
             spans += _cut(m)
             # Blanked to the same length, so later spans keep their positions.
-            question = question[: m.start()] + " " * (m.end() - m.start()) + question[m.end() :]
+            text = text[: m.start()] + " " * (m.end() - m.start()) + text[m.end() :]
+    if risk_route and _RESPONSE.search(question):
+        found += ["Business", "MD&A"]
+    if _DEPENDENCE.search(question):
+        found += ["Business"] if found else ["Business", RISK_FACTORS]
     return tuple(dict.fromkeys(found)), sorted(spans)
 
 

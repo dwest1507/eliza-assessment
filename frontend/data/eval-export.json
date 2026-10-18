@@ -37,17 +37,17 @@
             "20": 0.9824561403508771
           },
           "recallAt": {
-            "5": 0.797326649958229,
-            "10": 0.8669590643274854,
-            "20": 0.9301169590643275
+            "5": 0.7976190476190477,
+            "10": 0.8698830409356726,
+            "20": 0.9242690058479531
           },
           "hitAll": 0.9824561403508771,
-          "recallAll": 0.9593567251461987,
-          "mrr": 0.7569548872180452,
-          "meanSources": 12.491228070175438,
+          "recallAll": 0.9535087719298246,
+          "mrr": 0.7394110275689223,
+          "meanSources": 12.298245614035087,
           "facts": 939,
-          "factsReached": 766,
-          "meanSourceTokens": 28000.736842105263
+          "factsReached": 771,
+          "meanSourceTokens": 28214.280701754386
         },
         "byType": [
           {
@@ -129,10 +129,10 @@
             "hitAll": 0.9444444444444444,
             "recallAll": 0.925925925925926,
             "mrr": 0.8101851851851852,
-            "meanSources": 7.888888888888889,
+            "meanSources": 8.0,
             "facts": 340,
             "factsReached": 288,
-            "meanSourceTokens": 25758.722222222223
+            "meanSourceTokens": 25766.333333333332
           },
           {
             "questionType": "sector",
@@ -143,17 +143,17 @@
               "20": 1.0
             },
             "recallAt": {
-              "5": 0.7224489795918367,
-              "10": 0.9047619047619048,
-              "20": 0.9476190476190477
+              "5": 0.7236394557823129,
+              "10": 0.9166666666666667,
+              "20": 0.9238095238095239
             },
             "hitAll": 1.0,
-            "recallAll": 0.9476190476190477,
-            "mrr": 0.8595238095238095,
-            "meanSources": 9.428571428571429,
+            "recallAll": 0.9238095238095239,
+            "mrr": 0.7880952380952381,
+            "meanSources": 8.5,
             "facts": 313,
-            "factsReached": 272,
-            "meanSourceTokens": 28901.35714285714
+            "factsReached": 277,
+            "meanSourceTokens": 29761.0
           },
           {
             "questionType": "stale_filing",
@@ -184,6 +184,323 @@
         ]
       },
       {
+        "name": "dense",
+        "shipped": false,
+        "shippable": false,
+        "overall": {
+          "cases": 57,
+          "hitAt": {
+            "5": 0.8421052631578947,
+            "10": 0.9298245614035088,
+            "20": 0.9649122807017544
+          },
+          "recallAt": {
+            "5": 0.7233500417710944,
+            "10": 0.8450292397660818,
+            "20": 0.9125730994152047
+          },
+          "hitAll": 0.9824561403508771,
+          "recallAll": 0.941812865497076,
+          "mrr": 0.7393259589854018,
+          "meanSources": 11.614035087719298,
+          "facts": 939,
+          "factsReached": 761,
+          "meanSourceTokens": 29791.122807017542
+        },
+        "byType": [
+          {
+            "questionType": "figure_trend",
+            "cases": 14,
+            "hitAt": {
+              "5": 0.6428571428571429,
+              "10": 0.7857142857142857,
+              "20": 0.9285714285714286
+            },
+            "recallAt": {
+              "5": 0.4880952380952381,
+              "10": 0.625,
+              "20": 0.8571428571428571
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.9583333333333333,
+            "mrr": 0.4384008148714031,
+            "meanSources": 20.857142857142858,
+            "facts": 159,
+            "factsReached": 82,
+            "meanSourceTokens": 32172.714285714286
+          },
+          {
+            "questionType": "missing_company",
+            "cases": 3,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 1.0,
+            "meanSources": 3.3333333333333335,
+            "facts": 39,
+            "factsReached": 38,
+            "meanSourceTokens": 27352.0
+          },
+          {
+            "questionType": "outlook",
+            "cases": 6,
+            "hitAt": {
+              "5": 0.6666666666666666,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.6666666666666666,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 0.5978835978835979,
+            "meanSources": 16.0,
+            "facts": 61,
+            "factsReached": 40,
+            "meanSourceTokens": 31822.0
+          },
+          {
+            "questionType": "risk",
+            "cases": 18,
+            "hitAt": {
+              "5": 0.8888888888888888,
+              "10": 0.9444444444444444,
+              "20": 0.9444444444444444
+            },
+            "recallAt": {
+              "5": 0.8055555555555556,
+              "10": 0.8935185185185185,
+              "20": 0.8935185185185185
+            },
+            "hitAll": 0.9444444444444444,
+            "recallAll": 0.9074074074074073,
+            "mrr": 0.8009259259259259,
+            "meanSources": 7.5,
+            "facts": 340,
+            "factsReached": 307,
+            "meanSourceTokens": 28459.222222222223
+          },
+          {
+            "questionType": "sector",
+            "cases": 14,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.7784013605442176,
+              "10": 0.880952380952381,
+              "20": 0.9238095238095239
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.9238095238095239,
+            "mrr": 0.9642857142857143,
+            "meanSources": 8.714285714285714,
+            "facts": 313,
+            "factsReached": 267,
+            "meanSourceTokens": 30270.64285714286
+          },
+          {
+            "questionType": "stale_filing",
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 0.75,
+            "meanSources": 3.5,
+            "facts": 27,
+            "factsReached": 27,
+            "meanSourceTokens": 19316.5
+          }
+        ],
+        "missed": [
+          "trend-tsla-net-income-three-years",
+          "followup-topic-change-export-controls",
+          "trend-dis-segments-fy2025",
+          "trend-ko-revenue-two-years"
+        ]
+      },
+      {
+        "name": "hybrid",
+        "shipped": false,
+        "shippable": false,
+        "overall": {
+          "cases": 57,
+          "hitAt": {
+            "5": 0.8771929824561403,
+            "10": 0.9473684210526315,
+            "20": 0.9649122807017544
+          },
+          "recallAt": {
+            "5": 0.7894319131161236,
+            "10": 0.8918128654970761,
+            "20": 0.918421052631579
+          },
+          "hitAll": 0.9824561403508771,
+          "recallAll": 0.941812865497076,
+          "mrr": 0.763126882863725,
+          "meanSources": 11.807017543859649,
+          "facts": 939,
+          "factsReached": 819,
+          "meanSourceTokens": 29724.964912280702
+        },
+        "byType": [
+          {
+            "questionType": "figure_trend",
+            "cases": 14,
+            "hitAt": {
+              "5": 0.6428571428571429,
+              "10": 0.8571428571428571,
+              "20": 0.9285714285714286
+            },
+            "recallAt": {
+              "5": 0.5833333333333333,
+              "10": 0.7738095238095238,
+              "20": 0.8571428571428571
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.9345238095238095,
+            "mrr": 0.5082070707070707,
+            "meanSources": 22.357142857142858,
+            "facts": 159,
+            "factsReached": 110,
+            "meanSourceTokens": 32229.35714285714
+          },
+          {
+            "questionType": "missing_company",
+            "cases": 3,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 1.0,
+            "meanSources": 2.6666666666666665,
+            "facts": 39,
+            "factsReached": 39,
+            "meanSourceTokens": 27386.666666666668
+          },
+          {
+            "questionType": "outlook",
+            "cases": 6,
+            "hitAt": {
+              "5": 0.8333333333333334,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.8333333333333334,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 0.7666666666666666,
+            "meanSources": 14.666666666666666,
+            "facts": 61,
+            "factsReached": 46,
+            "meanSourceTokens": 31759.833333333332
+          },
+          {
+            "questionType": "risk",
+            "cases": 18,
+            "hitAt": {
+              "5": 0.9444444444444444,
+              "10": 0.9444444444444444,
+              "20": 0.9444444444444444
+            },
+            "recallAt": {
+              "5": 0.8796296296296297,
+              "10": 0.8981481481481483,
+              "20": 0.9120370370370371
+            },
+            "hitAll": 0.9444444444444444,
+            "recallAll": 0.925925925925926,
+            "mrr": 0.8305555555555555,
+            "meanSources": 7.444444444444445,
+            "facts": 340,
+            "factsReached": 315,
+            "meanSourceTokens": 28453.722222222223
+          },
+          {
+            "questionType": "sector",
+            "cases": 14,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.7855442176870749,
+              "10": 0.9166666666666667,
+              "20": 0.9238095238095239
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.9238095238095239,
+            "mrr": 0.880952380952381,
+            "meanSources": 8.642857142857142,
+            "facts": 313,
+            "factsReached": 282,
+            "meanSourceTokens": 29981.64285714286
+          },
+          {
+            "questionType": "stale_filing",
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "hitAll": 1.0,
+            "recallAll": 1.0,
+            "mrr": 0.75,
+            "meanSources": 4.5,
+            "facts": 27,
+            "factsReached": 27,
+            "meanSourceTokens": 19241.5
+          }
+        ],
+        "missed": [
+          "trend-tsla-net-income-three-years",
+          "followup-topic-change-export-controls",
+          "trend-goog-meta-net-income-two-years"
+        ]
+      },
+      {
         "name": "rerank",
         "shipped": false,
         "shippable": true,
@@ -195,17 +512,17 @@
             "20": 0.9824561403508771
           },
           "recallAt": {
-            "5": 0.759607351712615,
-            "10": 0.8845029239766081,
-            "20": 0.9257309941520467
+            "5": 0.7669172932330828,
+            "10": 0.881578947368421,
+            "20": 0.9198830409356724
           },
           "hitAll": 0.9824561403508771,
-          "recallAll": 0.9593567251461987,
+          "recallAll": 0.9535087719298246,
           "mrr": 0.7704615073036125,
-          "meanSources": 12.350877192982455,
+          "meanSources": 12.192982456140351,
           "facts": 939,
-          "factsReached": 767,
-          "meanSourceTokens": 28001.57894736842
+          "factsReached": 765,
+          "meanSourceTokens": 28228.0
         },
         "byType": [
           {
@@ -287,10 +604,10 @@
             "hitAll": 0.9444444444444444,
             "recallAll": 0.925925925925926,
             "mrr": 0.8611111111111112,
-            "meanSources": 7.777777777777778,
+            "meanSources": 7.888888888888889,
             "facts": 340,
             "factsReached": 288,
-            "meanSourceTokens": 25746.777777777777
+            "meanSourceTokens": 25754.38888888889
           },
           {
             "questionType": "sector",
@@ -301,17 +618,17 @@
               "20": 1.0
             },
             "recallAt": {
-              "5": 0.7414965986394558,
-              "10": 0.9285714285714286,
-              "20": 0.9476190476190477
+              "5": 0.7712585034013605,
+              "10": 0.9166666666666667,
+              "20": 0.9238095238095239
             },
             "hitAll": 1.0,
-            "recallAll": 0.9476190476190477,
+            "recallAll": 0.9238095238095239,
             "mrr": 0.880952380952381,
-            "meanSources": 9.0,
+            "meanSources": 8.214285714285714,
             "facts": 313,
-            "factsReached": 273,
-            "meanSourceTokens": 28920.14285714286
+            "factsReached": 271,
+            "meanSourceTokens": 29832.214285714286
           },
           {
             "questionType": "stale_filing",
@@ -353,17 +670,17 @@
             "20": 0.9824561403508771
           },
           "recallAt": {
-            "5": 0.7201336675020886,
-            "10": 0.8359649122807017,
-            "20": 0.9169590643274854
+            "5": 0.7230576441102757,
+            "10": 0.8432748538011696,
+            "20": 0.9140350877192983
           },
           "hitAll": 0.9824561403508771,
-          "recallAll": 0.9461988304093567,
-          "mrr": 0.7300647451963241,
-          "meanSources": 11.736842105263158,
+          "recallAll": 0.9432748538011696,
+          "mrr": 0.7329887218045112,
+          "meanSources": 11.614035087719298,
           "facts": 939,
-          "factsReached": 741,
-          "meanSourceTokens": 29510.77192982456
+          "factsReached": 737,
+          "meanSourceTokens": 29739.40350877193
         },
         "byType": [
           {
@@ -445,10 +762,10 @@
             "hitAll": 0.9444444444444444,
             "recallAll": 0.8935185185185185,
             "mrr": 0.7625661375661376,
-            "meanSources": 7.055555555555555,
+            "meanSources": 7.166666666666667,
             "facts": 340,
-            "factsReached": 294,
-            "meanSourceTokens": 28452.555555555555
+            "factsReached": 290,
+            "meanSourceTokens": 28452.166666666668
           },
           {
             "questionType": "sector",
@@ -459,17 +776,17 @@
               "20": 1.0
             },
             "recallAt": {
-              "5": 0.7593537414965986,
-              "10": 0.8797619047619047,
-              "20": 0.9357142857142857
+              "5": 0.7712585034013605,
+              "10": 0.9095238095238096,
+              "20": 0.9238095238095239
             },
             "hitAll": 1.0,
-            "recallAll": 0.9357142857142857,
-            "mrr": 0.8119047619047619,
-            "meanSources": 9.142857142857142,
+            "recallAll": 0.9238095238095239,
+            "mrr": 0.8238095238095238,
+            "meanSources": 8.5,
             "facts": 313,
             "factsReached": 264,
-            "meanSourceTokens": 29094.928571428572
+            "meanSourceTokens": 30026.285714285714
           },
           {
             "questionType": "stale_filing",
@@ -512,17 +829,17 @@
             "20": 0.9824561403508771
           },
           "recallAt": {
-            "5": 0.7271512113617377,
-            "10": 0.8932748538011696,
-            "20": 0.9257309941520467
+            "5": 0.7329991645781119,
+            "10": 0.8961988304093568,
+            "20": 0.9198830409356724
           },
           "hitAll": 0.9824561403508771,
-          "recallAll": 0.954970760233918,
-          "mrr": 0.7713659147869674,
-          "meanSources": 11.75438596491228,
+          "recallAll": 0.9491228070175439,
+          "mrr": 0.7655179615705933,
+          "meanSources": 11.56140350877193,
           "facts": 939,
-          "factsReached": 797,
-          "meanSourceTokens": 29460.21052631579
+          "factsReached": 800,
+          "meanSourceTokens": 29690.43859649123
         },
         "byType": [
           {
@@ -604,10 +921,10 @@
             "hitAll": 0.9444444444444444,
             "recallAll": 0.9120370370370371,
             "mrr": 0.8287037037037037,
-            "meanSources": 7.0,
+            "meanSources": 7.111111111111111,
             "facts": 340,
-            "factsReached": 300,
-            "meanSourceTokens": 28409.38888888889
+            "factsReached": 299,
+            "meanSourceTokens": 28400.777777777777
           },
           {
             "questionType": "sector",
@@ -618,17 +935,17 @@
               "20": 1.0
             },
             "recallAt": {
-              "5": 0.7403061224489795,
-              "10": 0.9047619047619048,
-              "20": 0.9476190476190477
+              "5": 0.7641156462585034,
+              "10": 0.9166666666666667,
+              "20": 0.9238095238095239
             },
             "hitAll": 1.0,
-            "recallAll": 0.9476190476190477,
-            "mrr": 0.8595238095238095,
-            "meanSources": 9.357142857142858,
+            "recallAll": 0.9238095238095239,
+            "mrr": 0.8357142857142856,
+            "meanSources": 8.428571428571429,
             "facts": 313,
-            "factsReached": 283,
-            "meanSourceTokens": 29030.714285714286
+            "factsReached": 287,
+            "meanSourceTokens": 29979.14285714286
           },
           {
             "questionType": "stale_filing",
@@ -660,27 +977,51 @@
     ],
     "comparisons": [
       {
+        "arm": "dense",
+        "shippedArm": "fts5",
+        "metric": "evidence reached",
+        "facts": 939,
+        "challengerOnly": 77,
+        "shippedOnly": 87,
+        "pValue": 0.4823062881447227,
+        "pAhead": 0.8047849160186471,
+        "pBehind": 0.24115314407236135,
+        "verdict": "indistinguishable"
+      },
+      {
+        "arm": "hybrid",
+        "shippedArm": "fts5",
+        "metric": "evidence reached",
+        "facts": 939,
+        "challengerOnly": 68,
+        "shippedOnly": 20,
+        "pValue": 2.770265657008097e-07,
+        "pAhead": 1.3851328285040486e-07,
+        "pBehind": 0.9999999608168768,
+        "verdict": "ahead"
+      },
+      {
         "arm": "rerank",
         "shippedArm": "fts5",
         "metric": "evidence reached",
         "facts": 939,
-        "challengerOnly": 13,
-        "shippedOnly": 12,
-        "pValue": 1.0,
-        "pAhead": 0.5,
-        "pBehind": 0.6549810171127319,
-        "verdict": "indistinguishable"
+        "challengerOnly": 9,
+        "shippedOnly": 15,
+        "pValue": 0.30745625495910645,
+        "pAhead": 0.9242051839828491,
+        "pBehind": 0.15372812747955322,
+        "verdict": "behind"
       },
       {
         "arm": "dense-local",
         "shippedArm": "fts5",
         "metric": "evidence reached",
         "facts": 939,
-        "challengerOnly": 75,
-        "shippedOnly": 100,
-        "pValue": 0.06933702412999165,
-        "pAhead": 0.9754723606643712,
-        "pBehind": 0.03466851206499583,
+        "challengerOnly": 70,
+        "shippedOnly": 104,
+        "pValue": 0.012138156118372994,
+        "pAhead": 0.9961060351111605,
+        "pBehind": 0.006069078059186497,
         "verdict": "behind"
       },
       {
@@ -688,11 +1029,11 @@
         "shippedArm": "fts5",
         "metric": "evidence reached",
         "facts": 939,
-        "challengerOnly": 56,
+        "challengerOnly": 54,
         "shippedOnly": 25,
-        "pValue": 0.0007521260646340775,
-        "pAhead": 0.00037606303231703874,
-        "pBehind": 0.9998413415409889,
+        "pValue": 0.001466071947342336,
+        "pAhead": 0.000733035973671168,
+        "pBehind": 0.9996803011163178,
         "verdict": "ahead"
       }
     ],
@@ -700,42 +1041,63 @@
       "shipped": "fts5",
       "limit": 3,
       "kept": [
-        "hybrid-local",
-        "rerank"
+        "hybrid-local"
       ],
       "candidates": [
         {
+          "name": "dense",
+          "facts": 939,
+          "factsReached": 761,
+          "gained": 77,
+          "lost": 87,
+          "pBehind": 0.24115314407236135,
+          "kept": false,
+          "shippable": false,
+          "reason": "dropped: makes an API call at query time, so it can't ship (indistinguishable on Evidence Reached, p behind = 0.241; available if the one-call limit is lifted)"
+        },
+        {
+          "name": "hybrid",
+          "facts": 939,
+          "factsReached": 819,
+          "gained": 68,
+          "lost": 20,
+          "pBehind": 0.9999999608168768,
+          "kept": false,
+          "shippable": false,
+          "reason": "dropped: makes an API call at query time, so it can't ship (ahead on Evidence Reached, p behind = 1.000; available if the one-call limit is lifted)"
+        },
+        {
           "name": "rerank",
           "facts": 939,
-          "factsReached": 767,
-          "gained": 13,
-          "lost": 12,
-          "pBehind": 0.6549810171127319,
-          "kept": true,
+          "factsReached": 765,
+          "gained": 9,
+          "lost": 15,
+          "pBehind": 0.15372812747955322,
+          "kept": false,
           "shippable": true,
-          "reason": "kept: not behind (p behind = 0.655), 2 of 2 not behind on Evidence Reached"
+          "reason": "dropped: behind on Evidence Reached (p behind = 0.154 < 0.20)"
         },
         {
           "name": "dense-local",
           "facts": 939,
-          "factsReached": 741,
-          "gained": 75,
-          "lost": 100,
-          "pBehind": 0.03466851206499583,
+          "factsReached": 737,
+          "gained": 70,
+          "lost": 104,
+          "pBehind": 0.006069078059186497,
           "kept": false,
           "shippable": true,
-          "reason": "dropped: behind on Evidence Reached (p behind = 0.035 < 0.20)"
+          "reason": "dropped: behind on Evidence Reached (p behind = 0.006 < 0.20)"
         },
         {
           "name": "hybrid-local",
           "facts": 939,
-          "factsReached": 797,
-          "gained": 56,
+          "factsReached": 800,
+          "gained": 54,
           "lost": 25,
-          "pBehind": 0.9998413415409889,
+          "pBehind": 0.9996803011163178,
           "kept": true,
           "shippable": true,
-          "reason": "kept: not behind (p behind = 1.000), 1 of 2 not behind on Evidence Reached"
+          "reason": "kept: not behind (p behind = 1.000), 1 of 1 not behind on Evidence Reached"
         }
       ]
     }

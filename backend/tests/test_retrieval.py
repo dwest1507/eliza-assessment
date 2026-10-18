@@ -595,6 +595,115 @@ def test_a_cybersecurity_question_with_a_time_phrase_keeps_its_window(index):
     assert {s.section for s in context.sources} <= set(CYBER_SECTIONS)
 
 
+@pytest.mark.parametrize(
+    "question",
+    [
+        "What are Apple's and Tesla's regulatory risks, and how are they addressing them?",
+        "What risks does Apple face, and how is it managing them?",
+        "What risks does Tesla disclose, and how does it mitigate them?",
+        "What supply risks does Apple face, and what is it doing in response?",
+        "What risks does Tesla face, and how is it handling them?",
+    ],
+)
+def test_a_risk_question_asking_how_they_respond_also_searches_business_and_mdna(index, question):
+    context = _ask(index, question)
+
+    assert set(context.query_scope.sections) == {"Risk Factors", "Business", "MD&A"}
+    assert context.query_scope.time_window.label == "latest"
+    sections = {s.section for s in context.sources}
+    assert "Risk Factors" in sections
+    assert sections & {"Business", "MD&A"}
+    assert {s.filing_id for s in context.sources} <= {
+        f.filing_id for f in context.query_scope.filings
+    }
+
+
+def test_a_risk_question_asking_how_they_respond_still_cites_10q_risk_pointers(index):
+    context = _ask(
+        index, "What are Apple's and Tesla's regulatory risks, and how are they addressing them?"
+    )
+
+    pairs = {(s.filing_id, s.section) for s in context.sources}
+    # Apple's Q1 FY2026 10-Q points back to the 10-K: cited as it stands, never searched.
+    assert ("AAPL_10-Q_2025-12-27", "Risk Factors") in pairs
+    searched = {(p.filing_id, p.section) for p in context.query_scope.searched}
+    assert ("AAPL_10-Q_2025-12-27", "Risk Factors") not in searched
+    assert ("AAPL_10-K_2025-09-27", "Risk Factors") in searched
+    assert ("AAPL_10-K_2025-09-27", "Business") in searched
+
+
+def test_a_response_phrase_without_a_risk_hint_adds_no_section(index):
+    context = _ask(index, "How is Apple managing its services business?")
+
+    assert context.query_scope.sections == ()
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "How dependent is Apple on its largest customers?",
+        "How dependent is Tesla on its suppliers?",
+        "What is NVIDIA's customer concentration?",
+        "How much does Apple rely on outside manufacturers?",
+        "Does Tesla have sole source suppliers?",
+        "How much revenue does Target get from government contracts?",
+    ],
+)
+def test_a_dependence_question_searches_business_and_risk_factors_of_the_latest_filings(
+    index, question
+):
+    context = _ask(index, question)
+
+    assert set(context.query_scope.sections) == {"Business", "Risk Factors"}
+    assert context.query_scope.time_window.label == "latest"
+    assert "Business" in {p.section for p in context.query_scope.searched}
+    assert context.sources
+    # A 10-Q has no Business Section and its Risk Factors point back to the 10-K or are
+    # searched as Risk Factors: it is never searched whole.
+    assert {s.section for s in context.sources} <= {"Business", "Risk Factors"}
+
+
+def test_a_dependence_question_cites_the_business_section_of_the_latest_10k(index):
+    context = _ask(index, "How dependent is Apple on its suppliers?")
+
+    assert ("AAPL_10-K_2025-09-27", "Business") in {
+        (s.filing_id, s.section) for s in context.sources
+    }
+
+
+def test_a_dependence_question_with_a_time_phrase_keeps_its_window(index):
+    context = _ask(
+        index, "How has Apple's dependence on its suppliers changed over the last two years?"
+    )
+
+    assert context.query_scope.time_window.label == "last 2 years"
+    assert "Business" in context.query_scope.sections
+    searched = {(p.filing_id, p.section) for p in context.query_scope.searched}
+    assert {("AAPL_10-K_2024-09-28", "Business"), ("AAPL_10-K_2025-09-27", "Business")} <= searched
+
+
+def test_a_dependence_phrase_beside_another_hint_adds_business_to_it(index):
+    context = _ask(index, "What does Tesla's MD&A say about its reliance on suppliers?")
+
+    assert set(context.query_scope.sections) == {"MD&A", "Business"}
+    assert context.query_scope.time_window.label == "latest"
+
+
+def test_a_follow_up_inherits_the_sections_a_dependence_phrase_planned(index):
+    context = prepare_answer_context(
+        [
+            Message("user", "How dependent is Apple on its suppliers?"),
+            Message("assistant", "Apple depends on outsourcing partners [S1]."),
+            Message("user", "And Tesla?"),
+        ],
+        index,
+    )
+
+    assert [c.ticker for c in context.query_scope.companies] == ["TSLA"]
+    assert set(context.query_scope.sections) == {"Business", "Risk Factors"}
+    assert context.query_scope.time_window.label == "latest"
+
+
 LEGAL_PROCEEDINGS = ("Legal Proceedings", "Financial Statements")
 
 

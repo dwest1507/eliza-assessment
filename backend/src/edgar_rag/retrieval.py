@@ -51,7 +51,11 @@ Financial Statements, not whole. A risk question is routed to the latest 10-K's 
 Factors plus any later 10-Q that states risk text; a later 10-Q whose Risk Factors only
 point back to the 10-K is cited as it stands, never ranked (finding 16). A cybersecurity
 question is routed the same way, to the Cybersecurity Section, Risk Factors and MD&A of
-the latest Filings. The Query Scope records the places searched (`QueryScope.searched`),
+the latest Filings. A risk question asking how the Companies address, manage or respond to
+their risks also searches Business and the MD&A, and a question about what Companies
+depend on (customers, suppliers, government contracts) searches Business and, with no
+other hint, Risk Factors, in the latest Filings unless it names a time phrase. The Query
+Scope records the places searched (`QueryScope.searched`),
 so the answer's reader, and the evaluation, can see where retrieval looked.
 
 Repeated text costs the budget once (finding 17). A chunk repeated across a Company's
@@ -109,6 +113,7 @@ from edgar_rag._facts import FactNote, FactRow
 from edgar_rag._prompt import HISTORY_MAX_TOKENS, HISTORY_TURNS, PROMPT_VERSION, render
 from edgar_rag._query_scope import (
     LATEST,
+    RISK_FACTORS,
     MissingCompany,
     ScopeCompany,
     ScopeFiling,
@@ -118,6 +123,7 @@ from edgar_rag._query_scope import (
     inherit_scope,
     is_change_question,
     names_period,
+    reads_latest_filings,
 )
 from edgar_rag._repeats import GAP, NEAR_DUPLICATE, NEW_TEXT, new_text, shingles
 from edgar_rag.corpus import Filing
@@ -172,8 +178,6 @@ STUB_TOKENS = 250
 """A Section with less text than this (about 1,000 characters) is a stub, usually a
 pointer to a note or another Item, so it is not searched, and a Filing whose hinted
 Sections are all stubs or missing is searched whole."""
-
-RISK_FACTORS = "Risk Factors"
 
 _CANDIDATES_PER_COMPANY = 200
 
@@ -277,8 +281,9 @@ class QueryScope:
     """The Sector phrases the question uses, each with the Sector table rows and the
     Companies it resolved to, so the answer and the front-end can name them."""
     time_window: TimeWindow
-    """The window each Company's Filings are filtered to. A risk or cybersecurity
-    question that names no time phrase and no Fiscal Period gets the latest window."""
+    """The window each Company's Filings are filtered to. A risk, cybersecurity or
+    dependence question that names no time phrase and no Fiscal Period gets the latest
+    window."""
     sections: tuple[str, ...]
     """The Sections the question's hints plan, preferred over the rest of each Filing
     (a cybersecurity question plans Cybersecurity, Risk Factors and MD&A, a legal
@@ -522,10 +527,12 @@ def prepare_answer_context(
         companies, sector_phrases, missing = who.companies, who.sector_phrases, who.missing
         sections = inherited.sections_from.sections
         periods = inherited.period_from.periods
-        # A risk or cybersecurity question (whose hint plans Risk Factors) that names no
-        # time phrase and no Fiscal Period reads the latest Filings.
+        # A risk, cybersecurity or dependence question that names no time phrase and no
+        # Fiscal Period reads the latest Filings.
         window = inherited.period_from.window or (
-            LATEST if RISK_FACTORS in sections and not periods else TimeWindow("all")
+            LATEST
+            if reads_latest_filings(inherited.sections_from.text) and not periods
+            else TimeWindow("all")
         )
         # The question as retrieval reads it: its own words, plus the words of the
         # message whose topic it inherits ("And what about Microsoft?").
@@ -749,7 +756,8 @@ def _plan(db: sqlite3.Connection, scope: QueryScope, filings: Sequence[ScopeFili
 
     Each Filing is searched in its hinted Sections that have real text, or whole when it
     has none. On the risk route, a 10-Q whose Risk Factors only point back to the 10-K
-    (or that has none) is not searched: its pointer is cited instead.
+    (or that has none) is not searched: its pointer is cited instead. That holds too when
+    the plan adds Business, which a 10-Q never has (a dependence question).
     """
     if scope.time_window.kind == "all" and not scope.sections:
         return _Plan(places=None, pointers=[])
@@ -765,7 +773,10 @@ def _plan(db: sqlite3.Connection, scope: QueryScope, filings: Sequence[ScopeFili
                     row["tokens"],
                     bool(row["pointer"]),
                 )
-    risk_only = scope.sections == (RISK_FACTORS,)
+    annual_only = RISK_FACTORS in scope.sections and set(scope.sections) <= {
+        RISK_FACTORS,
+        "Business",
+    }
     places: list[tuple[str, str | None]] = []
     pointers: list[tuple[str, str]] = []
     for filing in filings:
@@ -778,7 +789,7 @@ def _plan(db: sqlite3.Connection, scope: QueryScope, filings: Sequence[ScopeFili
             pointers.append((filing.filing_id, RISK_FACTORS))
         if hinted:
             places += [(filing.filing_id, s) for s in hinted]
-        elif not (risk_only and filing.form_type == "10-Q"):
+        elif not (annual_only and filing.form_type == "10-Q"):
             places.append((filing.filing_id, None))
     return _Plan(places=places, pointers=pointers)
 

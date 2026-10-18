@@ -1141,6 +1141,51 @@ The words left out still rank, but last: every chunk matching the question's oth
 - **Question furniture is the next noise.** Words such as "disclose", "describe" (already a stopword), "annual" and "report" match much of a Filing too. They are not in the fixed list, so they stay in the search terms. Leaving them out too was tried on #117's code: it reached 3 more facts (1 must-state), too few to justify a word list grown from dev's questions, so it was not kept.
 - **Every shippable Arm, and the "How it works" page.** `retrieval-dev.json` was run again on the shippable Arms (free) and exported with `make eval-export`: `fts5` 766 of 939, `rerank` 767, `dense-local` 741 and `hybrid-local` 797. The screen sends `hybrid-local` and `rerank` on to paid runs and drops `dense-local` (behind at one-sided p = 0.035). The hosted `dense` and `hybrid` Arms were not re-run, as for #117 and #120 (they need an OpenAI key to embed the questions their cache lacks).
 
+#### Response and dependence phrases add Business and MD&A (#121, 2026-10-18)
+
+On top of #119, #120 and #123. A risk question (one the Risk Factors hint itself reads) that asks how the Companies address, manage, mitigate, handle, deal with or respond to their risks also plans Business and the MD&A. The latest 10-K's Risk Factors stay in the plan, and a 10-Q whose Risk Factors point back to the 10-K is still cited as it stands, never searched. A cybersecurity question asking how a Company manages its risks gains nothing, since its plan already holds Item 1C, which states that. A question about what Companies depend on ("dependent on" and "how dependent are … on", "rely on", "reliance on", "largest" or "key customers", "customer concentration", "suppliers", "sole source", "government contracts") plans Business, plus Risk Factors when no other hint is present. With no time phrase it reads the latest Filings, as the risk route does, and a named time window replaces that. A 10-Q has no Business Section, so on a Business and Risk Factors plan a 10-Q is never searched whole: its Risk Factors are searched when they state risk text, and cited as a pointer otherwise. The response and dependence words stay search terms, since inside the added Sections they name the topic.
+
+`make eval-retrieval` on dev, before (#123's code) and after (free):
+
+| Question type | all facts before | after | must-state before | after |
+|---|---|---|---|---|
+| risk | 288 of 340 | 288 | 94 of 110 | 94 |
+| sector | 272 of 313 | 277 | 97 of 111 | 99 |
+| figure_trend, outlook, missing_company, stale_filing | 206 of 286 | 206 | 65 of 95 | 65 |
+| **all** | **766 of 939 (81.6%)** | **771 (82.1%)** | **256 of 316 (81.0%)** | **258 (81.6%)** |
+
+| | hit@10 | recall@10 | MRR | Source tokens | must-state planning misses | must-state ranking misses |
+|---|---|---|---|---|---|---|
+| before (#123) | 0.947 | 0.867 | 0.757 | 28,001 | 2 | 58 |
+| after | 0.947 | 0.870 | 0.739 | 28,214 | 3 | 55 |
+
+| Case | must-state reached | all facts reached |
+|---|---|---|
+| `sector-consumer-staples-key-customers` | 3 of 6 → 6 of 6 | 10 of 17 → 15 of 17 |
+| `sector-aerospace-government` | 3 of 4 → 3 of 4 | 13 of 17 → 14 of 17 |
+| `sector-semiconductors-customer-concentration` | 4 of 5 → 4 of 5 | 14 of 19 → 15 of 19 |
+| `followup-pharma-to-oil-majors` | 6 of 7 → 6 of 7 | 22 of 24 → 21 of 24 |
+| `sector-energy-operational-risks` | 8 of 8 → 7 of 8 | 19 of 19 → 18 of 19 |
+
+- **Evidence Reached rises, so the step is kept:** 7 facts gained and 2 lost, 3 must-state gained and 1 lost. The gain is the dependence route: PepsiCo's customer concentration (sales to Walmart about 14% of net revenue, and what losing Walmart would mean) is stated in Business, and Coca-Cola's reliance on its bottling partners in Risk Factors. Before, the question set no hint and searched every Filing of each Company whole, where neither passage ranked into the budget. The losses are on the response route: "how do they manage them" now shares each Company's budget between Risk Factors, Business and the MD&A, and one Risk Factors passage of each case no longer fits.
+- **`sector-aerospace-government`'s must-state miss is still a ranking miss**, RTX's Business passage on its U.S. government sales, now searched but not ranked into the budget.
+- **One planning miss is new**, in `sector-semiconductors-customer-concentration`: NVIDIA's latest 10-Q states its customer concentration in the MD&A, which a dependence plan (Business and Risk Factors) leaves out. Before, the question set no hint and searched every Filing whole, so it was a ranking miss; the fact is unreached either way.
+- **The Brief Suite's pharmaceutical questions, through the retrieval seam (free, `fts5`):** must-state facts reached rise from 52 to 59 of the suite's 108, almost all in the 340B follow-up (`brief-followup-pharma-340b`, 2 to 8 of 8), which inherits the plan of "how are they addressing them" and now reaches the MD&A and Business passages on the 340B program. The pharmaceutical question itself (`brief-sector-pharma-regulatory`) stays at 0 of 9, its rephrasing rises 0 to 1 of 9, the health care variant stays 1 of 13 and the Pfizer question 1 of 4: their drug-pricing evidence is ranked out, which the topic table of #116 addresses.
+- **Dropping the response words from the search terms too** was measured and not kept: `fts5` reached one fact more on dev (772, `sector-energy-operational-risks` recovered) but the Brief Suite's must-state facts fell from 59 to 57.
+- **MRR dips, and the Floors are re-recorded** (`make eval-floors`, ADR 0014): MRR 0.757 → 0.739, hit@10 unchanged at 0.947, recall@10 0.867 → 0.870. In `followup-pharma-to-oil-majors` and `sector-energy-operational-risks` a Business or MD&A Source now ranks first and the expected Risk Factors Source second. The Floors move to MRR 0.73, hit@10 0.94 and recall@10 0.86 unchanged.
+- **Every Arm, the hosted ones included, and the "How it works" page.** `retrieval-dev.json` was run on all six Arms (free, but for a fraction of a cent to embed the questions the hosted Arms' cache lacked, approved by the developer) and exported with `make eval-export`, so the page shows the hosted Arms again. Evidence Reached, all facts and must-state, before (#123's code) and after:
+
+| Arm | before | after | must-state before | after | screen |
+|---|---|---|---|---|---|
+| `fts5` (shipped) | 766 | 771 | 256 | 258 | |
+| `hybrid` (hosted) | 819 | 819 | 279 | 279 | can't ship (one-call rule); ahead of `fts5` |
+| `dense` (hosted) | 759 | 761 | 262 | 262 | can't ship (one-call rule); indistinguishable |
+| `hybrid-local` | 797 | 800 | 270 | 271 | kept (ahead, one-sided p = 0.001) |
+| `rerank` | 767 | 765 | 257 | 257 | dropped (behind, one-sided p = 0.154) |
+| `dense-local` | 741 | 737 | 258 | 256 | dropped (behind, one-sided p = 0.006) |
+
+  The screen now sends only `hybrid-local` on to paid runs; on #123's code it sent `rerank` too. `hybrid`, the hosted hybrid, reaches the most evidence of any Arm (819 of 939, 279 of 316 must-state), 19 facts more than `hybrid-local`, which is what lifting the one-call rule would buy on this measure.
+
 ### The version 2 holdout run
 
 Run once on 2026-10-17 (issue #74), after [the version 2 comparisons on dev](#the-version-2-comparisons-on-dev) had confirmed every shipped choice, on Golden Set version 2's 20 holdout cases. It is the same round as those comparisons (code version `756bfadca63122a9`, prompt v7, Golden Set version 2) and the setup that ships: the `fts5` Arm, 600-token chunks and the 32k budget, `gpt-6-luna` at reasoning effort `low`, judged by `jev-1.13.0` at the fact cut-off 0.6. Under [the holdout rule](#the-holdout-rule) it reports and decides nothing: nothing was changed after it, and no case was relabelled. [Version 1's holdout run](#the-holdout-run) stands as recorded.
