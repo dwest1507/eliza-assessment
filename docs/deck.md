@@ -99,29 +99,30 @@ was answered" under the answer first: its Query Scope chips show what the rules 
 
 # Evaluation: the final holdout numbers
 
-The final configuration (FTS5, `gpt-6-luna`, prompt v7) was scored once on each Golden Set version's holdout, after every choice was made on dev, and nothing changed after either run. Version 1 has 30 labelled questions, 10 of them holdout; version 2 has 80, 20 holdout, with one-claim facts.
+The final configuration (FTS5, `gpt-6-luna`, prompt v7) was scored once on each Golden Set version's holdout, after every choice was made on dev, and nothing changed after any run. Version 2's was scored once more after the new retrieval rules changed what ships. Version 1 has 30 labelled questions, 10 of them holdout; version 2 has 80, 20 holdout, with one-claim facts.
 
-| | Version 1 holdout | Version 2 holdout |
-|---|---|---|
-| hit@10 | 0.90 | 0.89 |
-| Fact Recall (Jev) | 0.67 | 0.74 |
-| Faithfulness (Jev) | 0.95 | 0.95 |
-| Citations valid | 1.00 | 0.95 |
-| Figures exact | 0.90 | 0.90 |
-| Coverage Gaps stated | 1.00 | 1.00 |
-| $ per answer, latency | $0.0030, 9.5 s | $0.0028, 7.8 s |
+| | Version 1 holdout | Version 2 holdout | Version 2, new retrieval |
+|---|---|---|---|
+| hit@10 | 0.90 | 0.89 | 0.89 |
+| Fact Recall (Jev) | 0.67 | 0.74 | 0.78 |
+| Faithfulness (Jev) | 0.95 | 0.95 | 0.94 |
+| Citations valid | 1.00 | 0.95 | 0.95 |
+| Figures exact | 0.90 | 0.90 | 0.90 |
+| Coverage Gaps stated | 1.00 | 1.00 | 1.00 |
+| $ per answer, latency | $0.0030, 9.5 s | $0.0028, 7.8 s | $0.0028, 8.1 s |
 
-Each is in line with its dev split (version 1: Fact Recall 0.62 to 0.65, hit@10 0.88; version 2: 0.72 and 0.93): the dev choices did not overfit badly. The versions' facts differ, so their Fact Recall is not compared.
+Each is in line with its dev split (version 1: Fact Recall 0.62 to 0.65, hit@10 0.88; version 2: 0.72 and 0.93; on the new retrieval: 0.72 and 0.96): the dev choices did not overfit badly. The new retrieval reaches 93 of the 106 must-state facts' evidence against 87, and its answers state 82 against 75: on 20 cases, a direction, not a measured gain. The versions' facts differ, so their Fact Recall is not compared.
 
-> Sources: [the holdout run](evaluation.md#the-holdout-run), [the version 2 holdout run](evaluation.md#the-version-2-holdout-run), [Golden Set](golden-set.md)
+> Sources: [the holdout run](evaluation.md#the-holdout-run), [the version 2 holdout run](evaluation.md#the-version-2-holdout-run), [the holdout on the new retrieval](evaluation.md#the-holdout-on-the-new-retrieval-130-2026-10-18), [Golden Set](golden-set.md)
 
 <!--
 Fact Recall: the share of a question's Required Facts the answer states. Faithfulness: the
 share of cited claims the cited Source supports. Both judged by Jev, pinned to one version,
-from neither generator's model family. Every figure failure (one in version 1, two in
-version 2) is a figure the answer computed and labelled as derived, which the check fails
-by design. Version 2's one zero is a follow-up that changes topic without naming a
-Company, ADR 0003's known weakness.
+from neither generator's model family. Every figure failure (one case in version 1, two in
+each version 2 run) is a figure the answer computed and labelled as derived, which the
+check fails by design, apart from one revenue figure quoted from an MD&A in the run on the
+new retrieval. Version 2's one zero, in both runs, is a follow-up that changes topic
+without naming a Company, ADR 0003's known weakness.
 -->
 
 ---
@@ -148,7 +149,7 @@ scores as much as the hybrid and the re-ranker did.
 # Risks and limits
 
 - **Small evaluation.** 20 holdout cases in version 2, 10 in version 1: one case moves a share by 0.05. The numbers show the system works, not its exact rate.
-- **Answers miss facts.** Fact Recall 0.74 on the version 2 holdout: the answers miss 31 of 106 must-state facts, 15 of them because their evidence never reaches the prompt.
+- **Answers miss facts.** Fact Recall 0.78 on the version 2 holdout, on the new retrieval: the answers miss 24 of 106 must-state facts, 9 of them because their evidence never reaches the prompt and 15 although it does.
 - **The brief's questions fail the Brief Suite.** 1 of 15 cases pass on version 2. The new retrieval gets the evidence of 80 of the 108 must-state facts into the Answer Call, against 53, but 44 are still missed: 23 never reach it, and 21 reach it in every run yet are stated in fewer than 4 of 5. The gap is now the generator as much as retrieval.
 - **Follow-ups that change topic without naming a Company** inherit the earlier Companies. The Query Scope chips, under "How this was answered", show it; the Golden Set measures it.
 - **Computed figures.** The model sometimes computes a growth rate rather than quoting the Filing; it labels it as derived.
@@ -156,7 +157,7 @@ scores as much as the hybrid and the re-ranker did.
 - **No human in the loop.** Claude drafted the evaluation's labels and labelled the judge study, with no human review. Accepted for a demo; production would use hand-labelled data.
 - **Our own inputs and a hosted model.** The Sector table and the list of missing Companies are curated and disclosed, not yet confirmed by the Client. The Answer Call goes to a hosted API, behind one interface a local model can replace.
 
-> Sources: [the holdout run](evaluation.md#the-holdout-run), [the version 2 holdout run](evaluation.md#the-version-2-holdout-run), [the Brief Suite](evaluation.md#the-brief-suite), [the new round on the new retrieval](evaluation.md#a-new-round-on-the-new-retrieval-126-2026-10-18), [ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md), [assumptions 4, 5, 9 and 10](assumptions.md), [EDA findings](findings.md), [ADR 0013](adr/0013-jev-stays-the-judge-checked-by-a-judge-study.md)
+> Sources: [the holdout run](evaluation.md#the-holdout-run), [the version 2 holdout run](evaluation.md#the-version-2-holdout-run), [the holdout on the new retrieval](evaluation.md#the-holdout-on-the-new-retrieval-130-2026-10-18), [the Brief Suite](evaluation.md#the-brief-suite), [the new round on the new retrieval](evaluation.md#a-new-round-on-the-new-retrieval-126-2026-10-18), [ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md), [assumptions 4, 5, 9 and 10](assumptions.md), [EDA findings](findings.md), [ADR 0013](adr/0013-jev-stays-the-judge-checked-by-a-judge-study.md)
 
 <!--
 Lead with the limits before the panel finds them. Each one is either measured (the
