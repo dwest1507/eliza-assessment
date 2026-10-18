@@ -570,8 +570,10 @@ def test_an_uncited_refusal_in_a_no_source_answer_makes_no_claim(refusal):
         "Tesla did not comply with the filings deadline.",
         "Apple did not meet its targets, in line with its 10-K guidance.",
         # What a Source lacks, inside a sentence that says something about a Company.
-        "Both face litigation, but Walmart also reports regulatory findings that Target's "
-        "excerpt does not mention.",
+        (
+            "Both face litigation, but Walmart also reports regulatory findings that "
+            "Target's excerpt does not mention."
+        ),
     ],
 )
 def test_an_uncited_sentence_about_a_company_is_a_claim_even_if_it_looks_like_a_gap(sentence):
