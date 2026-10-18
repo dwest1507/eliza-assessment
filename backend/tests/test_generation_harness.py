@@ -1125,6 +1125,58 @@ def test_rescoring_drops_jevs_verdicts_on_expected_coverage_gap_sentences(
     assert json.loads(path.read_text()) == after
 
 
+REFUSAL = "Citigroup is not covered in this answer."
+
+
+def test_rescoring_drops_uncited_claims_the_claim_split_no_longer_makes(
+    index, tmp_path, monkeypatch
+):
+    """Issue #109: a report saved before the claim exemption recognised a refusal counted
+    it an unsupported claim. The rescore splits the stored answer again and drops the
+    uncited claims the split no longer makes, with no Answer Call and no Jev call; an
+    uncited claim the split still makes stays, and so do the cited ones."""
+    import io
+    import json
+
+    from edgar_eval import answer_checks
+    from edgar_eval.generation import main
+
+    answer = f"Apple outsources manufacturing [S1].\n\nApple sells iPhones.\n\n{REFUSAL}"
+    with monkeypatch.context() as patch:
+        patch.setattr(answer_checks, "_states_gap", lambda sentence: False)
+        path, before = _saved_report(
+            index,
+            tmp_path,
+            answer,
+            lambda filing_id: [],
+            judge=FakeJudge(
+                verdicts={"Apple sells iPhones.": "unsupported", REFUSAL: "unsupported"}
+            ),
+        )
+    [case] = before["cases"]
+    assert [c["claim"] for c in case["judgments"]["claims"]][-1] == REFUSAL
+    assert case["faithfulness"] == pytest.approx(1 / 3)
+
+    out = io.StringIO()
+    rescore = ["--rescore", str(path), "--index", str(index)]
+    assert main(rescore, model=Refuses(), judge=Refuses(), out=out) == 0
+
+    after = json.loads(path.read_text())
+    [case] = after["cases"]
+    assert [c["claim"] for c in case["judgments"]["claims"]] == [
+        "Apple outsources manufacturing.",
+        "Apple sells iPhones.",
+    ]
+    assert case["faithfulness"] == 0.5
+    for summary in (after["overall"], *after["by_type"].values()):
+        assert summary["faithfulness"] == 0.5
+    assert "1 uncited claim no longer made dropped; Faithfulness 0.33 → 0.50" in out.getvalue()
+
+    # A second rescore finds nothing more to drop, and changes nothing.
+    assert main(rescore, model=Refuses(), judge=Refuses(), out=io.StringIO()) == 0
+    assert json.loads(path.read_text()) == after
+
+
 def test_a_report_saved_before_tiers_and_stop_reasons_still_loads_and_rescores(index, tmp_path):
     """Version 1 reports name no tier, no detail recall and no stop reason: every fact
     was must-state, and no answer was marked truncated."""

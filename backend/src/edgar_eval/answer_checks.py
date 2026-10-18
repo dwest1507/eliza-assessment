@@ -66,6 +66,9 @@ _COVERAGE_IN_LINE = re.compile(r"[.!?\]]\s+(?:\*\*|__)?coverage\b[^.:]{0,20}:", 
 #   speaks of the Sources, Filings or Corpus (`_RECORDS`; for "periods differ", also
 #   of the Filings' periods, `_FILING_PERIODS`) or names a Company missing from the
 #   Corpus. Any other uncited sentence about a Company is a claim, however it reads.
+#   Issue #109 widened it for the refusals of no-Source answers that #89's rules missed:
+#   "not covered in this answer", the Sources "using" or "with", "this material", and a
+#   fragment that is only a bracketed label ("[Coverage Gaps]", `_BRACKET_LABEL`).
 #
 # A sentence that says what the Sources lack, which has nothing to cite.
 _ABSENCE = re.compile(
@@ -80,11 +83,14 @@ _ABSENCE = re.compile(
 )
 _RECORDS_WORD = (
     r"(?:\b(?:sources?|filings?|excerpts?|corpus|dataset|10-[KQ]s?|financial facts"
-    r"|snapshot compan(?:y|ies))|(?<!raw )\bmaterials)\b(?!\s+of\b)"
+    r"|snapshot compan(?:y|ies))|(?<!raw )\bmaterials"
+    r"|(?<!raw )\bmaterial(?=\s*(?:[.,;:)]|$|\s(?:provided|available|supplied|given)\b)))"
+    r"\b(?!\s+of\b)"
 )
 """The Sources, Filings, Corpus or Financial Facts by any name, and the Corpus's
 coverage class, but not "sources of revenue", "the filing of a lawsuit" or "raw
-materials"."""
+materials". "Material", singular, only as a noun ("from this material."), never as the
+adjective of "material weakness"."""
 _RECORDS = re.compile(_RECORDS_WORD, re.I)
 _WORDS = r"(?:[\w’'&-]+\s+){0,3}?"
 _RECORDS_LACK = re.compile(
@@ -98,7 +104,7 @@ _RECORDS_LACK = re.compile(
     # assessed from the Sources", "... would not rest on the filings"
     r"|(?:\bno\b|\bnot\b|\bnothing\b|\bneither\b|\bnor\b|\bwithout\b|\bcannot\b"
     r"|n['’]t\b|\bunable\b|\babsent\b|\bmissing\b|\bunavailable\b)[^.;]{0,60}"
-    rf"\b(?:in|from|among|within|across|on)\s+{_WORDS}{_RECORDS_WORD}"
+    rf"\b(?:in|from|among|within|across|on|using|with)\s+{_WORDS}{_RECORDS_WORD}"
     # "No usable Sources were found", "There are no Honeywell filings"
     rf"|\bno\s+{_WORDS}{_RECORDS_WORD}",
     re.I,
@@ -108,7 +114,8 @@ exemption's absence rule, narrower than the citation check's `_ABSENCE`."""
 _FIXED_WORDING = re.compile(
     r"^\W*(?:trend unavailable|not in the corpus|stale filing|no guidance in the filings"
     r"|periods differ)\b"
-    r"|\bthis answer does not cover\b|\bleft out of this answer\b|\bso this answer covers\b"
+    r"|\bthis answer does not cover\b|\bnot covered in this answer\b"
+    r"|\bleft out of this answer\b|\bso this answer covers\b"
     r"|\bcited here only as\b|\bthe outlook below is drawn from\b"
     r"|\bthe comparison is not of the same period\b",
     re.I,
@@ -123,6 +130,9 @@ _FILING_PERIODS = re.compile(
 """The Filings' periods, as a "periods differ" sentence speaks of them; "fiscal years"
 are the Companies'."""
 _TAG_RUN = re.compile(rf"(?:{_TAG_BRACKET.pattern}\s*)+")
+_BRACKET_LABEL = re.compile(r"\[[A-Za-z][\w\s&’'-]*\]")
+"""A fragment that is only a bracketed label, such as a stray "[Coverage Gaps]" left
+after a sentence: not a sentence, and so no claim."""
 
 
 @dataclass(frozen=True)
@@ -633,7 +643,8 @@ def claims(answer: str) -> list[Claim]:
     counts it unsupported.
 
     Not claims: headings (with table header rows and bold labels, which head what
-    follows) and the closing Coverage note; and, among the sentences that rest on no
+    follows), the closing Coverage note and a fragment that is only a bracketed label
+    ("[Coverage Gaps]"); and, among the sentences that rest on no
     tag, lead-ins ending in a colon and sentences with nothing to cite: the fixed
     Coverage Gap wordings; the plain variants `check_coverage_gaps` recognises, but
     only when the sentence speaks of the Sources, Filings or Corpus or names a Company
@@ -654,7 +665,7 @@ def claims(answer: str) -> list[Claim]:
             if _COVERAGE.match(sentence):
                 break  # the Coverage note, which says what the Sources could not answer
             text, tags = strip_tags(sentence), tags_in(sentence) or unit.tags
-            if not re.search(r"\w", text):
+            if not re.search(r"\w", text) or _BRACKET_LABEL.fullmatch(text):
                 continue
             if not tags and (text.endswith(":") or _states_gap(text)):
                 continue

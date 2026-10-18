@@ -51,8 +51,9 @@ about a third of a cent per case with `gpt-6-luna`, Jev included.
 
 `--rescore REPORT...` (`make eval-rescore`) instead redoes the figure check of saved
 reports from their stored answers (`rescore_figures`), and drops Jev's stored verdicts on
-their expected Coverage Gap sentences (`rescore_gap_claims`; for a Brief Suite report,
-only that, in every run), in place, with no Answer Call and no Jev call. A changed check
+their expected Coverage Gap sentences (`rescore_gap_claims`) and the uncited claims the
+claim split no longer makes (`rescore_uncited_claims`; for a Brief Suite report, only
+those two, in every run), in place, with no Answer Call and no Jev call. A changed check
 is a fixed measurement, not a new choice, so rescoring is allowed on the holdout.
 
 A Golden Set report records the round it was run in (`current_round`): the code version
@@ -69,6 +70,7 @@ import hashlib
 import json
 import re
 import sys
+from collections import Counter
 from collections.abc import Callable, Iterable, Sequence
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import asdict, dataclass
@@ -130,6 +132,7 @@ __all__ = [
     "main",
     "rescore_figures",
     "rescore_gap_claims",
+    "rescore_uncited_claims",
     "stored_contradictions",
 ]
 
@@ -620,6 +623,49 @@ def rescore_gap_claims(report: dict, cases: Iterable[GoldenCase]) -> dict:
     return rescored
 
 
+def rescore_uncited_claims(report: dict) -> dict:
+    """A saved report (`GenerationReport.to_dict`) with the uncited claims the claim split
+    (`edgar_eval.answer_checks.claims`) no longer makes dropped from its stored verdicts,
+    as when the claim exemption comes to recognise a refusal (issue #109).
+
+    Each stored answer is split again. A stored claim that cites no Source was never sent
+    to Jev, only counted unsupported, so dropping one makes no Jev call; it is dropped
+    when the split of the same answer no longer makes it as an uncited claim, and kept
+    otherwise. Cited claims are never touched, and no claim is added: a claim the split
+    newly makes would rewrite a round's recorded claims, not fix a measurement. The
+    Faithfulness of each changed case, and of the summaries holding it, is recomputed;
+    an uncited claim is never contradicted, so nothing else changes."""
+    rescored = json.loads(json.dumps(report))
+    changed: set[str] = set()
+    for case in rescored["cases"]:
+        stored = case["judgments"]["claims"]
+        made = Counter(c.text for c in claims(case["answer"]) if not c.tags)
+        kept = []
+        for judged in stored:
+            if not judged["tags"]:
+                if not made[judged["claim"]]:
+                    continue
+                made[judged["claim"]] -= 1
+            kept.append(judged)
+        if len(kept) == len(stored):
+            continue
+        case["judgments"]["claims"] = kept
+        case["faithfulness"] = _faithfulness(case)
+        changed.add(case["question_type"])
+
+    def summarise(summary: dict, group: list[dict]) -> None:
+        scores = [f for f in map(_faithfulness, group) if f is not None]
+        summary["faithfulness"] = fmean(scores) if scores else None
+
+    if changed:
+        summarise(rescored["overall"], rescored["cases"])
+    for kind in changed:
+        summarise(
+            rescored["by_type"][kind], [c for c in rescored["cases"] if c["question_type"] == kind]
+        )
+    return rescored
+
+
 def _faithfulness(case: dict) -> float | None:
     """A saved case's Faithfulness, from its stored verdicts (`Judgments.faithfulness`)."""
     claimed = case["judgments"]["claims"]
@@ -814,8 +860,8 @@ def main(
                 path.write_text(json.dumps(rescored, indent=2) + "\n", encoding="utf-8")
                 runs = (report["run_reports"], rescored["run_reports"])
                 print(
-                    f"{path}: {_gap_claims_line(*runs)}; cases passed "
-                    f"{report['cases_passed']} → {rescored['cases_passed']}",
+                    f"{path}: {_gap_claims_line(*runs)}; {_uncited_claims_line(*runs)}; "
+                    f"cases passed {report['cases_passed']} → {rescored['cases_passed']}",
                     file=out,
                 )
                 continue
@@ -833,14 +879,15 @@ def main(
                 fact_values=fact_values or corpus_fact_values,
                 prepare=saved_arm.prepare or prepare_answer_context,
             )
-            rescored = rescore_gap_claims(rescored, own_cases)
+            rescored = rescore_uncited_claims(rescore_gap_claims(rescored, own_cases))
             path.write_text(json.dumps(rescored, indent=2) + "\n", encoding="utf-8")
             was, now = report["overall"]["figures_exact"], rescored["overall"]["figures_exact"]
             failing = [c["case_id"] for c in rescored["cases"] if c["figures"]["unmatched"]]
             print(
                 f"{path}: figures exact {was:.2f} → {now:.2f}; "
                 f"not exact: {', '.join(failing) or 'none'}; "
-                f"{_gap_claims_line([report], [rescored])}",
+                f"{_gap_claims_line([report], [rescored])}; "
+                f"{_uncited_claims_line([report], [rescored])}",
                 file=out,
             )
         return 0
@@ -940,6 +987,30 @@ def _gap_claims_line(before: Sequence[dict], after: Sequence[dict]) -> str:
     return (
         f"{kept - kept_was} Coverage Gap {noun} kept from Jev; Contradicted Claims "
         f"{claims_was} → {claims_now}, answers contradicted {answers_was} → {answers_now}"
+    )
+
+
+def _uncited_claims_line(before: Sequence[dict], after: Sequence[dict]) -> str:
+    """What a rescore's claim split changed in saved generation reports (a Brief Suite's
+    runs, or one report): the uncited claims it dropped, and the Faithfulness before and
+    after (for a Brief Suite, the mean of its runs')."""
+
+    def counts(reports: Sequence[dict]) -> tuple[int, str]:
+        uncited = sum(
+            not claim["tags"]
+            for r in reports
+            for c in r["cases"]
+            for claim in c["judgments"]["claims"]
+        )
+        scores = [r["overall"]["faithfulness"] for r in reports]
+        known = [f for f in scores if f is not None]
+        return uncited, f"{fmean(known):.2f}" if known else "–"
+
+    (was, faithful_was), (now, faithful_now) = counts(before), counts(after)
+    noun = "claim" if was - now == 1 else "claims"
+    return (
+        f"{was - now} uncited {noun} no longer made dropped; "
+        f"Faithfulness {faithful_was} → {faithful_now}"
     )
 
 

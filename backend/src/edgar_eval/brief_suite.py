@@ -36,6 +36,7 @@ from edgar_eval.generation import (
     Judge,
     evaluate,
     rescore_gap_claims,
+    rescore_uncited_claims,
     stored_contradictions,
 )
 from edgar_eval.generators import answer_cost
@@ -257,11 +258,14 @@ def _verdict(case: GoldenCase, reports: Sequence[GenerationReport]) -> BriefCase
 
 def rescore_brief_gap_claims(report: dict, cases: Sequence[GoldenCase]) -> dict:
     """A saved Brief Suite report (`BriefSuiteReport.to_dict`) with Jev's stored verdicts
-    on its Coverage Gap claims dropped from every run's report
-    (`edgar_eval.generation.rescore_gap_claims`), and each case's Contradicted Claims,
+    on its Coverage Gap claims, and the uncited claims the claim split no longer makes,
+    dropped from every run's report (`edgar_eval.generation.rescore_gap_claims`,
+    `rescore_uncited_claims`), and each case's Contradicted Claims,
     verdict and the cases passed recomputed from them. No Answer Call and no Jev call."""
     rescored = json.loads(json.dumps(report))
-    rescored["run_reports"] = [rescore_gap_claims(r, cases) for r in rescored["run_reports"]]
+    rescored["run_reports"] = [
+        rescore_uncited_claims(rescore_gap_claims(r, cases)) for r in rescored["run_reports"]
+    ]
     for case in rescored["cases"]:
         case["contradicted"] = [
             {"run": run, "claims": claims}

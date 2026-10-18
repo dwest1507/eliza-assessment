@@ -481,3 +481,4 @@ def test_rescoring_a_brief_suite_report_drops_jevs_verdicts_on_its_gap_claims(
     printed = out.getvalue()
     assert "5 Coverage Gap claims kept from Jev; Contradicted Claims 5 → 0" in printed
     assert "cases passed 0 → 1" in printed
+    assert "0 uncited claims no longer made dropped" in printed

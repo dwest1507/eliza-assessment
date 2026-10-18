@@ -502,6 +502,35 @@ def test_a_plain_coverage_gap_variant_that_speaks_of_the_filings_or_sources_make
 
 
 @pytest.mark.parametrize(
+    "refusal",
+    [
+        # Issue #109's four, from version 2's re-baselined dev runs: each says what the
+        # Sources could not answer, in wording #89's narrowed rules did not recognise.
+        pytest.param("Citigroup is not covered in this answer.", id="not covered in this answer"),
+        pytest.param(
+            "I can’t identify or describe Citigroup’s risks using the available Sources.",
+            id="using the Sources",
+        ),
+        pytest.param(
+            "I can't assess Honeywell's performance with the Filings provided.",
+            id="with the Filings",
+        ),
+        pytest.param(
+            "I can’t assess its recent performance from this material.", id="this material"
+        ),
+        pytest.param(
+            "The provided Filings do not include Citigroup. [Coverage Gaps]",
+            id="bracketed label",
+        ),
+    ],
+)
+def test_an_uncited_refusal_in_a_no_source_answer_makes_no_claim(refusal):
+    answer = f"Apple outsources manufacturing [S1].\n\n{refusal}"
+
+    assert [c.text for c in claims(answer)] == ["Apple outsources manufacturing."]
+
+
+@pytest.mark.parametrize(
     "sentence",
     [
         # Issue #89's three: each only looked like a Coverage Gap wording.
@@ -518,6 +547,11 @@ def test_a_plain_coverage_gap_variant_that_speaks_of_the_filings_or_sources_make
         "Apple's revenue grew only 2% in 2024, the same period as Tesla's slowdown.",
         "Apple has no other sources of revenue.",
         "Tesla's raw materials costs do not fall.",
+        # Issue #109's widening leaves these claims: "material" as an adjective, and
+        # "with" or "using" before what is not the Sources.
+        "Apple reported no material weakness in its internal controls.",
+        "Tesla cannot meet demand using its current factories.",
+        "JPMorgan has no dispute with its regulators.",
         # What a Source lacks, inside a sentence that says something about a Company.
         "Both face litigation, but Walmart also reports regulatory findings that Target's "
         "excerpt does not mention.",

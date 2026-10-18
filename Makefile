@@ -135,7 +135,7 @@ eval-brief: $(EVAL_INDEX) $(if $(filter dense hybrid,$(ARM)),$(EMBEDDINGS)) $(if
 GENERATION_REPORTS = $(wildcard data/derived/eval/generation-*.json data/derived/eval/prompt-iterations/generation-*.json)
 BRIEF_REPORTS = $(wildcard data/derived/eval/brief-suite*.json)
 
-eval-rescore: $(INDEX) ## Redo the figure check of every saved generation report, and drop Jev's verdicts on expected Coverage Gap sentences from it and every saved Brief Suite report, in place (no Answer Call, no Jev call)
+eval-rescore: $(INDEX) ## Redo the figure check of every saved generation report, and drop Jev's verdicts on expected Coverage Gap sentences and the uncited claims the claim split no longer makes from it and every saved Brief Suite report, in place (no Answer Call, no Jev call)
 	@if [ -z "$(GENERATION_REPORTS)$(BRIEF_REPORTS)" ]; then echo 'No saved generation reports in data/derived/eval/.'; exit 0; fi
 	$(UV) python -m edgar_eval.generation --rescore $(addprefix ../,$(GENERATION_REPORTS) $(BRIEF_REPORTS))
 
