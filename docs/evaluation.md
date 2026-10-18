@@ -1094,6 +1094,22 @@ The first of #116's rule fixes. The Market Risk hint now reads a kind of market 
 - **The 2 planning misses left** are `followup-topic-change-export-controls`'s, ADR 0003's known weakness, out of #116's scope. The ranking misses are unchanged.
 - **The Floors** were re-recorded with `make eval-floors` (hit@10 0.92 to 0.94, recall@10 0.85 to 0.87, MRR 0.78 unchanged), since hit@10 and recall@10 rose.
 
+#### Legal proceedings questions also search the Financial Statements (issue #120, 2026-10-18)
+
+The Legal Proceedings hint now plans Legal Proceedings and the Financial Statements together, for every Filing in the window, since a stub Item 3 points to the contingencies note ("see Note 15"). A stub is still not searched, so a Filing whose Item 3 is a stub is searched in its Financial Statements alone rather than whole. One departure from spec #116: the whole-Filing fallback is kept for a Filing where both Sections are stubs. JPMorgan's and NVIDIA's 10-Ks have stub Item 8s too (each points to pages elsewhere in the Filing), so without the fallback a legal proceedings question about them would get no Sources. `make eval-retrieval` on dev (`fts5`, free), against the report of #119 above (the three cases' figures are the same in #117's report):
+
+| Case | must-state reached | all facts reached | Sources | Source tokens |
+|---|---|---|---|---|
+| `risk-aapl-legal-proceedings` | 3 of 4 → 3 of 4 | 15 of 16 → 15 of 16 | 2 → 4 | 2,249 → 4,710 |
+| `risk-meta-amzn-legal-proceedings` | 3 of 8 → 3 of 8 | 7 of 21 → 8 of 21 | 10 → 3 | 23,122 → 29,510 |
+| `risk-wmt-tgt-legal-proceedings` | 7 of 7 → 7 of 7 | 21 of 22 → 21 of 22 | 2 → 4 | 1,800 → 21,932 |
+| **all 57 cases** | **255 of 316 → 255 of 316** | **759 of 939 → 760 of 939** | | |
+
+- **Evidence Reached does not fall, so the step is kept.** It gains one detail fact, Meta's, and no must-state fact. No other case changes.
+- **Amazon's misses were never a planning problem.** Its Item 3 is a stub, so the Filing was already searched whole, Financial Statements included. Its three unreached must-state facts (the FTC antitrust case, the Italian competition case and the Luxembourg data protection fine) are in the contingencies note, but the note's chunks rank below the Financial Statements chunks that fill the budget. That is a ranking miss, which the search-term fixes of #116 address. Meta's two unreached must-state facts are ranking misses inside its own Legal Proceedings.
+- **The Section metrics fall, so the Floors are re-recorded** (ADR 0014): recall@10 0.873 → 0.867 and MRR 0.788 → 0.770, hit@10 unchanged at 0.947. Two cases move. In `risk-meta-amzn-legal-proceedings` the expected Amazon Legal Proceedings Source is its stub (the pointer to the note), which is no longer searched, so recall@10 is 0.67. In it and `risk-wmt-tgt-legal-proceedings` a Financial Statements chunk now ranks first and the first expected Source moves to rank 2. The new Floors are hit@10 0.94 (unchanged), recall@10 0.86 and MRR 0.77.
+- **Every shippable Arm, on the rules of #119 and #120:** Evidence Reached is 760 of 939 facts for `fts5`, 760 for `rerank`, 741 for `dense-local` and 793 for `hybrid-local`, and the screen now sends `hybrid-local` and `rerank` on to paid runs. The hosted `dense` and `hybrid` Arms were not re-run (they need an OpenAI key to embed the questions their cache lacks). The "How it works" page is regenerated from these reports (`make eval-export`), so it shows the four Arms run here.
+
 ### The version 2 holdout run
 
 Run once on 2026-10-17 (issue #74), after [the version 2 comparisons on dev](#the-version-2-comparisons-on-dev) had confirmed every shipped choice, on Golden Set version 2's 20 holdout cases. It is the same round as those comparisons (code version `756bfadca63122a9`, prompt v7, Golden Set version 2) and the setup that ships: the `fts5` Arm, 600-token chunks and the 32k budget, `gpt-6-luna` at reasoning effort `low`, judged by `jev-1.13.0` at the fact cut-off 0.6. Under [the holdout rule](#the-holdout-rule) it reports and decides nothing: nothing was changed after it, and no case was relabelled. [Version 1's holdout run](#the-holdout-run) stands as recorded.

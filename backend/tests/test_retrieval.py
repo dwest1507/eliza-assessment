@@ -505,7 +505,6 @@ def test_a_scope_filing_carries_its_periods(index):
     ("question", "section"),
     [
         ("What are the main risk factors in Apple's latest Filings?", "Risk Factors"),
-        ("What legal proceedings does Apple disclose in its latest Filings?", "Legal Proceedings"),
         ("What does Tesla's latest MD&A say about deliveries?", "MD&A"),
         ("What does Apple's latest management's discussion say about services?", "MD&A"),
         ("What interest rate risk does Tesla report in its latest Filings?", "Market Risk"),
@@ -596,15 +595,53 @@ def test_a_cybersecurity_question_with_a_time_phrase_keeps_its_window(index):
     assert {s.section for s in context.sources} <= set(CYBER_SECTIONS)
 
 
-def test_a_stub_section_falls_back_to_the_whole_filing(index):
-    stub = _chunks(index, filing_id="TSLA_10-K_2025-12-31", section="Legal Proceedings")
-    assert sum(c["tokens"] for c in stub) < STUB_TOKENS  # "see Note 15" and little else
+LEGAL_PROCEEDINGS = ("Legal Proceedings", "Financial Statements")
+
+
+def _section_tokens(index, filing_id, section):
+    return sum(c["tokens"] for c in _chunks(index, filing_id=filing_id, section=section))
+
+
+def test_a_legal_proceedings_question_also_searches_the_financial_statements(index):
+    context = _ask(index, "What legal proceedings does Apple disclose in its latest Filings?")
+
+    assert context.query_scope.sections == LEGAL_PROCEEDINGS
+    assert _searched(context) == [
+        ("AAPL", "AAPL_10-K_2025-09-27", "Legal Proceedings"),
+        ("AAPL", "AAPL_10-K_2025-09-27", "Financial Statements"),
+        ("AAPL", "AAPL_10-Q_2025-12-27", "Legal Proceedings"),
+        ("AAPL", "AAPL_10-Q_2025-12-27", "Financial Statements"),
+    ]
+    sections = {s.section for s in context.sources}
+    assert "Legal Proceedings" in sections  # Apple's Item 3 states its cases
+    assert sections <= set(LEGAL_PROCEEDINGS)
+
+
+def test_a_stub_legal_proceedings_is_answered_from_the_financial_statements(index):
+    # Tesla's Item 3 only points to the contingencies note: "see Note 15".
+    assert _section_tokens(index, "TSLA_10-K_2025-12-31", "Legal Proceedings") < STUB_TOKENS
 
     context = _ask(index, "What legal proceedings does Tesla disclose in its latest Filings?")
 
-    assert context.query_scope.sections == ("Legal Proceedings",)
-    assert {s.filing_id for s in context.sources} == {"TSLA_10-K_2025-12-31"}
-    assert {s.section for s in context.sources} - {"Legal Proceedings"}
+    assert context.query_scope.sections == LEGAL_PROCEEDINGS
+    assert _searched(context) == [("TSLA", "TSLA_10-K_2025-12-31", "Financial Statements")]
+    assert context.sources
+    assert {(s.filing_id, s.section) for s in context.sources} == {
+        ("TSLA_10-K_2025-12-31", "Financial Statements")
+    }
+    assert any(re.search(r"legal proceedings", s.text, re.I) for s in context.sources)
+
+
+def test_a_stub_section_falls_back_to_the_whole_filing(index):
+    # JPMorgan's Item 3 and Item 8 both point to pages of its annual report.
+    for section in LEGAL_PROCEEDINGS:
+        assert _section_tokens(index, "JPM_10-K_2025-12-31", section) < STUB_TOKENS
+
+    context = _ask(index, "What legal proceedings does JPMorgan disclose in its latest Filings?")
+
+    assert context.query_scope.sections == LEGAL_PROCEEDINGS
+    assert {s.filing_id for s in context.sources} == {"JPM_10-K_2025-12-31"}
+    assert {s.section for s in context.sources} - set(LEGAL_PROCEEDINGS)
 
 
 def test_a_missing_section_falls_back_to_the_whole_filing(index):
@@ -648,10 +685,10 @@ def test_a_risk_question_records_each_risk_factors_searched_and_not_the_pointer(
 
 
 def test_a_filing_searched_whole_is_recorded_with_no_section(index):
-    stub = _ask(index, "What legal proceedings does Tesla disclose in its latest Filings?")
+    stub = _ask(index, "What legal proceedings does JPMorgan disclose in its latest Filings?")
     unhinted = _ask(index, "How does Apple describe its services business?")
 
-    assert _searched(stub) == [("TSLA", "TSLA_10-K_2025-12-31", None)]
+    assert _searched(stub) == [("JPM", "JPM_10-K_2025-12-31", None)]
     assert _searched(unhinted) == [
         ("AAPL", f.filing_id, None) for f in unhinted.query_scope.filings
     ]

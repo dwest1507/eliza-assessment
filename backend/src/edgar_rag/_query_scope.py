@@ -15,7 +15,9 @@ Rule-based, with no LLM (ADR 0003). It recognises:
 - Section hints: risk factors, legal proceedings, MD&A, market risk (its own name, or
   a kind of market risk with "risk", "exposure" or "sensitivity": "interest rate and
   foreign exchange risk", "FX exposure"), business, and cybersecurity, which plans the
-  Cybersecurity Section, Risk Factors and MD&A.
+  Cybersecurity Section, Risk Factors and MD&A. Legal proceedings plans Legal
+  Proceedings and the Financial Statements, where the contingencies note a stub Item 3
+  points to is.
 - Named periods: "FY2024", "fiscal 2024", "Q2 FY2025", or a bare year ("in 2023"), read
   as Fiscal Periods. A named period decides which copy of a repeated passage is cited.
 - Change questions: "how has it changed", "how did that change", "what is new", "how
@@ -412,7 +414,12 @@ _SECTION_HINTS: tuple[tuple[tuple[str, ...], re.Pattern[str]], ...] = tuple(
             rf"|\b{_MARKET_RISK_KINDS}\s+(?:risks?|exposures?|sensitivit(?:y|ies))\b"
             r"|\bquantitative\s+and\s+qualitative\s+disclosures?\b",
         ),
-        (("Legal Proceedings",), r"\blegal\s+proceedings?\b|\blitigation\b|\blawsuits?\b"),
+        (
+            # Item 3 often only points to the contingencies note of the Financial
+            # Statements ("see Note 15"), which states the cases.
+            ("Legal Proceedings", "Financial Statements"),
+            r"\blegal\s+proceedings?\b|\blitigation\b|\blawsuits?\b",
+        ),
         (
             ("MD&A",),
             r"\bMD&A\b|\bmanagement[’']?s\s+discussion\b|\bresults\s+of\s+operations\b",

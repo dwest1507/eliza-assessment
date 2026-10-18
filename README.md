@@ -135,7 +135,7 @@ GitHub Actions runs the same scripts as `make ci-cd` (in [`scripts/`](scripts/))
 | Security | every pull request and push to main, and weekly | CodeQL, gitleaks, npm audit, pip-audit, dependency review | `make security-audit` |
 | Release Please | pushes to main | opens a release pull request that bumps the version and writes `CHANGELOG.md` from the conventional commits | |
 
-A change meant to move the retrieval scores (a new Golden Set version, Shipped Arm, chunk size or context budget) re-records the Floors with `make eval-floors` and commits them with it. Dependabot opens weekly npm and uv update pull requests and monthly GitHub Actions ones.
+A change meant to move the retrieval scores (a new Golden Set version, Shipped Arm, chunk size or context budget, or a change to the Query Scope rules) re-records the Floors with `make eval-floors` and commits them with it. Dependabot opens weekly npm and uv update pull requests and monthly GitHub Actions ones.
 
 ### Asking a question
 

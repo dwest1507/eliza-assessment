@@ -127,17 +127,19 @@ def test_the_query_scope_carries_the_sections_searched(client):
 
     assert scope["searched"] == [
         {"ticker": "AAPL", "filingId": "AAPL_10-K_2025-09-27", "section": "Legal Proceedings"},
+        {"ticker": "AAPL", "filingId": "AAPL_10-K_2025-09-27", "section": "Financial Statements"},
         {"ticker": "AAPL", "filingId": "AAPL_10-Q_2025-12-27", "section": "Legal Proceedings"},
+        {"ticker": "AAPL", "filingId": "AAPL_10-Q_2025-12-27", "section": "Financial Statements"},
     ]
 
 
 def test_the_query_scope_marks_a_filing_searched_whole(client):
-    question = "What legal proceedings does Tesla disclose in its latest Filings?"
+    question = "What legal proceedings does JPMorgan disclose in its latest Filings?"
 
     scope = part_of(events(chat(client, user(question))), "data-query-scope")["data"]
 
     assert scope["searched"] == [
-        {"ticker": "TSLA", "filingId": "TSLA_10-K_2025-12-31", "section": None}
+        {"ticker": "JPM", "filingId": "JPM_10-K_2025-12-31", "section": None}
     ]
 
 

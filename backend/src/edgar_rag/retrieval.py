@@ -42,15 +42,17 @@ answer falls back to the text, and the prompt says the answer must say so.
 
 Retrieval applies the Query Scope's Companies and time window as hard filters before
 `bm25()` ranking, and each Company gets an even share of the context budget. A Section
-hint is a preference: each Filing in the window is searched in the hinted Section, or
-whole when that Section is missing or a stub (finding 14). A risk question is routed to
-the latest 10-K's Risk Factors plus any later 10-Q that states risk text; a later 10-Q
-whose Risk Factors only point back to the 10-K is cited as it stands, never ranked
-(finding 16). A cybersecurity question is routed the same way, to the Cybersecurity
-Section, Risk Factors and MD&A of the latest Filings. A hint may plan several Sections:
-`QueryScope.sections` lists every Section planned. The Query Scope records the places
-searched (`QueryScope.searched`), so the answer's reader, and the evaluation, can see
-where retrieval looked.
+hint is a preference: each Filing in the window is searched in the hinted Sections, or
+whole when every one of them is missing or a stub (finding 14). A hint may plan several
+Sections, and `QueryScope.sections` lists every Section planned. A legal proceedings
+question also searches the Financial Statements, whose contingencies note is where a stub
+Item 3 points ("see Note 15"), so a Filing whose Item 3 is a stub is searched in its
+Financial Statements, not whole. A risk question is routed to the latest 10-K's Risk
+Factors plus any later 10-Q that states risk text; a later 10-Q whose Risk Factors only
+point back to the 10-K is cited as it stands, never ranked (finding 16). A cybersecurity
+question is routed the same way, to the Cybersecurity Section, Risk Factors and MD&A of
+the latest Filings. The Query Scope records the places searched (`QueryScope.searched`),
+so the answer's reader, and the evaluation, can see where retrieval looked.
 
 Repeated text costs the budget once (finding 17). A chunk repeated across a Company's
 Filings is stored once and cited from the most recent Filing in the plan that holds it,
@@ -164,7 +166,8 @@ CONTEXT_BUDGET_TOKENS = 32_000
 
 STUB_TOKENS = 250
 """A Section with less text than this (about 1,000 characters) is a stub, usually a
-pointer to a note or another Item, so a hint for it falls back to the whole Filing."""
+pointer to a note or another Item, so it is not searched, and a Filing whose hinted
+Sections are all stubs or missing is searched whole."""
 
 RISK_FACTORS = "Risk Factors"
 
@@ -274,7 +277,8 @@ class QueryScope:
     question that names no time phrase and no Fiscal Period gets the latest window."""
     sections: tuple[str, ...]
     """The Sections the question's hints plan, preferred over the rest of each Filing
-    (a cybersecurity question plans Cybersecurity, Risk Factors and MD&A)."""
+    (a cybersecurity question plans Cybersecurity, Risk Factors and MD&A, a legal
+    proceedings question Legal Proceedings and Financial Statements)."""
     filings: tuple[ScopeFiling, ...]
     """The named Companies' Filings inside the window, by Company and then oldest
     first. A question naming no Company searches every Company's window."""

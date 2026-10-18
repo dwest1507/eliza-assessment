@@ -7,7 +7,7 @@
   "context_budget": 32000,
   "floors": {
     "hit@10": 0.94,
-    "recall@10": 0.87,
-    "mrr": 0.78
+    "recall@10": 0.86,
+    "mrr": 0.77
   }
 }

@@ -32,22 +32,22 @@
         "overall": {
           "cases": 57,
           "hitAt": {
-            "5": 0.8947368421052632,
-            "10": 0.9298245614035088,
-            "20": 0.9649122807017544
+            "5": 0.9122807017543859,
+            "10": 0.9473684210526315,
+            "20": 0.9824561403508771
           },
           "recallAt": {
-            "5": 0.793233082706767,
-            "10": 0.8523391812865497,
-            "20": 0.9154970760233918
+            "5": 0.797326649958229,
+            "10": 0.8669590643274854,
+            "20": 0.9301169590643275
           },
-          "hitAll": 0.9649122807017544,
-          "recallAll": 0.9359649122807018,
-          "mrr": 0.7841478696741855,
-          "meanSources": 11.614035087719298,
+          "hitAll": 0.9824561403508771,
+          "recallAll": 0.9593567251461987,
+          "mrr": 0.7701127819548872,
+          "meanSources": 12.491228070175438,
           "facts": 939,
-          "factsReached": 740,
-          "meanSourceTokens": 27321.385964912282
+          "factsReached": 760,
+          "meanSourceTokens": 27952.56140350877
         },
         "byType": [
           {
@@ -117,22 +117,22 @@
             "questionType": "risk",
             "cases": 18,
             "hitAt": {
-              "5": 0.8888888888888888,
-              "10": 0.8888888888888888,
-              "20": 0.8888888888888888
+              "5": 0.9444444444444444,
+              "10": 0.9444444444444444,
+              "20": 0.9444444444444444
             },
             "recallAt": {
-              "5": 0.8333333333333334,
-              "10": 0.8333333333333334,
-              "20": 0.8518518518518519
+              "5": 0.8796296296296297,
+              "10": 0.8796296296296297,
+              "20": 0.8981481481481483
             },
-            "hitAll": 0.8888888888888888,
-            "recallAll": 0.8518518518518519,
+            "hitAll": 0.9444444444444444,
+            "recallAll": 0.925925925925926,
             "mrr": 0.8518518518518519,
-            "meanSources": 5.388888888888889,
+            "meanSources": 7.888888888888889,
             "facts": 340,
-            "factsReached": 265,
-            "meanSourceTokens": 23669.666666666668
+            "factsReached": 289,
+            "meanSourceTokens": 25681.777777777777
           },
           {
             "questionType": "sector",
@@ -143,17 +143,17 @@
               "20": 1.0
             },
             "recallAt": {
-              "5": 0.7653061224489797,
+              "5": 0.7224489795918367,
               "10": 0.9047619047619048,
               "20": 0.9476190476190477
             },
             "hitAll": 1.0,
             "recallAll": 0.9476190476190477,
-            "mrr": 0.9166666666666667,
-            "meanSources": 9.071428571428571,
+            "mrr": 0.8595238095238095,
+            "meanSources": 9.428571428571429,
             "facts": 313,
-            "factsReached": 269,
-            "meanSourceTokens": 28821.35714285714
+            "factsReached": 265,
+            "meanSourceTokens": 28804.14285714286
           },
           {
             "questionType": "stale_filing",
@@ -180,327 +180,7 @@
         "missed": [
           "trend-tsla-net-income-three-years",
           "outlook-msft-cloud",
-          "followup-topic-change-export-controls",
-          "risk-aapl-msft-market-risk"
-        ]
-      },
-      {
-        "name": "dense",
-        "shipped": false,
-        "shippable": false,
-        "overall": {
-          "cases": 57,
-          "hitAt": {
-            "5": 0.8245614035087719,
-            "10": 0.9122807017543859,
-            "20": 0.9473684210526315
-          },
-          "recallAt": {
-            "5": 0.6999582289055973,
-            "10": 0.8201754385964912,
-            "20": 0.887719298245614
-          },
-          "hitAll": 0.9649122807017544,
-          "recallAll": 0.9125730994152047,
-          "mrr": 0.7393259589854018,
-          "meanSources": 10.982456140350877,
-          "facts": 939,
-          "factsReached": 737,
-          "meanSourceTokens": 28477.263157894737
-        },
-        "byType": [
-          {
-            "questionType": "figure_trend",
-            "cases": 14,
-            "hitAt": {
-              "5": 0.6428571428571429,
-              "10": 0.7857142857142857,
-              "20": 0.9285714285714286
-            },
-            "recallAt": {
-              "5": 0.4880952380952381,
-              "10": 0.625,
-              "20": 0.8571428571428571
-            },
-            "hitAll": 1.0,
-            "recallAll": 0.9583333333333333,
-            "mrr": 0.4384008148714031,
-            "meanSources": 20.857142857142858,
-            "facts": 159,
-            "factsReached": 82,
-            "meanSourceTokens": 32172.714285714286
-          },
-          {
-            "questionType": "missing_company",
-            "cases": 3,
-            "hitAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "recallAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 1.0,
-            "meanSources": 3.3333333333333335,
-            "facts": 39,
-            "factsReached": 38,
-            "meanSourceTokens": 27352.0
-          },
-          {
-            "questionType": "outlook",
-            "cases": 6,
-            "hitAt": {
-              "5": 0.6666666666666666,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "recallAt": {
-              "5": 0.6666666666666666,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 0.5978835978835979,
-            "meanSources": 16.0,
-            "facts": 61,
-            "factsReached": 40,
-            "meanSourceTokens": 31822.0
-          },
-          {
-            "questionType": "risk",
-            "cases": 18,
-            "hitAt": {
-              "5": 0.8333333333333334,
-              "10": 0.8888888888888888,
-              "20": 0.8888888888888888
-            },
-            "recallAt": {
-              "5": 0.7407407407407408,
-              "10": 0.8148148148148148,
-              "20": 0.8148148148148148
-            },
-            "hitAll": 0.8888888888888888,
-            "recallAll": 0.8148148148148148,
-            "mrr": 0.8009259259259259,
-            "meanSources": 5.333333333333333,
-            "facts": 340,
-            "factsReached": 285,
-            "meanSourceTokens": 25079.277777777777
-          },
-          {
-            "questionType": "sector",
-            "cases": 14,
-            "hitAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "recallAt": {
-              "5": 0.7664965986394557,
-              "10": 0.880952380952381,
-              "20": 0.9238095238095239
-            },
-            "hitAll": 1.0,
-            "recallAll": 0.9238095238095239,
-            "mrr": 0.9642857142857143,
-            "meanSources": 8.928571428571429,
-            "facts": 313,
-            "factsReached": 265,
-            "meanSourceTokens": 29267.0
-          },
-          {
-            "questionType": "stale_filing",
-            "cases": 2,
-            "hitAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "recallAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 0.75,
-            "meanSources": 3.5,
-            "facts": 27,
-            "factsReached": 27,
-            "meanSourceTokens": 19316.5
-          }
-        ],
-        "missed": [
-          "trend-tsla-net-income-three-years",
-          "followup-topic-change-export-controls",
-          "risk-aapl-msft-market-risk",
-          "trend-dis-segments-fy2025",
-          "trend-ko-revenue-two-years"
-        ]
-      },
-      {
-        "name": "hybrid",
-        "shipped": false,
-        "shippable": false,
-        "overall": {
-          "cases": 57,
-          "hitAt": {
-            "5": 0.8596491228070176,
-            "10": 0.9298245614035088,
-            "20": 0.9473684210526315
-          },
-          "recallAt": {
-            "5": 0.7759816207184628,
-            "10": 0.8771929824561403,
-            "20": 0.9052631578947369
-          },
-          "hitAll": 0.9649122807017544,
-          "recallAll": 0.9242690058479531,
-          "mrr": 0.7888578770157718,
-          "meanSources": 11.280701754385966,
-          "facts": 939,
-          "factsReached": 801,
-          "meanSourceTokens": 28460.701754385966
-        },
-        "byType": [
-          {
-            "questionType": "figure_trend",
-            "cases": 14,
-            "hitAt": {
-              "5": 0.6428571428571429,
-              "10": 0.8571428571428571,
-              "20": 0.9285714285714286
-            },
-            "recallAt": {
-              "5": 0.5833333333333333,
-              "10": 0.7738095238095238,
-              "20": 0.8571428571428571
-            },
-            "hitAll": 1.0,
-            "recallAll": 0.9345238095238095,
-            "mrr": 0.5082070707070707,
-            "meanSources": 22.357142857142858,
-            "facts": 159,
-            "factsReached": 110,
-            "meanSourceTokens": 32234.071428571428
-          },
-          {
-            "questionType": "missing_company",
-            "cases": 3,
-            "hitAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "recallAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 1.0,
-            "meanSources": 2.6666666666666665,
-            "facts": 39,
-            "factsReached": 39,
-            "meanSourceTokens": 27386.666666666668
-          },
-          {
-            "questionType": "outlook",
-            "cases": 6,
-            "hitAt": {
-              "5": 0.8333333333333334,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "recallAt": {
-              "5": 0.8333333333333334,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 0.7666666666666666,
-            "meanSources": 14.666666666666666,
-            "facts": 61,
-            "factsReached": 46,
-            "meanSourceTokens": 31759.833333333332
-          },
-          {
-            "questionType": "risk",
-            "cases": 18,
-            "hitAt": {
-              "5": 0.8888888888888888,
-              "10": 0.8888888888888888,
-              "20": 0.8888888888888888
-            },
-            "recallAt": {
-              "5": 0.8333333333333334,
-              "10": 0.8518518518518519,
-              "20": 0.8518518518518519
-            },
-            "hitAll": 0.8888888888888888,
-            "recallAll": 0.8518518518518519,
-            "mrr": 0.8472222222222222,
-            "meanSources": 5.222222222222222,
-            "facts": 340,
-            "factsReached": 293,
-            "meanSourceTokens": 25059.222222222223
-          },
-          {
-            "questionType": "sector",
-            "cases": 14,
-            "hitAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "recallAt": {
-              "5": 0.7903061224489797,
-              "10": 0.9166666666666667,
-              "20": 0.9476190476190477
-            },
-            "hitAll": 1.0,
-            "recallAll": 0.9476190476190477,
-            "mrr": 0.9642857142857143,
-            "meanSources": 9.357142857142858,
-            "facts": 313,
-            "factsReached": 286,
-            "meanSourceTokens": 29193.928571428572
-          },
-          {
-            "questionType": "stale_filing",
-            "cases": 2,
-            "hitAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "recallAt": {
-              "5": 1.0,
-              "10": 1.0,
-              "20": 1.0
-            },
-            "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 0.75,
-            "meanSources": 4.5,
-            "facts": 27,
-            "factsReached": 27,
-            "meanSourceTokens": 19241.5
-          }
-        ],
-        "missed": [
-          "trend-tsla-net-income-three-years",
-          "followup-topic-change-export-controls",
-          "risk-aapl-msft-market-risk",
-          "trend-goog-meta-net-income-two-years"
+          "followup-topic-change-export-controls"
         ]
       },
       {
@@ -510,22 +190,22 @@
         "overall": {
           "cases": 57,
           "hitAt": {
-            "5": 0.8771929824561403,
-            "10": 0.9298245614035088,
-            "20": 0.9649122807017544
+            "5": 0.8947368421052632,
+            "10": 0.9473684210526315,
+            "20": 0.9824561403508771
           },
           "recallAt": {
-            "5": 0.7555137844611529,
-            "10": 0.8698830409356726,
-            "20": 0.9111111111111111
+            "5": 0.759607351712615,
+            "10": 0.8845029239766081,
+            "20": 0.9257309941520467
           },
-          "hitAll": 0.9649122807017544,
-          "recallAll": 0.9359649122807018,
+          "hitAll": 0.9824561403508771,
+          "recallAll": 0.9593567251461987,
           "mrr": 0.7704615073036125,
-          "meanSources": 11.491228070175438,
+          "meanSources": 12.350877192982455,
           "facts": 939,
-          "factsReached": 739,
-          "meanSourceTokens": 27353.701754385966
+          "factsReached": 760,
+          "meanSourceTokens": 27977.543859649122
         },
         "byType": [
           {
@@ -595,22 +275,22 @@
             "questionType": "risk",
             "cases": 18,
             "hitAt": {
-              "5": 0.8888888888888888,
-              "10": 0.8888888888888888,
-              "20": 0.8888888888888888
+              "5": 0.9444444444444444,
+              "10": 0.9444444444444444,
+              "20": 0.9444444444444444
             },
             "recallAt": {
-              "5": 0.8518518518518519,
-              "10": 0.8518518518518519,
-              "20": 0.8518518518518519
+              "5": 0.8981481481481483,
+              "10": 0.8981481481481483,
+              "20": 0.8981481481481483
             },
-            "hitAll": 0.8888888888888888,
-            "recallAll": 0.8518518518518519,
+            "hitAll": 0.9444444444444444,
+            "recallAll": 0.925925925925926,
             "mrr": 0.8611111111111112,
-            "meanSources": 5.277777777777778,
+            "meanSources": 7.777777777777778,
             "facts": 340,
-            "factsReached": 265,
-            "meanSourceTokens": 23657.722222222223
+            "factsReached": 289,
+            "meanSourceTokens": 25669.833333333332
           },
           {
             "questionType": "sector",
@@ -621,17 +301,17 @@
               "20": 1.0
             },
             "recallAt": {
-              "5": 0.7843537414965986,
+              "5": 0.7414965986394558,
               "10": 0.9285714285714286,
               "20": 0.9476190476190477
             },
             "hitAll": 1.0,
             "recallAll": 0.9476190476190477,
             "mrr": 0.880952380952381,
-            "meanSources": 8.714285714285714,
+            "meanSources": 9.0,
             "facts": 313,
-            "factsReached": 268,
-            "meanSourceTokens": 28968.285714285714
+            "factsReached": 265,
+            "meanSourceTokens": 28921.214285714286
           },
           {
             "questionType": "stale_filing",
@@ -658,8 +338,7 @@
         "missed": [
           "trend-aapl-revenue-fy2025",
           "trend-tsla-net-income-three-years",
-          "followup-topic-change-export-controls",
-          "risk-aapl-msft-market-risk"
+          "followup-topic-change-export-controls"
         ]
       },
       {
@@ -669,22 +348,22 @@
         "overall": {
           "cases": 57,
           "hitAt": {
-            "5": 0.8421052631578947,
-            "10": 0.9122807017543859,
-            "20": 0.9649122807017544
+            "5": 0.8596491228070176,
+            "10": 0.9298245614035088,
+            "20": 0.9824561403508771
           },
           "recallAt": {
-            "5": 0.7160401002506266,
-            "10": 0.8111111111111111,
-            "20": 0.8921052631578947
+            "5": 0.7201336675020886,
+            "10": 0.8359649122807017,
+            "20": 0.9169590643274854
           },
-          "hitAll": 0.9649122807017544,
-          "recallAll": 0.921345029239766,
-          "mrr": 0.755795739348371,
-          "meanSources": 11.017543859649123,
+          "hitAll": 0.9824561403508771,
+          "recallAll": 0.9461988304093567,
+          "mrr": 0.7300647451963241,
+          "meanSources": 11.736842105263158,
           "facts": 939,
-          "factsReached": 720,
-          "meanSourceTokens": 28464.280701754386
+          "factsReached": 741,
+          "meanSourceTokens": 29510.77192982456
         },
         "byType": [
           {
@@ -754,22 +433,22 @@
             "questionType": "risk",
             "cases": 18,
             "hitAt": {
-              "5": 0.8333333333333334,
-              "10": 0.8888888888888888,
-              "20": 0.8888888888888888
+              "5": 0.8888888888888888,
+              "10": 0.9444444444444444,
+              "20": 0.9444444444444444
             },
             "recallAt": {
-              "5": 0.7407407407407408,
-              "10": 0.7962962962962963,
-              "20": 0.8148148148148148
+              "5": 0.787037037037037,
+              "10": 0.875,
+              "20": 0.8935185185185185
             },
-            "hitAll": 0.8888888888888888,
-            "recallAll": 0.8148148148148148,
-            "mrr": 0.7996031746031745,
-            "meanSources": 5.0,
+            "hitAll": 0.9444444444444444,
+            "recallAll": 0.8935185185185185,
+            "mrr": 0.7625661375661376,
+            "meanSources": 7.055555555555555,
             "facts": 340,
-            "factsReached": 273,
-            "meanSourceTokens": 25082.61111111111
+            "factsReached": 294,
+            "meanSourceTokens": 28452.555555555555
           },
           {
             "questionType": "sector",
@@ -780,17 +459,17 @@
               "20": 1.0
             },
             "recallAt": {
-              "5": 0.8022108843537415,
+              "5": 0.7593537414965986,
               "10": 0.8797619047619047,
               "20": 0.9357142857142857
             },
             "hitAll": 1.0,
             "recallAll": 0.9357142857142857,
-            "mrr": 0.869047619047619,
-            "meanSources": 8.857142857142858,
+            "mrr": 0.8119047619047619,
+            "meanSources": 9.142857142857142,
             "facts": 313,
             "factsReached": 264,
-            "meanSourceTokens": 29167.0
+            "meanSourceTokens": 29094.928571428572
           },
           {
             "questionType": "stale_filing",
@@ -818,7 +497,6 @@
           "trend-tsla-net-income-three-years",
           "outlook-meta-capex-2026",
           "followup-topic-change-export-controls",
-          "risk-aapl-msft-market-risk",
           "trend-dis-segments-fy2025"
         ]
       },
@@ -829,22 +507,22 @@
         "overall": {
           "cases": 57,
           "hitAt": {
-            "5": 0.8771929824561403,
-            "10": 0.9473684210526315,
-            "20": 0.9649122807017544
+            "5": 0.8947368421052632,
+            "10": 0.9649122807017544,
+            "20": 0.9824561403508771
           },
           "recallAt": {
-            "5": 0.7406015037593985,
-            "10": 0.8786549707602339,
-            "20": 0.9067251461988304
+            "5": 0.7446950710108605,
+            "10": 0.8932748538011696,
+            "20": 0.9257309941520467
           },
-          "hitAll": 0.9649122807017544,
-          "recallAll": 0.9359649122807018,
-          "mrr": 0.7912489557226399,
-          "meanSources": 11.035087719298245,
+          "hitAll": 0.9824561403508771,
+          "recallAll": 0.954970760233918,
+          "mrr": 0.7859857978279031,
+          "meanSources": 11.771929824561404,
           "facts": 939,
-          "factsReached": 774,
-          "meanSourceTokens": 28387.43859649123
+          "factsReached": 793,
+          "meanSourceTokens": 29436.105263157893
         },
         "byType": [
           {
@@ -914,22 +592,22 @@
             "questionType": "risk",
             "cases": 18,
             "hitAt": {
-              "5": 0.8888888888888888,
-              "10": 0.8888888888888888,
-              "20": 0.8888888888888888
+              "5": 0.9444444444444444,
+              "10": 0.9444444444444444,
+              "20": 0.9444444444444444
             },
             "recallAt": {
-              "5": 0.8333333333333334,
-              "10": 0.8518518518518519,
-              "20": 0.8518518518518519
+              "5": 0.8796296296296297,
+              "10": 0.8981481481481483,
+              "20": 0.9120370370370371
             },
-            "hitAll": 0.8888888888888888,
-            "recallAll": 0.8518518518518519,
-            "mrr": 0.8472222222222222,
-            "meanSources": 4.888888888888889,
+            "hitAll": 0.9444444444444444,
+            "recallAll": 0.9120370370370371,
+            "mrr": 0.875,
+            "meanSources": 7.0,
             "facts": 340,
-            "factsReached": 280,
-            "meanSourceTokens": 25042.666666666668
+            "factsReached": 299,
+            "meanSourceTokens": 28396.166666666668
           },
           {
             "questionType": "sector",
@@ -940,17 +618,17 @@
               "20": 1.0
             },
             "recallAt": {
-              "5": 0.7831632653061226,
+              "5": 0.7403061224489795,
               "10": 0.9047619047619048,
               "20": 0.9476190476190477
             },
             "hitAll": 1.0,
             "recallAll": 0.9476190476190477,
-            "mrr": 0.9166666666666667,
-            "meanSources": 9.142857142857142,
+            "mrr": 0.8595238095238095,
+            "meanSources": 9.428571428571429,
             "facts": 313,
             "factsReached": 280,
-            "meanSourceTokens": 28991.64285714286
+            "meanSourceTokens": 28949.571428571428
           },
           {
             "questionType": "stale_filing",
@@ -976,46 +654,21 @@
         ],
         "missed": [
           "trend-tsla-net-income-three-years",
-          "followup-topic-change-export-controls",
-          "risk-aapl-msft-market-risk"
+          "followup-topic-change-export-controls"
         ]
       }
     ],
     "comparisons": [
       {
-        "arm": "dense",
-        "shippedArm": "fts5",
-        "metric": "evidence reached",
-        "facts": 939,
-        "challengerOnly": 79,
-        "shippedOnly": 82,
-        "pValue": 0.8748178672015419,
-        "pAhead": 0.6236555214228672,
-        "pBehind": 0.43740893360077093,
-        "verdict": "indistinguishable"
-      },
-      {
-        "arm": "hybrid",
-        "shippedArm": "fts5",
-        "metric": "evidence reached",
-        "facts": 939,
-        "challengerOnly": 72,
-        "shippedOnly": 11,
-        "pValue": 3.918121146030225e-12,
-        "pAhead": 1.9590605730151125e-12,
-        "pBehind": 0.99999999999971,
-        "verdict": "ahead"
-      },
-      {
         "arm": "rerank",
         "shippedArm": "fts5",
         "metric": "evidence reached",
         "facts": 939,
-        "challengerOnly": 14,
+        "challengerOnly": 15,
         "shippedOnly": 15,
         "pValue": 1.0,
-        "pAhead": 0.644464448094368,
-        "pBehind": 0.5,
+        "pAhead": 0.572232224047184,
+        "pBehind": 0.572232224047184,
         "verdict": "indistinguishable"
       },
       {
@@ -1023,11 +676,11 @@
         "shippedArm": "fts5",
         "metric": "evidence reached",
         "facts": 939,
-        "challengerOnly": 74,
-        "shippedOnly": 94,
-        "pValue": 0.14245334559436543,
-        "pAhead": 0.9475440425926089,
-        "pBehind": 0.07122667279718271,
+        "challengerOnly": 77,
+        "shippedOnly": 96,
+        "pValue": 0.1709718637012668,
+        "pAhead": 0.9359368918462506,
+        "pBehind": 0.0854859318506334,
         "verdict": "behind"
       },
       {
@@ -1035,11 +688,11 @@
         "shippedArm": "fts5",
         "metric": "evidence reached",
         "facts": 939,
-        "challengerOnly": 56,
-        "shippedOnly": 22,
-        "pValue": 0.00014948153872377523,
-        "pAhead": 7.474076936188761e-05,
-        "pBehind": 0.9999721444175677,
+        "challengerOnly": 57,
+        "shippedOnly": 24,
+        "pValue": 0.00031731691802228086,
+        "pAhead": 0.00015865845901114043,
+        "pBehind": 0.9999366944240178,
         "verdict": "ahead"
       }
     ],
@@ -1052,56 +705,34 @@
       ],
       "candidates": [
         {
-          "name": "dense",
-          "facts": 939,
-          "factsReached": 737,
-          "gained": 79,
-          "lost": 82,
-          "pBehind": 0.43740893360077093,
-          "kept": false,
-          "shippable": false,
-          "reason": "dropped: makes an API call at query time, so it can't ship (indistinguishable on Evidence Reached, p behind = 0.437; available if the one-call limit is lifted)"
-        },
-        {
-          "name": "hybrid",
-          "facts": 939,
-          "factsReached": 801,
-          "gained": 72,
-          "lost": 11,
-          "pBehind": 0.99999999999971,
-          "kept": false,
-          "shippable": false,
-          "reason": "dropped: makes an API call at query time, so it can't ship (ahead on Evidence Reached, p behind = 1.000; available if the one-call limit is lifted)"
-        },
-        {
           "name": "rerank",
           "facts": 939,
-          "factsReached": 739,
-          "gained": 14,
+          "factsReached": 760,
+          "gained": 15,
           "lost": 15,
-          "pBehind": 0.5,
+          "pBehind": 0.572232224047184,
           "kept": true,
           "shippable": true,
-          "reason": "kept: not behind (p behind = 0.500), 2 of 2 not behind on Evidence Reached"
+          "reason": "kept: not behind (p behind = 0.572), 2 of 2 not behind on Evidence Reached"
         },
         {
           "name": "dense-local",
           "facts": 939,
-          "factsReached": 720,
-          "gained": 74,
-          "lost": 94,
-          "pBehind": 0.07122667279718271,
+          "factsReached": 741,
+          "gained": 77,
+          "lost": 96,
+          "pBehind": 0.0854859318506334,
           "kept": false,
           "shippable": true,
-          "reason": "dropped: behind on Evidence Reached (p behind = 0.071 < 0.20)"
+          "reason": "dropped: behind on Evidence Reached (p behind = 0.085 < 0.20)"
         },
         {
           "name": "hybrid-local",
           "facts": 939,
-          "factsReached": 774,
-          "gained": 56,
-          "lost": 22,
-          "pBehind": 0.9999721444175677,
+          "factsReached": 793,
+          "gained": 57,
+          "lost": 24,
+          "pBehind": 0.9999366944240178,
           "kept": true,
           "shippable": true,
           "reason": "kept: not behind (p behind = 1.000), 1 of 2 not behind on Evidence Reached"
