@@ -790,7 +790,7 @@ The LLM split agrees on 4 more answers (McNemar p = 0.388, shown, not decided on
 
 Run on 2026-10-17 (issue #73): the first round on Golden Set version 2, with one code version, prompt v7, `gpt-6-luna` and `jev-1.13.0` at the fact cut-off 0.6, on the dev split's 60 cases (939 Required Facts, 316 of them must-state). The "How it works" page shows this round, the Brief Suite and the holdout beside dev ([Showing the results](#showing-the-results)). **Every verdict below is directional: one-sided p < 0.10, fixed before running** ([ADR 0011](adr/0011-one-sided-thresholds-and-a-control-run.md)). Each comparison is shown beside the round's Control Run, and each score with its mean paired difference (challenger minus shipped) and 95% bootstrap interval, shown and not decided on.
 
-**Nothing changes what ships.** FTS5, `gpt-6-luna`, 600-token chunks and the 32k budget all stay ([ADR 0008](adr/0008-fts5-stays-the-shipped-arm.md), [ADR 0009](adr/0009-gpt-6-luna-stays-the-generator.md), [ADR 0010](adr/0010-chunk-size-and-context-budget.md)), so the Brief Suite was not run again on a new setup. The reports are in `data/derived/eval/`: `generation-dev.json` and `generation-control-dev.json`, `brief-suite.json` (since replaced by the runs on the fixed measurement, with #73's kept in `data/derived/eval-issue73/`; see [Re-scored on the fixed measurement](#re-scored-on-the-fixed-measurement-2026-10-17)), `retrieval-dev.json` and `arm-choice-dev.json`, `retrieval-dev-chunks<N>-budget<B>.json` and `settings-choice-dev.json`, and `generator-choice-dev.json`, with each challenger's generation report beside them.
+**Nothing changes what ships.** FTS5, `gpt-6-luna`, 600-token chunks and the 32k budget all stay ([ADR 0008](adr/0008-fts5-stays-the-shipped-arm.md), [ADR 0009](adr/0009-gpt-6-luna-stays-the-generator.md), [ADR 0010](adr/0010-chunk-size-and-context-budget.md)), so the Brief Suite was not run again on a new setup. The reports are in `data/derived/eval/`: `generation-dev.json` and `generation-control-dev.json`, `brief-suite.json` (since replaced by the runs on the fixed measurement, with #73's kept in `data/derived/eval-issue73/`, and those by [the new round on the new retrieval](#a-new-round-on-the-new-retrieval-126-2026-10-18); see [Re-scored on the fixed measurement](#re-scored-on-the-fixed-measurement-2026-10-17)), `retrieval-dev.json` and `arm-choice-dev.json`, `retrieval-dev-chunks<N>-budget<B>.json` and `settings-choice-dev.json`, and `generator-choice-dev.json`, with each challenger's generation report beside them.
 
 #### The baseline and the Control Run
 
@@ -1041,7 +1041,7 @@ Each states something about a Filing's content or a Company in a clause that doe
 - **Still mostly retrieval misses:** 48 of the 56 must-state facts missed across the 14 failing cases have evidence that never reached the Answer Context (49 of 57 in #73). Every must-state fact the pharmaceutical question misses is still one whose evidence never reaches the prompt.
 - **Five cases moved by one fact each, all generation noise.** Retrieval is unchanged, so each fact's evidence reached the prompt in the same runs as in #73. The brief's first question now also misses JPMorgan's limit on capital distributions (stated in 1 of 5 runs, against 5 of 5), and the NVIDIA rephrasing misses the H20 export licensing effect (2 of 5, against 4). Three facts are now stated in 4 of 5 runs: Microsoft's competition (`brief-risk-msft-xom-unh`) and Tesla's unauthorized-access attempts (the cybersecurity follow-up), whose evidence reached the prompt, and Pfizer's price-control regulations (`brief-sector-health-care-regulatory`), whose evidence never did, so the answers state it from other passages. The contradicted runs moved from `brief-outlook-unh-revenue-two-years` (2 runs) to one run each of three other cases. No run was cut off or lost a judgment.
 
-**Reports.** The new reports replace #73's in `data/derived/eval/` (`generation-dev.json`, `generation-control-dev.json` and `brief-suite.json`). #73's are kept as written in `data/derived/eval-issue73/`. The "How it works" page shows the new shipped run, Control Run and Brief Suite, beside #73's Arm, settings and generator comparisons, which stand as recorded.
+**Reports.** The new reports replace #73's in `data/derived/eval/` (`generation-dev.json`, `generation-control-dev.json` and `brief-suite.json`). #73's are kept as written in `data/derived/eval-issue73/`. The "How it works" page showed the new shipped run, Control Run and Brief Suite, beside #73's Arm, settings and generator comparisons, which stand as recorded. Since #126 these reports are kept in `data/derived/eval-issue92/`, and the page shows [the new round on the new retrieval](#a-new-round-on-the-new-retrieval-126-2026-10-18).
 
 **Spend.** The three runs printed their estimates first (up to $0.38, $0.38 and $0.47). They cost $0.25 (the shipped run: $0.168 in Answer Calls, $0.082 in Jev judging), $0.26 (the Control Run: $0.169 and $0.087) and $0.39 (the Brief Suite: $0.240 and $0.153), **$0.90 in all**. A version 2 dev run costs about $0.25, not version 1's $0.07: it has 60 cases, not 20.
 
@@ -1306,6 +1306,122 @@ Each term names a Filing and the phrase of it that uses the term (Lilly's FY2025
 | `dense-local` | 753 | 753 | 262 | 262 | dropped (54 / 98, p behind < 0.001) |
 
   The rankers that start from the `bm25()` candidates (`fts5`, `rerank`, the hybrids) gain from the table, and the dense Arms, which rank on the question's embedding alone, do not. `fts5` gains more than the challengers, so each comparison moves its way: `hybrid-local`'s lead narrows from 59 facts gained against 23 lost to 47 against 24, and `rerank`, which gains 11 of `fts5`'s 17, falls behind and is dropped by the screen (on #122's code it was kept at p behind = 0.212). `hybrid-local` is now the one Arm the screen sends on to paid runs.
+
+#### A new round on the new retrieval (#126, 2026-10-18)
+
+The shipped setup (`fts5`, `gpt-6-luna`, 600-token chunks, the 32k budget, prompt v7, `jev-1.13.0` at 0.6) on the retrieval of #119 to #125, started as a new round on code version `f767b0ca96c041ad`: its shipped run and Control Run on the 60 dev cases, then the Brief Suite 5 runs a case. It is the round #127 (`hybrid-local`) and #129 (the 48k budget) compare against, and it measures #116's rule changes against #92's baseline ([Re-scored on the fixed measurement](#re-scored-on-the-fixed-measurement-2026-10-17), code version `b82c73f3d9280d98`). Nothing about what ships is decided here.
+
+```sh
+make eval-retrieval                                   # free: every Arm, for the export
+make eval-generation                                  # the shipped run
+python -m edgar_eval.generation --split dev --model gpt-6-luna \
+    --json ../data/derived/eval/generation-control-dev.json   # the Control Run (from backend/)
+make eval-brief
+```
+
+**Evidence Reached** (`make eval-retrieval`, `fts5`), #92's baseline against the new retrieval:
+
+| Kind of question | all facts, #92 | now | must-state, #92 | now |
+|---|---|---|---|---|
+| Risk questions | 265 of 340 (78%) | 294 (86%) | 87 of 110 (79%) | 96 (87%) |
+| Sector questions | 269 of 313 (86%) | 289 (92%) | 96 of 111 (86%) | 104 (94%) |
+| Figure trends | 104 of 159 (65%) | 104 (65%) | 34 of 55 (62%) | 34 (62%) |
+| Outlooks | 44 of 61 (72%) | 49 (80%) | 14 of 21 (67%) | 18 (86%) |
+| Missing Companies | 36 of 39 (92%) | 39 (100%) | 9 of 10 | 10 |
+| The stale Filing | 22 of 27 (81%) | 22 (81%) | 8 of 9 | 8 |
+| **All** | **740 of 939 (78.8%)** | **797 (84.9%)** | **248 of 316 (78.5%)** | **270 (85.4%)** |
+
+| Section of the fact | all facts, #92 | now | must-state, #92 | now |
+|---|---|---|---|---|
+| Risk Factors | 495 of 559 (89%) | 516 (92%) | 168 of 188 (89%) | 177 (94%) |
+| MD&A | 139 of 221 (63%) | 153 (69%) | 46 of 75 (61%) | 51 (68%) |
+| Legal Proceedings | 42 of 49 | 43 | 12 of 15 | 12 |
+| Market Risk | 16 of 32 | 32 | 5 of 11 | 11 |
+| Financial Statements | 1 of 13 | 1 | 1 of 6 | 1 |
+| Business | 7 of 12 | 10 | 2 of 5 | 4 |
+| Cybersecurity | 0 of 2 | 2 | – | – |
+| Other | 40 of 51 | 40 | 14 of 16 | 14 |
+
+- **The must-state misses fall from 68 to 46: 9 to 3 planning misses and 59 to 43 ranking misses.** No must-state fact #92's run reached is lost, and 4 details are (three of Netflix's Risk Factors passages, outside #122's outlook route, and one Alphabet AI detail). hit@10 rises from 0.930 to 0.965, recall@10 from 0.852 to 0.879, and MRR falls from 0.784 to 0.771; the Floors were re-recorded along the way (#119 to #125).
+- **Figure trends and the stale Filing don't move**, and they now hold almost half of what is left: 21 of the 46 must-state misses are figure trends', ranking misses in the Filings of their window, which they search whole.
+- The other Arms on the same code are in [#125's note](#a-topic-table-of-the-filings-own-wording-125-2026-10-18): the screen sends `hybrid-local` alone on to paid runs.
+
+**The answers:**
+
+| Run | cases | citations valid | figures exact | gaps stated | structure followed | words | Fact Recall | detail recall | Faithfulness | answers with a Contradicted Claim | $ per answer | latency s |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **Shipped** (new retrieval) | 60 | 0.95 | 0.90 | 1.00 | 0.70 | 453 | **0.72** | 0.49 | **0.95** | 8 | 0.0028 | 8.7 |
+| Control Run (the same, again) | 60 | 0.95 | 0.90 | 1.00 | 0.80 | 457 | 0.73 | 0.49 | 0.95 | 2 | 0.0028 | 8.1 |
+| #92's shipped run | 60 | 0.92 | 0.95 | 1.00 | 0.82 | 453 | 0.70 | 0.47 | 0.96 | 4 | 0.0028 | 7.4 |
+| #92's Control Run | 60 | 0.95 | 0.88 | 1.00 | 0.75 | 462 | 0.73 | 0.49 | 0.95 | 6 | 0.0028 | 8.1 |
+
+By kind of question, Fact Recall in the shipped run and Control Run, against #92's two runs:
+
+| Kind | cases | Fact Recall, #92 | now | detail recall, #92 | now | Faithfulness, #92 | now |
+|---|---|---|---|---|---|---|---|
+| Risk questions | 18 | 0.66, 0.68 | 0.67, 0.64 | 0.48, 0.50 | 0.48, 0.52 | 0.98, 0.98 | 0.98, 0.98 |
+| Sector questions | 14 | 0.69, 0.70 | 0.73, 0.74 | 0.46, 0.47 | 0.51, 0.43 | 0.95, 0.92 | 0.95, 0.95 |
+| Figure trends | 14 | 0.80, 0.79 | 0.76, 0.76 | 0.43, 0.43 | 0.45, 0.47 | 0.94, 0.95 | 0.90, 0.94 |
+| Outlooks | 6 | 0.61, 0.69 | 0.74, 0.82 | 0.47, 0.57 | 0.52, 0.48 | 0.97, 0.95 | 0.97, 1.00 |
+| Missing Companies | 5 | 0.69, 0.81 | 0.92, 0.81 | 0.54, 0.62 | 0.66, 0.74 | 1.00, 1.00 | 0.97, 0.74 |
+| The stale Filing | 3 | 0.75, 0.92 | 0.58, 0.83 | 0.45, 0.50 | 0.45, 0.45 | 0.97, 0.97 | 0.97, 0.97 |
+
+**The must-state facts each run states, by whether their evidence reached the Answer Context:**
+
+| Run | stated, of 316 | evidence reached: stated | not reached: stated | missed: retrieval misses (not reached) | generation misses (reached) |
+|---|---|---|---|---|---|
+| Shipped (new retrieval) | 227 | 210 of 270 (78%) | 17 of 46 (37%) | 29 | 60 |
+| Control Run | 226 | 208 of 270 (77%) | 18 of 46 (39%) | 28 | 62 |
+| #92's shipped run | 219 | 198 of 248 (80%) | 21 of 68 (31%) | 47 | 50 |
+| #92's Control Run | 226 | 202 of 248 (81%) | 24 of 68 (35%) | 44 | 46 |
+
+- **The retrieval gain shows, but small against the noise.** The 22 must-state facts only the new retrieval reaches are stated 14 times in the new shipped run, against 3 in #92's (15 against 5 in the two Control Runs). On the facts both reach, the new runs state fewer: 196 of 248 against 198, and 193 against 202. Read under [the fact-level test](#the-fact-level-test-for-retrieval-comparisons) for reference (`python -m edgar_eval.selection compare`, offline), the new shipped run states 227 against #92's 219 (+8, p ahead = 0.191) and the new Control Run 226 against #92's 226 (+0, p ahead = 0.529). Pooled over both runs a side, 453 against 445. Case by case, the shipped runs' Fact Recall, 0.72 against 0.70, is indistinguishable (14 cases higher, 10 lower, p ahead = 0.271). These read two rounds against each other, not a challenger against a Control Run, and decide nothing.
+- **Missed facts are now mostly generation misses.** Retrieval misses fall from 47 to 29 in the shipped run, but generation misses rise from 50 to 60, because more evidence reaches the prompt and the answers state 78% of what reaches them, about as before.
+- **Where the gains are:** `outlook-msft-cloud` (0 and 1 of 4 must-state facts stated in #92's two runs, 3 and 4 now), `risk-aapl-msft-market-risk` (2 and 2 of 6, now 5 and 4) and `sector-consumer-staples-key-customers` (2 and 2 of 6, now 5 and 5), each a fact newly reached by #122's outlook route, #119's Market Risk phrasings and #121's dependence route.
+- **One case loses on generation.** `risk-wmt-tgt-legal-proceedings` reaches all 7 must-state facts in both rounds, but states 6 and 7 in #92's runs and 2 and 3 now. #120 added the Financial Statements to legal proceedings questions, and its Sources grew from 1,800 tokens to 23,258: the answers now cover the Financial Statements' accruals and drop Walmart's and Target's own Legal Proceedings detail. `sector-pharma-research-and-development` (6 and 7 of 9, now 5 and 3) reaches the same facts and its Sources barely change, so its loss is generation noise.
+- **The Control Run against the shipped run:** fact by fact, 226 against 227 must-state facts stated (−1, p ahead = 0.595), every one of them a fact both reached, since retrieval is deterministic. Case by case:
+
+| Score | higher / lower | p ahead | p behind | paired (left out) | mean difference, 95% interval |
+|---|---|---|---|---|---|
+| Fact Recall | 15 / 12 | 0.351 | 0.779 | 57 (0) | +0.002 [−0.042, +0.043] |
+| Faithfulness | 19 / 12 | 0.141 | 0.925 | 57 (1) | +0.015 [−0.004, +0.033] |
+| Coverage Gaps | 0 / 0 | 1.000 | 1.000 | 36 (0) | +0.000 [+0.000, +0.000] |
+| No Contradicted Claim | 8 / 2 | 0.055 | 0.989 | 60 (0) | +0.100 [+0.000, +0.200] |
+
+- **The round is conclusive for the Arm and settings rules,** whose one ahead score is the fact-level test, and for the generator rule, whose ahead scores are Fact Recall and Coverage Gaps: the Control Run is ahead on none of them.
+- **But the Control Run is ahead on Contradicted Claims (p = 0.055).** The shipped run has 8 answers with a Contradicted Claim (9 claims), the Control Run 2, and #92's runs 4 and 6. So this shipped run sits at the high end of that score's noise, and a challenger compared with it will look better on the Contradicted Claims guardrail than it is. #127 and #129 should read that guardrail beside the Control Run. Most of the 9 claims are summary or "the excerpts do not say" sentences, as in the holdout ([The version 2 holdout run](#the-version-2-holdout-run)).
+- **Faithfulness pairs 57 cases, 1 left out:** `missing-citigroup` has no claim in the shipped run, while in the Control Run its one uncited sentence, "Citigroup is the stated Coverage Gap.", is a claim and unsupported (Faithfulness 0.0, the Control Run's missing-Company 0.74). Like the refusals #109 exempted, it states no fact, but its wording is not one the exemption names. It is reported as scored.
+- **No judgment failed and no answer stopped at the token cap** in either run. Figures exact is 0.90 in both: each failure is a derived figure the answer computed and labelled, as before (6 cases a run, against 3 and 7 in #92's).
+
+**The Brief Suite: 1 of 15 cases passes**, as in #92: `brief-followup-nvda-net-income` again. Must-state facts whose evidence reaches the prompt rise from 53 to 80 of 108, and those missed fall from 56 to 44. Fact Recall per run rises from 0.49–0.57 to 0.65–0.68.
+
+| Case | Verdict | must-state facts | reached, #92 → now | missed, #92 → now | of them retrieval misses (never reached) | generation misses (reached in every run) | runs with a Contradicted Claim |
+|---|---|---|---|---|---|---|---|
+| `brief-risk-aapl-tsla-jpm` (the brief's first question) | fail | 9 | 7 → 7 | 2 → 3 | 1 → 1 | 1 → 2 | 0 → 0 |
+| `brief-risk-aapl-tsla-jpm-rephrased` | fail | 9 | 7 → 7 | 3 → 4 | 2 → 2 | 1 → 2 | 0 → 0 |
+| `brief-risk-msft-xom-unh` | fail | 9 | 6 → 6 | 4 → 4 | 3 → 3 | 1 → 1 | 0 → 0 |
+| `brief-risk-aapl-tsla-jpm-fy2025-quarterly-updates` | fail | 5 | 0 → 3 | 5 → 2 | 5 → 2 | 0 → 0 | 1 → 2 |
+| `brief-followup-aapl-tsla-jpm-cybersecurity` | fail | 6 | 5 → 6 | 1 → 2 | 1 → 0 | 0 → 2 | 0 → 0 |
+| `brief-outlook-nvda-revenue-two-years` (the brief's second question) | fail | 7 | 5 → 6 | 3 → 1 | 2 → 0 | 1 → 1 | 0 → 1 |
+| `brief-outlook-nvda-revenue-rephrased` | fail | 7 | 7 → 7 | 2 → 1 | 0 → 0 | 2 → 1 | 0 → 1 |
+| `brief-outlook-unh-revenue-two-years` | fail | 5 | 4 → 5 | 1 → 1 | 0 → 0 | 1 → 1 | 0 → 2 |
+| `brief-outlook-nvda-revenue-fy2024` | fail | 5 | 3 → 3 | 2 → 2 | 2 → 2 | 0 → 0 | 1 → 0 |
+| `brief-followup-nvda-net-income` | **pass** | 3 | 3 → 3 | 0 → 0 | 0 → 0 | 0 → 0 | 0 → 0 |
+| `brief-sector-pharma-regulatory` (the brief's third question) | fail | 9 | 0 → 6 | 8 → 4 | 8 → 2 | 0 → 2 | 0 → 0 |
+| `brief-sector-pharma-regulatory-rephrased` | fail | 9 | 0 → 5 | 8 → 4 | 8 → 3 | 0 → 1 | 0 → 0 |
+| `brief-sector-health-care-regulatory` | fail | 13 | 3 → 6 | 9 → 9 | 8 → 6 | 1 → 3 | 0 → 0 |
+| `brief-pharma-regulatory-pfe` | fail | 4 | 1 → 2 | 3 → 3 | 3 → 2 | 0 → 1 | 0 → 0 |
+| `brief-followup-pharma-340b` | fail | 8 | 2 → 8 | 5 → 4 | 5 → 0 | 0 → 4 | 1 → 0 |
+| **All** | **1 of 15** | **108** | **53 → 80** | **56 → 44** | **48 → 23** | **8 → 21** | **3 → 6** |
+
+- **Retrieval misses fall by half, from 48 to 23, and generation misses rise from 8 to 21.** A generation miss has its evidence in the prompt in all 5 runs (retrieval is deterministic) and is stated in fewer than 4 of them. A few never-reached facts are stated from other passages in a run, such as Merck's Keytruda decline under IRA pricing and Pfizer's price-control regulations (1 of 5 runs, in two cases each).
+- **The pharmaceutical question now fails on generation as much as retrieval.** It reaches 6 of its 9 must-state facts (none before) and misses 4: Merck's Keytruda decline and Pfizer's engagement with payors, never reached, and Janssen's IRA lawsuit (0 of 5 runs) and Pfizer's price-control regulations (1 of 5), reached in every run. The 340B follow-up reaches all 8 and misses 4, each stated in 0 to 3 runs, such as Lilly's and Pfizer's 340B exposure (0 of 5 each).
+- **The brief's second question misses one fact**, NVIDIA's Blackwell share of Data Center revenue (3 of 5 runs), now that its two retrieval misses are reached. **Its first question misses three:** Apple's antitrust investigations (never reached), and Tesla's dependence on its autonomous driving work and on Elon Musk (3 of 5 runs each), both reached.
+- **Contradicted Claims appear in 6 runs, against 3**, two of them in `brief-outlook-unh-revenue-two-years` and two in the quarterly updates case, so those cases would fail on them even with every fact stated. Each is a summary sentence, such as UnitedHealth's revenue growth "accelerated from 15% in FY2023 to 8% in FY2024". One judgment failed: Jev refused the Faithfulness of `brief-outlook-unh-revenue-two-years`'s run 5 (`max_tokens_exceeded`), recorded against that judgment. No run was cut off.
+
+**Reports.** The new reports replace #92's in `data/derived/eval/` (`retrieval-dev.json`, `generation-dev.json`, `generation-control-dev.json` and `brief-suite.json`), and #92's are kept as written in `data/derived/eval-issue92/`. The "How it works" page is regenerated from them (`make eval-export`): it shows this round's shipped run, Control Run and Brief Suite, beside #73's Arm, settings and generator comparisons, which stand as recorded until #127 and #129 run.
+
+**Spend.** Each run printed its estimate first: up to $0.38, $0.38 and $0.47, $1.23 in all, inside the $1.25 the developer approved. They cost $0.262 (the shipped run: $0.169 in Answer Calls, $0.093 in Jev judging), $0.257 (the Control Run: $0.169 and $0.088) and $0.416 (the Brief Suite: $0.254 and $0.162), **$0.94 in all** ($0.59 in Answer Calls, $0.34 in Jev judging). The retrieval harness embedded 42 questions missing from the hosted Arms' cache with OpenAI, under $0.0001.
 
 ### The version 2 holdout run
 

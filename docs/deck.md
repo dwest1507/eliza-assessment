@@ -147,14 +147,14 @@ scores as much as the hybrid and the re-ranker did.
 
 - **Small evaluation.** 20 holdout cases in version 2, 10 in version 1: one case moves a share by 0.05. The numbers show the system works, not its exact rate.
 - **Answers miss facts.** Fact Recall 0.74 on the version 2 holdout: the answers miss 31 of 106 must-state facts, 15 of them because their evidence never reaches the prompt.
-- **The brief's questions fail the Brief Suite.** 1 of 15 cases pass on version 2, on the fixed measurement. 48 of the 56 must-state facts missed never reach the Answer Call, so the gap is retrieval, not the generator: every must-state fact the pharmaceutical question misses has evidence that never reaches the prompt.
+- **The brief's questions fail the Brief Suite.** 1 of 15 cases pass on version 2. The new retrieval gets the evidence of 80 of the 108 must-state facts into the Answer Call, against 53, but 44 are still missed: 23 never reach it, and 21 reach it in every run yet are stated in fewer than 4 of 5. The gap is now the generator as much as retrieval.
 - **Follow-ups that change topic without naming a Company** inherit the earlier Companies. The Query Scope chips, under "How this was answered", show it; the Golden Set measures it.
 - **Computed figures.** The model sometimes computes a growth rate rather than quoting the Filing; it labels it as derived.
 - **Thin coverage.** Trends only for 13 Companies; Financial Facts only revenue, net income and segment revenue; guidance mostly sits outside the Filings.
 - **No human in the loop.** Claude drafted the evaluation's labels and labelled the judge study, with no human review. Accepted for a demo; production would use hand-labelled data.
 - **Our own inputs and a hosted model.** The Sector table and the list of missing Companies are curated and disclosed, not yet confirmed by the Client. The Answer Call goes to a hosted API, behind one interface a local model can replace.
 
-> Sources: [the holdout run](evaluation.md#the-holdout-run), [the version 2 holdout run](evaluation.md#the-version-2-holdout-run), [the Brief Suite](evaluation.md#the-brief-suite), [ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md), [assumptions 4, 5, 9 and 10](assumptions.md), [EDA findings](findings.md), [ADR 0013](adr/0013-jev-stays-the-judge-checked-by-a-judge-study.md)
+> Sources: [the holdout run](evaluation.md#the-holdout-run), [the version 2 holdout run](evaluation.md#the-version-2-holdout-run), [the Brief Suite](evaluation.md#the-brief-suite), [the new round on the new retrieval](evaluation.md#a-new-round-on-the-new-retrieval-126-2026-10-18), [ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md), [assumptions 4, 5, 9 and 10](assumptions.md), [EDA findings](findings.md), [ADR 0013](adr/0013-jev-stays-the-judge-checked-by-a-judge-study.md)
 
 <!--
 Lead with the limits before the panel finds them. Each one is either measured (the

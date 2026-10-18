@@ -1108,75 +1108,75 @@
       "promptVersion": "v7",
       "controlRun": false,
       "factCutoff": 0.6,
-      "answersPassed": 51,
+      "answersPassed": 49,
       "overall": {
         "cases": 60,
-        "citationsValid": 0.9166666666666666,
-        "figuresExact": 0.95,
+        "citationsValid": 0.95,
+        "figuresExact": 0.9,
         "coverageGapsStated": 1.0,
-        "structureFollowed": 0.8166666666666667,
-        "meanWords": 453.43333333333334,
-        "factRecall": 0.7014865251707356,
-        "detailRecall": 0.4667400911208961,
-        "faithfulness": 0.9605663206852713,
-        "answersContradicted": 4,
+        "structureFollowed": 0.7,
+        "meanWords": 453.3666666666667,
+        "factRecall": 0.7239026081131344,
+        "detailRecall": 0.49230811471523545,
+        "faithfulness": 0.9491726013682996,
+        "answersContradicted": 8,
         "truncated": 0,
         "judgmentsFailed": 0,
-        "meanCostUsd": 0.002802765,
-        "totalCostUsd": 0.1681659,
-        "meanLatencyS": 7.4155,
-        "maxLatencyS": 11.199,
-        "meanFirstTokenS": 2.309483333333333,
-        "meanInputTokens": 23760.316666666666,
-        "meanOutputTokens": 853.4666666666667,
-        "judgeCostUsd": 0.08215935
+        "meanCostUsd": 0.002812751666666667,
+        "totalCostUsd": 0.1687651,
+        "meanLatencyS": 8.7218,
+        "maxLatencyS": 12.874,
+        "meanFirstTokenS": 2.5379666666666667,
+        "meanInputTokens": 23847.433333333334,
+        "meanOutputTokens": 856.0166666666667,
+        "judgeCostUsd": 0.093257304
       },
       "byType": [
         {
           "questionType": "figure_trend",
           "cases": 14,
-          "citationsValid": 1.0,
-          "figuresExact": 0.8571428571428571,
+          "citationsValid": 0.9285714285714286,
+          "figuresExact": 0.5714285714285714,
           "coverageGapsStated": 1.0,
-          "structureFollowed": 1.0,
-          "meanWords": 364.42857142857144,
-          "factRecall": 0.8005952380952381,
-          "detailRecall": 0.4347737579880437,
-          "faithfulness": 0.9397126682840968,
-          "answersContradicted": 2,
+          "structureFollowed": 0.9285714285714286,
+          "meanWords": 364.5,
+          "factRecall": 0.755952380952381,
+          "detailRecall": 0.4517290249433107,
+          "faithfulness": 0.9019815618555115,
+          "answersContradicted": 1,
           "truncated": 0,
           "judgmentsFailed": 0,
-          "meanCostUsd": 0.004292635714285714,
-          "totalCostUsd": 0.0600969,
-          "meanLatencyS": 7.479714285714286,
-          "maxLatencyS": 9.076,
-          "meanFirstTokenS": 2.7872857142857144,
-          "meanInputTokens": 38357.78571428572,
-          "meanOutputTokens": 913.7142857142857,
-          "judgeCostUsd": 0.016244172
+          "meanCostUsd": 0.004330235714285714,
+          "totalCostUsd": 0.0606233,
+          "meanLatencyS": 9.031642857142858,
+          "maxLatencyS": 12.874,
+          "meanFirstTokenS": 3.2850714285714284,
+          "meanInputTokens": 38732.71428571428,
+          "meanOutputTokens": 913.9285714285714,
+          "judgeCostUsd": 0.019029528
         },
         {
           "questionType": "missing_company",
           "cases": 5,
-          "citationsValid": 0.6,
+          "citationsValid": 1.0,
           "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
-          "structureFollowed": 1.0,
-          "meanWords": 297.4,
-          "factRecall": 0.6944444444444443,
-          "detailRecall": 0.5416666666666666,
-          "faithfulness": 1.0,
+          "structureFollowed": 0.8,
+          "meanWords": 295.6,
+          "factRecall": 0.9166666666666666,
+          "detailRecall": 0.6620370370370371,
+          "faithfulness": 0.9743589743589745,
           "answersContradicted": 0,
           "truncated": 0,
           "judgmentsFailed": 0,
-          "meanCostUsd": 0.0012216000000000002,
-          "totalCostUsd": 0.006108000000000001,
-          "meanLatencyS": 4.419,
-          "maxLatencyS": 7.766,
-          "meanFirstTokenS": 1.3202,
-          "meanInputTokens": 9891.0,
-          "meanOutputTokens": 465.0,
-          "judgeCostUsd": 0.003256638
+          "meanCostUsd": 0.00130136,
+          "totalCostUsd": 0.0065068,
+          "meanLatencyS": 5.5496,
+          "maxLatencyS": 9.155,
+          "meanFirstTokenS": 1.7678,
+          "meanInputTokens": 10423.6,
+          "meanOutputTokens": 518.0,
+          "judgeCostUsd": 0.004142334
         },
         {
           "questionType": "outlook",
@@ -1185,44 +1185,44 @@
           "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
           "structureFollowed": 0.8333333333333334,
-          "meanWords": 388.1666666666667,
-          "factRecall": 0.611111111111111,
-          "detailRecall": 0.4656084656084656,
+          "meanWords": 389.0,
+          "factRecall": 0.7361111111111112,
+          "detailRecall": 0.5198412698412699,
           "faithfulness": 0.9696969696969697,
-          "answersContradicted": 0,
+          "answersContradicted": 1,
           "truncated": 0,
           "judgmentsFailed": 0,
-          "meanCostUsd": 0.0030905,
-          "totalCostUsd": 0.018543,
-          "meanLatencyS": 6.3693333333333335,
-          "maxLatencyS": 8.585,
-          "meanFirstTokenS": 2.2611666666666665,
-          "meanInputTokens": 27340.833333333332,
-          "meanOutputTokens": 712.8333333333334,
-          "judgeCostUsd": 0.005087964
+          "meanCostUsd": 0.0015785666666666665,
+          "totalCostUsd": 0.0094714,
+          "meanLatencyS": 6.656666666666666,
+          "maxLatencyS": 8.526,
+          "meanFirstTokenS": 1.8856666666666666,
+          "meanInputTokens": 12371.5,
+          "meanOutputTokens": 682.8333333333334,
+          "judgeCostUsd": 0.006762462
         },
         {
           "questionType": "risk",
           "cases": 18,
           "citationsValid": 1.0,
-          "figuresExact": 0.9444444444444444,
+          "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
-          "structureFollowed": 0.7777777777777778,
-          "meanWords": 510.8888888888889,
-          "factRecall": 0.6554232804232805,
-          "detailRecall": 0.4839896214896215,
-          "faithfulness": 0.9759259259259259,
-          "answersContradicted": 0,
+          "structureFollowed": 0.6666666666666666,
+          "meanWords": 505.8333333333333,
+          "factRecall": 0.6732804232804233,
+          "detailRecall": 0.4807158119658119,
+          "faithfulness": 0.9757918552036199,
+          "answersContradicted": 1,
           "truncated": 0,
           "judgmentsFailed": 0,
-          "meanCostUsd": 0.0022445166666666665,
-          "totalCostUsd": 0.0404013,
-          "meanLatencyS": 7.529222222222223,
-          "maxLatencyS": 9.369,
-          "meanFirstTokenS": 2.2262222222222223,
-          "meanInputTokens": 18113.5,
-          "meanOutputTokens": 866.3333333333334,
-          "judgeCostUsd": 0.027206886000000003
+          "meanCostUsd": 0.002597127777777778,
+          "totalCostUsd": 0.0467483,
+          "meanLatencyS": 9.18511111111111,
+          "maxLatencyS": 11.421,
+          "meanFirstTokenS": 2.4436666666666667,
+          "meanInputTokens": 21629.88888888889,
+          "meanOutputTokens": 868.2777777777778,
+          "judgeCostUsd": 0.030272046
         },
         {
           "questionType": "sector",
@@ -1230,58 +1230,59 @@
           "citationsValid": 0.9285714285714286,
           "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
-          "structureFollowed": 0.5714285714285714,
-          "meanWords": 573.7857142857143,
-          "factRecall": 0.6949128252699681,
-          "detailRecall": 0.4633491858281774,
-          "faithfulness": 0.9484372217786635,
-          "answersContradicted": 2,
+          "structureFollowed": 0.35714285714285715,
+          "meanWords": 578.2857142857143,
+          "factRecall": 0.7304810269095984,
+          "detailRecall": 0.5056652031441947,
+          "faithfulness": 0.945148876935144,
+          "answersContradicted": 4,
           "truncated": 0,
           "judgmentsFailed": 0,
-          "meanCostUsd": 0.002736271428571429,
-          "totalCostUsd": 0.0383078,
-          "meanLatencyS": 9.310928571428573,
-          "maxLatencyS": 11.199,
-          "meanFirstTokenS": 2.6137142857142854,
-          "meanInputTokens": 22108.428571428572,
-          "meanOutputTokens": 1050.857142857143,
-          "judgeCostUsd": 0.028847532000000002
+          "meanCostUsd": 0.002905992857142857,
+          "totalCostUsd": 0.0406839,
+          "meanLatencyS": 10.553857142857142,
+          "maxLatencyS": 12.34,
+          "meanFirstTokenS": 2.7875,
+          "meanInputTokens": 23811.0,
+          "meanOutputTokens": 1049.7857142857142,
+          "judgeCostUsd": 0.031869474
         },
         {
           "questionType": "stale_filing",
           "cases": 3,
-          "citationsValid": 0.3333333333333333,
+          "citationsValid": 0.6666666666666666,
           "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
           "structureFollowed": 1.0,
-          "meanWords": 353.0,
-          "factRecall": 0.75,
+          "meanWords": 362.0,
+          "factRecall": 0.5833333333333333,
           "detailRecall": 0.45,
-          "faithfulness": 0.9666666666666667,
-          "answersContradicted": 0,
+          "faithfulness": 0.96875,
+          "answersContradicted": 1,
           "truncated": 0,
           "judgmentsFailed": 0,
-          "meanCostUsd": 0.0015696333333333333,
-          "totalCostUsd": 0.0047089,
-          "meanLatencyS": 4.674666666666667,
-          "maxLatencyS": 6.542,
-          "meanFirstTokenS": 0.9049999999999999,
+          "meanCostUsd": 0.0015771333333333335,
+          "totalCostUsd": 0.0047314,
+          "meanLatencyS": 5.363666666666667,
+          "maxLatencyS": 7.784,
+          "meanFirstTokenS": 1.0410000000000001,
           "meanInputTokens": 13183.0,
-          "meanOutputTokens": 502.6666666666667,
-          "judgeCostUsd": 0.001516158
+          "meanOutputTokens": 517.6666666666666,
+          "judgeCostUsd": 0.00118146
         }
       ],
       "failing": {
         "citations": [
           "stale-ge-recent-performance",
-          "stale-gecc-eni-2014",
-          "missing-citigroup",
-          "sector-communication-services-advertising",
-          "missing-kroger-with-walmart"
+          "trend-xom-net-income-2025",
+          "sector-banks-capital-liquidity"
         ],
         "figures": [
-          "risk-meta-amzn-legal-proceedings",
+          "trend-tsla-net-income-three-years",
+          "trend-goog-cloud-two-years",
           "trend-dis-segments-fy2025",
+          "trend-xom-net-income-2025",
+          "gap-cat-sales-snapshot",
           "gap-msft-goog-capex-periods-differ"
         ],
         "coverageGaps": []
@@ -1295,52 +1296,52 @@
       "promptVersion": "v7",
       "controlRun": true,
       "factCutoff": 0.6,
-      "answersPassed": 51,
+      "answersPassed": 55,
       "overall": {
         "cases": 60,
         "citationsValid": 0.95,
-        "figuresExact": 0.8833333333333333,
+        "figuresExact": 0.9,
         "coverageGapsStated": 1.0,
-        "structureFollowed": 0.75,
-        "meanWords": 462.25,
-        "factRecall": 0.7284276152697204,
-        "detailRecall": 0.4894886947131529,
-        "faithfulness": 0.9541970162038387,
-        "answersContradicted": 6,
+        "structureFollowed": 0.8,
+        "meanWords": 457.3666666666667,
+        "factRecall": 0.7254795399532241,
+        "detailRecall": 0.49032373715036254,
+        "faithfulness": 0.9471087130696664,
+        "answersContradicted": 2,
         "truncated": 0,
         "judgmentsFailed": 0,
-        "meanCostUsd": 0.0028102983333333337,
-        "totalCostUsd": 0.16861790000000001,
-        "meanLatencyS": 8.12145,
-        "maxLatencyS": 12.345,
-        "meanFirstTokenS": 2.3591166666666665,
-        "meanInputTokens": 23760.316666666666,
-        "meanOutputTokens": 868.5333333333333,
-        "judgeCostUsd": 0.08730414
+        "meanCostUsd": 0.00281571,
+        "totalCostUsd": 0.1689426,
+        "meanLatencyS": 8.100316666666666,
+        "maxLatencyS": 12.039,
+        "meanFirstTokenS": 2.3212333333333333,
+        "meanInputTokens": 23847.433333333334,
+        "meanOutputTokens": 861.9333333333333,
+        "judgeCostUsd": 0.087929688
       },
       "byType": [
         {
           "questionType": "figure_trend",
           "cases": 14,
-          "citationsValid": 0.9285714285714286,
-          "figuresExact": 0.6428571428571429,
+          "citationsValid": 1.0,
+          "figuresExact": 0.5714285714285714,
           "coverageGapsStated": 1.0,
           "structureFollowed": 1.0,
-          "meanWords": 381.42857142857144,
-          "factRecall": 0.7916666666666667,
-          "detailRecall": 0.4324288806431663,
-          "faithfulness": 0.9476527149321267,
-          "answersContradicted": 4,
+          "meanWords": 375.85714285714283,
+          "factRecall": 0.755952380952381,
+          "detailRecall": 0.4700371057513915,
+          "faithfulness": 0.9397239665096808,
+          "answersContradicted": 2,
           "truncated": 0,
           "judgmentsFailed": 0,
-          "meanCostUsd": 0.004300064285714286,
-          "totalCostUsd": 0.0602009,
-          "meanLatencyS": 8.229142857142858,
-          "maxLatencyS": 10.273,
-          "meanFirstTokenS": 2.7357857142857145,
-          "meanInputTokens": 38357.78571428572,
-          "meanOutputTokens": 928.5714285714286,
-          "judgeCostUsd": 0.018615408
+          "meanCostUsd": 0.004344235714285714,
+          "totalCostUsd": 0.0608193,
+          "meanLatencyS": 8.60207142857143,
+          "maxLatencyS": 10.105,
+          "meanFirstTokenS": 3.0130000000000003,
+          "meanInputTokens": 38732.71428571428,
+          "meanOutputTokens": 941.9285714285714,
+          "judgeCostUsd": 0.015258768
         },
         {
           "questionType": "missing_company",
@@ -1349,21 +1350,21 @@
           "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
           "structureFollowed": 1.0,
-          "meanWords": 320.8,
+          "meanWords": 320.2,
           "factRecall": 0.8055555555555555,
-          "detailRecall": 0.6157407407407408,
-          "faithfulness": 1.0,
+          "detailRecall": 0.736111111111111,
+          "faithfulness": 0.7352941176470589,
           "answersContradicted": 0,
           "truncated": 0,
           "judgmentsFailed": 0,
-          "meanCostUsd": 0.0012463,
-          "totalCostUsd": 0.0062315,
-          "meanLatencyS": 5.2122,
-          "maxLatencyS": 8.343,
-          "meanFirstTokenS": 1.5422,
-          "meanInputTokens": 9891.0,
-          "meanOutputTokens": 514.4,
-          "judgeCostUsd": 0.0027810300000000003
+          "meanCostUsd": 0.00130436,
+          "totalCostUsd": 0.0065218,
+          "meanLatencyS": 5.391,
+          "maxLatencyS": 8.931,
+          "meanFirstTokenS": 1.5474,
+          "meanInputTokens": 10423.6,
+          "meanOutputTokens": 524.0,
+          "judgeCostUsd": 0.002854278
         },
         {
           "questionType": "outlook",
@@ -1371,68 +1372,68 @@
           "citationsValid": 1.0,
           "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
-          "structureFollowed": 1.0,
-          "meanWords": 440.8333333333333,
-          "factRecall": 0.6944444444444445,
-          "detailRecall": 0.5674603174603174,
-          "faithfulness": 0.9527777777777778,
+          "structureFollowed": 0.8333333333333334,
+          "meanWords": 371.0,
+          "factRecall": 0.8194444444444445,
+          "detailRecall": 0.4781746031746032,
+          "faithfulness": 1.0,
           "answersContradicted": 0,
           "truncated": 0,
           "judgmentsFailed": 0,
-          "meanCostUsd": 0.003150916666666667,
-          "totalCostUsd": 0.018905500000000002,
-          "meanLatencyS": 8.049166666666666,
-          "maxLatencyS": 9.014,
-          "meanFirstTokenS": 2.6346666666666665,
-          "meanInputTokens": 27340.833333333332,
-          "meanOutputTokens": 833.6666666666666,
-          "judgeCostUsd": 0.006480642000000001
+          "meanCostUsd": 0.0015542333333333335,
+          "totalCostUsd": 0.009325400000000001,
+          "meanLatencyS": 6.118166666666667,
+          "maxLatencyS": 7.792,
+          "meanFirstTokenS": 1.8046666666666666,
+          "meanInputTokens": 12371.5,
+          "meanOutputTokens": 634.1666666666666,
+          "judgeCostUsd": 0.006379674
         },
         {
           "questionType": "risk",
           "cases": 18,
           "citationsValid": 1.0,
-          "figuresExact": 0.9444444444444444,
+          "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
-          "structureFollowed": 0.6666666666666666,
-          "meanWords": 502.3888888888889,
-          "factRecall": 0.682253086419753,
-          "detailRecall": 0.5025324212824214,
-          "faithfulness": 0.9762426900584794,
-          "answersContradicted": 1,
+          "structureFollowed": 0.8333333333333334,
+          "meanWords": 521.6111111111111,
+          "factRecall": 0.6353174603174603,
+          "detailRecall": 0.5200258075258075,
+          "faithfulness": 0.9811183732752361,
+          "answersContradicted": 0,
           "truncated": 0,
           "judgmentsFailed": 0,
-          "meanCostUsd": 0.0022436,
-          "totalCostUsd": 0.0403848,
-          "meanLatencyS": 8.105944444444445,
-          "maxLatencyS": 11.276,
-          "meanFirstTokenS": 2.2694444444444444,
-          "meanInputTokens": 18113.5,
-          "meanOutputTokens": 864.5,
-          "judgeCostUsd": 0.027221712000000002
+          "meanCostUsd": 0.0026060722222222225,
+          "totalCostUsd": 0.0469093,
+          "meanLatencyS": 8.369666666666667,
+          "maxLatencyS": 9.527,
+          "meanFirstTokenS": 2.1371111111111114,
+          "meanInputTokens": 21629.88888888889,
+          "meanOutputTokens": 886.1666666666666,
+          "judgeCostUsd": 0.0315819
         },
         {
           "questionType": "sector",
           "cases": 14,
-          "citationsValid": 1.0,
-          "figuresExact": 0.9285714285714286,
+          "citationsValid": 0.9285714285714286,
+          "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
-          "structureFollowed": 0.35714285714285715,
-          "meanWords": 580.2142857142857,
-          "factRecall": 0.6957013224870368,
-          "detailRecall": 0.46780596854126266,
-          "faithfulness": 0.9214088209654571,
-          "answersContradicted": 1,
+          "structureFollowed": 0.42857142857142855,
+          "meanWords": 564.5,
+          "factRecall": 0.7380918684490113,
+          "detailRecall": 0.43072057494326405,
+          "faithfulness": 0.9458235217163787,
+          "answersContradicted": 0,
           "truncated": 0,
           "judgmentsFailed": 0,
-          "meanCostUsd": 0.002731485714285714,
-          "totalCostUsd": 0.0382408,
-          "meanLatencyS": 9.840571428571428,
-          "maxLatencyS": 12.345,
-          "meanFirstTokenS": 2.582785714285714,
-          "meanInputTokens": 22108.428571428572,
-          "meanOutputTokens": 1041.2857142857142,
-          "judgeCostUsd": 0.030756726
+          "meanCostUsd": 0.002905171428571429,
+          "totalCostUsd": 0.040672400000000004,
+          "meanLatencyS": 9.714428571428572,
+          "maxLatencyS": 12.039,
+          "meanFirstTokenS": 2.6645,
+          "meanInputTokens": 23811.0,
+          "meanOutputTokens": 1048.142857142857,
+          "judgeCostUsd": 0.030259740000000004
         },
         {
           "questionType": "stale_filing",
@@ -1441,36 +1442,35 @@
           "figuresExact": 1.0,
           "coverageGapsStated": 1.0,
           "structureFollowed": 1.0,
-          "meanWords": 326.6666666666667,
-          "factRecall": 0.9166666666666667,
-          "detailRecall": 0.5,
+          "meanWords": 353.6666666666667,
+          "factRecall": 0.8333333333333333,
+          "detailRecall": 0.45,
           "faithfulness": 0.9666666666666667,
           "answersContradicted": 0,
           "truncated": 0,
           "judgmentsFailed": 0,
-          "meanCostUsd": 0.0015514666666666668,
-          "totalCostUsd": 0.0046544,
-          "meanLatencyS": 4.682666666666667,
-          "maxLatencyS": 6.839,
-          "meanFirstTokenS": 0.906,
+          "meanCostUsd": 0.0015647999999999999,
+          "totalCostUsd": 0.0046944,
+          "meanLatencyS": 5.09,
+          "maxLatencyS": 6.916,
+          "meanFirstTokenS": 0.9186666666666667,
           "meanInputTokens": 13183.0,
-          "meanOutputTokens": 466.3333333333333,
-          "judgeCostUsd": 0.001448622
+          "meanOutputTokens": 493.0,
+          "judgeCostUsd": 0.001595328
         }
       ],
       "failing": {
         "citations": [
           "stale-ge-recent-performance",
-          "trend-amzn-aws-two-years",
-          "missing-kroger-with-walmart"
+          "missing-citigroup",
+          "sector-industrials-tariffs"
         ],
         "figures": [
           "trend-meta-revenue-two-years",
-          "trend-aapl-revenue-fy2025",
-          "trend-amzn-aws-two-years",
-          "risk-meta-amzn-legal-proceedings",
           "trend-dis-segments-fy2025",
-          "sector-semiconductors-customer-concentration",
+          "trend-pfe-jnj-revenue-2024",
+          "trend-xom-net-income-2025",
+          "gap-cat-sales-snapshot",
           "gap-msft-goog-capex-periods-differ"
         ],
         "coverageGaps": []
@@ -2390,8 +2390,13 @@
             "evidenceReachedRuns": 0
           },
           {
-            "fact": "JPMorgan says its ability to distribute capital to shareholders could be limited if it does not satisfy regulatory capital requirements.",
-            "statedRuns": 1,
+            "fact": "Tesla says its future business depends on developing its driver assistance systems and autonomous driving solutions.",
+            "statedRuns": 3,
+            "evidenceReachedRuns": 5
+          },
+          {
+            "fact": "Tesla says it is highly dependent on the services of Elon Musk, its Chief Executive Officer.",
+            "statedRuns": 3,
             "evidenceReachedRuns": 5
           }
         ],
@@ -2407,22 +2412,14 @@
         "mustState": 7,
         "missed": [
           {
-            "fact": "NVIDIA said at the end of fiscal 2024 that it expected its next-generation products to be supply-constrained based on demand indications.",
-            "statedRuns": 0,
-            "evidenceReachedRuns": 0
-          },
-          {
             "fact": "NVIDIA says its Blackwell architectures are the majority of its Data Center revenue.",
-            "statedRuns": 1,
-            "evidenceReachedRuns": 5
-          },
-          {
-            "fact": "NVIDIA incurred a charge in the first quarter of fiscal 2026 for H20 excess inventory and purchase obligations.",
             "statedRuns": 3,
-            "evidenceReachedRuns": 0
+            "evidenceReachedRuns": 5
           }
         ],
-        "contradictedRuns": [],
+        "contradictedRuns": [
+          1
+        ],
         "truncatedRuns": [],
         "failedRuns": []
       },
@@ -2434,39 +2431,19 @@
         "mustState": 9,
         "missed": [
           {
-            "fact": "AbbVie says the Inflation Reduction Act will reduce prices and reimbursements for certain of its products.",
-            "statedRuns": 0,
-            "evidenceReachedRuns": 0
-          },
-          {
-            "fact": "Johnson & Johnson says the Inflation Reduction Act has subjected certain of its products to government-established pricing beginning in 2026.",
-            "statedRuns": 0,
-            "evidenceReachedRuns": 0
-          },
-          {
             "fact": "Johnson & Johnson's Janssen unit filed litigation in July 2023 challenging the constitutionality of the IRA's Medicare Drug Price Negotiation Program.",
             "statedRuns": 0,
-            "evidenceReachedRuns": 0
-          },
-          {
-            "fact": "Eli Lilly announced preliminary voluntary agreements with the U.S. government in November 2025 under which it agreed to lower Medicaid and certain other drug prices for U.S. patients.",
-            "statedRuns": 0,
-            "evidenceReachedRuns": 0
+            "evidenceReachedRuns": 5
           },
           {
             "fact": "Merck expects U.S. sales of Keytruda to decline beginning in January 2028 when government pricing under the Inflation Reduction Act takes effect.",
-            "statedRuns": 0,
-            "evidenceReachedRuns": 0
-          },
-          {
-            "fact": "Merck has sued the U.S. government over the IRA's Drug Price Negotiation Program.",
-            "statedRuns": 0,
+            "statedRuns": 1,
             "evidenceReachedRuns": 0
           },
           {
             "fact": "Pfizer says changes in U.S. and international regulations that mandate price controls could adversely affect its future results.",
             "statedRuns": 1,
-            "evidenceReachedRuns": 0
+            "evidenceReachedRuns": 5
           },
           {
             "fact": "Pfizer says it has engaged with major payors and the U.S. government to explore opportunities to improve access and reimbursement.",
@@ -2489,6 +2466,11 @@
             "fact": "Apple says it is subject to antitrust investigations and litigation in various jurisdictions around the world.",
             "statedRuns": 0,
             "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "Tesla says it is highly dependent on the services of Elon Musk, its Chief Executive Officer.",
+            "statedRuns": 1,
+            "evidenceReachedRuns": 5
           },
           {
             "fact": "Tesla says U.S. trade policy changes in 2025, including higher import tariffs, have impacted its supply chain costs.",
@@ -2529,7 +2511,7 @@
           },
           {
             "fact": "UnitedHealth says a reduction or protracted delay in government funding for the health care programs it participates in may materially and adversely affect its results.",
-            "statedRuns": 2,
+            "statedRuns": 1,
             "evidenceReachedRuns": 5
           }
         ],
@@ -2545,11 +2527,6 @@
         "mustState": 5,
         "missed": [
           {
-            "fact": "Apple's first-quarter fiscal 2025 10-Q says the DOJ's proposed remedies against Google could prohibit Google from offering Apple commercial terms for search distribution for up to 10 years.",
-            "statedRuns": 0,
-            "evidenceReachedRuns": 0
-          },
-          {
             "fact": "Apple's second-quarter fiscal 2025 10-Q says new U.S. tariffs were announced beginning in the second quarter of fiscal 2025, including on imports from China and India.",
             "statedRuns": 0,
             "evidenceReachedRuns": 0
@@ -2558,20 +2535,11 @@
             "fact": "Tesla's first-quarter 2025 10-Q says the United States has announced changes to trade policy, including increasing tariffs on imports.",
             "statedRuns": 0,
             "evidenceReachedRuns": 0
-          },
-          {
-            "fact": "Tesla's second-quarter 2025 10-Q says recent government actions have repealed or restricted consumer, manufacturing and charging infrastructure tax credits.",
-            "statedRuns": 0,
-            "evidenceReachedRuns": 0
-          },
-          {
-            "fact": "JPMorgan's first-quarter 2025 10-Q refers to the risk factors in its 2024 Form 10-K rather than setting out new ones.",
-            "statedRuns": 0,
-            "evidenceReachedRuns": 0
           }
         ],
         "contradictedRuns": [
-          1
+          2,
+          4
         ],
         "truncatedRuns": [],
         "failedRuns": []
@@ -2584,9 +2552,14 @@
         "mustState": 6,
         "missed": [
           {
-            "fact": "Tesla says its information technology systems or data could be subject to cyber-attacks that could result in data breaches and intellectual property theft.",
-            "statedRuns": 1,
-            "evidenceReachedRuns": 0
+            "fact": "Apple says it experiences malicious attacks and other attempts to gain unauthorized access to its systems on a regular basis.",
+            "statedRuns": 3,
+            "evidenceReachedRuns": 5
+          },
+          {
+            "fact": "Tesla says malicious entities have reportedly attempted to gain unauthorized access to its products' systems to gain control of or change their functionality.",
+            "statedRuns": 2,
+            "evidenceReachedRuns": 5
           }
         ],
         "contradictedRuns": [],
@@ -2601,17 +2574,14 @@
         "mustState": 7,
         "missed": [
           {
-            "fact": "NVIDIA said the H20 export licensing requirements will negatively affect its future revenue.",
-            "statedRuns": 2,
-            "evidenceReachedRuns": 5
-          },
-          {
             "fact": "NVIDIA incurred a charge in the first quarter of fiscal 2026 for H20 excess inventory and purchase obligations.",
-            "statedRuns": 3,
+            "statedRuns": 2,
             "evidenceReachedRuns": 5
           }
         ],
-        "contradictedRuns": [],
+        "contradictedRuns": [
+          5
+        ],
         "truncatedRuns": [],
         "failedRuns": []
       },
@@ -2624,13 +2594,18 @@
         "missed": [
           {
             "fact": "UnitedHealth said in its 2023 annual report that increased care patterns, primarily for seniors' outpatient procedures, were expected to persist throughout 2024.",
-            "statedRuns": 2,
+            "statedRuns": 3,
             "evidenceReachedRuns": 5
           }
         ],
-        "contradictedRuns": [],
+        "contradictedRuns": [
+          1,
+          3
+        ],
         "truncatedRuns": [],
-        "failedRuns": []
+        "failedRuns": [
+          5
+        ]
       },
       {
         "caseId": "brief-outlook-nvda-revenue-fy2024",
@@ -2650,9 +2625,7 @@
             "evidenceReachedRuns": 0
           }
         ],
-        "contradictedRuns": [
-          3
-        ],
+        "contradictedRuns": [],
         "truncatedRuns": [],
         "failedRuns": []
       },
@@ -2675,24 +2648,9 @@
         "mustState": 9,
         "missed": [
           {
-            "fact": "AbbVie says the Inflation Reduction Act will reduce prices and reimbursements for certain of its products.",
-            "statedRuns": 0,
-            "evidenceReachedRuns": 0
-          },
-          {
-            "fact": "Johnson & Johnson says the Inflation Reduction Act has subjected certain of its products to government-established pricing beginning in 2026.",
-            "statedRuns": 0,
-            "evidenceReachedRuns": 0
-          },
-          {
             "fact": "Johnson & Johnson's Janssen unit filed litigation in July 2023 challenging the constitutionality of the IRA's Medicare Drug Price Negotiation Program.",
             "statedRuns": 0,
-            "evidenceReachedRuns": 0
-          },
-          {
-            "fact": "Eli Lilly announced preliminary voluntary agreements with the U.S. government in November 2025 under which it agreed to lower Medicaid and certain other drug prices for U.S. patients.",
-            "statedRuns": 0,
-            "evidenceReachedRuns": 0
+            "evidenceReachedRuns": 5
           },
           {
             "fact": "Merck expects U.S. sales of Keytruda to decline beginning in January 2028 when government pricing under the Inflation Reduction Act takes effect.",
@@ -2700,13 +2658,8 @@
             "evidenceReachedRuns": 0
           },
           {
-            "fact": "Merck has sued the U.S. government over the IRA's Drug Price Negotiation Program.",
-            "statedRuns": 0,
-            "evidenceReachedRuns": 0
-          },
-          {
             "fact": "Pfizer says changes in U.S. and international regulations that mandate price controls could adversely affect its future results.",
-            "statedRuns": 0,
+            "statedRuns": 1,
             "evidenceReachedRuns": 0
           },
           {
@@ -2727,33 +2680,28 @@
         "mustState": 13,
         "missed": [
           {
-            "fact": "AbbVie says the Inflation Reduction Act will reduce prices and reimbursements for certain of its products.",
-            "statedRuns": 0,
-            "evidenceReachedRuns": 0
-          },
-          {
             "fact": "Johnson & Johnson says the Inflation Reduction Act has subjected certain of its products to government-established pricing beginning in 2026.",
-            "statedRuns": 0,
-            "evidenceReachedRuns": 0
+            "statedRuns": 2,
+            "evidenceReachedRuns": 5
           },
           {
             "fact": "Johnson & Johnson's Janssen unit filed litigation in July 2023 challenging the constitutionality of the IRA's Medicare Drug Price Negotiation Program.",
             "statedRuns": 0,
-            "evidenceReachedRuns": 0
+            "evidenceReachedRuns": 5
           },
           {
             "fact": "Eli Lilly announced preliminary voluntary agreements with the U.S. government in November 2025 under which it agreed to lower Medicaid and certain other drug prices for U.S. patients.",
             "statedRuns": 0,
-            "evidenceReachedRuns": 0
+            "evidenceReachedRuns": 5
           },
           {
             "fact": "Merck expects U.S. sales of Keytruda to decline beginning in January 2028 when government pricing under the Inflation Reduction Act takes effect.",
-            "statedRuns": 0,
+            "statedRuns": 1,
             "evidenceReachedRuns": 0
           },
           {
-            "fact": "Merck has sued the U.S. government over the IRA's Drug Price Negotiation Program.",
-            "statedRuns": 0,
+            "fact": "Pfizer says changes in U.S. and international regulations that mandate price controls could adversely affect its future results.",
+            "statedRuns": 1,
             "evidenceReachedRuns": 0
           },
           {
@@ -2769,7 +2717,12 @@
           {
             "fact": "UnitedHealth says CMS has in the past reduced or frozen Medicare Advantage benchmarks and additional cuts are possible.",
             "statedRuns": 0,
-            "evidenceReachedRuns": 5
+            "evidenceReachedRuns": 0
+          },
+          {
+            "fact": "UnitedHealth says it has intensified its medical and operating cost management in response to Medicare Advantage benchmark reductions and other funding pressures.",
+            "statedRuns": 0,
+            "evidenceReachedRuns": 0
           }
         ],
         "contradictedRuns": [],
@@ -2785,8 +2738,8 @@
         "missed": [
           {
             "fact": "Pfizer says Eliquis was among the first ten medicines subject to the IRA's Medicare drug price negotiation program.",
-            "statedRuns": 0,
-            "evidenceReachedRuns": 0
+            "statedRuns": 2,
+            "evidenceReachedRuns": 5
           },
           {
             "fact": "Pfizer announced preliminary agreements with the Trump Administration in September 2025 to make certain drug prices for U.S. patients more comparable to those in other developed countries.",
@@ -2811,34 +2764,27 @@
         "mustState": 8,
         "missed": [
           {
+            "fact": "Johnson & Johnson says increased third-party use of the 340B drug discount program may hurt its financial performance.",
+            "statedRuns": 3,
+            "evidenceReachedRuns": 5
+          },
+          {
             "fact": "Johnson & Johnson maintains a policy that no end customer is permitted direct delivery of product to a location other than the billing location.",
-            "statedRuns": 0,
-            "evidenceReachedRuns": 0
+            "statedRuns": 3,
+            "evidenceReachedRuns": 5
           },
           {
-            "fact": "Eli Lilly has implemented a Contract Pharmacy Limited Distribution System for sales through the 340B program.",
+            "fact": "Eli Lilly says the continued expansion of the 340B program impacts its revenue on an increasing percentage of sales.",
             "statedRuns": 0,
-            "evidenceReachedRuns": 0
-          },
-          {
-            "fact": "Merck says it remains committed to the 340B Program and to providing 340B discounts to eligible covered entities.",
-            "statedRuns": 0,
-            "evidenceReachedRuns": 0
+            "evidenceReachedRuns": 5
           },
           {
             "fact": "Pfizer says changes to the Medicaid Drug Rebate Program or the 340B Program could have a material impact on its business.",
-            "statedRuns": 1,
-            "evidenceReachedRuns": 0
-          },
-          {
-            "fact": "Pfizer implemented a policy in 2022 to help improve contract pharmacy integrity under the 340B Program.",
             "statedRuns": 0,
-            "evidenceReachedRuns": 0
+            "evidenceReachedRuns": 5
           }
         ],
-        "contradictedRuns": [
-          1
-        ],
+        "contradictedRuns": [],
         "truncatedRuns": [],
         "failedRuns": []
       }
