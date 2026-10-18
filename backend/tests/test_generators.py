@@ -2,11 +2,17 @@
 the answer cost, the generation harness's choice of implementation and the Makefile's
 key check all read."""
 
+import os
+import shutil
+import subprocess
+from pathlib import Path
+
 import pytest
 
 from edgar_eval import generators
 from edgar_eval.generators import (
     ANTHROPIC,
+    COMPARISON,
     GENERATORS,
     Generator,
     Price,
@@ -130,3 +136,70 @@ def test_the_keys_command_names_the_api_keys_a_run_needs(monkeypatch, capsys):
     with pytest.raises(SystemExit) as stopped:
         main(["keys", "gemini-9"])
     assert stopped.value.code != 0
+
+
+def test_the_default_comparison_is_gpt_6_luna_against_claude_haiku_5_5():
+    # Golden Set version 2's comparison: the shipped generator first, every one a row.
+    assert COMPARISON == ("gpt-6-luna", "claude-haiku-5-5")
+    assert COMPARISON[0] == GENERATORS[0].model
+    assert set(COMPARISON) <= {g.model for g in GENERATORS}
+
+
+def test_the_keys_command_names_the_default_comparison_s_keys(capsys):
+    assert main(["keys", "--comparison"]) == 0
+    assert capsys.readouterr().out.split() == ["OPENAI_API_KEY", "ANTHROPIC_API_KEY"]
+
+
+# --- The Makefile reads the table ---------------------------------------------------------
+# `make eval-generators` names no model: the default comparison is COMPARISON, MODELS="..."
+# names rows and MODELS= (empty) runs every one.
+
+REPO = Path(__file__).resolve().parents[2]
+
+
+def test_the_makefile_names_no_compared_generator():
+    makefile = (REPO / "Makefile").read_text(encoding="utf-8")
+
+    assert [g.model for g in GENERATORS if g.model in makefile] == []
+
+
+def _dry_run(*assignments: str) -> list[str]:
+    """The commands `make eval-generators` would run, without running them."""
+    env = {k: v for k, v in os.environ.items() if k not in {"MODELS", "MAKEFLAGS", "MFLAGS"}}
+    index = "data/derived/edgar_rag.sqlite"  # treated as built, so nothing is rebuilt
+    printed = subprocess.run(
+        ["make", "--no-print-directory", "-n", "-o", index, "eval-generators", *assignments],
+        cwd=REPO,
+        env=env,
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    return printed.splitlines()
+
+
+def _line(lines: list[str], command: str) -> str:
+    return next(line for line in lines if command in line)
+
+
+@pytest.mark.skipif(shutil.which("make") is None, reason="needs make")
+@pytest.mark.parametrize(
+    ("assignments", "keys", "selection"),
+    [
+        ((), "keys --comparison", "generators --split dev"),
+        (
+            ("MODELS=claude-sonnet-5-5 claude-haiku-5-5",),
+            "keys claude-sonnet-5-5 claude-haiku-5-5",
+            "generators --split dev --model claude-sonnet-5-5 --model claude-haiku-5-5",
+        ),
+        (("MODELS=",), "keys --all", "generators --split dev --all"),
+    ],
+)
+def test_make_eval_generators_passes_the_models_named_or_the_default(assignments, keys, selection):
+    lines = _dry_run(*assignments)
+
+    # The shipped generator's keys, then the compared ones', both from the table.
+    check = _line(lines, "edgar_eval.generators keys")
+    assert "edgar_eval.generators keys)" in check
+    assert f"edgar_eval.generators {keys})" in check
+    assert _line(lines, "edgar_eval.selection").rstrip().endswith(f"selection {selection}")

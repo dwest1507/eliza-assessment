@@ -51,7 +51,7 @@ Control Run, `generation-control-<split>.json`: each command reuses them when th
 the shipped setup and of this round, and otherwise runs them again first.
 
     python -m edgar_eval.selection arms [--split dev] [--reuse]
-    python -m edgar_eval.selection generators [--split dev] [--reuse] [--model MODEL]...
+    python -m edgar_eval.selection generators [--split dev] [--reuse] [--model MODEL... | --all]
     python -m edgar_eval.selection settings [--split dev] [--reuse] --setting CHUNKS:BUDGET...
     python -m edgar_eval.selection compare SHIPPED.json CHALLENGER.json...
         [--control CONTROL.json] [--rule arms|generators|settings] [--json PATH]
@@ -66,18 +66,18 @@ with every candidate screened and why it was kept or dropped.
 `arms` runs the retrieval harness on the split for every Arm in `edgar_eval.arms.ARMS`,
 writing `data/derived/eval/retrieval-<split>.json` with its screen, then the generation
 harness once per challenger Arm the screen keeps, writing
-`generation-arms-<split>-<arm>.json`. `generators` runs it
-once per other model in `edgar_eval.generators.GENERATORS` on the Shipped Arm, writing
+`generation-arms-<split>-<arm>.json`. `generators` runs it on the Shipped Arm once per
+other model in the default comparison, `edgar_eval.generators.COMPARISON`, writing
 `generation-<split>-<model>.json` (the name `make eval-generation` uses); `--model`
-(repeatable) limits it to the generators named (`make eval-generators` passes
-`gpt-6-luna` and `claude-haiku-5-5`, Golden Set version 2's comparison, unless `MODELS=`
-says otherwise). `settings` runs the retrieval harness on the Shipped Arm for the shipped
-setting and each `--setting`, a chunk size and context budget such as `450:32000`,
-writing `retrieval-<split>-chunks<N>-budget<B>.json`, then the generation harness once
-per setting the screen keeps, writing `generation-<split>-chunks<N>-budget<B>.json` (the
-names `make eval-retrieval` and `make eval-generation` use with `CHUNK_TOKENS=<N>
-CONTEXT_BUDGET=<B>`), and builds the index of another chunk size,
-`data/derived/edgar_rag-chunks<N>.sqlite`, when missing.
+(repeatable) names other rows of `edgar_eval.generators.GENERATORS` instead, and `--all`
+runs every row (`make eval-generators` passes `--model` for each of `MODELS="..."`, and
+`--all` for `MODELS=`, empty). `settings` runs the retrieval harness on the Shipped Arm
+for the shipped setting and each `--setting`, a chunk size and context budget such as
+`450:32000`, writing `retrieval-<split>-chunks<N>-budget<B>.json`, then the generation
+harness once per setting the screen keeps, writing
+`generation-<split>-chunks<N>-budget<B>.json` (the names `make eval-retrieval` and
+`make eval-generation` use with `CHUNK_TOKENS=<N> CONTEXT_BUDGET=<B>`), and builds the
+index of another chunk size, `data/derived/edgar_rag-chunks<N>.sqlite`, when missing.
 With `--reuse`, a challenger's report already written is read instead of rerun (for
 `arms` and `settings`, the retrieval reports too); the shipped run and Control Run are
 reused by round, with or without it. All three call the
@@ -594,9 +594,14 @@ def main(argv: list[str] | None = None, *, out: TextIO | None = None) -> int:
             "--reuse", action="store_true", help="read challenger reports already written"
         )
         command.add_argument("--json", type=Path)
-    generators.add_argument(
-        "--model", action="append", default=[], help="run only this generator (repeatable)"
+    chosen = generators.add_mutually_exclusive_group()
+    chosen.add_argument(
+        "--model",
+        action="append",
+        default=[],
+        help="run this generator instead of the default comparison (repeatable)",
     )
+    chosen.add_argument("--all", action="store_true", help="run every compared generator")
     settings.add_argument(
         "--setting",
         action="append",
@@ -620,8 +625,11 @@ def main(argv: list[str] | None = None, *, out: TextIO | None = None) -> int:
         rule = args.command
         options: dict[str, Any] = {}
         if rule == "generators":
+            from edgar_eval.generators import COMPARISON
+
             _check_generators(args.model)  # before any paid run
-            options = {"only": args.model}
+            # No --model: the default comparison; --all: every row (no limit).
+            options = {"only": () if args.all else args.model or COMPARISON}
         elif rule == "settings":
             if not args.setting:
                 parser.error("name each setting to compare: --setting CHUNKS:BUDGET")

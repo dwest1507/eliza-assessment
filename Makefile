@@ -30,8 +30,9 @@ ENV_FILE := $(BACKEND)/.env
 export $(shell sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' $(ENV_FILE) 2>/dev/null)
 
 # The API key variables a generator's provider needs, read from the table of compared
-# generators (edgar_eval.generators.GENERATORS): `$(GENERATOR_KEYS) MODEL` for one model
-# (none for the default generator), `$(GENERATOR_KEYS) --all` for every one.
+# generators (edgar_eval.generators.GENERATORS): `$(GENERATOR_KEYS) MODEL...` for the
+# models named (none for the default generator), `$(GENERATOR_KEYS) --comparison` for the
+# default comparison's, `$(GENERATOR_KEYS) --all` for every one.
 GENERATOR_KEYS = $(UV) python -m edgar_eval.generators keys
 
 # Stops a recipe unless every variable named in $(1), a shell word list, is set.
@@ -145,14 +146,16 @@ eval-arms: $(INDEX) $(EMBEDDINGS) $(LOCAL_EMBEDDINGS) ## Screen every Arm on Evi
 	$(call require_keys,$$keys JEV_API_KEY)
 	$(UV) python -m edgar_eval.selection arms --split $(SPLIT)
 
-# The generators `make eval-generators` compares: Golden Set version 2's two by default.
-# MODELS="..." names other rows of the table; MODELS= (empty) runs every one.
-MODELS ?= gpt-6-luna claude-haiku-5-5
+# The generators `make eval-generators` compares, all read from the table: with MODELS
+# unset, the default comparison (edgar_eval.generators.COMPARISON); MODELS="..." names
+# other rows; MODELS= (empty) runs every one. The shipped generator always runs.
+MODELS_KEYS = $(if $(filter undefined,$(origin MODELS)),--comparison,$(or $(strip $(MODELS)),--all))
+MODELS_ARGS = $(if $(filter undefined,$(origin MODELS)),,$(or $(foreach m,$(MODELS),--model $(m)),--all))
 
-eval-generators: $(INDEX) ## Answer the split with gpt-6-luna and claude-haiku-5-5 and choose one by the selection rule [MODELS="..."; empty for every generator] (costs money)
-	@keys=$$( ($(GENERATOR_KEYS)) && ($(GENERATOR_KEYS) $(or $(MODELS),--all)) ) || exit 1; \
+eval-generators: $(INDEX) ## Answer the split with the default comparison's generators (edgar_eval.generators.COMPARISON) and choose one by the selection rule [MODELS="..."; empty for every generator] (costs money)
+	@keys=$$( ($(GENERATOR_KEYS)) && ($(GENERATOR_KEYS) $(MODELS_KEYS)) ) || exit 1; \
 	$(call require_keys,$$keys JEV_API_KEY)
-	$(UV) python -m edgar_eval.selection generators --split $(SPLIT) $(foreach m,$(MODELS),--model $(m))
+	$(UV) python -m edgar_eval.selection generators --split $(SPLIT) $(MODELS_ARGS)
 
 # The settings `make eval-settings` compares, each CHUNKS:BUDGET (ADR 0010's grid).
 CANDIDATES ?=
@@ -172,7 +175,7 @@ eval-export: $(RETRIEVAL_REPORT) ## Export the latest eval results (Golden Set v
 judge-study-sample: $(INDEX) ## Draw the judge study's items from the saved reports and write its blind labelling sheet to data/eval/judge_study/ (no provider call) [SEED=...]
 	$(UV) python -m edgar_eval.judge_study sample $(if $(SEED),--seed $(SEED))
 
-judge-study-judge: ## Judge every sampled item: Jev twice, claude-haiku-5-5 once with REFERENCE=1, and the trial LLM claim split with LLM_SPLIT=1; prints the cost first (costs money) [REFERENCE=1] [LLM_SPLIT=1]
+judge-study-judge: ## Judge every sampled item: Jev twice, the reference judge (REFERENCE_MODEL in edgar_eval.judge_study) once with REFERENCE=1, and the trial LLM claim split with LLM_SPLIT=1; prints the cost first (costs money) [REFERENCE=1] [LLM_SPLIT=1]
 	@$(call require_keys,JEV_API_KEY $(if $(or $(REFERENCE),$(LLM_SPLIT)),ANTHROPIC_API_KEY))
 	$(UV) python -m edgar_eval.judge_study judge $(if $(REFERENCE),--reference) $(if $(LLM_SPLIT),--llm-split)
 
