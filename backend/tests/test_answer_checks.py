@@ -361,10 +361,10 @@ No guidance is in the Filings.
         pytest.param("Three risks stand out:", id="colon lead-in"),
         pytest.param("The Sources do not include Honeywell's filings.", id="missing company"),
         pytest.param("Tesla gives no 2026 revenue guidance in its Filings.", id="no guidance"),
-        pytest.param("Apple's and Tesla's fiscal years end on different dates.", id="periods"),
+        pytest.param("Apple's and Tesla's latest Filings cover different periods.", id="periods"),
         pytest.param("GE Capital's FY2014 10-K is a decade old.", id="stale filing"),
         pytest.param("Only Moderna's 2025 10-K is in the Corpus.", id="snapshot trend"),
-        pytest.param("I can't determine Microsoft's revenue trend.", id="absence"),
+        pytest.param("I can't determine Microsoft's revenue trend from the Sources.", id="absence"),
         pytest.param("**Coverage:** Apple's FY2025 10-K only.", id="coverage note"),
     ],
 )
@@ -374,6 +374,176 @@ def test_headings_coverage_gap_wordings_and_colon_lead_ins_make_no_claim(exempt)
     assert [(c.text, c.tags) for c in claims(answer)] == [
         ("Apple outsources manufacturing.", ("S1",)),
         ("Apple sells iPhones.", ()),
+    ]
+
+
+@pytest.mark.parametrize(
+    "wording",
+    [
+        pytest.param(
+            "Not in the Corpus: Wells Fargo is not in the Filings provided, so this answer "
+            "does not cover it.",
+            id="missing company",
+        ),
+        pytest.param(
+            "Stale Filing: the only General Electric Filing is GE Capital's 10-K for FY2014 "
+            "(Report Period 2014-12-31); it does not describe General Electric today, so it "
+            "is left out of this answer.",
+            id="stale filing left out",
+        ),
+        pytest.param(
+            "Stale Filing: a General Electric Filing is GE Capital's 10-K for FY2014 (Report "
+            "Period 2014-12-31); it does not describe General Electric today, so it is cited "
+            "here only as GE Capital's report for FY2014.",
+            id="stale filing cited",
+        ),
+        pytest.param(
+            "Trend unavailable: JPMorgan is a Snapshot Company. The Corpus holds 4 JPMorgan "
+            "Filings, Q1 2025 to Q4 2025 (JPM_10-Q_2025-03-31, JPM_10-Q_2025-06-30, "
+            "JPM_10-Q_2025-09-30, JPM_10-K_2025-12-31), so this answer covers Report Periods "
+            "2025-03-31 to 2025-12-31 only.",
+            id="snapshot trend",
+        ),
+        pytest.param(
+            "No guidance in the Filings: Apple's own guidance is not in the Filings provided; "
+            "the outlook below is drawn from MD&A commentary and risk factors.",
+            id="no guidance",
+        ),
+        pytest.param(
+            "No guidance in the Filings: Companies' own guidance is not in the Filings "
+            "provided; the outlook below is drawn from MD&A commentary and risk factors.",
+            id="no guidance, no Company",
+        ),
+        pytest.param(
+            "Periods differ: the Companies' latest Filings here cover different periods "
+            "(Apple: 10-K FY2025, year to 2025-09-27; Tesla: 10-K FY2025, year to "
+            "2025-12-31), so the comparison is not of the same period.",
+            id="periods differ",
+        ),
+        pytest.param(
+            "NVIDIA's own revenue guidance is not in the Filings provided; the outlook below "
+            "is drawn from MD&A commentary and risk factors.",
+            id="EDA 8.6 guidance",
+        ),
+        pytest.param(
+            "The only General Electric Filing is GE Capital's 10-K for 2014; it does not "
+            "describe General Electric today.",
+            id="EDA 8.6 stale filing",
+        ),
+        pytest.param("JPMorgan is a Snapshot Company.", id="snapshot without its label"),
+        # A fixed wording's second half, written as a sentence of its own.
+        pytest.param(
+            "It does not describe General Electric today, so it is left out of this answer.",
+            id="stale filing, second half",
+        ),
+        pytest.param("So this answer does not cover it.", id="missing company, second half"),
+        pytest.param(
+            "The outlook below is drawn from MD&A commentary and risk factors.",
+            id="no guidance, second half",
+        ),
+        pytest.param("So the comparison is not of the same period.", id="periods, second half"),
+    ],
+)
+def test_every_fixed_coverage_gap_wording_makes_no_claim(wording):
+    answer = f"Apple outsources manufacturing [S1].\n\n{wording}"
+
+    assert [c.text for c in claims(answer)] == ["Apple outsources manufacturing."]
+
+
+def test_a_sentence_opening_with_any_coverage_gap_label_makes_no_claim():
+    from edgar_rag._coverage import LABELS
+
+    for label in LABELS.values():
+        answer = f"Apple outsources manufacturing [S1].\n\n{label}: see below."
+        assert [c.text for c in claims(answer)] == ["Apple outsources manufacturing."], label
+
+
+@pytest.mark.parametrize(
+    "variant",
+    [
+        pytest.param("Wells Fargo is not in the Corpus.", id="not in the Corpus"),
+        pytest.param("The Sources do not include Wells Fargo filings.", id="do not include"),
+        pytest.param("There are no filings for Honeywell.", id="no filings for"),
+        pytest.param("Guidance is not in the Filings.", id="guidance not in the Filings"),
+        pytest.param("The Filings give no 2026 forecast.", id="Filings give no forecast"),
+        pytest.param("The two Companies' Filings cover different periods.", id="periods"),
+        # The periods that differ are the Filings' Report Periods.
+        pytest.param(
+            "The periods differ, so this is not a same-period comparison.", id="the periods"
+        ),
+        pytest.param("Their Report Periods are not aligned.", id="Report Periods"),
+        pytest.param("Tesla's trend cannot be assessed from the Sources.", id="Sources"),
+        pytest.param("Nothing in the excerpts covers Tesla's 2026 outlook.", id="excerpts"),
+        pytest.param("The Corpus lacks Apple's earnings releases.", id="Corpus lacks"),
+        pytest.param("Only Apple's 2025 10-K is available.", id="only a 10-K"),
+        pytest.param("No usable Sources were found for this question.", id="no Sources"),
+        pytest.param("There are no Sources to cite.", id="no Sources to cite"),
+        pytest.param("The Sources therefore cannot answer which took charges.", id="cannot"),
+        pytest.param(
+            "Based on the materials provided, I cannot answer this question.", id="materials"
+        ),
+        pytest.param(
+            "The available materials do not support an assessment of GE today.",
+            id="materials do not support",
+        ),
+        pytest.param("The Financial Facts table has no rows for Citigroup.", id="Financial Facts"),
+        pytest.param("Any list of risks I wrote would not rest on the filings.", id="not rest on"),
+        # A sentence that names a Company missing from the Corpus has nothing to cite.
+        pytest.param("A Honeywell revenue trend is unavailable.", id="missing Company"),
+        pytest.param("I cannot compare Wells Fargo.", id="missing Company, no records word"),
+    ],
+)
+def test_a_plain_coverage_gap_variant_that_speaks_of_the_filings_or_sources_makes_no_claim(
+    variant,
+):
+    answer = f"Apple outsources manufacturing [S1].\n\n{variant}"
+
+    assert [c.text for c in claims(answer)] == ["Apple outsources manufacturing."]
+
+
+@pytest.mark.parametrize(
+    "sentence",
+    [
+        # Issue #89's three: each only looked like a Coverage Gap wording.
+        "Apple's revenue grew only 2% in 2024 on weaker iPhone sales.",
+        "Apple's margin did not change much versus 2023 as costs rose.",
+        "Tesla has no exposure to China tariffs.",
+        # Similar ones about a Company in the Corpus.
+        "Tesla's deliveries rose only in 2025.",
+        "Microsoft's operating margin did not change.",
+        "JPMorgan has no debt maturing in 2026.",
+        "NVIDIA cannot compare its gaming sales with 2023.",
+        "Apple's and Tesla's fiscal years end on different dates.",
+        "Apple's revenue trend is unavailable.",
+        "Apple's revenue grew only 2% in 2024, the same period as Tesla's slowdown.",
+        "Apple has no other sources of revenue.",
+        "Tesla's raw materials costs do not fall.",
+        # What a Source lacks, inside a sentence that says something about a Company.
+        "Both face litigation, but Walmart also reports regulatory findings that Target's "
+        "excerpt does not mention.",
+    ],
+)
+def test_an_uncited_sentence_about_a_company_is_a_claim_even_if_it_looks_like_a_gap(sentence):
+    answer = f"Apple outsources manufacturing [S1].\n\n{sentence}"
+
+    assert [(c.text, c.tags) for c in claims(answer)] == [
+        ("Apple outsources manufacturing.", ("S1",)),
+        (sentence, ()),
+    ]
+
+
+def test_an_uncited_table_row_of_figures_is_a_claim_whatever_its_cells_say():
+    row = "| Sports | $17,619 million | $17,672 million | reported as no change |"
+    answer = f"| Segment | FY2024 | FY2025 | Change |\n|---|---|---|---|\n{row}"
+
+    assert [(c.text, c.tags) for c in claims(answer)] == [(row, ())]
+
+
+def test_a_cited_sentence_stating_a_gap_is_still_judged():
+    answer = "Wells Fargo is not in the Corpus [S1]."
+
+    assert [(c.text, c.tags) for c in claims(answer)] == [
+        ("Wells Fargo is not in the Corpus.", ("S1",))
     ]
 
 
