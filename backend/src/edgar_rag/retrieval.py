@@ -64,7 +64,11 @@ cites only those paragraphs, from the Filing they are new in.
 
 Question text is reduced to quoted terms before it reaches FTS5 `MATCH`, so FTS5
 operators in a question (`NOT`, `NEAR`, `*`, quotes, colons) are searched as words,
-never run.
+never run. The terms leave out generic words ("main", "key") and the phrases that set a
+Section hint ("risks" on the risk route), which match nearly every passage of the
+Section searched: the chunks matching only those words rank after every chunk matching
+the question's other words, so they still fill the budget but never outrank the topic.
+A question with nothing else naming a topic is searched with all its words.
 
 The ranking step can be swapped: `prepare_answer_context` takes an optional `Ranker`,
 which is given the question, every chunk inside the hard filters and the `bm25()`
@@ -561,12 +565,13 @@ def prepare_answer_context(
         )
         facts = _facts.lookup(db, companies, metrics, segments, scope.filings, scope.periods)
         fact_sources, rows = _facts_sources(db, facts)
-        terms = _terms(*(n.words for n in inherited.asked))
+        terms = _terms(*(n.terms for n in inherited.asked))
+        every_word = _terms(*(n.words for n in inherited.asked))
         text_sources, searched = _sources(
             db,
             scope,
             filings,
-            _Search(focus, terms, ranker),
+            _Search(focus, terms, ranker, every_word if every_word != terms else None),
             context_budget,
             explicit=bool(left_out),
             first_number=len(fact_sources) + 1,
@@ -716,12 +721,17 @@ def _terms(*words: Iterable[str]) -> str | None:
 
 @dataclass(frozen=True)
 class _Search:
-    """What retrieval searches for: the question, its FTS5 terms (None if it has none)
-    and the ranker, if any, that replaces `bm25()`."""
+    """What retrieval searches for: the question, its FTS5 terms (None if it has none),
+    the ranker, if any, that replaces `bm25()`, and the terms with the generic and hint
+    words kept (None if they are the same terms)."""
 
     question: str
     terms: str | None
     ranker: Ranker | None = None
+    every_word: str | None = None
+    """Ranked after every chunk the terms match: the chunks matching only a generic or
+    hint word ("risks" in Risk Factors) still fill the budget, but never outrank one
+    matching the question's topic."""
 
 
 @dataclass(frozen=True)
@@ -860,21 +870,30 @@ def _ranked(
             f"AND EXISTS (SELECT 1 FROM chunk_filings f WHERE f.chunk_id = c.id AND {in_place})"
         )
         listing_filter = f"AND {in_place}"
-    params = {"terms": search.terms, "ticker": ticker, "limit": _CANDIDATES_PER_COMPANY}
-    ranking = [
-        row["id"]
-        for row in db.execute(
-            f"""
-            SELECT c.id
-            FROM chunks_fts JOIN chunks c ON c.id = chunks_fts.rowid
-            WHERE chunks_fts MATCH :terms AND c.kind != 'risk_pointer' {company_filter}
-            {place_filter}
-            ORDER BY bm25(chunks_fts), c.id
-            LIMIT :limit
-            """,
-            params,
-        )
-    ]
+    params = {"ticker": ticker, "limit": _CANDIDATES_PER_COMPANY}
+
+    def matching(terms: str) -> list[int]:
+        return [
+            row["id"]
+            for row in db.execute(
+                f"""
+                SELECT c.id
+                FROM chunks_fts JOIN chunks c ON c.id = chunks_fts.rowid
+                WHERE chunks_fts MATCH :terms AND c.kind != 'risk_pointer' {company_filter}
+                {place_filter}
+                ORDER BY bm25(chunks_fts), c.id
+                LIMIT :limit
+                """,
+                params | {"terms": terms},
+            )
+        ]
+
+    ranking = matching(search.terms)
+    if search.every_word is not None and len(ranking) < _CANDIDATES_PER_COMPANY:
+        seen = set(ranking)
+        ranking += [i for i in matching(search.every_word) if i not in seen][
+            : _CANDIDATES_PER_COMPANY - len(ranking)
+        ]
     if search.ranker is not None:
         eligible = tuple(
             row["id"]

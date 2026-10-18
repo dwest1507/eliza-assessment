@@ -18,6 +18,12 @@ Rule-based, with no LLM (ADR 0003). It recognises:
   Cybersecurity Section, Risk Factors and MD&A. Legal proceedings plans Legal
   Proceedings and the Financial Statements, where the contingencies note a stub Item 3
   points to is.
+  The phrase that sets a hint, and the generic words "main", "major", "key", "primary",
+  "principal", "biggest" and "important", leave the message's search terms
+  (`ScopeNamedInMessage.terms`), except the parts of a hint phrase its pattern captures
+  ("interest rate" in "interest rate risk", "cybersecurity" in "cybersecurity risks",
+  and the legal proceedings words, which find the Financial Statements' contingencies
+  note).
 - Named periods: "FY2024", "fiscal 2024", "Q2 FY2025", or a bare year ("in 2023"), read
   as Fiscal Periods. A named period decides which copy of a repeated passage is cited.
 - Change questions: "how has it changed", "how did that change", "what is new", "how
@@ -404,21 +410,27 @@ _MARKET_RISK_KINDS = (
 
 # Each hint plans one or more Sections. In order: a phrase matched by an earlier hint is
 # not read again by a later one, so "interest rate risk" is Market Risk and "cybersecurity
-# risks" the Cybersecurity hint, neither of them Risk Factors alone.
+# risks" the Cybersecurity hint, neither of them Risk Factors alone. A phrase setting a
+# hint leaves the search terms, since nearly every passage of its Section matches it,
+# except the parts its pattern captures, which name a topic inside the Sections planned:
+# the kind of market risk ("interest rate"), and the words of a hint that also plans
+# other Sections, where they are the topic ("cybersecurity" in Risk Factors and MD&A,
+# "litigation" in the Financial Statements).
 _SECTION_HINTS: tuple[tuple[tuple[str, ...], re.Pattern[str]], ...] = tuple(
     (sections, re.compile(pattern, re.I))
     for sections, pattern in (
         (
             ("Market Risk",),
             r"\bmarket\s+risks?\b"
-            rf"|\b{_MARKET_RISK_KINDS}\s+(?:risks?|exposures?|sensitivit(?:y|ies))\b"
+            rf"|\b({_MARKET_RISK_KINDS})\s+(?:risks?|exposures?|sensitivit(?:y|ies))\b"
             r"|\bquantitative\s+and\s+qualitative\s+disclosures?\b",
         ),
         (
             # Item 3 often only points to the contingencies note of the Financial
-            # Statements ("see Note 15"), which states the cases.
+            # Statements ("see Note 15"), which states the cases. Its words are kept as
+            # search terms, since they find that note.
             ("Legal Proceedings", "Financial Statements"),
-            r"\blegal\s+proceedings?\b|\blitigation\b|\blawsuits?\b",
+            r"\b(legal\s+proceedings?|litigation|lawsuits?)\b",
         ),
         (
             ("MD&A",),
@@ -433,7 +445,7 @@ _SECTION_HINTS: tuple[tuple[tuple[str, ...], re.Pattern[str]], ...] = tuple(
             # Item 1C states the risk management and governance, Risk Factors the risks,
             # and the MD&A any incident and its cost (UnitedHealth's Change Healthcare).
             ("Cybersecurity", "Risk Factors", "MD&A"),
-            r"\b(?:cyber(?:[\s-]?(?:security|attacks?|threats?|incidents?))?"
+            r"\b(cyber(?:[\s-]?(?:security|attacks?|threats?|incidents?))?"
             r"|data\s+breach(?:es)?|information\s+security)(?:\s+risks?)?\b",
         ),
         (("Risk Factors",), r"\brisk\s+factors?\b|\brisks?\b"),
@@ -441,14 +453,38 @@ _SECTION_HINTS: tuple[tuple[tuple[str, ...], re.Pattern[str]], ...] = tuple(
 )
 
 
+def _cut(m: re.Match[str]) -> list[tuple[int, int]]:
+    """The spans of a hint phrase outside its captured groups."""
+    kept = sorted(m.span(g) for g in range(1, (m.re.groups or 0) + 1) if m.start(g) >= 0)
+    spans, start = [], m.start()
+    for begin, end in kept:
+        if begin > start:
+            spans.append((start, begin))
+        start = max(start, end)
+    if m.end() > start:
+        spans.append((start, m.end()))
+    return spans
+
+
 def find_section_hints(question: str) -> tuple[str, ...]:
     """The Sections a question's hints plan, each once, in the order of `_SECTION_HINTS`."""
+    return _section_hints(question)[0]
+
+
+def _section_hints(question: str) -> tuple[tuple[str, ...], list[tuple[int, int]]]:
+    """`find_section_hints`, plus the character spans of the words that set them: each
+    hint phrase, less the parts its pattern captures."""
     found: list[str] = []
+    spans: list[tuple[int, int]] = []
     for sections, pattern in _SECTION_HINTS:
-        question, n = pattern.subn(" ", question)
-        if n:
+        matches = list(pattern.finditer(question))
+        if matches:
             found += sections
-    return tuple(dict.fromkeys(found))
+        for m in matches:
+            spans += _cut(m)
+            # Blanked to the same length, so later spans keep their positions.
+            question = question[: m.start()] + " " * (m.end() - m.start()) + question[m.end() :]
+    return tuple(dict.fromkeys(found)), sorted(spans)
 
 
 # --- Named periods -----------------------------------------------------------------------
@@ -608,6 +644,10 @@ _STOPWORDS = frozenset(
     please facing face faced""".split()
 )
 
+# Words that match almost every passage of a Filing ("the main risks", "key customers"):
+# they leave the search terms as stopwords do, but still count as words of the message.
+_GENERIC = frozenset("main major key primary principal biggest important".split())
+
 # Words that name no topic of their own: a follow-up made only of these ("How did that
 # change over the last two years?") asks about the topic of an earlier message.
 _NOT_TOPIC = frozenset(
@@ -633,8 +673,12 @@ class ScopeNamedInMessage:
     window: TimeWindow | None
     periods: tuple[str, ...]
     words: tuple[str, ...]
-    """The message's search terms: its words without Company names, Sector phrases or
-    stopwords."""
+    """The message's words without Company names, Sector phrases or stopwords."""
+    terms: tuple[str, ...]
+    """The message's search terms: its words without generic words (`_GENERIC`) or the
+    phrases that set a Section hint ("risks" on the risk route), which match nearly every
+    passage of the Section searched. When that leaves no word naming a topic, they are
+    all its words, so removing noise never leaves a question unsearched."""
 
     @property
     def names_companies(self) -> bool:
@@ -647,7 +691,7 @@ class ScopeNamedInMessage:
     @property
     def has_topic(self) -> bool:
         """Whether it names something to search for beyond Companies and periods."""
-        return any(w not in _NOT_TOPIC and not w.isdigit() for w in self.words)
+        return _names_topic(self.words)
 
 
 def scope_named_in(
@@ -657,15 +701,23 @@ def scope_named_in(
     Companies in the Corpus and `missing` the curated Companies that are not."""
     companies, sector_phrases, spans = resolve_companies(text, known)
     missing_names, missing_spans = find_missing(text, missing, spans)
+    sections, hint_spans = _section_hints(text)
+    words = _words(_without_spans(text, spans + missing_spans))
+    terms = tuple(
+        w
+        for w in _words(_without_spans(text, _merged(spans + missing_spans + hint_spans)))
+        if w not in _GENERIC
+    )
     return ScopeNamedInMessage(
         text=text,
         companies=companies,
         sector_phrases=sector_phrases,
         missing=missing_names,
-        sections=find_section_hints(text),
+        sections=sections,
         window=find_time_window(text),
         periods=find_periods(text),
-        words=_words(_without_spans(text, spans + missing_spans)),
+        words=words,
+        terms=terms if _names_topic(terms) else words,
     )
 
 
@@ -730,6 +782,21 @@ def inherit_scope(
         sections_from=most_recent(lambda n: bool(n.sections)),
         topic_from=most_recent(lambda n: n.has_topic),
     )
+
+
+def _names_topic(words: Iterable[str]) -> bool:
+    return any(w not in _NOT_TOPIC and not w.isdigit() for w in words)
+
+
+def _merged(spans: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    """Overlapping spans joined into one, so each stretch of text is cut out once."""
+    merged: list[tuple[int, int]] = []
+    for start, end in sorted(spans):
+        if merged and start <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+        else:
+            merged.append((start, end))
+    return merged
 
 
 def _without_spans(text: str, spans: list[tuple[int, int]]) -> str:

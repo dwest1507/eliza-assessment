@@ -1110,6 +1110,37 @@ The Legal Proceedings hint now plans Legal Proceedings and the Financial Stateme
 - **The Section metrics fall, so the Floors are re-recorded** (ADR 0014): recall@10 0.873 → 0.867 and MRR 0.788 → 0.770, hit@10 unchanged at 0.947. Two cases move. In `risk-meta-amzn-legal-proceedings` the expected Amazon Legal Proceedings Source is its stub (the pointer to the note), which is no longer searched, so recall@10 is 0.67. In it and `risk-wmt-tgt-legal-proceedings` a Financial Statements chunk now ranks first and the first expected Source moves to rank 2. The new Floors are hit@10 0.94 (unchanged), recall@10 0.86 and MRR 0.77.
 - **Every shippable Arm, on the rules of #119 and #120:** Evidence Reached is 760 of 939 facts for `fts5`, 760 for `rerank`, 741 for `dense-local` and 793 for `hybrid-local`, and the screen now sends `hybrid-local` and `rerank` on to paid runs. The hosted `dense` and `hybrid` Arms were not re-run (they need an OpenAI key to embed the questions their cache lacks). The "How it works" page is regenerated from these reports (`make eval-export`), so it shows the four Arms run here.
 
+#### Search terms without generic and hint words (#123, 2026-10-18)
+
+On top of #119 and #120. A question's search terms leave out the generic words "main", "major", "key", "primary", "principal", "biggest" and "important", and the phrases that set a Section hint ("risks" on the risk route, "MD&A", "business overview"), since nearly every passage of the Section searched matches them. A hint keeps the words that name a topic inside the Sections it plans: the kind of market risk ("interest rate" in "interest rate risk"), and the words of a hint that also plans other Sections, where they are the topic: "cybersecurity" in the Risk Factors and MD&A the Cybersecurity hint plans, and "legal proceedings" or "litigation" in the Financial Statements, where they find the contingencies note. When nothing naming a topic is left ("What are Apple's main risks?"), the question is searched with all its words, as before.
+
+The words left out still rank, but last: every chunk matching the question's other words ranks first, by `bm25()` over those words alone, and the chunks matching only a generic or hint word follow, by `bm25()` over every word, as before. Two alternatives were measured and dropped:
+
+- **Leaving the words out of the search altogether** (on #117's code: 715 of 939 facts, against 740). The candidates shrank to the chunks matching what was left, often question furniture such as "disclose" and "annual reports", and the risk questions' Sources fell from 23,670 tokens to 20,928, so passages the topic words miss never filled the budget.
+- **Cutting the legal proceedings and cybersecurity words too** (on #120's code: 761 facts and 254 must-state, against 766 and 256 kept). `risk-meta-amzn-legal-proceedings` then ranked Amazon's and Meta's Financial Statements by "disclose", "annual" and "reports" alone, and lost 2 must-state facts of the contingencies note.
+
+`make eval-retrieval ARMS=fts5` on dev, before (#120) and after (free):
+
+| Question type | all facts before | after | must-state before | after |
+|---|---|---|---|---|
+| risk | 289 of 340 | 288 | 94 of 110 | 94 |
+| sector | 265 of 313 | 272 | 96 of 111 | 97 |
+| figure_trend | 104 of 159 | 104 | 34 of 55 | 34 |
+| outlook | 44 of 61 | 44 | 14 of 21 | 14 |
+| missing_company | 36 of 39 | 36 | 9 of 10 | 9 |
+| stale_filing | 22 of 27 | 22 | 8 of 9 | 8 |
+| **all** | **760 of 939 (80.9%)** | **766 (81.6%)** | **255 of 316 (80.7%)** | **256 (81.0%)** |
+
+| | hit@10 | recall@10 | MRR | Source tokens | must-state planning misses | must-state ranking misses |
+|---|---|---|---|---|---|---|
+| before (#120) | 0.947 | 0.867 | 0.770 | 27,953 | 2 | 59 |
+| after | 0.947 | 0.867 | 0.757 | 28,001 | 2 | 58 |
+
+- **Evidence Reached rises, so the step is kept:** 7 facts gained and 1 lost. The gains are in sector questions on the risk route (`sector-software-ai-risks` 3, `sector-health-care-liability-claims` 2, one of them must-state, a Risk Factors ranking miss, `sector-banks-capital-liquidity` 1, `sector-software-cybersecurity` 1), where the topic words ("AI", "product liability", "capital") now outrank "risks". The loss is one Alphabet AI detail (`risk-goog-meta-ai`).
+- **MRR dips, and the Floors are re-recorded.** One case moves: `risk-ko-market-risk`'s 10-K Market Risk is now its fourth Source, behind the Financial Statements of three 10-Qs (their Market Risk is a stub, so they are searched whole), which "risks" no longer ranks below it. The Floors move to MRR 0.75, hit@10 0.94 and recall@10 0.86 unchanged (`make eval-floors`, ADR 0014).
+- **Question furniture is the next noise.** Words such as "disclose", "describe" (already a stopword), "annual" and "report" match much of a Filing too. They are not in the fixed list, so they stay in the search terms. Leaving them out too was tried on #117's code: it reached 3 more facts (1 must-state), too few to justify a word list grown from dev's questions, so it was not kept.
+- **Every shippable Arm, and the "How it works" page.** `retrieval-dev.json` was run again on the shippable Arms (free) and exported with `make eval-export`: `fts5` 766 of 939, `rerank` 767, `dense-local` 741 and `hybrid-local` 797. The screen sends `hybrid-local` and `rerank` on to paid runs and drops `dense-local` (behind at one-sided p = 0.035). The hosted `dense` and `hybrid` Arms were not re-run, as for #117 and #120 (they need an OpenAI key to embed the questions their cache lacks).
+
 ### The version 2 holdout run
 
 Run once on 2026-10-17 (issue #74), after [the version 2 comparisons on dev](#the-version-2-comparisons-on-dev) had confirmed every shipped choice, on Golden Set version 2's 20 holdout cases. It is the same round as those comparisons (code version `756bfadca63122a9`, prompt v7, Golden Set version 2) and the setup that ships: the `fts5` Arm, 600-token chunks and the 32k budget, `gpt-6-luna` at reasoning effort `low`, judged by `jev-1.13.0` at the fact cut-off 0.6. Under [the holdout rule](#the-holdout-rule) it reports and decides nothing: nothing was changed after it, and no case was relabelled. [Version 1's holdout run](#the-holdout-run) stands as recorded.

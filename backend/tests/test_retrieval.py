@@ -656,6 +656,49 @@ def test_a_missing_section_falls_back_to_the_whole_filing(index):
     assert {s.section for s in context.sources} - {"MD&A"}
 
 
+# --- Search terms ------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("question", "topic"),
+    [
+        # A Risk Factors Section's chunks nearly all say "risk", and many say "key" or
+        # "main", so those words would rank passages that never mention the topic.
+        ("What are Tesla's key competition risks?", "competi"),
+        ("What are Target's key competition risks?", "competi"),
+    ],
+)
+def test_on_the_risk_route_the_topic_word_outranks_risk_and_generic_words(index, question, topic):
+    context = prepare_answer_context([Message("user", question)], index, context_budget=2000)
+
+    assert context.query_scope.sections == ("Risk Factors",)
+    in_scope = {f.filing_id for f in context.query_scope.filings}
+    on_topic = {
+        c["id"]
+        for c in _chunks(index, section="Risk Factors")
+        if c["filing_id"] in in_scope and topic in c["text"].lower()
+    }
+    passages = [p for _, p in _passages(context)]
+    assert 0 < len(passages) < len(on_topic)  # more passages on the topic than fit
+    assert all(topic in p.lower() for p in passages), [p[:80] for p in passages]
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "What are Apple's main risks?",
+        "What are the key risk factors for Tesla?",
+        "What is Apple's biggest litigation?",
+        "What are NVIDIA's most important risks?",
+    ],
+)
+def test_a_question_of_only_generic_and_hint_words_still_gets_sources(index, question):
+    context = _ask(index, question)
+
+    assert context.query_scope.sections
+    assert _passages(context)
+
+
 # --- The places searched -----------------------------------------------------------------
 
 
