@@ -398,6 +398,66 @@ def test_an_answer_cut_off_at_the_token_cap_fails_with_no_fact_recall(index):
     assert finished.overall.truncated == 0
 
 
+def test_a_cut_off_answer_whose_fact_judgment_failed_scores_0_and_is_paired(index):
+    """Truncation comes from the stop reason, not from Jev, so a cut-off answer's Fact
+    Recall is 0 even when its Fact Recall judgment failed, and the selection rule pairs
+    it as 0 instead of leaving it out."""
+    import json
+
+    from edgar_eval.generation import evaluate
+    from edgar_eval.selection import Candidate, compare
+
+    fact = "Apple uses outsourcing partners."
+    case = _case("cut-off", "What are the primary risk factors facing Apple?", facts=[fact])
+
+    report = evaluate(
+        [case],
+        FakeModel("Apple relies on outsourcing partners in Asia [S1]. Apple also", "token_cap"),
+        JevJudge(client=FakeJev(fail_on={fact})),
+        index,
+        names={},
+        fact_values=lambda filing_id: [],
+        log_path=None,
+    )
+
+    [result] = report.cases
+    assert result.truncated
+    assert [f.judgment for f in result.judgments.failures] == ["fact_recall"]
+    assert result.fact_recall == 0.0
+    assert report.overall.fact_recall == 0.0
+    data = json.loads(json.dumps(report.to_dict()))
+    assert data["cases"][0]["fact_recall"] == 0.0
+    # The selection rule pairs it as 0 against a shipped run that stated the fact.
+    challenger = Candidate.from_report(data)
+    shipped = Candidate("shipped", {"cut-off": 1.0}, {}, {}, cost_usd=None)
+    comparison = compare(challenger, shipped).fact_recall
+    assert (comparison.paired, comparison.left_out, comparison.losses) == (1, 0, 1)
+
+
+def test_a_cut_off_answer_to_a_case_with_no_must_state_fact_has_no_fact_recall(index):
+    from edgar_eval.generation import evaluate
+
+    details = ["Apple uses outsourcing partners."]
+    cases = [
+        _case("details-only", "What are the primary risk factors facing Apple?", details=details),
+        _case("no-facts", "What are the primary risk factors facing Apple?"),
+    ]
+
+    report = evaluate(
+        cases,
+        FakeModel("Apple relies on outsourcing partners in Asia [S1]. Apple also", "token_cap"),
+        JevJudge(client=FakeJev(fail_on=set(details))),
+        index,
+        names={},
+        fact_values=lambda filing_id: [],
+        log_path=None,
+    )
+
+    assert [r.truncated for r in report.cases] == [True, True]
+    assert [r.fact_recall for r in report.cases] == [None, None]
+    assert report.overall.fact_recall is None
+
+
 def test_a_jev_failure_on_one_fact_keeps_the_cases_checks_and_other_judgments(index):
     from edgar_eval.generation import evaluate
 
@@ -619,6 +679,61 @@ def test_the_report_and_its_summary_show_each_cases_contradicted_claims(index, t
     printed = out.getvalue()
     assert "Answers with a Contradicted Claim: 1 of 1" in printed
     assert "Contradicted Claims in risk-aapl-tsla-jpm: Tesla depends on its CEO." in printed
+
+
+GAP_SENTENCE = (
+    "**No guidance in the Filings: NVIDIA's own guidance is not in the Filings provided; the "
+    "outlook below is drawn from MD&A commentary and risk factors.**"
+)
+"""The no-guidance note of a saved Brief Suite answer that Jev judged contradicted (#86)."""
+GAP_ANSWER = f"NVIDIA's revenue grew in fiscal 2025 [S1]. {GAP_SENTENCE} [S1] [S2]"
+
+
+def _gap_report(index, gaps):
+    from edgar_eval.generation import evaluate
+
+    judge = FakeJudge(verdicts={GAP_SENTENCE: "contradicted"})
+    report = evaluate(
+        [_case("nvda-outlook", "How has NVIDIA's revenue outlook changed?", gaps=gaps)],
+        FakeModel(GAP_ANSWER),
+        judge,
+        index,
+        names={"NVDA": ("NVDA", "NVIDIA")},
+        fact_values=lambda filing_id: [],
+        log_path=None,
+    )
+    return report, judge
+
+
+def test_a_cited_sentence_stating_an_expected_coverage_gap_is_not_sent_to_jev(index):
+    report, judge = _gap_report(index, [("no_guidance", ("NVDA",))])
+
+    [result] = report.cases
+    _, _, claims, _ = judge.asked[0]
+    assert [c.text for c in claims] == ["NVIDIA's revenue grew in fiscal 2025."]
+    # Left out of Faithfulness and recorded, so a reviewer still sees it; the Coverage Gap
+    # check alone scores it.
+    assert [(c.text, c.tags) for c in result.gap_claims] == [(GAP_SENTENCE, ("S1", "S2"))]
+    assert result.coverage_gaps.passed
+    assert result.contradictions.passed
+    assert result.faithfulness == 1.0
+    assert report.overall.answers_contradicted == 0
+    import json
+
+    saved = json.loads(json.dumps(report.to_dict()))["cases"][0]["gap_claims"]
+    assert saved == [
+        {"text": GAP_SENTENCE, "tags": ["S1", "S2"], "heading": "", "table_header": ""}
+    ]
+
+
+def test_a_coverage_gap_sentence_the_case_does_not_expect_still_goes_to_jev(index):
+    report, judge = _gap_report(index, [])
+
+    [result] = report.cases
+    _, _, claims, _ = judge.asked[0]
+    assert GAP_SENTENCE in [c.text for c in claims]
+    assert result.gap_claims == ()
+    assert result.contradictions.claims == (GAP_SENTENCE,)
 
 
 UNCITED_ANSWER = """\
@@ -868,7 +983,7 @@ def test_the_command_answers_through_a_chosen_arm_and_records_it(index, tmp_path
     assert saved["query_api_call"] is True  # so the selection rule never chooses it
 
 
-def _saved_report(index, tmp_path, answer, fact_values):
+def _saved_report(index, tmp_path, answer, fact_values, judge=None, case="risk-aapl-tsla-jpm"):
     """A version 1 generation report written by the command line, as `make eval-generation`
     saved it before version 2 became the default."""
     import io
@@ -881,7 +996,7 @@ def _saved_report(index, tmp_path, answer, fact_values):
         "--golden-set",
         str(GOLDEN_SET_V1),
         "--case",
-        "risk-aapl-tsla-jpm",
+        case,
         "--index",
         str(index),
         "--log",
@@ -890,7 +1005,7 @@ def _saved_report(index, tmp_path, answer, fact_values):
     code = main(
         [*argv, "--json", str(path)],
         model=FakeModel(answer),
-        judge=FakeJudge(),
+        judge=judge or FakeJudge(),
         fact_values=fact_values,
         out=io.StringIO(),
     )
@@ -898,20 +1013,11 @@ def _saved_report(index, tmp_path, answer, fact_values):
     return path, json.loads(path.read_text())
 
 
-class Refuses:
-    """An answer model or judge that must not be called."""
-
-    model = "never"
-
-    def __getattr__(self, name):
-        raise AssertionError(f"called {name} while rescoring")
-
-
 def test_rescoring_redoes_the_figure_check_from_the_saved_answers_alone(index, tmp_path):
     import io
     import json
 
-    from edgar_eval.generation import main
+    from edgar_eval.rescore import main
 
     answer = "Apple outsources manufacturing [S1]. Its revenue was $391.0 billion [S1]."
     # Saved under the old rule: any Financial Fact of Apple's, whichever Filing reports it.
@@ -920,9 +1026,7 @@ def test_rescoring_redoes_the_figure_check_from_the_saved_answers_alone(index, t
 
     out = io.StringIO()
     code = main(
-        ["--rescore", str(path), "--index", str(index)],
-        model=Refuses(),
-        judge=Refuses(),
+        [str(path), "--index", str(index)],
         fact_values=lambda filing_id: [391_035_000_000] if filing_id == APPLE_FY2024_10K else [],
         out=out,
     )
@@ -943,13 +1047,222 @@ def test_rescoring_redoes_the_figure_check_from_the_saved_answers_alone(index, t
     assert "1.00 → 0.00" in out.getvalue()
 
 
+TESLA_GAP = "Tesla's own guidance for 2026 is not in the Filings provided."
+TESLA_GAP_ANSWER = f"Tesla depends on Elon Musk [S1]. {TESLA_GAP} [S1] [S2]"
+"""An answer to outlook-tsla-2026, which expects a "no guidance" Coverage Gap, stating it
+in a cited sentence."""
+
+
+def _saved_before_gap_claims(index, tmp_path, monkeypatch):
+    """A report saved before expected Coverage Gap sentences were kept from Jev, which
+    judged this one contradicted."""
+    from edgar_eval import generation
+
+    with monkeypatch.context() as patch:
+        patch.setattr(generation, "split_gap_claims", lambda found, expected: (list(found), []))
+        return _saved_report(
+            index,
+            tmp_path,
+            TESLA_GAP_ANSWER,
+            lambda filing_id: [],
+            judge=FakeJudge(verdicts={TESLA_GAP: "contradicted"}),
+            case="outlook-tsla-2026",
+        )
+
+
+def test_rescoring_drops_jevs_verdicts_on_expected_coverage_gap_sentences(
+    index, tmp_path, monkeypatch
+):
+    import io
+    import json
+
+    from edgar_eval.rescore import main as rescore_main
+
+    path, before = _saved_before_gap_claims(index, tmp_path, monkeypatch)
+    [case] = before["cases"]
+    assert case["contradictions"]["claims"] == [TESLA_GAP]
+    assert case["faithfulness"] == 0.5
+    assert before["overall"]["answers_contradicted"] == 1
+
+    out = io.StringIO()
+    rescore = [str(path), "--index", str(index)]
+    assert rescore_main(rescore, out=out) == 0
+
+    after = json.loads(path.read_text())
+    [case] = after["cases"]
+    assert [c["claim"] for c in case["judgments"]["claims"]] == ["Tesla depends on Elon Musk."]
+    assert case["gap_claims"] == [
+        {"text": TESLA_GAP, "tags": ["S1", "S2"], "heading": "", "table_header": ""}
+    ]
+    assert case["contradictions"] == {"claims": [], "count": 0, "passed": True}
+    assert case["faithfulness"] == 1.0
+    assert case["passed"] == (
+        not case["truncated"]
+        and not case["citations"]["unknown_tags"]
+        and not case["citations"]["uncited"]
+        and not case["coverage_gaps"]["missing"]
+    )
+    for summary in (after["overall"], after["by_type"]["outlook"]):
+        assert summary["answers_contradicted"] == 0
+        assert summary["faithfulness"] == 1.0
+    printed = out.getvalue()
+    assert "1 Coverage Gap claim kept from Jev" in printed
+    assert "Contradicted Claims 1 → 0" in printed
+
+    # A second rescore finds nothing more to keep from Jev, and changes nothing.
+    assert rescore_main(rescore, out=io.StringIO()) == 0
+    assert json.loads(path.read_text()) == after
+
+
+REFUSAL = "Citigroup is not covered in this answer."
+
+
+def test_rescoring_drops_uncited_claims_the_claim_split_no_longer_makes(
+    index, tmp_path, monkeypatch
+):
+    """Issue #109: a report saved before the claim exemption recognised a refusal counted
+    it an unsupported claim. The rescore splits the stored answer again and drops the
+    uncited claims the split no longer makes, with no Answer Call and no Jev call; an
+    uncited claim the split still makes stays, and so do the cited ones."""
+    import io
+    import json
+
+    from edgar_eval import answer_checks
+    from edgar_eval.rescore import main as rescore_main
+
+    answer = f"Apple outsources manufacturing [S1].\n\nApple sells iPhones.\n\n{REFUSAL}"
+    with monkeypatch.context() as patch:
+        patch.setattr(answer_checks, "_states_gap", lambda sentence: False)
+        path, before = _saved_report(
+            index,
+            tmp_path,
+            answer,
+            lambda filing_id: [],
+            judge=FakeJudge(
+                verdicts={"Apple sells iPhones.": "unsupported", REFUSAL: "unsupported"}
+            ),
+        )
+    [case] = before["cases"]
+    assert [c["claim"] for c in case["judgments"]["claims"]][-1] == REFUSAL
+    assert case["faithfulness"] == pytest.approx(1 / 3)
+
+    out = io.StringIO()
+    rescore = [str(path), "--index", str(index)]
+    assert rescore_main(rescore, out=out) == 0
+
+    after = json.loads(path.read_text())
+    [case] = after["cases"]
+    assert [c["claim"] for c in case["judgments"]["claims"]] == [
+        "Apple outsources manufacturing.",
+        "Apple sells iPhones.",
+    ]
+    assert case["faithfulness"] == 0.5
+    for summary in (after["overall"], *after["by_type"].values()):
+        assert summary["faithfulness"] == 0.5
+    assert "1 uncited claim no longer made dropped; Faithfulness 0.33 → 0.50" in out.getvalue()
+
+    # A second rescore finds nothing more to drop, and changes nothing.
+    assert rescore_main(rescore, out=io.StringIO()) == 0
+    assert json.loads(path.read_text()) == after
+
+
+def _stale_report(index, tmp_path, monkeypatch):
+    """A report saved before the claim exemption recognised its refusal, so a rescore
+    changes it (`test_rescoring_drops_uncited_claims_the_claim_split_no_longer_makes`)."""
+    from edgar_eval import answer_checks
+
+    answer = f"Apple outsources manufacturing [S1].\n\nApple sells iPhones.\n\n{REFUSAL}"
+    with monkeypatch.context() as patch:
+        patch.setattr(answer_checks, "_states_gap", lambda sentence: False)
+        path, _ = _saved_report(
+            index,
+            tmp_path,
+            answer,
+            lambda filing_id: [],
+            judge=FakeJudge(verdicts={"Apple sells iPhones.": "unsupported"}),
+        )
+    return path.read_bytes()
+
+
+ROUND_REPORTS = ("generation-dev.json", "generation-control-dev.json", "brief-suite.json")
+COMPARISON_REPORT = "generation-dev-claude-haiku-5-5.json"
+"""One of #73's comparison reports, which stand as recorded."""
+
+
+def _eval_dir(index, tmp_path, monkeypatch):
+    """A reports directory holding a stale shipped run, Control Run and comparison."""
+    stale = _stale_report(index, tmp_path, monkeypatch)
+    eval_dir = tmp_path / "eval"
+    (eval_dir / "prompt-iterations").mkdir(parents=True)
+    for name in (*ROUND_REPORTS[:2], COMPARISON_REPORT, "prompt-iterations/generation-dev-v6.json"):
+        (eval_dir / name).write_bytes(stale)
+    return eval_dir, stale
+
+
+def test_rescoring_by_default_leaves_a_rounds_comparison_reports_as_recorded(
+    index, tmp_path, monkeypatch
+):
+    """`make eval-rescore` with no REPORTS re-scores the current round's shipped run,
+    Control Run and Brief Suite only: a comparison report of #73's is left untouched."""
+    import io
+
+    from edgar_eval.rescore import main
+
+    eval_dir, stale = _eval_dir(index, tmp_path, monkeypatch)
+    out = io.StringIO()
+
+    assert main(["--dir", str(eval_dir), "--index", str(index)], out=out) == 0
+
+    for name in ROUND_REPORTS[:2]:
+        assert (eval_dir / name).read_bytes() != stale
+        assert f"{eval_dir / name}:" in out.getvalue()
+    for name in (COMPARISON_REPORT, "prompt-iterations/generation-dev-v6.json"):
+        assert (eval_dir / name).read_bytes() == stale
+        assert name not in out.getvalue()
+
+
+def test_rescoring_a_named_report_or_every_report(index, tmp_path, monkeypatch):
+    """A report other than the round's is re-scored when named, by path or by its name
+    in the reports directory, and `--all` (`REPORTS=all`) re-scores every saved one."""
+    import io
+
+    from edgar_eval.rescore import main
+
+    eval_dir, stale = _eval_dir(index, tmp_path, monkeypatch)
+    common = ["--dir", str(eval_dir), "--index", str(index)]
+
+    assert main([COMPARISON_REPORT, *common], out=io.StringIO()) == 0
+    assert (eval_dir / COMPARISON_REPORT).read_bytes() != stale
+    for name in (*ROUND_REPORTS[:2], "prompt-iterations/generation-dev-v6.json"):
+        assert (eval_dir / name).read_bytes() == stale
+
+    assert main(["--all", *common], out=io.StringIO()) == 0
+    for name in (*ROUND_REPORTS[:2], "prompt-iterations/generation-dev-v6.json"):
+        assert (eval_dir / name).read_bytes() != stale
+
+    with pytest.raises(SystemExit):
+        main(["generation-dev-nothing.json", *common], out=io.StringIO())
+
+
+def test_rescoring_with_no_saved_report_says_so(tmp_path):
+    import io
+
+    from edgar_eval.rescore import main
+
+    out = io.StringIO()
+    assert main(["--dir", str(tmp_path)], out=out) == 0
+    assert out.getvalue() == (
+        f"No saved generation or Brief Suite reports to re-score in {tmp_path}.\n"
+    )
+
+
 def test_a_report_saved_before_tiers_and_stop_reasons_still_loads_and_rescores(index, tmp_path):
     """Version 1 reports name no tier, no detail recall and no stop reason: every fact
     was must-state, and no answer was marked truncated."""
     import io
     import json
 
-    from edgar_eval.generation import main
+    from edgar_eval.rescore import main
     from edgar_eval.selection import Candidate
 
     path, saved = _saved_report(index, tmp_path, ANSWER, lambda filing_id: [])
@@ -961,9 +1274,7 @@ def test_a_report_saved_before_tiers_and_stop_reasons_still_loads_and_rescores(i
     path.write_text(json.dumps(saved))
 
     code = main(
-        ["--rescore", str(path), "--index", str(index)],
-        model=Refuses(),
-        judge=Refuses(),
+        [str(path), "--index", str(index)],
         fact_values=lambda filing_id: [],
         out=io.StringIO(),
     )
@@ -980,15 +1291,15 @@ def test_rescoring_refuses_a_report_whose_sources_cannot_be_rebuilt(index, tmp_p
     import io
     import json
 
-    from edgar_eval.generation import main
+    from edgar_eval.rescore import main as rescore_main
 
     path, saved = _saved_report(index, tmp_path, ANSWER, lambda filing_id: [])
     saved["cases"][0]["sources"] += 1  # as if answered from another index
     path.write_text(json.dumps(saved))
 
     with pytest.raises(ValueError, match="risk-aapl-tsla-jpm"):
-        main(
-            ["--rescore", str(path), "--index", str(index)],
+        rescore_main(
+            [str(path), "--index", str(index)],
             fact_values=lambda filing_id: [],
             out=io.StringIO(),
         )
@@ -1002,6 +1313,7 @@ def test_rescoring_rebuilds_each_answer_context_at_the_reports_own_setting(index
     import json
 
     from edgar_eval.generation import main
+    from edgar_eval.rescore import main as rescore_main
 
     path = tmp_path / "generation-dev-budget3000.json"
     argv = ["--case", "trend-tsla-net-income-three-years", "--index", str(index)]
@@ -1014,13 +1326,45 @@ def test_rescoring_rebuilds_each_answer_context_at_the_reports_own_setting(index
     )
     saved = json.loads(path.read_text())
 
-    rescore = ["--rescore", str(path), "--index", str(index)]
-    assert main(rescore, fact_values=lambda filing_id: [], out=io.StringIO()) == 0
+    rescore = [str(path), "--index", str(index)]
+    assert rescore_main(rescore, fact_values=lambda filing_id: [], out=io.StringIO()) == 0
     assert json.loads(path.read_text())["cases"][0]["sources"] == saved["cases"][0]["sources"]
 
     path.write_text(json.dumps(saved | {"chunk_tokens": 300}))
     with pytest.raises(ValueError, match="300-token chunks"):
-        main(rescore, fact_values=lambda filing_id: [], out=io.StringIO())
+        rescore_main(rescore, fact_values=lambda filing_id: [], out=io.StringIO())
+
+
+def test_rescoring_rebuilds_a_report_of_another_chunk_size_from_that_index_beside_it(
+    index, indexed_filings, tmp_path
+):
+    """`make eval-rescore` names the shipped index; a report answered from 300-token chunks
+    is rebuilt from `edgar_rag-chunks300.sqlite` beside it, as `CHUNK_TOKENS=300` built it."""
+    import io
+    import json
+    import shutil
+
+    from edgar_eval.generation import main
+    from edgar_eval.rescore import main as rescore_main
+    from edgar_rag.retrieval import build_index
+
+    shipped = shutil.copy(index, tmp_path / "edgar_rag.sqlite")
+    other = build_index(indexed_filings, tmp_path / "edgar_rag-chunks300.sqlite", chunk_tokens=300)
+    path = tmp_path / "generation-dev-chunks300.json"
+    argv = ["--case", "trend-tsla-net-income-three-years", "--log", str(tmp_path / "l")]
+    main(
+        [*argv, "--index", str(other), "--json", str(path)],
+        model=FakeModel(ANSWER),
+        judge=FakeJudge(),
+        fact_values=lambda filing_id: [],
+        out=io.StringIO(),
+    )
+    saved = json.loads(path.read_text())
+    assert saved["chunk_tokens"] == 300
+
+    rescore = [str(path), "--index", str(shipped)]
+    assert rescore_main(rescore, fact_values=lambda filing_id: [], out=io.StringIO()) == 0
+    assert json.loads(path.read_text()) == saved
 
 
 def test_a_report_saved_before_contradicted_claims_were_counted_still_loads(index, tmp_path):
@@ -1029,7 +1373,7 @@ def test_a_report_saved_before_contradicted_claims_were_counted_still_loads(inde
     import io
     import json
 
-    from edgar_eval.generation import main
+    from edgar_eval.rescore import main as rescore_main
     from edgar_eval.selection import Candidate
 
     path, saved = _saved_report(index, tmp_path, ANSWER, lambda filing_id: [])
@@ -1042,8 +1386,8 @@ def test_a_report_saved_before_contradicted_claims_were_counted_still_loads(inde
 
     for report in (saved, old):
         path.write_text(json.dumps(report))
-        rescore = ["--rescore", str(path), "--index", str(index)]
-        assert main(rescore, fact_values=lambda filing_id: [], out=io.StringIO()) == 0
+        rescore = [str(path), "--index", str(index)]
+        assert rescore_main(rescore, fact_values=lambda filing_id: [], out=io.StringIO()) == 0
         rescored = json.loads(path.read_text())
         assert rescored == report  # nothing to change: its figures were already checked
         candidate = Candidate.from_report(rescored)
@@ -1057,7 +1401,7 @@ def test_a_report_saved_before_judgment_failures_were_recorded_still_loads(index
     import json
 
     from edgar_eval import selection
-    from edgar_eval.generation import main
+    from edgar_eval.rescore import main as rescore_main
 
     path, saved = _saved_report(index, tmp_path, ANSWER, lambda filing_id: [])
     for case in saved["cases"]:
@@ -1066,8 +1410,8 @@ def test_a_report_saved_before_judgment_failures_were_recorded_still_loads(index
         del summary["judgments_failed"]
     path.write_text(json.dumps(saved))
 
-    rescore = ["--rescore", str(path), "--index", str(index)]
-    assert main(rescore, fact_values=lambda filing_id: [], out=io.StringIO()) == 0
+    rescore = [str(path), "--index", str(index)]
+    assert rescore_main(rescore, fact_values=lambda filing_id: [], out=io.StringIO()) == 0
     candidate = selection.Candidate.from_report(json.loads(path.read_text()))
     assert candidate.fact_recall == {"risk-aapl-tsla-jpm": saved["cases"][0]["fact_recall"]}
     choice = path.with_name("arm-choice-dev.json")
@@ -1214,14 +1558,14 @@ def test_rescoring_reads_the_golden_set_version_each_report_records(index, tmp_p
     import io
     import json
 
-    from edgar_eval.generation import main
+    from edgar_eval.rescore import main as rescore_main
 
     path, saved = _saved_report(index, tmp_path, ANSWER, lambda filing_id: [])
     del saved["golden_set_version"]
     path.write_text(json.dumps(saved))
 
-    rescore = ["--rescore", str(path), "--index", str(index)]
-    assert main(rescore, fact_values=lambda filing_id: [], out=io.StringIO()) == 0
+    rescore = [str(path), "--index", str(index)]
+    assert rescore_main(rescore, fact_values=lambda filing_id: [], out=io.StringIO()) == 0
     assert json.loads(path.read_text()) == saved
 
 

@@ -857,7 +857,10 @@ function GeneratorChoiceTable({
             directional: one-sided, at thresholds fixed before running. Under each verdict, the mean
             paired difference (challenger minus shipped) and its 95% bootstrap interval, shown and
             not decided on. If the Control Run came out ahead of the shipped run, the comparison
-            would be inconclusive and the shipped generator would stand.
+            would be inconclusive and the shipped generator would stand. This comparison was scored
+            on the earlier measurement and stands as recorded: it set the challenger’s run against a
+            shipped run and Control Run scored before the measurement fixes, not against the newer
+            ones in the answers table.
           </>
         ) : (
           <>

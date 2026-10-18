@@ -4,11 +4,12 @@ generator is one edit to that table.
 
 Everything that depends on a generator reads the table: the answer cost
 (`answer_cost`), the implementation the generation harness answers with
-(`answer_model`), the list `make eval-generators` runs, and the API key the Makefile
-checks for before a paid run:
+(`answer_model`), the generators `make eval-generators` runs by default (`COMPARISON`,
+beside the table), and the API key the Makefile checks for before a paid run:
 
-    python -m edgar_eval.generators keys [MODEL...]   # the keys those models' providers need
-    python -m edgar_eval.generators keys --all        # every compared generator's keys
+    python -m edgar_eval.generators keys [MODEL...]     # the keys those models' providers need
+    python -m edgar_eval.generators keys --comparison   # the default comparison's keys
+    python -m edgar_eval.generators keys --all          # every compared generator's keys
 
 With no MODEL, the default generator is `OPENAI_MODEL`, else the shipped one (the
 table's first row). A model not in the table is refused: it has no provider and no
@@ -29,6 +30,7 @@ from edgar_rag.answer_model import AnswerModel
 
 __all__ = [
     "ANTHROPIC",
+    "COMPARISON",
     "GENERATORS",
     "OPENAI",
     "Generator",
@@ -99,11 +101,16 @@ Context stays within the 32k context budget). Reasoning and thinking tokens are 
 output and are already counted in the output tokens. Every input token is priced at the
 full rate, ignoring cached input, so a cost is an upper bound.
 
-Golden Set version 1 compared the first four; version 2 compares `gpt-6-luna` with
-`claude-haiku-5-5` only, which is what `make eval-generators` runs unless `MODELS=` names
-other rows (or is empty, for every row).
-The version 1 rows stay at their prices, so a version 1 run is still accepted and priced
-as its saved reports were."""
+Golden Set version 1 compared the first four; version 2 compares the rows in
+`COMPARISON`. The version 1 rows stay at their prices, so a version 1 run is still
+accepted and priced as its saved reports were."""
+
+COMPARISON: tuple[str, ...] = ("gpt-6-luna", "claude-haiku-5-5")
+"""The generators the comparison runs by default, the shipped one first: Golden Set
+version 2's, `gpt-6-luna` against `claude-haiku-5-5`. `python -m edgar_eval.selection
+generators` (and so `make eval-generators`) runs these unless `--model` names other rows
+(`MODELS="..."`) or `--all` asks for every row (`MODELS=`, empty); the shipped generator
+always runs, as the shipped run and the Control Run."""
 
 
 def generator(model: str | None = None) -> Generator | None:
@@ -148,9 +155,17 @@ def main(argv: list[str] | None = None, *, out: TextIO | None = None) -> int:
     keys = commands.add_parser("keys", help="print the API key variables a run needs")
     keys.add_argument("model", nargs="*", help="the generators (default: the default one)")
     keys.add_argument("--all", action="store_true", help="every compared generator")
+    keys.add_argument(
+        "--comparison", action="store_true", help="the generators compared by default"
+    )
     args = parser.parse_args(argv)
 
-    rows = GENERATORS if args.all else tuple(_require(m) for m in args.model or [None])
+    if args.all:
+        rows = GENERATORS
+    elif args.comparison:
+        rows = tuple(_require(m) for m in COMPARISON)
+    else:
+        rows = tuple(_require(m) for m in args.model or [None])
     print("\n".join(dict.fromkeys(g.provider.key_env_var for g in rows)), file=out)
     return 0
 

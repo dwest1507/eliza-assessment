@@ -15,13 +15,14 @@ Two judgments, each a narrow question over the state it needs:
   the generation harness scores Fact Recall on the must-state ones and detail recall on
   the details (`edgar_eval.generation.CaseResult`).
 - **Faithfulness.** The answer's claims (`edgar_eval.answer_checks.claims`: every
-  sentence but its headings, Coverage Gap wordings and lead-ins) are grouped by the
-  Sources they cite. One request per group: the state is those Sources' text, and each
-  claim is a Choice between supported, unsupported and contradicted. Beside the claim,
-  marked as context and not judged, go its nearest heading and, for a table row, the
-  table's header row, so "it" and a row of figures keep their meaning; each verdict
-  records them. A claim citing no Source of the turn, an uncited sentence among them,
-  is unsupported and never sent.
+  sentence but its headings, Coverage Gap wordings and lead-ins; the harness keeps from
+  the judge a cited sentence stating one of the case's expected Coverage Gaps,
+  `split_gap_claims`) are grouped by the Sources they cite. One request per group: the
+  state is those Sources' text, and each claim is a Choice between supported,
+  unsupported and contradicted. Beside the claim, marked as context and not judged, go
+  its nearest heading and, for a table row, the table's header row, so "it" and a row
+  of figures keep their meaning; each verdict records them. A claim citing no Source of
+  the turn, an uncited sentence among them, is unsupported and never sent.
   Faithfulness is the share of claims supported by the Sources they cite.
 
 Each request is one judgment: the Fact Recall of the answer, or the Faithfulness of one
@@ -61,6 +62,7 @@ __all__ = [
     "JevJudge",
     "JudgmentFailure",
     "Judgments",
+    "faithfulness_score",
 ]
 
 JEV_MODEL = "jev-1.13.0"
@@ -158,6 +160,16 @@ class JudgmentFailure:
     error: str
 
 
+def faithfulness_score(verdicts: Sequence[str], *, failed: bool) -> float | None:
+    """Faithfulness from Jev's verdicts on an answer's claims: the share judged
+    supported, or None if there is no claim or the judgment `failed`. The rule is stated
+    here only: `Judgments.faithfulness` and the offline re-score (`edgar_eval.rescore`)
+    read it."""
+    if not verdicts or failed:
+        return None
+    return sum(v == "supported" for v in verdicts) / len(verdicts)
+
+
 @dataclass(frozen=True)
 class Judgments:
     facts: tuple[FactJudgment, ...]
@@ -184,9 +196,9 @@ class Judgments:
     def faithfulness(self) -> float | None:
         """The share of claims their cited Sources support, or None if there is no claim
         or any claim's judgment failed."""
-        if not self.claims or self._failed("faithfulness"):
-            return None
-        return sum(c.verdict == "supported" for c in self.claims) / len(self.claims)
+        return faithfulness_score(
+            [c.verdict for c in self.claims], failed=self._failed("faithfulness")
+        )
 
     @property
     def cost_usd(self) -> float:

@@ -217,6 +217,37 @@ def test_a_run_whose_fact_judgment_failed_states_no_fact_and_is_listed(index):
     assert [(f.run, f.error) for f in case.judgment_failures] == [(5, "fact_recall: Timeout: slow")]
 
 
+def test_a_cut_off_run_states_no_fact_by_the_harness_rule(index):
+    """The Brief Suite counts a fact stated by `CaseResult.facts_stated`, so a run cut off
+    at the token cap states none, even one Jev judged stated."""
+
+    class CutOffInRun5(RunModel):
+        def stream(self, messages):
+            for part in super().stream(messages):
+                if isinstance(part, Usage) and self.calls[messages[-1].content] == 5:
+                    part = Usage(part.input_tokens, part.output_tokens, stop_reason="token_cap")
+                yield part
+
+    from edgar_eval.brief_suite import evaluate_brief_suite
+
+    report = evaluate_brief_suite(
+        [_case("brief-apple", [(OUTSOURCES, REACHED)])],
+        CutOffInRun5(),
+        RunJudge(stated={OUTSOURCES: {1, 2, 3, 5}}),
+        index,
+        runs=5,
+        names={},
+        fact_values=lambda filing_id: [],
+        log_path=None,
+        workers=1,
+    )
+
+    [case] = report.cases
+    assert case.truncated_runs == (5,)
+    assert case.facts[0].stated_runs == 3  # run 5 was judged stated, but was cut off
+    assert not case.passed
+
+
 def _suite_file(tmp_path):
     """A Brief Suite file of two made-up cases, so the command runs no drafted case."""
 
@@ -368,3 +399,86 @@ def test_the_golden_set_still_runs_once_and_refuses_several_runs(index, tmp_path
             fact_values=lambda filing_id: [],
             out=io.StringIO(),
         )
+
+
+GUIDANCE_GAP = "Apple's own guidance is not in the Filings provided."
+
+
+class GapModel:
+    """Answers with a claim about Apple and a cited "no guidance" Coverage Gap sentence."""
+
+    model = "gpt-6-luna"
+
+    def stream(self, messages):
+        yield f"Apple outsources manufacturing to partners in Asia [S1]. {GUIDANCE_GAP} [S1]"
+        yield Usage(input_tokens=20_000, output_tokens=1_000, stop_reason="complete")
+
+
+class GapJudge:
+    """States every fact, and judges the guidance sentence contradicted by its Sources."""
+
+    def judge(self, answer, required_facts, claims, sources):
+        return Judgments(
+            facts=tuple(FactJudgment(f, 1.0) for f in required_facts),
+            claims=tuple(
+                ClaimJudgment(
+                    c.text, c.tags, "contradicted" if "guidance" in c.text else "supported", {}
+                )
+                for c in claims
+            ),
+            model=JEV_MODEL,
+            requests=1,
+            input_tokens=1_000,
+        )
+
+
+def test_rescoring_a_brief_suite_report_drops_jevs_verdicts_on_its_gap_claims(
+    index, tmp_path, monkeypatch
+):
+    """A Brief Suite report saved before expected Coverage Gap sentences were kept from
+    Jev: its gap sentence was judged contradicted in every run, failing the case. The
+    rescore drops those verdicts, with no Answer Call and no Jev call, and the case
+    passes."""
+    from edgar_eval import generation, rescore
+
+    suite = json.loads(_suite_file(tmp_path).read_text())
+    [apple] = [c for c in suite["cases"] if c["id"] == "brief-apple"]
+    apple["expected_coverage_gaps"] = [{"kind": "no_guidance", "companies": ["AAPL"]}]
+    suite_path = tmp_path / "brief_suite.json"
+    suite_path.write_text(json.dumps(suite | {"cases": [apple]}))
+    path = tmp_path / "brief-suite.json"
+    argv = ["--brief-suite", str(suite_path), "--index", str(index)]
+    with monkeypatch.context() as patch:
+        patch.setattr(generation, "split_gap_claims", lambda found, expected: (list(found), []))
+        generation.main(
+            [*argv, "--log", str(tmp_path / "l"), "--json", str(path)],
+            model=GapModel(),
+            judge=GapJudge(),
+            fact_values=lambda filing_id: [],
+            out=io.StringIO(),
+        )
+    before = json.loads(path.read_text())
+    assert before["cases_passed"] == 0
+    assert [c["run"] for c in before["cases"][0]["contradicted"]] == [1, 2, 3, 4, 5]
+
+    out = io.StringIO()
+    code = rescore.main(
+        [str(path), "--brief-suite", str(suite_path), "--index", str(index)],
+        fact_values=lambda filing_id: [],
+        out=out,
+    )
+
+    assert code == 0
+    after = json.loads(path.read_text())
+    [case] = after["cases"]
+    assert case["contradicted"] == [] and case["passed"] is True
+    assert after["cases_passed"] == 1
+    for run in after["run_reports"]:
+        [result] = run["cases"]
+        assert [g["text"] for g in result["gap_claims"]] == [GUIDANCE_GAP]
+        assert result["contradictions"]["count"] == 0
+        assert run["overall"]["answers_contradicted"] == 0
+    printed = out.getvalue()
+    assert "5 Coverage Gap claims kept from Jev; Contradicted Claims 5 → 0" in printed
+    assert "cases passed 0 → 1" in printed
+    assert "0 uncited claims no longer made dropped" in printed

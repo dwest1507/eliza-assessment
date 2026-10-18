@@ -9,8 +9,10 @@ Call to the generator under test. The answer is then scored three ways:
 - **By Jev** (`edgar_eval.judge`), pinned to an exact version: whether the answer
   states each of the case's Required Facts, and Faithfulness of each claim to the
   Sources it cites. Fact Recall is scored on the must-state facts only; detail recall,
-  on the details, is reported beside it and decides nothing. Any claim Jev
-  judges contradicted by its Sources, a Contradicted Claim, fails the answer
+  on the details, is reported beside it and decides nothing. A cited sentence
+  stating one of the case's expected Coverage Gaps is kept from Jev and scored by the
+  Coverage Gap check alone (`split_gap_claims`; the case records it in `gap_claims`).
+  Any claim Jev judges contradicted by its Sources, a Contradicted Claim, fails the answer
   (`ContradictionCheck`), beside the citation and Coverage Gap checks in code, whatever
   its Faithfulness.
   A judgment Jev fails to make is recorded in its case, which keeps its code checks
@@ -47,10 +49,8 @@ the key of the generator's provider (`OPENAI_API_KEY` or `ANTHROPIC_API_KEY`), a
 costs money:
 about a third of a cent per case with `gpt-6-luna`, Jev included.
 
-`--rescore REPORT...` (`make eval-rescore`) instead redoes the figure check of saved
-reports from their stored answers, in place, with no Answer Call and no Jev call
-(`rescore_figures`). A changed check is a fixed measurement, not a new choice, so
-rescoring is allowed on the holdout.
+A saved report is re-scored offline, with no Answer Call and no Jev call, by
+`edgar_eval.rescore` (`make eval-rescore`), which applies the rules stated here.
 
 A Golden Set report records the round it was run in (`current_round`): the code version
 (a digest of the backend's source, `code_version`), the prompt version and the Golden
@@ -85,6 +85,7 @@ from edgar_eval.answer_checks import (
     check_figures,
     check_structure,
     claims,
+    split_gap_claims,
 )
 from edgar_eval.generators import answer_cost, answer_model
 from edgar_eval.judge import FACT_CUTOFF, Evidence, Judgments
@@ -94,7 +95,6 @@ from edgar_rag.corpus import DEFAULT_SECTOR_TABLE
 from edgar_rag.golden_set import (
     DEFAULT_BRIEF_SUITE,
     DEFAULT_GOLDEN_SET,
-    GOLDEN_SET_FILES,
     GOLDEN_SET_V1,
     GOLDEN_SET_V2,
     GoldenCase,
@@ -119,12 +119,14 @@ __all__ = [
     "GenerationReport",
     "Judge",
     "Summary",
+    "answer_passes",
+    "check_answer_figures",
     "code_version",
     "company_names",
     "current_round",
     "evaluate",
     "main",
-    "rescore_figures",
+    "mean_score",
 ]
 
 
@@ -149,6 +151,12 @@ class ContradictionCheck:
     not averaged away."""
 
     claims: tuple[str, ...]
+
+    @classmethod
+    def from_verdicts(cls, judged: Iterable[tuple[str, str]]) -> ContradictionCheck:
+        """The check from each judged claim and Jev's verdict on it: a CaseResult's
+        judgments, or a saved report's stored verdicts."""
+        return cls(tuple(claim for claim, verdict in judged if verdict == "contradicted"))
 
     @property
     def count(self) -> int:
@@ -188,6 +196,10 @@ class CaseResult:
     """Evidence Reached for each Required Fact, in the case's order: whether its evidence
     quote is in the text of the Answer Context's Sources. Empty in reports saved before
     it was recorded."""
+    gap_claims: tuple[Claim, ...] = ()
+    """The cited claims stating one of the case's expected Coverage Gaps
+    (`edgar_eval.answer_checks.split_gap_claims`): kept from Jev, so out of Faithfulness and
+    the Contradicted Claims, and scored by the Coverage Gap check alone."""
 
     @property
     def truncated(self) -> bool:
@@ -196,31 +208,59 @@ class CaseResult:
 
     @property
     def passed(self) -> bool:
-        """Whether the answer passes: not truncated, every citation valid, every
-        expected Coverage Gap stated, and no Contradicted Claim."""
-        gaps = self.coverage_gaps is None or self.coverage_gaps.passed
-        return not self.truncated and self.citations.passed and gaps and self.contradictions.passed
+        """Whether the answer passes (`answer_passes`)."""
+        return answer_passes(
+            truncated=self.truncated,
+            citations=self.citations,
+            coverage_gaps=self.coverage_gaps,
+            contradictions=self.contradictions,
+        )
+
+    @property
+    def facts_stated(self) -> tuple[bool, ...] | None:
+        """Whether the answer counts as stating each Required Fact, in the case's order,
+        or None when their judgment failed. A truncated answer states none, judged or
+        not: a cut-off answer can't score as complete, and truncation comes from the stop
+        reason, not from Jev. The truncation rule is stated here only: Fact Recall and
+        the Brief Suite read it."""
+        if self.truncated:
+            return (False,) * len(self._tiers)
+        return self._judged
 
     @property
     def fact_recall(self) -> float | None:
-        """The share of must-state Required Facts stated, or None if the case has none
-        or their judgment failed. A truncated answer's is 0: a cut-off answer can't
-        score as complete."""
-        recall = self._recall("must_state")
-        return 0.0 if self.truncated and recall is not None else recall
+        """The share of must-state Required Facts stated (`facts_stated`), so 0 for a
+        truncated answer. None if the case has none, or if their judgment failed for an
+        answer that was not cut off."""
+        return self._share(self.facts_stated, "must_state")
 
     @property
     def detail_recall(self) -> float | None:
-        """The share of detail Required Facts stated, or None if the case has none or
-        their judgment failed."""
-        return self._recall("detail")
+        """The share of detail Required Facts Jev judged stated, or None if the case has
+        none or their judgment failed."""
+        return self._share(self._judged, "detail")
 
-    def _recall(self, tier: Tier) -> float | None:
-        if self.judgments.fact_recall is None:  # no fact, or their judgment failed
+    @property
+    def _judged(self) -> tuple[bool, ...] | None:
+        """Jev's verdict on each Required Fact, or None when their judgment failed."""
+        if any(f.judgment == "fact_recall" for f in self.judgments.failures):
             return None
-        tiers = self.fact_tiers or ("must_state",) * len(self.judgments.facts)
-        stated = [f.stated for f, t in zip(self.judgments.facts, tiers, strict=True) if t == tier]
-        return sum(stated) / len(stated) if stated else None
+        return tuple(f.stated for f in self.judgments.facts)
+
+    @property
+    def _tiers(self) -> tuple[Tier, ...]:
+        """Each Required Fact's tier, in the case's order: every one must-state in a
+        version 1 report, which recorded none."""
+        if self.fact_tiers:
+            return self.fact_tiers
+        failed = [f.items for f in self.judgments.failures if f.judgment == "fact_recall"]
+        return ("must_state",) * len(failed[0] if failed else self.judgments.facts)
+
+    def _share(self, stated: tuple[bool, ...] | None, tier: Tier) -> float | None:
+        if stated is None:
+            return None
+        in_tier = [s for s, t in zip(stated, self._tiers, strict=True) if t == tier]
+        return sum(in_tier) / len(in_tier) if in_tier else None
 
     @property
     def faithfulness(self) -> float | None:
@@ -228,9 +268,29 @@ class CaseResult:
 
     @property
     def contradictions(self) -> ContradictionCheck:
-        return ContradictionCheck(
-            tuple(c.claim for c in self.judgments.claims if c.verdict == "contradicted")
-        )
+        return ContradictionCheck.from_verdicts((c.claim, c.verdict) for c in self.judgments.claims)
+
+
+def answer_passes(
+    *,
+    truncated: bool,
+    citations: CitationCheck,
+    coverage_gaps: CoverageGapCheck | None,
+    contradictions: ContradictionCheck,
+) -> bool:
+    """Whether an answer passes: not truncated, every citation valid, every expected
+    Coverage Gap stated (`coverage_gaps` is None when the case expects none), and no
+    Contradicted Claim. The rule is stated here only: `CaseResult.passed` and the offline
+    re-score (`edgar_eval.rescore`) read it."""
+    gaps = coverage_gaps is None or coverage_gaps.passed
+    return not truncated and citations.passed and gaps and contradictions.passed
+
+
+def mean_score(values: Iterable[float | None]) -> float | None:
+    """The mean of a score over the cases that have one, or None if none has: how a
+    summary averages a score (`Summary`), here and in the offline re-score."""
+    present = [v for v in values if v is not None]
+    return fmean(present) if present else None
 
 
 @dataclass(frozen=True)
@@ -404,6 +464,7 @@ def _run_case(
     source_text = normalise_whitespace("\n".join(s.text for s in context.sources))
     covered = {s.ticker: names.get(s.ticker, (s.ticker,)) for s in context.sources}
     gaps = case.expected_coverage_gaps
+    judged, gap_claims = split_gap_claims(claims(answer), gaps)
     return CaseResult(
         case_id=case.id,
         question_type=case.question_type,
@@ -417,11 +478,9 @@ def _run_case(
         first_token_s=record.first_token_s,
         cost_usd=answer_cost(record.model, record.input_tokens, record.output_tokens),
         citations=check_citations(answer, passages),
-        figures=_check_figures(answer, context.sources, fact_values),
+        figures=check_answer_figures(answer, context.sources, fact_values),
         coverage_gaps=check_coverage_gaps(answer, gaps, names) if gaps else None,
-        judgments=judge.judge(
-            answer, [f.fact for f in case.required_facts], claims(answer), evidence
-        ),
+        judgments=judge.judge(answer, [f.fact for f in case.required_facts], judged, evidence),
         structure=check_structure(answer, covered),
         fact_tiers=tuple(f.tier for f in case.required_facts),
         stop_reason=record.stop_reason,
@@ -429,12 +488,15 @@ def _run_case(
         evidence_reached=tuple(
             normalise_whitespace(f.evidence) in source_text for f in case.required_facts
         ),
+        gap_claims=tuple(gap_claims),
     )
 
 
-def _check_figures(answer: str, sources: Sequence[Source], fact_values: FactValues) -> FigureCheck:
+def check_answer_figures(
+    answer: str, sources: Sequence[Source], fact_values: FactValues
+) -> FigureCheck:
     """The figure check against the turn's Sources: their passages, and the Financial
-    Facts of each one's Filing."""
+    Facts of each one's Filing. The harness and the offline re-score both run it."""
     return check_figures(
         answer,
         {s.number: s.text for s in sources},
@@ -443,83 +505,32 @@ def _check_figures(answer: str, sources: Sequence[Source], fact_values: FactValu
 
 
 def _summarise(results: Sequence[CaseResult]) -> Summary:
-    def mean(values: Iterable[float | None]) -> float | None:
-        present = [v for v in values if v is not None]
-        return fmean(present) if present else None
-
     costs = [r.cost_usd for r in results]
     priced = None if not results or None in costs else costs
     return Summary(
         cases=len(results),
-        citations_valid=mean(r.citations.passed for r in results) or 0.0,
-        figures_exact=mean(r.figures.passed for r in results) or 0.0,
-        coverage_gaps_stated=mean(
+        citations_valid=mean_score(r.citations.passed for r in results) or 0.0,
+        figures_exact=mean_score(r.figures.passed for r in results) or 0.0,
+        coverage_gaps_stated=mean_score(
             r.coverage_gaps.passed if r.coverage_gaps else None for r in results
         ),
-        structure_followed=mean(r.structure.passed for r in results) or 0.0,
-        mean_words=mean(r.structure.words for r in results) or 0.0,
-        fact_recall=mean(r.fact_recall for r in results),
-        detail_recall=mean(r.detail_recall for r in results),
-        faithfulness=mean(r.faithfulness for r in results),
+        structure_followed=mean_score(r.structure.passed for r in results) or 0.0,
+        mean_words=mean_score(r.structure.words for r in results) or 0.0,
+        fact_recall=mean_score(r.fact_recall for r in results),
+        detail_recall=mean_score(r.detail_recall for r in results),
+        faithfulness=mean_score(r.faithfulness for r in results),
         answers_contradicted=sum(not r.contradictions.passed for r in results),
         mean_cost_usd=fmean(priced) if priced else None,
         total_cost_usd=sum(priced) if priced else None,
-        mean_latency_s=mean(r.latency_s for r in results) or 0.0,
+        mean_latency_s=mean_score(r.latency_s for r in results) or 0.0,
         max_latency_s=max((r.latency_s for r in results), default=0.0),
-        mean_first_token_s=mean(r.first_token_s for r in results),
-        mean_input_tokens=mean(r.input_tokens for r in results),
-        mean_output_tokens=mean(r.output_tokens for r in results),
+        mean_first_token_s=mean_score(r.first_token_s for r in results),
+        mean_input_tokens=mean_score(r.input_tokens for r in results),
+        mean_output_tokens=mean_score(r.output_tokens for r in results),
         judge_cost_usd=sum(r.judgments.cost_usd for r in results),
         truncated=sum(r.truncated for r in results),
         judgments_failed=sum(len(r.judgments.failures) for r in results),
     )
-
-
-def rescore_figures(
-    report: dict,
-    cases: Iterable[GoldenCase],
-    index: str | Path,
-    *,
-    fact_values: FactValues,
-    prepare: Prepare = prepare_answer_context,
-) -> dict:
-    """A saved report (`GenerationReport.to_dict`) with its figure check redone from its
-    stored answers, and its figures-exact scores recomputed. Nothing else changes.
-
-    A report stores each answer but not its Sources, so each case's Answer Context is
-    prepared again through `prepare`, the Arm the report was answered through, at the
-    context budget the report records (ADR 0010). That is deterministic and makes no
-    Answer Call and no Jev call; it raises ValueError when the report was answered from
-    an index of another chunk size, or when a case's Sources no longer number what they
-    did, since its answer then cites Sources it was never given.
-    """
-    chunk_tokens = report.get("chunk_tokens")
-    if chunk_tokens is not None and chunk_tokens != index_chunk_tokens(index):
-        raise ValueError(
-            f"the report was answered from {chunk_tokens}-token chunks, and {index} holds "
-            f"{index_chunk_tokens(index)}-token chunks"
-        )
-    budget = report.get("context_budget", CONTEXT_BUDGET_TOKENS)
-    by_id = {c.id: c for c in cases}
-    rescored = json.loads(json.dumps(report))
-    for case in rescored["cases"]:
-        context = prepare(conversation(by_id[case["case_id"]]), Path(index), context_budget=budget)
-        if len(context.sources) != case["sources"]:
-            raise ValueError(
-                f"{case['case_id']}: the Answer Context now has {len(context.sources)} "
-                f"Sources, not the {case['sources']} the answer was given"
-            )
-        case["figures"] = asdict(_check_figures(case["answer"], context.sources, fact_values))
-
-    def figures_exact(group: Iterable[dict]) -> float:
-        return fmean(not c["figures"]["unmatched"] for c in group)
-
-    rescored["overall"]["figures_exact"] = figures_exact(rescored["cases"])
-    for kind, summary in rescored["by_type"].items():
-        summary["figures_exact"] = figures_exact(
-            c for c in rescored["cases"] if c["question_type"] == kind
-        )
-    return rescored
 
 
 # --- Inputs the harness reads from the repository -----------------------------------------
@@ -669,14 +680,6 @@ def main(
     )
     parser.add_argument("--log", type=Path, default=DEFAULT_ANSWER_LOG, help="Answer Call log")
     parser.add_argument("--json", type=Path, help="also write the report as JSON here")
-    parser.add_argument(
-        "--rescore",
-        type=Path,
-        nargs="+",
-        metavar="REPORT",
-        help="redo the figure check of saved reports from their answers, in place, "
-        "with no Answer Call and no Jev call",
-    )
     args = parser.parse_args(argv)
 
     if arms is None:
@@ -690,31 +693,6 @@ def main(
     if arm.prepare is None:
         parser.error(f"the {arm.name} Arm cannot prepare an Answer Context")
     golden = load_golden_set(args.golden_set)
-    if args.rescore:
-        for path in args.rescore:
-            report = json.loads(path.read_text(encoding="utf-8"))
-            saved_arm = by_name[report["arm"]] if report.get("arm") else arm
-            # Each report against its own Golden Set version (version 1 if it records
-            # none, as reports from before the version was recorded): the file named if
-            # it is that version, else that version's own file.
-            version = report.get("golden_set_version", 1)
-            own = golden if golden.version == version else None
-            rescored = rescore_figures(
-                report,
-                (own or load_golden_set(GOLDEN_SET_FILES[version])).cases,
-                args.index,
-                fact_values=fact_values or corpus_fact_values,
-                prepare=saved_arm.prepare or prepare_answer_context,
-            )
-            path.write_text(json.dumps(rescored, indent=2) + "\n", encoding="utf-8")
-            was, now = report["overall"]["figures_exact"], rescored["overall"]["figures_exact"]
-            failing = [c["case_id"] for c in rescored["cases"] if c["figures"]["unmatched"]]
-            print(
-                f"{path}: figures exact {was:.2f} → {now:.2f}; "
-                f"not exact: {', '.join(failing) or 'none'}",
-                file=out,
-            )
-        return 0
     if args.brief_suite:
         # The suite's cases replace version 1 cases, whichever Golden Set file is named.
         golden_sets = dict.fromkeys((GOLDEN_SET_V1, GOLDEN_SET_V2, args.golden_set))

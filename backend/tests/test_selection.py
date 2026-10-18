@@ -539,15 +539,38 @@ def test_naming_the_shipped_generator_runs_it_once(monkeypatch, tmp_path):
     assert ran == ["gpt-6-luna", "gpt-6-luna", "claude-haiku-5-5"]  # no third shipped run
 
 
-def test_with_no_generator_named_every_generator_in_the_table_runs(monkeypatch, tmp_path):
+def test_with_no_generator_named_the_default_comparison_runs(monkeypatch, tmp_path):
+    from edgar_eval import generators
+    from edgar_eval.selection import main
+
+    ran = _fake_generation_runs(monkeypatch, tmp_path)
+    monkeypatch.setattr(generators, "COMPARISON", ("gpt-6-luna", "claude-opus-5-5"))
+
+    main(["generators", "--json", str(tmp_path / "c.json")], out=io.StringIO())
+
+    assert ran == ["gpt-6-luna", "gpt-6-luna", "claude-opus-5-5"]  # read from the table
+
+
+def test_with_all_every_generator_in_the_table_runs(monkeypatch, tmp_path):
     from edgar_eval.generators import GENERATORS
     from edgar_eval.selection import main
 
     ran = _fake_generation_runs(monkeypatch, tmp_path)
 
-    main(["generators", "--json", str(tmp_path / "c.json")], out=io.StringIO())
+    main(["generators", "--all", "--json", str(tmp_path / "c.json")], out=io.StringIO())
 
     assert ran == [GENERATORS[0].model] + [g.model for g in GENERATORS]
+
+
+def test_all_and_named_generators_are_not_both_accepted(monkeypatch, tmp_path):
+    from edgar_eval.selection import main
+
+    ran = _fake_generation_runs(monkeypatch, tmp_path)
+
+    with pytest.raises(SystemExit) as stopped:
+        main(["generators", "--all", "--model", "claude-haiku-5-5"], out=io.StringIO())
+
+    assert stopped.value.code != 0 and ran == []
 
 
 def test_a_generator_not_in_the_table_is_refused_before_any_run(monkeypatch, tmp_path):

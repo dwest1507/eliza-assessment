@@ -47,6 +47,7 @@ __all__ = [
     "FactVerdict",
     "RunClaims",
     "RunError",
+    "case_passes",
     "estimate_cost",
     "evaluate_brief_suite",
     "print_brief_suite_report",
@@ -100,6 +101,14 @@ class RunError:
     error: str
 
 
+def case_passes(*, missed: bool, contradicted: bool, answered_runs: int, runs: int) -> bool:
+    """Whether a Brief Suite case passes over `runs` runs: no must-state fact `missed`
+    (stated in too few runs), no run with a Contradicted Claim, and enough runs answered
+    at all (which matters for a case with no fact). The rule is stated here only:
+    `BriefCaseVerdict.passed` and the offline re-score (`edgar_eval.rescore`) read it."""
+    return not missed and not contradicted and answered_runs >= required_runs(runs)
+
+
 @dataclass(frozen=True)
 class BriefCaseVerdict:
     case_id: str
@@ -128,12 +137,12 @@ class BriefCaseVerdict:
 
     @property
     def passed(self) -> bool:
-        """Every must-state fact stated in enough runs, no run with a Contradicted Claim,
-        and enough runs answered at all (which matters for a case with no fact)."""
-        return (
-            not self.missed
-            and not self.contradicted
-            and self.answered_runs >= required_runs(self.runs)
+        """The case's verdict (`case_passes`)."""
+        return case_passes(
+            missed=bool(self.missed),
+            contradicted=bool(self.contradicted),
+            answered_runs=self.answered_runs,
+            runs=self.runs,
         )
 
 
@@ -247,11 +256,11 @@ def _verdict(case: GoldenCase, reports: Sequence[GenerationReport]) -> BriefCase
 
 
 def _stated(result: CaseResult, i: int) -> bool:
-    """Whether the run's answer states the case's i-th Required Fact. A truncated answer
-    states none, as its Fact Recall is 0, and so does one whose Fact Recall judgment
-    failed, which judged no fact."""
-    facts = result.judgments.facts
-    return not result.truncated and i < len(facts) and facts[i].stated
+    """Whether the run's answer states the case's i-th Required Fact, by the harness's
+    rule (`CaseResult.facts_stated`: a truncated answer states none). One whose Fact
+    Recall judgment failed judged no fact, and so states none either."""
+    stated = result.facts_stated
+    return stated is not None and stated[i]
 
 
 def _reached(result: CaseResult, i: int) -> bool:

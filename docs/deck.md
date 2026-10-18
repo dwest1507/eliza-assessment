@@ -147,7 +147,7 @@ scores as much as the hybrid and the re-ranker did.
 
 - **Small evaluation.** 20 holdout cases in version 2, 10 in version 1: one case moves a share by 0.05. The numbers show the system works, not its exact rate.
 - **Answers miss facts.** Fact Recall 0.74 on the version 2 holdout: the answers miss 31 of 106 must-state facts, 15 of them because their evidence never reaches the prompt.
-- **The brief's questions fail the Brief Suite.** 1 of 15 cases pass on version 2. 49 of the 57 must-state facts missed never reach the Answer Call, so the gap is retrieval, not the generator: every must-state fact the pharmaceutical question misses has evidence that never reaches the prompt.
+- **The brief's questions fail the Brief Suite.** 1 of 15 cases pass on version 2, on the fixed measurement. 48 of the 56 must-state facts missed never reach the Answer Call, so the gap is retrieval, not the generator: every must-state fact the pharmaceutical question misses has evidence that never reaches the prompt.
 - **Follow-ups that change topic without naming a Company** inherit the earlier Companies. The Query Scope chips, under "How this was answered", show it; the Golden Set measures it.
 - **Computed figures.** The model sometimes computes a growth rate rather than quoting the Filing; it labels it as derived.
 - **Thin coverage.** Trends only for 13 Companies; Financial Facts only revenue, net income and segment revenue; guidance mostly sits outside the Filings.
