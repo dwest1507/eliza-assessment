@@ -183,6 +183,10 @@ describe('the "How it works" page', () => {
     expect(control).toHaveTextContent('−0.005 [−0.058, +0.039]')
     expect(scoreboard).toHaveTextContent('These verdicts are directional')
     expect(scoreboard).toHaveTextContent('Chosen: gpt-6-luna')
+    // The comparison predates the measurement fixes that re-scored the shipped run above.
+    expect(scoreboard).toHaveTextContent(
+      'This comparison was scored on the earlier measurement and stands as recorded'
+    )
   })
 
   it('leaves the generator comparison out when it has not run', async () => {
