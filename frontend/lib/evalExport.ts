@@ -269,6 +269,20 @@ export interface EvalExport {
   coverage: { periods: string[]; companies: CoverageCompany[] }
 }
 
+/**
+ * The round's shipped run: the split's `generation-<split>.json` report, else the chosen
+ * generator's run, never the Control Run; null until answers have been scored.
+ */
+export function shippedRun(data: EvalExport): GenerationRun | null {
+  const runs = data.generation.filter((run) => !run.controlRun)
+  return (
+    runs.find((run) => run.report === `generation-${data.split}.json`) ??
+    runs.find((run) => run.model === data.generatorChoice?.chosen) ??
+    runs[0] ??
+    null
+  )
+}
+
 /** A score in [0, 1] to two decimals, or a dash when there was nothing to score. */
 export function score(value: number | null): string {
   return value === null ? '–' : value.toFixed(2)

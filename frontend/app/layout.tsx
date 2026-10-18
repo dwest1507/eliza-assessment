@@ -12,7 +12,7 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: 'SEC Filings Research',
   description:
-    'Ask business questions about public Companies and get answers cited to their 10-K and 10-Q Filings.',
+    'Ask business questions about public companies and get answers cited to their 10-K and 10-Q filings.',
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

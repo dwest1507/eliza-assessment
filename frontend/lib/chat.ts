@@ -1,4 +1,4 @@
-import type { UIMessage } from 'ai'
+import type { ChatStatus, UIMessage } from 'ai'
 
 /** One reported row of a Facts Source, as its Filing prints it. */
 export interface FactRow {
@@ -122,6 +122,19 @@ export function messageSources(message: MessageLike): Source[] {
   return Array.isArray(sources) ? sources : []
 }
 
+/**
+ * Whether an answer has finished: every answer has, except the last message while the
+ * chat is waiting for or streaming its answer. A restored answer always has.
+ */
+export function answerComplete(
+  message: { id: string },
+  messages: readonly { id: string }[],
+  status: ChatStatus
+): boolean {
+  const busy = status === 'submitted' || status === 'streaming'
+  return !(busy && messages.at(-1)?.id === message.id)
+}
+
 /** A Source tag as the backend writes it: `S1`, `S2`, ... */
 const SOURCE_TAG = /^S\d+$/
 
@@ -195,15 +208,66 @@ export function citedTag(href: string | undefined): string | null {
   return match ? match[1] : null
 }
 
+/** A citation in an answer's text: `[S3]`, or a group such as `[S1, S3]`, not yet a link. */
+const CITATION = /\[(S\d+(?:\s*[,;]\s*S\d+)*)\](?!\()/g
+
+/** The tags of one citation group: `S1, S3` gives `S1` and `S3`. */
+function groupTags(group: string): string[] {
+  return group.split(/\s*[,;]\s*/)
+}
+
 /**
  * The answer's Markdown with every citation turned into a link: `[S3]` becomes
  * `[S3](#source-S3)`, and a grouped `[S1, S3]` becomes one link per tag.
  */
 export function linkCitations(markdown: string): string {
-  return markdown.replace(/\[(S\d+(?:\s*[,;]\s*S\d+)*)\](?!\()/g, (_, group: string) =>
-    group
-      .split(/\s*[,;]\s*/)
+  return markdown.replace(CITATION, (_, group: string) =>
+    groupTags(group)
       .map((tag) => `[${tag}](${citationHref(tag)})`)
       .join(' ')
   )
+}
+
+/** A Source tag's number, for putting tags in order: `S11` comes after `S2`. */
+function tagNumber(tag: string): number {
+  return Number(tag.slice(1))
+}
+
+/**
+ * The Sources an answer's text cites, each once and in tag order. A cited tag that is
+ * not among the Sources is skipped: the text shows it as unavailable instead.
+ */
+export function citedSources(text: string, sources: readonly Source[]): Source[] {
+  const cited = new Set([...text.matchAll(CITATION)].flatMap((match) => groupTags(match[1])))
+  return sources
+    .filter((source) => cited.has(source.tag))
+    .sort((a, b) => tagNumber(a.tag) - tagNumber(b.tag))
+}
+
+/** An answer's opening paragraph, the direct answer, and the rest of its analysis. */
+export interface AnswerSplit {
+  opening: string
+  remainder: string
+}
+
+/** A blank line, which ends a Markdown paragraph: `\n\n`, `\r\n\r\n`, or one holding spaces. */
+const BLANK_LINE = /\r?\n[ \t]*\r?\n/
+
+/** A first block that is not a prose direct answer: a heading, a list item or a table row. */
+const NOT_PROSE = /^\s*(?:#{1,6}(?:\s|$)|(?:[-*+]|\d+[.)])(?:\s|$)|\|)/
+
+/**
+ * An answer's text split at its first blank line into the opening paragraph, which the
+ * prompt's fixed structure makes the direct answer, and the remainder. There is no split
+ * (null) when there is no remainder yet, or when the first block is a heading, list item
+ * or table row, since then it is not a prose answer and the whole text should show.
+ */
+export function splitAnswer(text: string): AnswerSplit | null {
+  const body = text.replace(/^(?:[ \t]*\r?\n)+/, '')
+  if (NOT_PROSE.test(body)) return null
+  const match = BLANK_LINE.exec(body)
+  if (!match) return null
+  const remainder = body.slice(match.index + match[0].length).replace(/^(?:[ \t]*\r?\n)+/, '')
+  if (!remainder.trim()) return null
+  return { opening: body.slice(0, match.index), remainder }
 }

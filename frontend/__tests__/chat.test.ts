@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import {
+  citedSources,
   HISTORY_TURNS,
   MAX_MESSAGES,
   messageCitedFilings,
@@ -10,6 +11,7 @@ import {
   messageText,
   promptMessages,
   rejectionReason,
+  splitAnswer,
   type QueryScope,
   type ResearchMessage,
   type Source,
@@ -145,6 +147,95 @@ describe('messageCitedFilings', () => {
     const cited = messageCitedFilings(message)
     expect(cited).toEqual({ S2: 'TSLA_10-K_2025-12-31' })
     expect(Object.getPrototypeOf(cited)).toBe(Object.prototype)
+  })
+})
+
+describe('citedSources', () => {
+  /** The Sources an answer was given, S1 to S11, each as a minimal Source. */
+  const given: Source[] = Array.from({ length: 11 }, (_, i) => ({
+    ...appleSource,
+    tag: `S${i + 1}`,
+  }))
+  const tags = (sources: Source[]) => sources.map((s) => s.tag)
+
+  it('lists the Sources the answer cites, in tag order, not citation order', () => {
+    expect(tags(citedSources('Tesla [S3] and Apple [S1].', given))).toEqual(['S1', 'S3'])
+  })
+
+  it('lists a tag cited more than once only once', () => {
+    expect(tags(citedSources('Apple [S2] faces tariffs [S2] and [S2].', given))).toEqual(['S2'])
+  })
+
+  it('skips a cited tag that is not among the Sources', () => {
+    expect(tags(citedSources('Apple [S1] and a made-up [S40].', given))).toEqual(['S1'])
+  })
+
+  it('reads a tag run like [S1][S2] and a grouped [S4, S11] as separate citations', () => {
+    expect(tags(citedSources('Both [S1][S2], and [S4, S11].', given))).toEqual([
+      'S1',
+      'S2',
+      'S4',
+      'S11',
+    ])
+  })
+
+  it('is empty when the answer cites nothing', () => {
+    expect(citedSources('No citations here, nor S1 without brackets.', given)).toEqual([])
+    expect(citedSources('', given)).toEqual([])
+  })
+})
+
+describe('splitAnswer', () => {
+  it('splits the opening paragraph from the rest at the first blank line', () => {
+    const text =
+      'Apple faces tariffs [S1].\nIt says so twice.\n\n**Apple.** Detail [S1].\n\nCoverage: none.'
+    expect(splitAnswer(text)).toEqual({
+      opening: 'Apple faces tariffs [S1].\nIt says so twice.',
+      remainder: '**Apple.** Detail [S1].\n\nCoverage: none.',
+    })
+  })
+
+  it('reads Windows line breaks and a blank line holding spaces as a paragraph break', () => {
+    expect(splitAnswer('Apple faces tariffs.\r\n  \r\nDetail.\r\n')).toEqual({
+      opening: 'Apple faces tariffs.',
+      remainder: 'Detail.\r\n',
+    })
+  })
+
+  it('skips blank lines before the opening', () => {
+    expect(splitAnswer('\n\nApple faces tariffs.\n\nDetail.')).toEqual({
+      opening: 'Apple faces tariffs.',
+      remainder: 'Detail.',
+    })
+  })
+
+  it('has no split when there is no remainder', () => {
+    expect(splitAnswer('Apple faces tariffs [S1].')).toBeNull()
+    expect(splitAnswer('Apple faces tariffs [S1].\n\n')).toBeNull()
+    expect(splitAnswer('Apple faces tariffs [S1].\r\n\r\n  \n')).toBeNull()
+    expect(splitAnswer('')).toBeNull()
+  })
+
+  it('has no split when the first block is a heading, list item or table row', () => {
+    for (const opening of [
+      '## Apple',
+      '# Answer',
+      '- Apple faces tariffs.',
+      '* Apple faces tariffs.',
+      '+ Apple faces tariffs.',
+      '1. Apple faces tariffs.',
+      '2) Apple faces tariffs.',
+      '| Company | Risk |\n| --- | --- |\n| Apple | Tariffs |',
+    ]) {
+      expect(splitAnswer(`${opening}\n\nDetail [S1].`)).toBeNull()
+    }
+  })
+
+  it('splits an opening that only mentions a number or a hash mark', () => {
+    expect(splitAnswer('2024 revenue rose; #1 in its market.\n\nDetail.')).toEqual({
+      opening: '2024 revenue rose; #1 in its market.',
+      remainder: 'Detail.',
+    })
   })
 })
 

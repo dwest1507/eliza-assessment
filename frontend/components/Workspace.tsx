@@ -1,19 +1,25 @@
 'use client'
 
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type Ref } from 'react'
 import Link from 'next/link'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import AnswerMessage from '@/components/AnswerMessage'
+import FollowUps from '@/components/FollowUps'
 import SourcesPanel from '@/components/SourcesPanel'
 import {
+  answerComplete,
+  citedSources,
   messageDataPart,
   messageSources,
   messageText,
   rejectionReason,
   type ResearchMessage,
+  type Source,
 } from '@/lib/chat'
 import { loadConversation, saveConversation } from '@/lib/conversation'
+import { WHATS_COVERED_ID, type CoverageSummary } from '@/lib/coverage'
+import { followUps } from '@/lib/followUps'
 import { STARTERS } from '@/lib/starters'
 
 /** Which answer's Sources the panel shows, and which of them is open. */
@@ -26,18 +32,26 @@ interface OpenSource {
  * The research workspace: a conversation thread, starter prompts on an empty
  * conversation, and a Sources panel that opens on a citation click. The conversation is
  * kept in session storage, so it survives a page refresh, and "New conversation" clears
- * it, so an old Query Scope can't leak into a new topic.
+ * it, so an old Query Scope can't leak into a new topic. With a Corpus coverage summary,
+ * the empty conversation also says how many Companies are covered. The latest answer,
+ * once complete, is followed by suggested follow-up questions.
  */
-export default function Workspace() {
+export default function Workspace({ coverage }: { coverage?: CoverageSummary }) {
   const [transport] = useState(
     () => new DefaultChatTransport<ResearchMessage>({ api: '/api/chat' })
   )
-  const { messages, sendMessage, setMessages, status, stop, error } = useChat<ResearchMessage>({
-    transport,
-  })
+  const { messages, sendMessage, regenerate, setMessages, status, stop, error } =
+    useChat<ResearchMessage>({
+      transport,
+    })
   const [input, setInput] = useState('')
   const [open, setOpen] = useState<OpenSource | null>(null)
-  const endRef = useRef<HTMLDivElement>(null)
+  const threadRef = useRef<HTMLDivElement>(null)
+  const lastQuestionRef = useRef<HTMLDivElement>(null)
+  // How to scroll the next question into place once it renders, or null for not at all.
+  const pendingScroll = useRef<ScrollBehavior | null>(null)
+  const [end, setEnd] = useState<HTMLDivElement | null>(null)
+  const [endBelow, setEndBelow] = useState(false)
 
   const busy = status === 'submitted' || status === 'streaming'
 
@@ -45,7 +59,11 @@ export default function Workspace() {
   // has no storage) and the browser's first render agree.
   useEffect(() => {
     const saved = loadConversation()
-    if (saved.length > 0) setMessages(saved)
+    if (saved.length > 0) {
+      // A restored conversation opens at its last question, at once.
+      pendingScroll.current = 'auto'
+      setMessages(saved)
+    }
   }, [setMessages])
 
   // Saved once each answer is complete, never half-written. Only "New conversation"
@@ -54,13 +72,35 @@ export default function Workspace() {
     if (!busy && messages.length > 0) saveConversation(messages)
   }, [messages, busy])
 
+  // The thread scrolls once per question, to put it at the top of the thread, and never
+  // while its answer streams, so the reader keeps their place.
+  const lastQuestionId = messages.findLast((m) => m.role === 'user')?.id
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
-  }, [messages, status])
+    const behavior = pendingScroll.current
+    if (!behavior || !lastQuestionId) return
+    pendingScroll.current = null
+    lastQuestionRef.current?.scrollIntoView({ behavior, block: 'start' })
+  }, [lastQuestionId])
+
+  // "Jump to latest" shows while the end of the thread is below the thread's visible area.
+  useEffect(() => {
+    if (!end || typeof IntersectionObserver === 'undefined') return
+    const observer = new IntersectionObserver(
+      ([entry]) =>
+        setEndBelow(
+          !entry.isIntersecting &&
+            (!entry.rootBounds || entry.boundingClientRect.top >= entry.rootBounds.bottom)
+        ),
+      { root: threadRef.current }
+    )
+    observer.observe(end)
+    return () => observer.disconnect()
+  }, [end])
 
   function ask(question: string) {
     const text = question.trim()
     if (!text || busy) return
+    pendingScroll.current = scrollBehavior()
     sendMessage({ text })
   }
 
@@ -80,9 +120,68 @@ export default function Workspace() {
   }
 
   const openMessage = open ? messages.find((m) => m.id === open.messageId) : undefined
-  const openSources = openMessage ? messageSources(openMessage) : []
+  const openSources = open && openMessage ? switcherSources(openMessage, open.tag) : []
   const last = messages.at(-1)
   const writing = status === 'streaming' && last?.role === 'assistant' && !messageText(last)
+  const turns = groupTurns(messages)
+  // Follow-ups suggested under the latest answer once it is complete, built from its
+  // Query Scope by fixed templates, so no model is asked.
+  const lastScope = last?.role === 'assistant' ? messageDataPart(last, 'query-scope') : null
+  const lastQuestion = messages.findLast((m) => m.role === 'user')
+  const suggestions =
+    status === 'ready' && lastScope
+      ? followUps(lastScope, lastQuestion ? messageText(lastQuestion) : '')
+      : []
+
+  const renderMessage = (message: ResearchMessage) =>
+    message.role === 'user' ? (
+      <UserMessage
+        key={message.id}
+        ref={message.id === lastQuestionId ? lastQuestionRef : undefined}
+        text={messageText(message)}
+      />
+    ) : (
+      <AnswerMessage
+        key={message.id}
+        text={messageText(message)}
+        sources={messageSources(message)}
+        scope={messageDataPart(message, 'query-scope')}
+        gaps={messageDataPart(message, 'coverage-gaps')?.gaps ?? []}
+        complete={answerComplete(message, messages, status)}
+        openTag={open?.messageId === message.id ? open.tag : null}
+        onCite={(tag) => setOpen({ messageId: message.id, tag })}
+      />
+    )
+
+  // Progress, errors and the end-of-thread marker follow the latest turn.
+  const tail = (
+    <>
+      {status === 'submitted' && <Progress text="Finding the relevant filings…" />}
+      {writing && <Progress text="Writing the answer…" />}
+
+      {status === 'error' && (
+        <div
+          role="alert"
+          className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-[14px] text-red-200"
+        >
+          {rejectionReason(error) ?? (
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <span>The answer couldn&apos;t be loaded. Please try again.</span>
+              <button
+                type="button"
+                onClick={() => regenerate()}
+                className="btn-secondary px-3 py-1.5 text-[13px] whitespace-nowrap"
+              >
+                Try again
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+      {suggestions.length > 0 && <FollowUps questions={suggestions} onPick={ask} />}
+      <div ref={setEnd} />
+    </>
+  )
 
   return (
     <div className="flex h-dvh flex-col text-ink">
@@ -90,8 +189,8 @@ export default function Workspace() {
         <h1 className="text-[15px] font-semibold tracking-tight whitespace-nowrap text-ink">
           SEC Filings Research<span className="text-accent">.</span>
         </h1>
-        <p className="hidden font-mono text-[11px] tracking-widest text-muted lg:block">
-          Answers from 10-K and 10-Q Filings, every claim cited to its passage
+        <p className="hidden font-mono text-[12px] tracking-widest text-muted lg:block">
+          Answers from companies’ 10-K and 10-Q filings, with every claim linked to its passage
         </p>
         <button
           type="button"
@@ -112,46 +211,47 @@ export default function Workspace() {
 
       <div className="flex min-h-0 flex-1">
         <main className="flex min-w-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            <div className="mx-auto flex max-w-3xl flex-col gap-6 px-5 py-8">
-              {messages.length === 0 ? (
-                <EmptyState disabled={busy} onPick={ask} />
-              ) : (
-                messages.map((message) =>
-                  message.role === 'user' ? (
-                    <UserMessage key={message.id} text={messageText(message)} />
-                  ) : (
-                    <AnswerMessage
-                      key={message.id}
-                      text={messageText(message)}
-                      sources={messageSources(message)}
-                      scope={messageDataPart(message, 'query-scope')}
-                      gaps={messageDataPart(message, 'coverage-gaps')?.gaps ?? []}
-                      openTag={open?.messageId === message.id ? open.tag : null}
-                      onCite={(tag) => setOpen({ messageId: message.id, tag })}
-                    />
+          <div className="relative flex min-h-0 flex-1 flex-col">
+            {/* A size container, so the latest turn can be sized to the thread's height. */}
+            <div ref={threadRef} className="[container-type:size] min-h-0 flex-1 overflow-y-auto">
+              <div className="mx-auto flex max-w-3xl flex-col gap-6 px-5 py-8">
+                {turns.length === 0 ? (
+                  <>
+                    <EmptyState disabled={busy} onPick={ask} coverage={coverage} />
+                    {tail}
+                  </>
+                ) : (
+                  turns.map((turn, i) =>
+                    i < turns.length - 1 ? (
+                      <div key={turn[0].id} className="flex flex-col gap-6">
+                        {turn.map(renderMessage)}
+                      </div>
+                    ) : (
+                      // At least the thread's height, less its bottom padding and the
+                      // question's top margin, so a new question can scroll to the top
+                      // with room below it for the answer.
+                      <div
+                        key={turn[0].id}
+                        className="flex min-h-[calc(100cqh-3.5rem)] flex-col gap-6"
+                      >
+                        {turn.map(renderMessage)}
+                        {tail}
+                      </div>
+                    )
                   )
-                )
-              )}
-
-              {status === 'submitted' && <Progress text="Retrieving Sources…" />}
-              {writing && <Progress text="Writing the answer…" />}
-
-              {status === 'error' && (
-                <div
-                  role="alert"
-                  className="rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3 text-[14px] text-red-200"
-                >
-                  {rejectionReason(error) ?? (
-                    <>
-                      The answer could not be loaded. Check that the API is running (
-                      <code className="font-mono text-[13px]">make dev</code>) and try again.
-                    </>
-                  )}
-                </div>
-              )}
-              <div ref={endRef} />
+                )}
+              </div>
             </div>
+
+            {end && endBelow && (
+              <button
+                type="button"
+                onClick={() => end.scrollIntoView({ behavior: scrollBehavior(), block: 'end' })}
+                className="btn-secondary absolute bottom-4 left-1/2 -translate-x-1/2 px-4 py-1.5 text-[13px] whitespace-nowrap shadow-[0_4px_24px_rgba(0,0,0,0.5)]"
+              >
+                Jump to latest <span aria-hidden="true">↓</span>
+              </button>
+            )}
           </div>
 
           <form
@@ -164,8 +264,8 @@ export default function Workspace() {
                 aria-label="Question"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask about a Company's risks, results or outlook…"
-                className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-white/[0.04] px-4 text-[14px] text-ink transition-all duration-150 outline-none placeholder:text-muted/60 focus:border-accent/50 focus:bg-white/[0.06] focus:shadow-[0_0_0_3px_rgba(14,165,233,0.15)]"
+                placeholder="Ask about a company’s risks, results or outlook…"
+                className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-white/[0.04] px-4 text-[14px] text-ink transition-all duration-150 outline-none placeholder:text-muted focus:border-accent/50 focus:bg-white/[0.06] focus:shadow-[0_0_0_3px_rgba(14,165,233,0.15)]"
               />
               {busy ? (
                 <button
@@ -201,22 +301,61 @@ export default function Workspace() {
   )
 }
 
-function EmptyState({ disabled, onPick }: { disabled: boolean; onPick: (q: string) => void }) {
+/**
+ * The Sources the panel's switcher lists for one answer: the Sources it cites, plus the
+ * open one when it is not cited, in tag order.
+ */
+function switcherSources(message: ResearchMessage, openTag: string): Source[] {
+  const sources = messageSources(message)
+  const cited = citedSources(messageText(message), sources)
+  return sources.filter((s) => s.tag === openTag || cited.includes(s))
+}
+
+/**
+ * The conversation as turns: each question with the answer that follows it. A turn keeps
+ * its element as later turns arrive, so an answer's component state survives a new question.
+ */
+function groupTurns(messages: ResearchMessage[]): ResearchMessage[][] {
+  const turns: ResearchMessage[][] = []
+  for (const message of messages) {
+    if (message.role === 'user' || turns.length === 0) turns.push([message])
+    else turns[turns.length - 1].push(message)
+  }
+  return turns
+}
+
+/** Smooth scrolling, unless the user prefers reduced motion. */
+function scrollBehavior(): ScrollBehavior {
+  const reduce =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  return reduce ? 'auto' : 'smooth'
+}
+
+function EmptyState({
+  disabled,
+  onPick,
+  coverage,
+}: {
+  disabled: boolean
+  onPick: (q: string) => void
+  coverage?: CoverageSummary
+}) {
   return (
     <section className="flex flex-col gap-6 pt-10">
       <div>
         <div className="mb-4 flex items-center gap-3">
           <span className="h-px w-10 bg-accent/50" aria-hidden="true" />
-          <span className="font-mono text-[11px] tracking-widest text-accent">
+          <span className="font-mono text-[12px] tracking-widest text-accent">
             10-K and 10-Q research
           </span>
         </div>
         <h2 className="headline text-3xl font-semibold tracking-[-0.03em] md:text-4xl">
-          Ask a question about a Company
+          Ask a question about a public company
         </h2>
         <p className="mt-3 max-w-xl text-[14.5px] leading-relaxed text-muted">
-          Name Companies by name or ticker. Each answer cites the Filing Sections it rests on and
-          says what the Filings cannot answer.
+          Name a company or its ticker. Each answer links every claim to the filing passage it comes
+          from, and says what the filings can’t answer.
         </p>
       </div>
       <ul aria-label="Starter prompts" className="grid gap-2 sm:grid-cols-2">
@@ -234,13 +373,31 @@ function EmptyState({ disabled, onPick }: { disabled: boolean; onPick: (q: strin
           </li>
         ))}
       </ul>
+      {coverage && <CoverageLine coverage={coverage} />}
     </section>
   )
 }
 
-function UserMessage({ text }: { text: string }) {
+/** How many Companies are covered and how many have a trend's worth of history, in plain words. */
+function CoverageLine({ coverage }: { coverage: CoverageSummary }) {
+  const count = coverage.companies.length
   return (
-    <div className="flex justify-end">
+    <p className="text-[13.5px] text-muted">
+      {count} {count === 1 ? 'company' : 'companies'} covered · {coverage.tracked} with two or more
+      years of quarterly filings ·{' '}
+      <Link
+        href={`/how-it-works#${WHATS_COVERED_ID}`}
+        className="text-accent underline-offset-2 transition-colors duration-200 hover:underline"
+      >
+        See what’s covered
+      </Link>
+    </p>
+  )
+}
+
+function UserMessage({ text, ref }: { text: string; ref?: Ref<HTMLDivElement> }) {
+  return (
+    <div ref={ref} className="flex scroll-mt-6 justify-end">
       <p className="max-w-[85%] rounded-xl bg-accent/15 px-4 py-2.5 text-[14px] break-words whitespace-pre-wrap text-ink shadow-[inset_0_0_0_1px_rgba(14,165,233,0.25)]">
         {text}
       </p>

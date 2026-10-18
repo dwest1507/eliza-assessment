@@ -35,7 +35,10 @@ export function scopeChips(scope: QueryScope): Chip[] {
   return chips
 }
 
-/** What the rules resolved from the question, shown above its answer so it can be disputed. */
+/**
+ * What the rules resolved from the question, shown under its answer's "How this was
+ * answered" so it can be disputed.
+ */
 export default function QueryScopeChips({ scope }: { scope: QueryScope }) {
   return (
     <ul aria-label="Query Scope" className="flex flex-wrap gap-1.5">
@@ -43,7 +46,7 @@ export default function QueryScopeChips({ scope }: { scope: QueryScope }) {
         <li
           key={`${chip.title}:${chip.text}`}
           title={chip.title}
-          className="rounded-full border border-white/[0.10] px-2.5 py-0.5 font-mono text-[11px] tracking-wide text-muted"
+          className="rounded-full border border-white/[0.10] px-2.5 py-0.5 font-mono text-[12px] tracking-wide text-muted"
         >
           {chip.text}
         </li>

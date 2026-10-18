@@ -1,5 +1,9 @@
 import Link from 'next/link'
 import type { ReactNode } from 'react'
+import { HeadlineNumbers, HowAnswersAreMade, KnownLimits } from '@/components/Overview'
+import TechnicalDetails, { TechnicalSection } from '@/components/TechnicalDetails'
+import WhatsCovered from '@/components/WhatsCovered'
+import { coverageSummary } from '@/lib/coverage'
 import {
   type BriefSuiteResults,
   type CoverageCompany,
@@ -19,26 +23,30 @@ import {
   questionType,
   score,
   seconds,
+  shippedRun,
   usd,
 } from '@/lib/evalExport'
 
 type Thresholds = EvalExport['thresholds']
 
 /**
- * The "How it works" page: the architecture, the evaluation scoreboard (the shipped run
+ * The "How it works" page: a plain overview first (how an answer is made, "What's
+ * covered", the shipped run's headline numbers and the known limits), then the sections
+ * under "Technical details", each collapsed by default: the architecture, the evaluation scoreboard (the shipped run
  * beside its Control Run, the retrieval Arms and their screen, and the generator
  * comparison), the Brief Suite's verdicts, the holdout run beside dev and the Corpus
  * coverage grid, all read from the evaluation export so the evidence sits in the product.
  */
 export default function HowItWorks({ data }: { data: EvalExport }) {
+  const shipped = shippedRun(data)
   return (
     <div className="min-h-dvh text-ink">
       <header className="sticky top-0 z-30 flex items-center gap-4 border-b border-line bg-canvas/80 px-5 py-3 backdrop-blur-xl">
         <h1 className="text-[15px] font-semibold tracking-tight">
           How it works<span className="text-accent">.</span>
         </h1>
-        <p className="hidden font-mono text-[11px] tracking-widest text-muted lg:block">
-          The architecture, the evaluation scores and the Filings behind every answer
+        <p className="hidden font-mono text-[12px] tracking-widest text-muted lg:block">
+          How answers are made, what’s covered and how far to trust them
         </p>
         <Link
           href="/"
@@ -48,42 +56,34 @@ export default function HowItWorks({ data }: { data: EvalExport }) {
         </Link>
       </header>
 
-      <main className="mx-auto flex max-w-5xl flex-col gap-20 px-5 py-14">
-        <Architecture data={data} />
-        <Scoreboard data={data} />
-        {data.briefSuite && <BriefSuite brief={data.briefSuite} />}
-        {data.holdout && <Holdout holdout={data.holdout} dev={data} />}
-        <CoverageGrid data={data} />
+      <main className="flex flex-col gap-20 px-5 py-14">
+        <div className="mx-auto flex w-full max-w-5xl flex-col gap-16">
+          <HowAnswersAreMade />
+          <WhatsCovered summary={coverageSummary(data.coverage)} />
+          {shipped && <HeadlineNumbers run={shipped} />}
+          <KnownLimits />
+        </div>
+        <TechnicalDetails
+          heading={
+            <div>
+              <h2 className="headline text-3xl font-semibold tracking-[-0.02em] md:text-4xl">
+                Technical details
+              </h2>
+              <p className="mt-2 max-w-3xl text-[14px] leading-relaxed text-muted">
+                The architecture, the evaluation scores and the Filings behind every answer. Open a
+                section by its heading, or all of them at once.
+              </p>
+            </div>
+          }
+        >
+          <Architecture data={data} />
+          <Scoreboard data={data} />
+          {data.briefSuite && <BriefSuite brief={data.briefSuite} />}
+          {data.holdout && <Holdout holdout={data.holdout} dev={data} />}
+          <CoverageGrid data={data} />
+        </TechnicalDetails>
       </main>
     </div>
-  )
-}
-
-function Section({
-  id,
-  title,
-  intro,
-  children,
-}: {
-  id: string
-  title: string
-  intro: ReactNode
-  children: ReactNode
-}) {
-  return (
-    <section aria-labelledby={id} className="flex flex-col gap-4">
-      <div>
-        <div className="mb-3 flex items-center gap-3">
-          <span className="h-px w-10 bg-accent/50" aria-hidden="true" />
-          <span className="font-mono text-[11px] tracking-widest text-accent">{id}</span>
-        </div>
-        <h2 id={id} className="headline text-2xl font-semibold tracking-[-0.02em] md:text-3xl">
-          {title}
-        </h2>
-        <p className="mt-2 max-w-3xl text-[14px] leading-relaxed text-muted">{intro}</p>
-      </div>
-      {children}
-    </section>
   )
 }
 
@@ -173,7 +173,7 @@ function Architecture({ data }: { data: EvalExport }) {
   ]
 
   return (
-    <Section
+    <TechnicalSection
       id="architecture"
       title="Architecture"
       intro="Each question gets exactly one generative LLM request, the Answer Call. Everything before it is deterministic: the same conversation always gets the same Sources and the same Coverage Gaps, so every claim can be traced and every stage measured."
@@ -181,7 +181,7 @@ function Architecture({ data }: { data: EvalExport }) {
       <Lane label="Built once, from the Corpus" stages={builtOnce} />
       <Lane label="For every question" stages={perQuestion} emphasis />
       <Lane label="Measured on the Golden Set" stages={measured} />
-    </Section>
+    </TechnicalSection>
   )
 }
 
@@ -225,15 +225,17 @@ function Lane({
 
 // --- Evaluation scoreboard ----------------------------------------------------------------
 
-const th =
-  'border-b border-line bg-raised px-3 py-1.5 text-left font-mono text-[11px] font-medium tracking-wide whitespace-nowrap text-muted'
+/** A header cell without its background, for the coverage grid's fixed header, which sets an opaque one. */
+const thBare =
+  'border-b border-line px-3 py-1.5 text-left font-mono text-[12px] font-medium tracking-wide whitespace-nowrap text-muted'
+const th = `${thBare} bg-raised`
 const td = 'border-b border-line px-3 py-1.5 whitespace-nowrap tabular-nums'
 const caption = 'mb-3 text-left text-[14px] font-semibold text-white'
 const note = 'mt-2 text-[12.5px] leading-relaxed text-muted'
 const badge =
-  'ml-2 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 font-mono text-[10px] tracking-widest text-accent-strong'
+  'ml-2 rounded-full border border-accent/30 bg-accent/10 px-2 py-0.5 font-mono text-[12px] tracking-widest text-accent-strong'
 const quietBadge =
-  'ml-2 rounded-full border border-line px-2 py-0.5 font-mono text-[10px] tracking-widest text-muted'
+  'ml-2 rounded-full border border-line px-2 py-0.5 font-mono text-[12px] tracking-widest text-muted'
 
 /** How a version's verdicts are worded: directional under version 2, as the docs word them. */
 function verdictRule(thresholds: Thresholds): string {
@@ -245,7 +247,7 @@ function verdictRule(thresholds: Thresholds): string {
 function Scoreboard({ data }: { data: EvalExport }) {
   const { retrieval, split, goldenSet, thresholds } = data
   return (
-    <Section
+    <TechnicalSection
       id="scoreboard"
       title="Evaluation scoreboard"
       intro={
@@ -281,7 +283,7 @@ function Scoreboard({ data }: { data: EvalExport }) {
       {data.generatorChoice && (
         <GeneratorChoiceTable choice={data.generatorChoice} thresholds={thresholds} />
       )}
-    </Section>
+    </TechnicalSection>
   )
 }
 
@@ -290,7 +292,7 @@ function BriefSuite({ brief }: { brief: BriefSuiteResults }) {
   const missed = failing.flatMap((c) => c.missed)
   const notReached = missed.filter((f) => f.evidenceReachedRuns === 0).length
   return (
-    <Section
+    <TechnicalSection
       id="brief-suite"
       title="The Brief Suite"
       intro={
@@ -344,7 +346,7 @@ function BriefSuite({ brief }: { brief: BriefSuiteResults }) {
           state from the Sources. Hover a case for its question.
         </p>
       </div>
-    </Section>
+    </TechnicalSection>
   )
 }
 
@@ -356,7 +358,7 @@ function Holdout({ holdout, dev }: { holdout: HoldoutResults; dev: EvalExport })
   )
   const devArm = dev.retrieval.arms.find((arm) => arm.shipped)
   return (
-    <Section
+    <TechnicalSection
       id="holdout"
       title="The holdout run"
       intro={
@@ -390,7 +392,7 @@ function Holdout({ holdout, dev }: { holdout: HoldoutResults; dev: EvalExport })
           }))}
         />
       )}
-    </Section>
+    </TechnicalSection>
   )
 }
 
@@ -688,9 +690,9 @@ function GenerationTable({
                   ) : (
                     run.model === shipped && <span className={badge}>shipped</span>
                   )}
-                  <span className="ml-2 text-[11.5px] text-muted">prompt {run.promptVersion}</span>
+                  <span className="ml-2 text-[12px] text-muted">prompt {run.promptVersion}</span>
                   {repeated(run) && (
-                    <span className="ml-2 font-mono text-[11.5px] text-muted">{run.report}</span>
+                    <span className="ml-2 font-mono text-[12px] text-muted">{run.report}</span>
                   )}
                 </th>
                 {GENERATION_COLUMNS.map(([name, value]) => (
@@ -780,7 +782,7 @@ function signTest(test: SignTest | null): ReactNode {
       {test.verdict} ({test.challengerOnly} higher, {test.shippedOnly} lower, p ahead ={' '}
       {pValue(test.pAhead)}, p behind = {pValue(test.pBehind)})
       {test.difference && (
-        <span className="block text-[11.5px] text-muted">{difference(test.difference)}</span>
+        <span className="block text-[12px] text-muted">{difference(test.difference)}</span>
       )}
     </>
   )
@@ -827,7 +829,7 @@ function GeneratorChoiceTable({
             <tr>
               <th scope="row" className={`${td} text-left font-medium`}>
                 Control Run
-                <span className="ml-2 text-[11.5px] text-muted">{choice.shipped} again</span>
+                <span className="ml-2 text-[12px] text-muted">{choice.shipped} again</span>
               </th>
               <GeneratorChoiceRow c={choice.control} />
               <td className={td}>–</td>
@@ -883,12 +885,19 @@ function follows(previous: string, period: string): boolean {
   return index(period) === index(previous) + 1
 }
 
+/** The grid's fixed header cells: the other headers' raised shade made opaque, so the cells
+    scrolling beneath them stay readable. */
+const fixedHeader = `${thBare} sticky top-0 bg-[color-mix(in_srgb,white_6%,var(--color-elevated))]`
+/** The Company column, fixed at a set width (padding included) so the coverage column can sit beside it. */
+const companyColumn = 'sticky left-0 w-20 min-w-20 lg:w-64 lg:min-w-64'
+const coverageColumn = 'sticky left-20 lg:left-64'
+
 function CoverageGrid({ data }: { data: EvalExport }) {
   const { periods, companies } = data.coverage
   const tracked = companies.filter((c) => c.coverage === 'tracked').length
   const skipped = periods.map((p, i) => i > 0 && !follows(periods[i - 1], p))
   return (
-    <Section
+    <TechnicalSection
       id="coverage"
       title="Corpus coverage"
       intro={
@@ -900,36 +909,47 @@ function CoverageGrid({ data }: { data: EvalExport }) {
         </>
       }
     >
-      <div className="card overflow-x-auto p-3">
-        <table className="border-collapse text-[12px]">
-          <caption className={caption}>Filings by Company and Report Period</caption>
-          <thead>
-            <tr>
-              <th className={`${th} sticky left-0 z-10`}>Company</th>
-              <th className={th}>Coverage</th>
-              {periods.map((period, i) => (
-                <th
-                  key={period}
-                  className={`${th} px-1 text-center font-medium ${skipped[i] ? 'border-l-2 border-l-muted/40' : ''}`}
-                >
-                  <span className="block text-[10.5px] text-muted">{period.slice(0, 4)}</span>
-                  {`Q${period.slice(5)}`}
-                  <span className="sr-only"> {quarterLabel(period)}</span>
-                </th>
+      <div className="card p-3">
+        {/* Its own scroll area, no taller than the screen, so both scrollbars stay in reach;
+            the header row and the Company and coverage columns stay fixed while it scrolls. */}
+        <div
+          role="region"
+          aria-labelledby="coverage-grid"
+          tabIndex={0}
+          className="max-h-[70dvh] overflow-auto rounded-lg focus-visible:outline-2 focus-visible:outline-accent"
+        >
+          <table className="border-separate border-spacing-0 text-[12px]">
+            <caption id="coverage-grid" className={caption}>
+              Filings by Company and Report Period
+            </caption>
+            <thead>
+              <tr>
+                <th className={`${fixedHeader} ${companyColumn} z-30`}>Company</th>
+                <th className={`${fixedHeader} ${coverageColumn} z-30`}>Coverage</th>
+                {periods.map((period, i) => (
+                  <th
+                    key={period}
+                    className={`${fixedHeader} z-20 px-1 text-center font-medium ${skipped[i] ? 'border-l-2 border-l-muted/40' : ''}`}
+                  >
+                    <span className="block text-[12px] text-muted">{period.slice(0, 4)}</span>
+                    {`Q${period.slice(5)}`}
+                    <span className="sr-only"> {quarterLabel(period)}</span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {companies.map((company) => (
+                <CoverageRow
+                  key={company.ticker}
+                  company={company}
+                  periods={periods}
+                  skipped={skipped}
+                />
               ))}
-            </tr>
-          </thead>
-          <tbody>
-            {companies.map((company) => (
-              <CoverageRow
-                key={company.ticker}
-                company={company}
-                periods={periods}
-                skipped={skipped}
-              />
-            ))}
-          </tbody>
-        </table>
+            </tbody>
+          </table>
+        </div>
         <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
           <span className="font-mono font-semibold text-accent">K</span> a 10-K,{' '}
           <span className="font-mono text-accent">Q</span> a 10-Q; hover a cell for its Filing ID
@@ -937,7 +957,7 @@ function CoverageGrid({ data }: { data: EvalExport }) {
           skip.
         </p>
       </div>
-    </Section>
+    </TechnicalSection>
   )
 }
 
@@ -955,13 +975,17 @@ function CoverageRow({
     <tr className={snapshot ? 'bg-white/[0.015]' : undefined}>
       <th
         scope="row"
-        className="sticky left-0 z-10 border-b border-line bg-elevated px-3 py-1 text-left font-medium whitespace-nowrap"
+        className={`${companyColumn} z-10 border-b border-line bg-elevated px-3 py-1 text-left font-medium whitespace-nowrap`}
         title={`${company.company}${company.sector ? `, ${company.sector}` : ''}`}
       >
-        <span className="font-mono">{company.ticker}</span>
-        <span className="ml-2 hidden font-normal text-muted lg:inline">{company.company}</span>
+        <div className="w-14 truncate lg:w-58">
+          <span className="font-mono">{company.ticker}</span>
+          <span className="ml-2 hidden font-normal text-muted lg:inline">{company.company}</span>
+        </div>
       </th>
-      <td className="border-b border-line px-3 py-1 whitespace-nowrap text-muted">
+      <td
+        className={`${coverageColumn} z-10 border-b border-line bg-elevated px-3 py-1 whitespace-nowrap text-muted`}
+      >
         {snapshot ? 'Snapshot' : 'Tracked'}
       </td>
       {periods.map((period, i) => {
