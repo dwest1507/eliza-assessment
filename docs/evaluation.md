@@ -1231,6 +1231,37 @@ hit@10 (0.947), recall@10 (0.870) and MRR (0.739) are unchanged, as are the 3 mu
 
   Every Arm gains, since every Arm ranks inside the same budget. The screen sends `rerank` on to paid runs again beside `hybrid-local` (#121's code dropped it at p behind = 0.154). `hybrid`, the hosted hybrid, still reaches the most evidence of any Arm, 17 facts more than `hybrid-local`, which is what lifting the one-call rule would buy on this measure.
 
+#### An outlook route: the latest MD&A (#122, 2026-10-18)
+
+On top of #119, #120, #123, #121 and #124. Outlook questions now have their own route. "Outlook", "expect", "expects", "expectations", "guidance", "forecast", "going forward" and "next year" set an MD&A hint. So does "for" a year later than the latest Fiscal Period of the Companies named ("What does Tesla plan for 2026?"), since no Filing covers that year. "for 2024", a year a Filing covers, does not. With no time phrase the window is the latest Filings (the latest 10-K and any later 10-Qs), as on the risk route. A time phrase ("over the last two years") replaces that window, and so does a Fiscal Period a Filing covers. A future year does not, so "Tesla's outlook for 2026" reads Tesla's FY2025 10-K. The same rule now applies on the risk and dependence routes: a future year no longer widens them to every Filing.
+
+The route is a Section hint like any other. A follow-up inherits it by ADR 0003's rules, so "And what about Microsoft?" after an outlook question reads Microsoft's latest MD&A. Guidance stays a Coverage Gap: the "no guidance" gap is still stated for outlook questions, since the route only changes where retrieval looks. The outlook words leave the search terms, as the MD&A hint's do (#123), since the route plans only the MD&A. Keeping them as search terms instead (a capturing group in the hint pattern) was measured too, on #123's code, and changed no fact reached on any Arm.
+
+`make eval-retrieval` on dev (free), every Arm, before (#124's code) and after. The hosted `dense` and `hybrid` Arms were run too, with the developer's approval (embedding the questions missing from their cache costs a fraction of a cent):
+
+| Arm | all facts before | after | must-state before | after | outlook facts before | after | outlook must-state before | after | screen |
+|---|---|---|---|---|---|---|---|---|---|
+| `fts5` (shipped) | 775 of 939 | 780 | 260 of 316 | 264 | 44 of 61 | 49 | 14 of 21 | 18 | |
+| `hybrid` (hosted) | 822 | 833 | 279 | 285 | 46 | 57 | 15 | 21 | can't ship (one-call rule); ahead of `fts5` (69 gained, 16 lost, p ahead < 0.001) |
+| `dense` (hosted) | 761 | 775 | 262 | 269 | 40 | 54 | 13 | 20 | can't ship (one-call rule); indistinguishable (74 / 79, p behind = 0.373) |
+| `hybrid-local` | 805 | 816 | 273 | 279 | 46 | 57 | 15 | 21 | kept (59 / 23, p ahead < 0.001) |
+| `rerank` | 770 | 775 | 259 | 263 | 44 | 49 | 14 | 18 | kept (10 / 15, p behind = 0.212) |
+| `dense-local` | 744 | 753 | 257 | 262 | 46 | 55 | 15 | 20 | dropped (68 / 95, p behind = 0.021) |
+
+The three cases the ticket names, `fts5`, before and after:
+
+| Case | must-state reached | all facts reached | Sources | Source tokens |
+|---|---|---|---|---|
+| `outlook-msft-cloud` | 0 of 4 → 4 of 4 | 4 of 12 → 12 of 12 | 19 → 3 | 32,039 → 20,605 |
+| `outlook-nflx-growth` | 2 of 4 → 2 of 4 | 8 of 11 → 5 of 11 | 6 → 1 | 31,020 → 5,567 |
+| `outlook-tsla-2026` | 2 of 3 → 2 of 3 | 6 of 12 → 6 of 12 | 32 → 1 | 31,789 → 2,665 |
+
+- **Evidence Reached rises on every Arm, so the step is kept.** Only the six outlook cases change, and no must-state fact is lost on any Arm. `fts5` reaches 4 more must-state facts, all of them Microsoft's: its Q2 FY2026 MD&A (Azure up 39%, Microsoft Cloud up 26%, commercial remaining performance obligation up 110%, continued capital expenditures) now fills Microsoft's budget, where before 19 Sources across every Microsoft Filing crowded it out.
+- **Netflix loses three details, all in Risk Factors.** Its four Risk Factors details (slower membership growth in mature countries, the cost structure if growth slows, advertising revenue, the WBD debt) are outside the MD&A the route plans, so the three reached before are now planning misses. Its two unreached must-state facts (continued content investment, the WBD closing) are MD&A ranking misses under `fts5`. The embedding Arms, which rank every chunk of the Section, reach all 4.
+- **`fts5` leaves most of the budget unused on this route.** It ranks only the chunks its terms match, and inside one Filing's MD&A few do: Tesla's 10-K MD&A holds 15,493 tokens, but only 2,665 of them match "outlook" or "2026". Tesla's one unreached must-state fact (Robotaxi's business potential) is in a chunk that matches neither. The outlook Sources average 13,597 tokens under `fts5`, against 23,087 under `hybrid-local`, which reaches all 3 of Tesla's must-state facts. #124's budget passing does not help here, since an outlook question about one Company has no other Company to pass the unused share to; #125 (the topic table) works on ranking misses like these.
+- **The Section metrics rise, so the Floors are re-recorded** (ADR 0014): for `fts5`, hit@10 0.947 → 0.965, recall@10 0.870 → 0.879 and MRR 0.739 → 0.757 (#124 left all three as #121 had them). With fewer Filings competing, the outlook cases' expected MD&A Sources rank higher. The Floors move to hit@10 0.96, recall@10 0.87 and MRR 0.75.
+- **The screen** still sends `hybrid-local` and `rerank` on to paid runs, and drops `dense-local`. The hosted `hybrid` Arm reaches the most evidence of any Arm (833 of 939, 285 of 316 must-state), 17 facts more than `hybrid-local`, the same gap as on #124's code. The "How it works" page is regenerated from these reports (`make eval-export`).
+
 ### The version 2 holdout run
 
 Run once on 2026-10-17 (issue #74), after [the version 2 comparisons on dev](#the-version-2-comparisons-on-dev) had confirmed every shipped choice, on Golden Set version 2's 20 holdout cases. It is the same round as those comparisons (code version `756bfadca63122a9`, prompt v7, Golden Set version 2) and the setup that ships: the `fts5` Arm, 600-token chunks and the 32k budget, `gpt-6-luna` at reasoning effort `low`, judged by `jev-1.13.0` at the fact cut-off 0.6. Under [the holdout rule](#the-holdout-rule) it reports and decides nothing: nothing was changed after it, and no case was relabelled. [Version 1's holdout run](#the-holdout-run) stands as recorded.

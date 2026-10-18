@@ -59,9 +59,12 @@ question is routed the same way, to the Cybersecurity Section, Risk Factors and 
 the latest Filings. A risk question asking how the Companies address, manage or respond to
 their risks also searches Business and the MD&A, and a question about what Companies
 depend on (customers, suppliers, government contracts) searches Business and, with no
-other hint, Risk Factors, in the latest Filings unless it names a time phrase. The Query
-Scope records the places searched (`QueryScope.searched`),
-so the answer's reader, and the evaluation, can see where retrieval looked.
+other hint, Risk Factors, in the latest Filings unless it names a time phrase. An outlook
+question ("outlook", "expect", "guidance", "going forward", or "for" a year after the
+Companies' latest Filing) is routed to the MD&A of the latest Filings; a time phrase, or
+a Fiscal Period a Filing covers, replaces that window. Guidance itself stays a Coverage
+Gap. The Query Scope records the places searched (`QueryScope.searched`), so the
+answer's reader, and the evaluation, can see where retrieval looked.
 
 Repeated text costs the budget once (finding 17). A chunk repeated across a Company's
 Filings is stored once and cited from the most recent Filing in the plan that holds it,
@@ -124,6 +127,7 @@ from edgar_rag._query_scope import (
     ScopeFiling,
     SectorPhrase,
     TimeWindow,
+    future_periods,
     in_window,
     inherit_scope,
     is_change_question,
@@ -287,8 +291,8 @@ class QueryScope:
     Companies it resolved to, so the answer and the front-end can name them."""
     time_window: TimeWindow
     """The window each Company's Filings are filtered to. A risk, cybersecurity or
-    dependence question that names no time phrase and no Fiscal Period gets the latest
-    window."""
+    dependence or outlook question that names no time phrase and no Fiscal Period a Filing
+    covers gets the latest window."""
     sections: tuple[str, ...]
     """The Sections the question's hints plan, preferred over the rest of each Filing
     (a cybersecurity question plans Cybersecurity, Risk Factors and MD&A, a legal
@@ -532,12 +536,15 @@ def prepare_answer_context(
         companies, sector_phrases, missing = who.companies, who.sector_phrases, who.missing
         sections = inherited.sections_from.sections
         periods = inherited.period_from.periods
-        # A risk, cybersecurity or dependence question that names no time phrase and no
-        # Fiscal Period reads the latest Filings.
+        # A risk, cybersecurity, dependence or outlook question that names no time phrase
+        # and no Fiscal Period a Filing covers reads the latest Filings. A future year
+        # ("Tesla's outlook for 2026") covers none.
+        latest_route = (
+            reads_latest_filings(inherited.sections_from.text) or inherited.sections_from.outlook
+        )
+        covered = set(periods) - set(future_periods(periods, companies or known))
         window = inherited.period_from.window or (
-            LATEST
-            if reads_latest_filings(inherited.sections_from.text) and not periods
-            else TimeWindow("all")
+            LATEST if latest_route and not covered else TimeWindow("all")
         )
         # The question as retrieval reads it: its own words, plus the words of the
         # message whose topic it inherits ("And what about Microsoft?").
@@ -704,8 +711,21 @@ class _connect:
 
 
 def _companies(db: sqlite3.Connection) -> list[ScopeCompany]:
+    latest = dict(
+        db.execute(
+            "SELECT ticker, MAX(CAST(substr(fiscal_period, -4) AS INTEGER)) FROM filings "
+            "WHERE fiscal_period IS NOT NULL GROUP BY ticker"
+        ).fetchall()
+    )
     return [
-        ScopeCompany(row["ticker"], row["name"], row["coverage"], row["sector"], row["industry"])
+        ScopeCompany(
+            row["ticker"],
+            row["name"],
+            row["coverage"],
+            row["sector"],
+            row["industry"],
+            latest.get(row["ticker"]),
+        )
         for row in db.execute(
             "SELECT ticker, name, coverage, sector, industry FROM companies ORDER BY ticker"
         )

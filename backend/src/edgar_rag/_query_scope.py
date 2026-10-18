@@ -28,6 +28,10 @@ Rule-based, with no LLM (ADR 0003). It recognises:
   ("interest rate" in "interest rate risk", "cybersecurity" in "cybersecurity risks",
   and the legal proceedings words, which find the Financial Statements' contingencies
   note).
+- The outlook route: "outlook", "expect", "expects", "expectations", "guidance",
+  "forecast", "going forward", "next year", or "for" a year later than the latest Fiscal
+  Period of the Companies named, set an MD&A hint. Guidance itself stays a Coverage Gap
+  (`_coverage`): the route changes where retrieval looks, not what the answer may claim.
 - Named periods: "FY2024", "fiscal 2024", "Q2 FY2025", or a bare year ("in 2023"), read
   as Fiscal Periods. A named period decides which copy of a repeated passage is cited.
 - Change questions: "how has it changed", "how did that change", "what is new", "how
@@ -69,6 +73,9 @@ class ScopeCompany:
     coverage: str | None
     sector: str | None = None
     industry: str | None = None
+    latest_fiscal_year: int | None = None
+    """The fiscal year of the Company's latest Filing, which a year named in a question
+    is measured against: a later one is a future year, which no Filing covers."""
 
 
 # Aliases the Filing names don't yield by dropping a suffix.
@@ -412,6 +419,17 @@ _MARKET_RISK_KINDS = (
     rf"{_MARKET_RISK_KIND}(?:(?:\s*,\s*(?:(?:and|or)\s+)?|\s+(?:and|or|&)\s+){_MARKET_RISK_KIND})*"
 )
 
+# The outlook route's words. The MD&A holds a Company's forward-looking commentary; a
+# question naming none of these but asking "for" a future year is an outlook too.
+_OUTLOOK = re.compile(
+    r"\boutlook\b|\bexpect(?:s|ations?)?\b|\bguidance\b|\bforecasts?\b"
+    r"|\bgoing\s+forward\b|\bnext\s+(?:fiscal\s+)?year\b",
+    re.I,
+)
+_FOR_YEAR = re.compile(
+    r"\bfor\s+(?:the\s+)?(?:(?:fiscal\s+)?year\s+|fiscal\s+|FY\s?)?((?:19|20)\d{2})\b", re.I
+)
+
 # Each hint plans one or more Sections. In order: a phrase matched by an earlier hint is
 # not read again by a later one, so "interest rate risk" is Market Risk and "cybersecurity
 # risks" the Cybersecurity hint, neither of them Risk Factors alone. A phrase setting a
@@ -452,6 +470,9 @@ _SECTION_HINTS: tuple[tuple[tuple[str, ...], re.Pattern[str]], ...] = tuple(
             r"\b(cyber(?:[\s-]?(?:security|attacks?|threats?|incidents?))?"
             r"|data\s+breach(?:es)?|information\s+security)(?:\s+risks?)?\b",
         ),
+        # The outlook route plans only the MD&A, so like the MD&A hint its words leave
+        # the search terms (capturing them changed no fact reached on dev, #122).
+        (("MD&A",), _OUTLOOK.pattern),
         (("Risk Factors",), r"\brisk\s+factors?\b|\brisks?\b"),
     )
 )
@@ -490,6 +511,24 @@ _DEPENDENCE = re.compile(
     r"|\bgovernment\s+contracts?\b",
     re.I,
 )
+
+
+def takes_outlook_route(question: str, companies: Iterable[ScopeCompany]) -> bool:
+    """Whether a question takes the outlook route: it names an outlook word, or asks
+    "for" a year later than the latest fiscal year of `companies` (the Companies it
+    names, or every Company when it names none)."""
+    if _OUTLOOK.search(question):
+        return True
+    return bool(future_periods([f"FY{y}" for y in _FOR_YEAR.findall(question)], companies))
+
+
+def future_periods(periods: Sequence[str], companies: Iterable[ScopeCompany]) -> tuple[str, ...]:
+    """The named periods ("FY2026", "Q1 FY2026") whose fiscal year is later than the
+    latest fiscal year of every one of `companies`: periods no Filing of theirs covers."""
+    years = [c.latest_fiscal_year for c in companies if c.latest_fiscal_year is not None]
+    if not years:
+        return ()
+    return tuple(p for p in periods if int(p[-4:]) > max(years))
 
 
 def find_section_hints(question: str) -> tuple[str, ...]:
@@ -726,6 +765,10 @@ class ScopeNamedInMessage:
     phrases that set a Section hint ("risks" on the risk route), which match nearly every
     passage of the Section searched. When that leaves no word naming a topic, they are
     all its words, so removing noise never leaves a question unsearched."""
+    outlook: bool = False
+    """Whether it takes the outlook route, whose MD&A hint reads the latest Filings when
+    no time phrase or covered Fiscal Period is named. It goes with `sections`, so a
+    follow-up inheriting the Section hints inherits the route."""
 
     @property
     def names_companies(self) -> bool:
@@ -748,6 +791,7 @@ def scope_named_in(
     Companies in the Corpus and `missing` the curated Companies that are not."""
     companies, sector_phrases, spans = resolve_companies(text, known)
     missing_names, missing_spans = find_missing(text, missing, spans)
+    outlook = takes_outlook_route(text, companies or known)
     sections, hint_spans = _section_hints(text)
     words = _words(_without_spans(text, spans + missing_spans))
     terms = tuple(
@@ -755,12 +799,15 @@ def scope_named_in(
         for w in _words(_without_spans(text, _merged(spans + missing_spans + hint_spans)))
         if w not in _GENERIC
     )
+    if outlook and "MD&A" not in sections:  # "for" a future year, with no outlook word
+        sections += ("MD&A",)
     return ScopeNamedInMessage(
         text=text,
         companies=companies,
         sector_phrases=sector_phrases,
         missing=missing_names,
         sections=sections,
+        outlook=outlook,
         window=find_time_window(text),
         periods=find_periods(text),
         words=words,

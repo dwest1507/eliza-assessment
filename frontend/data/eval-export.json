@@ -32,22 +32,22 @@
         "overall": {
           "cases": 57,
           "hitAt": {
-            "5": 0.9122807017543859,
-            "10": 0.9473684210526315,
+            "5": 0.9298245614035088,
+            "10": 0.9649122807017544,
             "20": 0.9824561403508771
           },
           "recallAt": {
-            "5": 0.7976190476190477,
-            "10": 0.8698830409356726,
-            "20": 0.9242690058479531
+            "5": 0.806390977443609,
+            "10": 0.8786549707602339,
+            "20": 0.9154970760233918
           },
           "hitAll": 0.9824561403508771,
-          "recallAll": 0.9535087719298246,
-          "mrr": 0.7394110275689223,
-          "meanSources": 12.75438596491228,
+          "recallAll": 0.9447368421052632,
+          "mrr": 0.7569548872180452,
+          "meanSources": 11.456140350877194,
           "facts": 939,
-          "factsReached": 775,
-          "meanSourceTokens": 29064.59649122807
+          "factsReached": 780,
+          "meanSourceTokens": 27378.245614035088
         },
         "byType": [
           {
@@ -96,22 +96,22 @@
             "questionType": "outlook",
             "cases": 6,
             "hitAt": {
-              "5": 0.8333333333333334,
-              "10": 0.8333333333333334,
+              "5": 1.0,
+              "10": 1.0,
               "20": 1.0
             },
             "recallAt": {
-              "5": 0.8333333333333334,
-              "10": 0.8333333333333334,
-              "20": 1.0
+              "5": 0.9166666666666666,
+              "10": 0.9166666666666666,
+              "20": 0.9166666666666666
             },
             "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 0.7222222222222222,
-            "meanSources": 13.666666666666666,
+            "recallAll": 0.9166666666666666,
+            "mrr": 0.8888888888888888,
+            "meanSources": 1.3333333333333333,
             "facts": 61,
-            "factsReached": 44,
-            "meanSourceTokens": 29617.666666666668
+            "factsReached": 49,
+            "meanSourceTokens": 13597.333333333334
           },
           {
             "questionType": "risk",
@@ -179,7 +179,6 @@
         ],
         "missed": [
           "trend-tsla-net-income-three-years",
-          "outlook-msft-cloud",
           "followup-topic-change-export-controls"
         ]
       },
@@ -190,22 +189,22 @@
         "overall": {
           "cases": 57,
           "hitAt": {
-            "5": 0.8421052631578947,
+            "5": 0.8771929824561403,
             "10": 0.9298245614035088,
             "20": 0.9649122807017544
           },
           "recallAt": {
-            "5": 0.7233500417710944,
-            "10": 0.8450292397660818,
-            "20": 0.9108187134502923
+            "5": 0.7496658312447786,
+            "10": 0.8362573099415205,
+            "20": 0.902046783625731
           },
           "hitAll": 0.9824561403508771,
-          "recallAll": 0.941812865497076,
-          "mrr": 0.7393259589854018,
-          "meanSources": 12.017543859649123,
+          "recallAll": 0.9330409356725146,
+          "mrr": 0.7699580948806956,
+          "meanSources": 10.421052631578947,
           "facts": 939,
-          "factsReached": 761,
-          "meanSourceTokens": 30575.57894736842
+          "factsReached": 775,
+          "meanSourceTokens": 29634.01754385965
         },
         "byType": [
           {
@@ -254,22 +253,22 @@
             "questionType": "outlook",
             "cases": 6,
             "hitAt": {
-              "5": 0.6666666666666666,
+              "5": 1.0,
               "10": 1.0,
               "20": 1.0
             },
             "recallAt": {
-              "5": 0.6666666666666666,
-              "10": 1.0,
-              "20": 1.0
+              "5": 0.9166666666666666,
+              "10": 0.9166666666666666,
+              "20": 0.9166666666666666
             },
             "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 0.5978835978835979,
-            "meanSources": 16.5,
+            "recallAll": 0.9166666666666666,
+            "mrr": 0.8888888888888888,
+            "meanSources": 1.3333333333333333,
             "facts": 61,
-            "factsReached": 40,
-            "meanSourceTokens": 32031.666666666668
+            "factsReached": 54,
+            "meanSourceTokens": 23086.833333333332
           },
           {
             "questionType": "risk",
@@ -349,22 +348,22 @@
         "overall": {
           "cases": 57,
           "hitAt": {
-            "5": 0.8771929824561403,
+            "5": 0.8947368421052632,
             "10": 0.9473684210526315,
             "20": 0.9649122807017544
           },
           "recallAt": {
-            "5": 0.7894319131161236,
-            "10": 0.8918128654970761,
-            "20": 0.918421052631579
+            "5": 0.798203842940685,
+            "10": 0.8830409356725146,
+            "20": 0.9096491228070176
           },
           "hitAll": 0.9824561403508771,
-          "recallAll": 0.941812865497076,
-          "mrr": 0.763126882863725,
-          "meanSources": 12.403508771929825,
+          "recallAll": 0.9330409356725146,
+          "mrr": 0.7759923799397483,
+          "meanSources": 10.964912280701755,
           "facts": 939,
-          "factsReached": 822,
-          "meanSourceTokens": 30577.754385964912
+          "factsReached": 833,
+          "meanSourceTokens": 29639.80701754386
         },
         "byType": [
           {
@@ -413,22 +412,22 @@
             "questionType": "outlook",
             "cases": 6,
             "hitAt": {
-              "5": 0.8333333333333334,
+              "5": 1.0,
               "10": 1.0,
               "20": 1.0
             },
             "recallAt": {
-              "5": 0.8333333333333334,
-              "10": 1.0,
-              "20": 1.0
+              "5": 0.9166666666666666,
+              "10": 0.9166666666666666,
+              "20": 0.9166666666666666
             },
             "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 0.7666666666666666,
-            "meanSources": 15.0,
+            "recallAll": 0.9166666666666666,
+            "mrr": 0.8888888888888888,
+            "meanSources": 1.3333333333333333,
             "facts": 61,
-            "factsReached": 46,
-            "meanSourceTokens": 31992.333333333332
+            "factsReached": 57,
+            "meanSourceTokens": 23081.833333333332
           },
           {
             "questionType": "risk",
@@ -507,22 +506,22 @@
         "overall": {
           "cases": 57,
           "hitAt": {
-            "5": 0.8947368421052632,
+            "5": 0.9298245614035088,
             "10": 0.9473684210526315,
             "20": 0.9824561403508771
           },
           "recallAt": {
-            "5": 0.7669172932330828,
-            "10": 0.881578947368421,
-            "20": 0.9198830409356724
+            "5": 0.793233082706767,
+            "10": 0.8728070175438597,
+            "20": 0.9111111111111111
           },
           "hitAll": 0.9824561403508771,
-          "recallAll": 0.9535087719298246,
-          "mrr": 0.7704615073036125,
-          "meanSources": 12.631578947368421,
+          "recallAll": 0.9447368421052632,
+          "mrr": 0.8103529024581656,
+          "meanSources": 11.333333333333334,
           "facts": 939,
-          "factsReached": 770,
-          "meanSourceTokens": 29038.614035087718
+          "factsReached": 775,
+          "meanSourceTokens": 27352.263157894737
         },
         "byType": [
           {
@@ -571,22 +570,22 @@
             "questionType": "outlook",
             "cases": 6,
             "hitAt": {
-              "5": 0.6666666666666666,
+              "5": 1.0,
               "10": 1.0,
               "20": 1.0
             },
             "recallAt": {
-              "5": 0.6666666666666666,
-              "10": 1.0,
-              "20": 1.0
+              "5": 0.9166666666666666,
+              "10": 0.9166666666666666,
+              "20": 0.9166666666666666
             },
             "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 0.5099206349206349,
-            "meanSources": 13.666666666666666,
+            "recallAll": 0.9166666666666666,
+            "mrr": 0.8888888888888888,
+            "meanSources": 1.3333333333333333,
             "facts": 61,
-            "factsReached": 44,
-            "meanSourceTokens": 29617.666666666668
+            "factsReached": 49,
+            "meanSourceTokens": 13597.333333333334
           },
           {
             "questionType": "risk",
@@ -665,22 +664,22 @@
         "overall": {
           "cases": 57,
           "hitAt": {
-            "5": 0.8596491228070176,
-            "10": 0.9298245614035088,
+            "5": 0.8947368421052632,
+            "10": 0.9473684210526315,
             "20": 0.9824561403508771
           },
           "recallAt": {
-            "5": 0.7230576441102757,
-            "10": 0.8432748538011696,
-            "20": 0.9140350877192983
+            "5": 0.7493734335839599,
+            "10": 0.852046783625731,
+            "20": 0.9052631578947369
           },
           "hitAll": 0.9824561403508771,
-          "recallAll": 0.9432748538011696,
-          "mrr": 0.7329887218045112,
-          "meanSources": 12.087719298245615,
+          "recallAll": 0.9345029239766082,
+          "mrr": 0.7636904761904761,
+          "meanSources": 10.789473684210526,
           "facts": 939,
-          "factsReached": 744,
-          "meanSourceTokens": 30567.385964912282
+          "factsReached": 753,
+          "meanSourceTokens": 29625.140350877195
         },
         "byType": [
           {
@@ -729,22 +728,22 @@
             "questionType": "outlook",
             "cases": 6,
             "hitAt": {
-              "5": 0.6666666666666666,
-              "10": 0.8333333333333334,
+              "5": 1.0,
+              "10": 1.0,
               "20": 1.0
             },
             "recallAt": {
-              "5": 0.6666666666666666,
-              "10": 0.8333333333333334,
-              "20": 1.0
+              "5": 0.9166666666666666,
+              "10": 0.9166666666666666,
+              "20": 0.9166666666666666
             },
             "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 0.7083333333333334,
-            "meanSources": 13.666666666666666,
+            "recallAll": 0.9166666666666666,
+            "mrr": 1.0,
+            "meanSources": 1.3333333333333333,
             "facts": 61,
-            "factsReached": 46,
-            "meanSourceTokens": 32036.166666666668
+            "factsReached": 55,
+            "meanSourceTokens": 23084.833333333332
           },
           {
             "questionType": "risk",
@@ -812,7 +811,6 @@
         ],
         "missed": [
           "trend-tsla-net-income-three-years",
-          "outlook-meta-capex-2026",
           "followup-topic-change-export-controls",
           "trend-dis-segments-fy2025"
         ]
@@ -824,22 +822,22 @@
         "overall": {
           "cases": 57,
           "hitAt": {
-            "5": 0.8771929824561403,
+            "5": 0.9122807017543859,
             "10": 0.9649122807017544,
             "20": 0.9824561403508771
           },
           "recallAt": {
-            "5": 0.7329991645781119,
-            "10": 0.8961988304093568,
-            "20": 0.9198830409356724
+            "5": 0.759314954051796,
+            "10": 0.8874269005847953,
+            "20": 0.9111111111111111
           },
           "hitAll": 0.9824561403508771,
-          "recallAll": 0.9491228070175439,
-          "mrr": 0.7655179615705933,
-          "meanSources": 12.12280701754386,
+          "recallAll": 0.9403508771929825,
+          "mrr": 0.7878863826232247,
+          "meanSources": 10.771929824561404,
           "facts": 939,
-          "factsReached": 805,
-          "meanSourceTokens": 30583.087719298244
+          "factsReached": 816,
+          "meanSourceTokens": 29641.929824561405
         },
         "byType": [
           {
@@ -888,22 +886,22 @@
             "questionType": "outlook",
             "cases": 6,
             "hitAt": {
-              "5": 0.6666666666666666,
+              "5": 1.0,
               "10": 1.0,
               "20": 1.0
             },
             "recallAt": {
-              "5": 0.6666666666666666,
-              "10": 1.0,
-              "20": 1.0
+              "5": 0.9166666666666666,
+              "10": 0.9166666666666666,
+              "20": 0.9166666666666666
             },
             "hitAll": 1.0,
-            "recallAll": 1.0,
-            "mrr": 0.7041666666666666,
-            "meanSources": 14.166666666666666,
+            "recallAll": 0.9166666666666666,
+            "mrr": 0.9166666666666666,
+            "meanSources": 1.3333333333333333,
             "facts": 61,
-            "factsReached": 46,
-            "meanSourceTokens": 32028.0
+            "factsReached": 57,
+            "meanSourceTokens": 23087.0
           },
           {
             "questionType": "risk",
@@ -981,23 +979,23 @@
         "shippedArm": "fts5",
         "metric": "evidence reached",
         "facts": 939,
-        "challengerOnly": 73,
-        "shippedOnly": 87,
-        "pValue": 0.3040598777154111,
-        "pAhead": 0.8822087867653651,
-        "pBehind": 0.15202993885770555,
-        "verdict": "behind"
+        "challengerOnly": 74,
+        "shippedOnly": 79,
+        "pValue": 0.7465275303369354,
+        "pAhead": 0.6861145463998155,
+        "pBehind": 0.3732637651684677,
+        "verdict": "indistinguishable"
       },
       {
         "arm": "hybrid",
         "shippedArm": "fts5",
         "metric": "evidence reached",
         "facts": 939,
-        "challengerOnly": 67,
-        "shippedOnly": 20,
-        "pValue": 4.3053681250011924e-07,
-        "pAhead": 2.1526840625005962e-07,
-        "pBehind": 0.9999999382418405,
+        "challengerOnly": 69,
+        "shippedOnly": 16,
+        "pValue": 5.240266679443081e-09,
+        "pAhead": 2.6201333397215405e-09,
+        "pBehind": 0.999999999413753,
         "verdict": "ahead"
       },
       {
@@ -1017,11 +1015,11 @@
         "shippedArm": "fts5",
         "metric": "evidence reached",
         "facts": 939,
-        "challengerOnly": 69,
-        "shippedOnly": 100,
-        "pValue": 0.02074104038358712,
-        "pAhead": 0.9932018228466346,
-        "pBehind": 0.01037052019179356,
+        "challengerOnly": 68,
+        "shippedOnly": 95,
+        "pValue": 0.04137242299938576,
+        "pAhead": 0.9860055140440604,
+        "pBehind": 0.02068621149969288,
         "verdict": "behind"
       },
       {
@@ -1029,11 +1027,11 @@
         "shippedArm": "fts5",
         "metric": "evidence reached",
         "facts": 939,
-        "challengerOnly": 57,
-        "shippedOnly": 27,
-        "pValue": 0.001404494631113956,
-        "pAhead": 0.000702247315556978,
-        "pBehind": 0.9996860263642091,
+        "challengerOnly": 59,
+        "shippedOnly": 23,
+        "pValue": 8.715478657320522e-05,
+        "pAhead": 4.357739328660261e-05,
+        "pBehind": 0.9999838414369006,
         "verdict": "ahead"
       }
     ],
@@ -1048,21 +1046,21 @@
         {
           "name": "dense",
           "facts": 939,
-          "factsReached": 761,
-          "gained": 73,
-          "lost": 87,
-          "pBehind": 0.15202993885770555,
+          "factsReached": 775,
+          "gained": 74,
+          "lost": 79,
+          "pBehind": 0.3732637651684677,
           "kept": false,
           "shippable": false,
-          "reason": "dropped: makes an API call at query time, so it can't ship (behind on Evidence Reached, p behind = 0.152; available if the one-call limit is lifted)"
+          "reason": "dropped: makes an API call at query time, so it can't ship (indistinguishable on Evidence Reached, p behind = 0.373; available if the one-call limit is lifted)"
         },
         {
           "name": "hybrid",
           "facts": 939,
-          "factsReached": 822,
-          "gained": 67,
-          "lost": 20,
-          "pBehind": 0.9999999382418405,
+          "factsReached": 833,
+          "gained": 69,
+          "lost": 16,
+          "pBehind": 0.999999999413753,
           "kept": false,
           "shippable": false,
           "reason": "dropped: makes an API call at query time, so it can't ship (ahead on Evidence Reached, p behind = 1.000; available if the one-call limit is lifted)"
@@ -1070,7 +1068,7 @@
         {
           "name": "rerank",
           "facts": 939,
-          "factsReached": 770,
+          "factsReached": 775,
           "gained": 10,
           "lost": 15,
           "pBehind": 0.21217811107635498,
@@ -1081,21 +1079,21 @@
         {
           "name": "dense-local",
           "facts": 939,
-          "factsReached": 744,
-          "gained": 69,
-          "lost": 100,
-          "pBehind": 0.01037052019179356,
+          "factsReached": 753,
+          "gained": 68,
+          "lost": 95,
+          "pBehind": 0.02068621149969288,
           "kept": false,
           "shippable": true,
-          "reason": "dropped: behind on Evidence Reached (p behind = 0.010 < 0.20)"
+          "reason": "dropped: behind on Evidence Reached (p behind = 0.021 < 0.20)"
         },
         {
           "name": "hybrid-local",
           "facts": 939,
-          "factsReached": 805,
-          "gained": 57,
-          "lost": 27,
-          "pBehind": 0.9996860263642091,
+          "factsReached": 816,
+          "gained": 59,
+          "lost": 23,
+          "pBehind": 0.9999838414369006,
           "kept": true,
           "shippable": true,
           "reason": "kept: not behind (p behind = 1.000), 1 of 2 not behind on Evidence Reached"

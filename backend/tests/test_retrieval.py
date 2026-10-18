@@ -817,6 +817,72 @@ def test_a_question_of_only_generic_and_hint_words_still_gets_sources(index, que
     assert _passages(context)
 
 
+# --- The outlook route -------------------------------------------------------------------
+
+APPLE_LATEST = ["AAPL_10-K_2025-09-27", "AAPL_10-Q_2025-12-27"]
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "What is Apple's outlook for its Services business?",
+        "What does Apple expect for its gross margin?",
+        "What does Apple say it expects from tariffs?",
+        "What are Apple's expectations for its Services revenue?",
+        "What guidance does Apple give for its gross margin?",
+        "What does Apple forecast for its Services business?",
+        "How does Apple see its gross margin going forward?",
+        "What does Apple say about its gross margin next year?",
+    ],
+)
+def test_an_outlook_question_searches_only_the_latest_mdna(index, question):
+    context = _ask(index, question)
+
+    assert context.query_scope.sections == ("MD&A",)
+    assert context.query_scope.time_window.label == "latest"
+    assert _scope_filings(context, "AAPL") == APPLE_LATEST
+    assert context.sources
+    text = [s for s in context.sources if s.kind == "text"]
+    assert {s.section for s in text} == {"MD&A"}
+    assert {s.filing_id for s in text} <= set(APPLE_LATEST)
+
+
+def test_an_outlook_question_over_the_last_two_years_keeps_that_window(index):
+    context = _ask(index, "How has NVIDIA's growth outlook changed over the last two years?")
+
+    assert context.query_scope.sections == ("MD&A",)
+    assert context.query_scope.time_window.label == "last 2 years"
+    assert len(_scope_filings(context, "NVDA")) == 8
+    assert {s.section for s in context.sources if s.kind == "text"} == {"MD&A"}
+
+
+def test_an_outlook_for_a_year_after_the_latest_filing_reads_the_latest_mdna(index):
+    # Tesla's latest Filing is its FY2025 10-K, so 2026 names no Filing of Tesla's.
+    for question in ("What is Tesla's outlook for 2026?", "What does Tesla plan for 2026?"):
+        context = _ask(index, question)
+
+        assert context.query_scope.sections == ("MD&A",), question
+        assert context.query_scope.time_window.label == "latest", question
+        assert _scope_filings(context, "TSLA") == ["TSLA_10-K_2025-12-31"]
+        assert {(s.filing_id, s.section) for s in context.sources if s.kind == "text"} == {
+            ("TSLA_10-K_2025-12-31", "MD&A")
+        }
+
+
+def test_a_year_a_filing_covers_is_not_an_outlook(index):
+    context = _ask(index, "What did Tesla say about deliveries for 2024?")
+
+    assert context.query_scope.sections == ()
+    assert context.query_scope.periods == ("FY2024",)
+    assert context.query_scope.time_window.label == "all Filings"
+
+
+def test_an_outlook_question_still_states_that_guidance_is_not_in_the_filings(index):
+    context = _ask(index, "What is Tesla's outlook for 2026?")
+
+    assert [(g.kind, g.companies) for g in context.coverage_gaps] == [("no_guidance", ("TSLA",))]
+
+
 # --- The places searched -----------------------------------------------------------------
 
 
