@@ -681,6 +681,61 @@ def test_the_report_and_its_summary_show_each_cases_contradicted_claims(index, t
     assert "Contradicted Claims in risk-aapl-tsla-jpm: Tesla depends on its CEO." in printed
 
 
+GAP_SENTENCE = (
+    "**No guidance in the Filings: NVIDIA's own guidance is not in the Filings provided; the "
+    "outlook below is drawn from MD&A commentary and risk factors.**"
+)
+"""The no-guidance note of a saved Brief Suite answer that Jev judged contradicted (#86)."""
+GAP_ANSWER = f"NVIDIA's revenue grew in fiscal 2025 [S1]. {GAP_SENTENCE} [S1] [S2]"
+
+
+def _gap_report(index, gaps):
+    from edgar_eval.generation import evaluate
+
+    judge = FakeJudge(verdicts={GAP_SENTENCE: "contradicted"})
+    report = evaluate(
+        [_case("nvda-outlook", "How has NVIDIA's revenue outlook changed?", gaps=gaps)],
+        FakeModel(GAP_ANSWER),
+        judge,
+        index,
+        names={"NVDA": ("NVDA", "NVIDIA")},
+        fact_values=lambda filing_id: [],
+        log_path=None,
+    )
+    return report, judge
+
+
+def test_a_cited_sentence_stating_an_expected_coverage_gap_is_not_sent_to_jev(index):
+    report, judge = _gap_report(index, [("no_guidance", ("NVDA",))])
+
+    [result] = report.cases
+    _, _, claims, _ = judge.asked[0]
+    assert [c.text for c in claims] == ["NVIDIA's revenue grew in fiscal 2025."]
+    # Left out of Faithfulness and recorded, so a reviewer still sees it; the Coverage Gap
+    # check alone scores it.
+    assert [(c.text, c.tags) for c in result.gap_claims] == [(GAP_SENTENCE, ("S1", "S2"))]
+    assert result.coverage_gaps.passed
+    assert result.contradictions.passed
+    assert result.faithfulness == 1.0
+    assert report.overall.answers_contradicted == 0
+    import json
+
+    saved = json.loads(json.dumps(report.to_dict()))["cases"][0]["gap_claims"]
+    assert saved == [
+        {"text": GAP_SENTENCE, "tags": ["S1", "S2"], "heading": "", "table_header": ""}
+    ]
+
+
+def test_a_coverage_gap_sentence_the_case_does_not_expect_still_goes_to_jev(index):
+    report, judge = _gap_report(index, [])
+
+    [result] = report.cases
+    _, _, claims, _ = judge.asked[0]
+    assert GAP_SENTENCE in [c.text for c in claims]
+    assert result.gap_claims == ()
+    assert result.contradictions.claims == (GAP_SENTENCE,)
+
+
 UNCITED_ANSWER = """\
 Apple relies on outsourcing partners in Asia [S1].
 
@@ -928,7 +983,7 @@ def test_the_command_answers_through_a_chosen_arm_and_records_it(index, tmp_path
     assert saved["query_api_call"] is True  # so the selection rule never chooses it
 
 
-def _saved_report(index, tmp_path, answer, fact_values):
+def _saved_report(index, tmp_path, answer, fact_values, judge=None, case="risk-aapl-tsla-jpm"):
     """A version 1 generation report written by the command line, as `make eval-generation`
     saved it before version 2 became the default."""
     import io
@@ -941,7 +996,7 @@ def _saved_report(index, tmp_path, answer, fact_values):
         "--golden-set",
         str(GOLDEN_SET_V1),
         "--case",
-        "risk-aapl-tsla-jpm",
+        case,
         "--index",
         str(index),
         "--log",
@@ -950,7 +1005,7 @@ def _saved_report(index, tmp_path, answer, fact_values):
     code = main(
         [*argv, "--json", str(path)],
         model=FakeModel(answer),
-        judge=FakeJudge(),
+        judge=judge or FakeJudge(),
         fact_values=fact_values,
         out=io.StringIO(),
     )
@@ -1001,6 +1056,73 @@ def test_rescoring_redoes_the_figure_check_from_the_saved_answers_alone(index, t
             summary.pop("figures_exact")
     assert after == before
     assert "1.00 → 0.00" in out.getvalue()
+
+
+TESLA_GAP = "Tesla's own guidance for 2026 is not in the Filings provided."
+TESLA_GAP_ANSWER = f"Tesla depends on Elon Musk [S1]. {TESLA_GAP} [S1] [S2]"
+"""An answer to outlook-tsla-2026, which expects a "no guidance" Coverage Gap, stating it
+in a cited sentence."""
+
+
+def _saved_before_gap_claims(index, tmp_path, monkeypatch):
+    """A report saved before expected Coverage Gap sentences were kept from Jev, which
+    judged this one contradicted."""
+    from edgar_eval import generation
+
+    with monkeypatch.context() as patch:
+        patch.setattr(generation, "split_gap_claims", lambda found, expected: (list(found), []))
+        return _saved_report(
+            index,
+            tmp_path,
+            TESLA_GAP_ANSWER,
+            lambda filing_id: [],
+            judge=FakeJudge(verdicts={TESLA_GAP: "contradicted"}),
+            case="outlook-tsla-2026",
+        )
+
+
+def test_rescoring_drops_jevs_verdicts_on_expected_coverage_gap_sentences(
+    index, tmp_path, monkeypatch
+):
+    import io
+    import json
+
+    from edgar_eval.generation import main
+
+    path, before = _saved_before_gap_claims(index, tmp_path, monkeypatch)
+    [case] = before["cases"]
+    assert case["contradictions"]["claims"] == [TESLA_GAP]
+    assert case["faithfulness"] == 0.5
+    assert before["overall"]["answers_contradicted"] == 1
+
+    out = io.StringIO()
+    rescore = ["--rescore", str(path), "--index", str(index)]
+    assert main(rescore, model=Refuses(), judge=Refuses(), out=out) == 0
+
+    after = json.loads(path.read_text())
+    [case] = after["cases"]
+    assert [c["claim"] for c in case["judgments"]["claims"]] == ["Tesla depends on Elon Musk."]
+    assert case["gap_claims"] == [
+        {"text": TESLA_GAP, "tags": ["S1", "S2"], "heading": "", "table_header": ""}
+    ]
+    assert case["contradictions"] == {"claims": [], "count": 0, "passed": True}
+    assert case["faithfulness"] == 1.0
+    assert case["passed"] == (
+        not case["truncated"]
+        and not case["citations"]["unknown_tags"]
+        and not case["citations"]["uncited"]
+        and not case["coverage_gaps"]["missing"]
+    )
+    for summary in (after["overall"], after["by_type"]["outlook"]):
+        assert summary["answers_contradicted"] == 0
+        assert summary["faithfulness"] == 1.0
+    printed = out.getvalue()
+    assert "1 Coverage Gap claim kept from Jev" in printed
+    assert "Contradicted Claims 1 → 0" in printed
+
+    # A second rescore finds nothing more to keep from Jev, and changes nothing.
+    assert main(rescore, model=Refuses(), judge=Refuses(), out=io.StringIO()) == 0
+    assert json.loads(path.read_text()) == after
 
 
 def test_a_report_saved_before_tiers_and_stop_reasons_still_loads_and_rescores(index, tmp_path):
@@ -1081,6 +1203,37 @@ def test_rescoring_rebuilds_each_answer_context_at_the_reports_own_setting(index
     path.write_text(json.dumps(saved | {"chunk_tokens": 300}))
     with pytest.raises(ValueError, match="300-token chunks"):
         main(rescore, fact_values=lambda filing_id: [], out=io.StringIO())
+
+
+def test_rescoring_rebuilds_a_report_of_another_chunk_size_from_that_index_beside_it(
+    index, indexed_filings, tmp_path
+):
+    """`make eval-rescore` names the shipped index; a report answered from 300-token chunks
+    is rebuilt from `edgar_rag-chunks300.sqlite` beside it, as `CHUNK_TOKENS=300` built it."""
+    import io
+    import json
+    import shutil
+
+    from edgar_eval.generation import main
+    from edgar_rag.retrieval import build_index
+
+    shipped = shutil.copy(index, tmp_path / "edgar_rag.sqlite")
+    other = build_index(indexed_filings, tmp_path / "edgar_rag-chunks300.sqlite", chunk_tokens=300)
+    path = tmp_path / "generation-dev-chunks300.json"
+    argv = ["--case", "trend-tsla-net-income-three-years", "--log", str(tmp_path / "l")]
+    main(
+        [*argv, "--index", str(other), "--json", str(path)],
+        model=FakeModel(ANSWER),
+        judge=FakeJudge(),
+        fact_values=lambda filing_id: [],
+        out=io.StringIO(),
+    )
+    saved = json.loads(path.read_text())
+    assert saved["chunk_tokens"] == 300
+
+    rescore = ["--rescore", str(path), "--index", str(shipped)]
+    assert main(rescore, fact_values=lambda filing_id: [], out=io.StringIO()) == 0
+    assert json.loads(path.read_text()) == saved
 
 
 def test_a_report_saved_before_contradicted_claims_were_counted_still_loads(index, tmp_path):

@@ -47,7 +47,7 @@ The share of a case's must-state Required Facts that an answer states, as judged
 _Avoid_: Recall (unqualified), coverage
 
 **Faithfulness**:
-The share of an answer's claims that the Sources they cite support, as judged by Jev. Every sentence of the answer is a claim, except its headings, its Coverage Gap wordings (and uncited sentences that say what the Sources or Filings lack, naming them) and its lead-ins ending in a colon. An uncited sentence about a Company is a claim, however much it looks like a Coverage Gap. A claim that cites no Source is unsupported.
+The share of an answer's claims that the Sources they cite support, as judged by Jev. Every sentence of the answer is a claim, except its headings, its Coverage Gap wordings (and uncited sentences that say what the Sources or Filings lack, naming them) and its lead-ins ending in a colon. An uncited sentence about a Company is a claim, however much it looks like a Coverage Gap. A claim that cites no Source is unsupported. A cited sentence stating one of the case's expected Coverage Gaps, other than "periods differ", is left to the Coverage Gap check and not judged by Jev.
 _Avoid_: Groundedness, accuracy, hallucination rate
 
 **Contradicted Claim**:

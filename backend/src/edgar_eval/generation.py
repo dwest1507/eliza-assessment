@@ -9,8 +9,10 @@ Call to the generator under test. The answer is then scored three ways:
 - **By Jev** (`edgar_eval.judge`), pinned to an exact version: whether the answer
   states each of the case's Required Facts, and Faithfulness of each claim to the
   Sources it cites. Fact Recall is scored on the must-state facts only; detail recall,
-  on the details, is reported beside it and decides nothing. Any claim Jev
-  judges contradicted by its Sources, a Contradicted Claim, fails the answer
+  on the details, is reported beside it and decides nothing. A cited sentence
+  stating one of the case's expected Coverage Gaps is kept from Jev and scored by the
+  Coverage Gap check alone (`split_gap_claims`; the case records it in `gap_claims`).
+  Any claim Jev judges contradicted by its Sources, a Contradicted Claim, fails the answer
   (`ContradictionCheck`), beside the citation and Coverage Gap checks in code, whatever
   its Faithfulness.
   A judgment Jev fails to make is recorded in its case, which keeps its code checks
@@ -48,9 +50,10 @@ costs money:
 about a third of a cent per case with `gpt-6-luna`, Jev included.
 
 `--rescore REPORT...` (`make eval-rescore`) instead redoes the figure check of saved
-reports from their stored answers, in place, with no Answer Call and no Jev call
-(`rescore_figures`). A changed check is a fixed measurement, not a new choice, so
-rescoring is allowed on the holdout.
+reports from their stored answers (`rescore_figures`), and drops Jev's stored verdicts on
+their expected Coverage Gap sentences (`rescore_gap_claims`; for a Brief Suite report,
+only that, in every run), in place, with no Answer Call and no Jev call. A changed check
+is a fixed measurement, not a new choice, so rescoring is allowed on the holdout.
 
 A Golden Set report records the round it was run in (`current_round`): the code version
 (a digest of the backend's source, `code_version`), the prompt version and the Golden
@@ -85,6 +88,7 @@ from edgar_eval.answer_checks import (
     check_figures,
     check_structure,
     claims,
+    split_gap_claims,
 )
 from edgar_eval.generators import answer_cost, answer_model
 from edgar_eval.judge import FACT_CUTOFF, Evidence, Judgments
@@ -125,6 +129,8 @@ __all__ = [
     "evaluate",
     "main",
     "rescore_figures",
+    "rescore_gap_claims",
+    "stored_contradictions",
 ]
 
 
@@ -188,6 +194,10 @@ class CaseResult:
     """Evidence Reached for each Required Fact, in the case's order: whether its evidence
     quote is in the text of the Answer Context's Sources. Empty in reports saved before
     it was recorded."""
+    gap_claims: tuple[Claim, ...] = ()
+    """The cited claims stating one of the case's expected Coverage Gaps
+    (`edgar_eval.answer_checks.split_gap_claims`): kept from Jev, so out of Faithfulness and
+    the Contradicted Claims, and scored by the Coverage Gap check alone."""
 
     @property
     def truncated(self) -> bool:
@@ -429,6 +439,7 @@ def _run_case(
     source_text = normalise_whitespace("\n".join(s.text for s in context.sources))
     covered = {s.ticker: names.get(s.ticker, (s.ticker,)) for s in context.sources}
     gaps = case.expected_coverage_gaps
+    judged, gap_claims = split_gap_claims(claims(answer), gaps)
     return CaseResult(
         case_id=case.id,
         question_type=case.question_type,
@@ -444,9 +455,7 @@ def _run_case(
         citations=check_citations(answer, passages),
         figures=_check_figures(answer, context.sources, fact_values),
         coverage_gaps=check_coverage_gaps(answer, gaps, names) if gaps else None,
-        judgments=judge.judge(
-            answer, [f.fact for f in case.required_facts], claims(answer), evidence
-        ),
+        judgments=judge.judge(answer, [f.fact for f in case.required_facts], judged, evidence),
         structure=check_structure(answer, covered),
         fact_tiers=tuple(f.tier for f in case.required_facts),
         stop_reason=record.stop_reason,
@@ -454,6 +463,7 @@ def _run_case(
         evidence_reached=tuple(
             normalise_whitespace(f.evidence) in source_text for f in case.required_facts
         ),
+        gap_claims=tuple(gap_claims),
     )
 
 
@@ -545,6 +555,84 @@ def rescore_figures(
             c for c in rescored["cases"] if c["question_type"] == kind
         )
     return rescored
+
+
+def rescore_gap_claims(report: dict, cases: Iterable[GoldenCase]) -> dict:
+    """A saved report (`GenerationReport.to_dict`) with Jev's stored verdicts on its
+    Coverage Gap claims dropped, as the harness now keeps those claims from Jev
+    (`edgar_eval.answer_checks.split_gap_claims`, ADR 0013's 2026-10-17 note).
+
+    Each dropped claim moves to its case's `gap_claims`, so a reviewer still sees it, and
+    the scores that rest on the claims judged are recomputed: the case's Faithfulness,
+    Contradicted Claims and pass, and the Faithfulness and answers contradicted of each
+    summary that holds it. A field the report never had is not added, except
+    `gap_claims`. Jev's instructions do not change, so no claim is judged again and no
+    Jev call is made; a Faithfulness judgment that failed stays failed."""
+    by_id = {c.id: c for c in cases}
+    rescored = json.loads(json.dumps(report))
+    changed: set[str] = set()
+    for case in rescored["cases"]:
+        judgments = case["judgments"]
+        stored = [
+            Claim(c["claim"], tuple(c["tags"]), c.get("heading", ""), c.get("table_header", ""))
+            for c in judgments["claims"]
+        ]
+        _, kept = split_gap_claims(stored, by_id[case["case_id"]].expected_coverage_gaps)
+        case["gap_claims"] = case.get("gap_claims", []) + [asdict(c) for c in kept]
+        if not kept:
+            continue
+        judgments["claims"] = [
+            judged
+            for judged, claim in zip(judgments["claims"], stored, strict=True)
+            if claim not in kept
+        ]
+        case["faithfulness"] = _faithfulness(case)
+        contradicted = stored_contradictions(case)
+        if "contradictions" in case:
+            case["contradictions"] = {
+                "claims": contradicted,
+                "count": len(contradicted),
+                "passed": not contradicted,
+            }
+        if "passed" in case:
+            citations, gaps = case["citations"], case["coverage_gaps"]
+            case["passed"] = (
+                not case.get("truncated", False)
+                and not citations["unknown_tags"]
+                and not citations["uncited"]
+                and (gaps is None or not gaps["missing"])
+                and not contradicted
+            )
+        changed.add(case["question_type"])
+
+    def summarise(summary: dict, group: list[dict]) -> None:
+        scores = [f for f in map(_faithfulness, group) if f is not None]
+        summary["faithfulness"] = fmean(scores) if scores else None
+        if "answers_contradicted" in summary:
+            summary["answers_contradicted"] = sum(bool(stored_contradictions(c)) for c in group)
+
+    if changed:
+        summarise(rescored["overall"], rescored["cases"])
+    for kind in changed:
+        summarise(
+            rescored["by_type"][kind], [c for c in rescored["cases"] if c["question_type"] == kind]
+        )
+    return rescored
+
+
+def _faithfulness(case: dict) -> float | None:
+    """A saved case's Faithfulness, from its stored verdicts (`Judgments.faithfulness`)."""
+    claimed = case["judgments"]["claims"]
+    failures = case["judgments"].get("failures", ())
+    if not claimed or any(f["judgment"] == "faithfulness" for f in failures):
+        return None
+    return sum(c["verdict"] == "supported" for c in claimed) / len(claimed)
+
+
+def stored_contradictions(case: dict) -> list[str]:
+    """A saved case's (`GenerationReport.to_dict`) Contradicted Claims, read from its
+    stored verdicts."""
+    return [c["claim"] for c in case["judgments"]["claims"] if c["verdict"] == "contradicted"]
 
 
 # --- Inputs the harness reads from the repository -----------------------------------------
@@ -650,6 +738,7 @@ def main(
         estimate_cost,
         evaluate_brief_suite,
         print_brief_suite_report,
+        rescore_brief_gap_claims,
     )
 
     out = out or sys.stdout
@@ -718,25 +807,40 @@ def main(
     if args.rescore:
         for path in args.rescore:
             report = json.loads(path.read_text(encoding="utf-8"))
+            if "run_reports" in report:  # a Brief Suite report: its Coverage Gap claims
+                golden_sets = dict.fromkeys((GOLDEN_SET_V1, GOLDEN_SET_V2, args.golden_set))
+                suite = load_brief_suite(args.brief_suite or DEFAULT_BRIEF_SUITE, golden_sets)
+                rescored = rescore_brief_gap_claims(report, suite.cases)
+                path.write_text(json.dumps(rescored, indent=2) + "\n", encoding="utf-8")
+                runs = (report["run_reports"], rescored["run_reports"])
+                print(
+                    f"{path}: {_gap_claims_line(*runs)}; cases passed "
+                    f"{report['cases_passed']} → {rescored['cases_passed']}",
+                    file=out,
+                )
+                continue
             saved_arm = by_name[report["arm"]] if report.get("arm") else arm
             # Each report against its own Golden Set version (version 1 if it records
             # none, as reports from before the version was recorded): the file named if
             # it is that version, else that version's own file.
             version = report.get("golden_set_version", 1)
             own = golden if golden.version == version else None
+            own_cases = (own or load_golden_set(GOLDEN_SET_FILES[version])).cases
             rescored = rescore_figures(
                 report,
-                (own or load_golden_set(GOLDEN_SET_FILES[version])).cases,
-                args.index,
+                own_cases,
+                _index_for(args.index, report.get("chunk_tokens")),
                 fact_values=fact_values or corpus_fact_values,
                 prepare=saved_arm.prepare or prepare_answer_context,
             )
+            rescored = rescore_gap_claims(rescored, own_cases)
             path.write_text(json.dumps(rescored, indent=2) + "\n", encoding="utf-8")
             was, now = report["overall"]["figures_exact"], rescored["overall"]["figures_exact"]
             failing = [c["case_id"] for c in rescored["cases"] if c["figures"]["unmatched"]]
             print(
                 f"{path}: figures exact {was:.2f} → {now:.2f}; "
-                f"not exact: {', '.join(failing) or 'none'}",
+                f"not exact: {', '.join(failing) or 'none'}; "
+                f"{_gap_claims_line([report], [rescored])}",
                 file=out,
             )
         return 0
@@ -803,6 +907,40 @@ def main(
         args.json.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
         print(f"\nWritten to {args.json.resolve()}", file=out)
     return 1 if report.errors else 0
+
+
+def _index_for(index: Path, chunk_tokens: int | None) -> Path:
+    """The index a saved report's Answer Contexts are rebuilt from: `index`, or, for a
+    report answered from chunks of another size, the index of that size beside it
+    (`edgar_rag-chunks450.sqlite`, as `make eval-generation CHUNK_TOKENS=450` builds it)
+    when it exists. Without it, `rescore_figures` refuses the report."""
+    if chunk_tokens is None or not index.exists() or chunk_tokens == index_chunk_tokens(index):
+        return index
+    other = index.with_name(f"{index.stem}-chunks{chunk_tokens}{index.suffix}")
+    return other if other.exists() else index
+
+
+def _gap_claims_line(before: Sequence[dict], after: Sequence[dict]) -> str:
+    """What a rescore changed in saved generation reports (a Brief Suite's runs, or one
+    report): the Coverage Gap claims it kept from Jev, and the Contradicted Claims and
+    answers contradicted before and after."""
+
+    def counts(reports: Sequence[dict]) -> tuple[int, int, int]:
+        cases = [c for r in reports for c in r["cases"]]
+        return (
+            sum(len(c.get("gap_claims", ())) for c in cases),
+            sum(len(stored_contradictions(c)) for c in cases),
+            sum(bool(stored_contradictions(c)) for c in cases),
+        )
+
+    (kept_was, claims_was, answers_was), (kept, claims_now, answers_now) = map(
+        counts, (before, after)
+    )
+    noun = "claim" if kept - kept_was == 1 else "claims"
+    return (
+        f"{kept - kept_was} Coverage Gap {noun} kept from Jev; Contradicted Claims "
+        f"{claims_was} → {claims_now}, answers contradicted {answers_was} → {answers_now}"
+    )
 
 
 _COLUMNS = (

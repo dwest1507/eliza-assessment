@@ -697,6 +697,75 @@ def test_a_gap_about_one_company_may_be_stated_without_naming_it_again():
     assert check_coverage_gaps(answer, [gap("no_guidance", "TSLA")], {"TSLA": ("Tesla",)}).passed
 
 
+# --- Expected Coverage Gap sentences, kept from Jev (#86) ---------------------------------
+
+NVIDIA_GAP = (
+    "**No guidance in the Filings: NVIDIA's own guidance is not in the Filings provided; the "
+    "outlook below is drawn from MD&A commentary and risk factors.**"
+)
+"""The opening of a saved Brief Suite answer (brief-outlook-nvda-revenue-two-years, run 5
+of the version 1 baseline), which Jev judged contradicted by the Sources it cites."""
+
+NVIDIA_ANSWER = (
+    "NVIDIA's revenue grew from $60,922 million in FY2024 to $130,497 million in FY2025 "
+    f"[S4] [S8]. {NVIDIA_GAP} [S4] [S8] [S15]"
+)
+
+
+def test_a_cited_sentence_stating_an_expected_coverage_gap_is_left_to_the_code_check():
+    from edgar_eval.answer_checks import split_gap_claims
+
+    found = claims(NVIDIA_ANSWER)
+    judged, gap_claims = split_gap_claims(found, [gap("no_guidance", "NVDA")])
+
+    assert [c.text for c in judged] == [
+        "NVIDIA's revenue grew from $60,922 million in FY2024 to $130,497 million in FY2025."
+    ]
+    assert [(c.text, c.tags) for c in gap_claims] == [(NVIDIA_GAP, ("S4", "S8", "S15"))]
+
+
+def test_a_coverage_gap_sentence_the_case_does_not_expect_is_still_judged():
+    from edgar_eval.answer_checks import split_gap_claims
+
+    found = claims(NVIDIA_ANSWER)
+
+    # No expected gap, or only one of another kind whose wording it does not use.
+    for expected in ([], [gap("periods_differ", "NVDA", "AMD")]):
+        judged, gap_claims = split_gap_claims(found, expected)
+        assert judged == found
+        assert gap_claims == []
+
+
+def test_a_periods_differ_sentence_still_goes_to_jev_since_its_dates_can_be_wrong():
+    """A saved dev answer named Microsoft's 10-K to 2025-06-30 while citing its 10-Q to
+    2025-12-31; Jev rightly judged the sentence contradicted."""
+    from edgar_eval.answer_checks import split_gap_claims
+
+    found = claims(
+        "The filings cover different periods: Microsoft's 10-K FY2025 to 2025-06-30 and "
+        "Oracle's 10-K FY2025 to 2025-05-31 [S3] [S4]."
+    )
+
+    judged, gap_claims = split_gap_claims(found, [gap("periods_differ", "MSFT", "ORCL")])
+
+    assert judged == found
+    assert gap_claims == []
+
+
+def test_an_uncited_sentence_is_never_a_gap_claim():
+    """An uncited sentence rests on no Source: it is unsupported, or no claim at all, and
+    never goes to Jev, so there is nothing to keep from it."""
+    from edgar_eval.answer_checks import Claim, split_gap_claims
+
+    cited = Claim("NVIDIA gives no revenue guidance in its 10-K.", ("S4",))
+    uncited = Claim("NVIDIA gives no guidance for fiscal 2027.", ())
+
+    judged, gap_claims = split_gap_claims([cited, uncited], [gap("no_guidance", "NVDA")])
+
+    assert gap_claims == [cited]
+    assert judged == [uncited]
+
+
 # --- Answer structure (assumption 8) ------------------------------------------------------
 
 COMPANIES = {"AAPL": ("Apple Inc", "Apple"), "TSLA": ("Tesla Inc", "Tesla")}

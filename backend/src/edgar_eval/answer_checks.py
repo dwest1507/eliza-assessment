@@ -35,6 +35,7 @@ __all__ = [
     "claims",
     "figures",
     "source_numbers_cited",
+    "split_gap_claims",
     "units",
 ]
 
@@ -571,6 +572,35 @@ def _names(sentence: str, aliases: Sequence[str]) -> bool:
 
 def _flatten(text: str) -> str:
     return re.sub(r"[\s\-‐-―]+", " ", text.replace("’", "'"))
+
+
+_JUDGED_GAPS = {"periods_differ"}
+"""Coverage Gap kinds whose sentences still go to Jev: a "periods differ" sentence names
+each Company's Filing and Report Period, which the Sources it cites can contradict. Two
+saved dev answers gave Microsoft's cited Filing as its 10-K to 2025-06-30 when the Source
+cited was its 10-Q to 2025-12-31 (ADR 0013, 2026-10-17 note)."""
+
+
+def split_gap_claims(
+    found: Sequence[Claim], expected: Sequence[CoverageGapLabel]
+) -> tuple[list[Claim], list[Claim]]:
+    """The claims for Jev's Faithfulness judgment, and the Coverage Gap claims kept from
+    it, each in the order found (ADR 0013, 2026-10-17 note).
+
+    A Coverage Gap claim cites a Source and says what one of the case's expected Coverage
+    Gaps says (`_GAP_MARKERS` of its kind): "No guidance in the Filings: NVIDIA's own
+    guidance is not in the Filings provided [S4]." It says what the Filings lack, not
+    something about the Company, so the Sources it cites cannot judge it: the Coverage
+    Gap check (`check_coverage_gaps`) alone scores it. Not one: a sentence stating a
+    "periods differ" gap (`_JUDGED_GAPS`), and an uncited sentence, which is judged
+    unsupported without a Jev request."""
+    markers = [_GAP_MARKERS[g.kind] for g in expected if g.kind not in _JUDGED_GAPS]
+    judged: list[Claim] = []
+    kept: list[Claim] = []
+    for claim in found:
+        is_gap = bool(claim.tags) and any(m.search(claim.text) for m in markers)
+        (kept if is_gap else judged).append(claim)
+    return judged, kept
 
 
 # --- Claims, for the Faithfulness judgment ------------------------------------------------

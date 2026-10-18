@@ -23,13 +23,21 @@ Contradicted Claims of each run.
 
 from __future__ import annotations
 
+import json
 import math
 from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import TextIO
 
-from edgar_eval.generation import CaseResult, GenerationReport, Judge, evaluate
+from edgar_eval.generation import (
+    CaseResult,
+    GenerationReport,
+    Judge,
+    evaluate,
+    rescore_gap_claims,
+    stored_contradictions,
+)
 from edgar_eval.generators import answer_cost
 from edgar_eval.judge import JEV_USD_PER_MILLION_INPUT_TOKENS
 from edgar_rag.answer_model import AnswerModel
@@ -51,6 +59,7 @@ __all__ = [
     "evaluate_brief_suite",
     "print_brief_suite_report",
     "required_runs",
+    "rescore_brief_gap_claims",
 ]
 
 BRIEF_SUITE_RUNS = 5
@@ -244,6 +253,29 @@ def _verdict(case: GoldenCase, reports: Sequence[GenerationReport]) -> BriefCase
             for failure in r.judgments.failures
         ),
     )
+
+
+def rescore_brief_gap_claims(report: dict, cases: Sequence[GoldenCase]) -> dict:
+    """A saved Brief Suite report (`BriefSuiteReport.to_dict`) with Jev's stored verdicts
+    on its Coverage Gap claims dropped from every run's report
+    (`edgar_eval.generation.rescore_gap_claims`), and each case's Contradicted Claims,
+    verdict and the cases passed recomputed from them. No Answer Call and no Jev call."""
+    rescored = json.loads(json.dumps(report))
+    rescored["run_reports"] = [rescore_gap_claims(r, cases) for r in rescored["run_reports"]]
+    for case in rescored["cases"]:
+        case["contradicted"] = [
+            {"run": run, "claims": claims}
+            for run, r in enumerate(rescored["run_reports"], start=1)
+            for result in r["cases"]
+            if result["case_id"] == case["case_id"] and (claims := stored_contradictions(result))
+        ]
+        case["passed"] = (
+            not case["missed"]
+            and not case["contradicted"]
+            and case["runs"] - len(case["errors"]) >= rescored["pass_runs"]
+        )
+    rescored["cases_passed"] = sum(c["passed"] for c in rescored["cases"])
+    return rescored
 
 
 def _stated(result: CaseResult, i: int) -> bool:

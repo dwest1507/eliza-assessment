@@ -15,13 +15,14 @@ Two judgments, each a narrow question over the state it needs:
   the generation harness scores Fact Recall on the must-state ones and detail recall on
   the details (`edgar_eval.generation.CaseResult`).
 - **Faithfulness.** The answer's claims (`edgar_eval.answer_checks.claims`: every
-  sentence but its headings, Coverage Gap wordings and lead-ins) are grouped by the
-  Sources they cite. One request per group: the state is those Sources' text, and each
-  claim is a Choice between supported, unsupported and contradicted. Beside the claim,
-  marked as context and not judged, go its nearest heading and, for a table row, the
-  table's header row, so "it" and a row of figures keep their meaning; each verdict
-  records them. A claim citing no Source of the turn, an uncited sentence among them,
-  is unsupported and never sent.
+  sentence but its headings, Coverage Gap wordings and lead-ins; the harness keeps from
+  the judge a cited sentence stating one of the case's expected Coverage Gaps,
+  `split_gap_claims`) are grouped by the Sources they cite. One request per group: the
+  state is those Sources' text, and each claim is a Choice between supported,
+  unsupported and contradicted. Beside the claim, marked as context and not judged, go
+  its nearest heading and, for a table row, the table's header row, so "it" and a row
+  of figures keep their meaning; each verdict records them. A claim citing no Source of
+  the turn, an uncited sentence among them, is unsupported and never sent.
   Faithfulness is the share of claims supported by the Sources they cite.
 
 Each request is one judgment: the Fact Recall of the answer, or the Faithfulness of one
