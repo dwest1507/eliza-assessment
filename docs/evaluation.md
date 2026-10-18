@@ -181,7 +181,7 @@ Golden Set version 1, dev split, prompt v5, `gpt-6-luna`, judged by `jev-1.13.0`
 make embeddings      # once: the dense and hybrid Arms' chunk embeddings (about 35 cents, about 25 minutes)
 make local-embeddings  # once: the dense-local and hybrid-local Arms' chunk embeddings (free, about 30 minutes)
 make eval-retrieval  # every Arm, no LLM call
-make eval-arms       # every Arm through the generation harness, then the selection rule (about $0.07 per Arm)
+make eval-arms       # every Arm through the generation harness, then the selection rule (about $0.07 per Arm on version 1's dev, $0.25 on version 2's)
 ```
 
 **The rule** (`backend/src/edgar_eval/selection.py`). For each challenger, the dev cases both it and the Shipped Arm answered are paired, and an exact sign test is run on each score: Fact Recall and Faithfulness per case, and whether the case stated every expected Coverage Gap. Cases where the two tie, or that either could not score, are left out, as McNemar's test leaves out concordant cases. Each score pairs only the cases both sides scored, so a case missing a score on one side (a failed judgment, or a case only one side answered) is never counted as a zero, and the comparison reports, per score, how many cases it paired and how many it left out (`paired` and `left_out` in the choice file). A challenger **qualifies** only if the test puts it **ahead** on Fact Recall (p < 0.05) and **behind** on neither Faithfulness nor Coverage Gaps. When several qualify, the cheapest per answer wins. When none does, the Shipped Arm stays. The rule is applied in code to the reports `make eval-arms` writes (`generation-arms-<split>-<arm>.json`), and the choice is written to `data/derived/eval/arm-choice-<split>.json`. That is version 1's rule, which every comparison in this section was decided by; the code now applies [ADR 0011's one-sided thresholds](#the-one-sided-thresholds) instead, and version 1's choice files are records, never recomputed.
@@ -243,7 +243,7 @@ make eval-generators MODELS=               # every compared generator in the tab
 make eval-brief                            # the Brief Suite, 5 runs a case, a verdict per case
 ```
 
-It runs each Golden Set case through the whole pipeline, one real Answer Call per case, and scores the answers. Before the first Answer Call it prints the run's estimated cost. It calls the generator and the Jev judge, so it needs `JEV_API_KEY` and the key of the generator's provider (`OPENAI_API_KEY` or `ANTHROPIC_API_KEY`, as the table of compared generators, `GENERATORS` in [`generators.py`](../backend/src/edgar_eval/generators.py), says) in `backend/.env`, and it costs money: about $0.07 for the 20 dev cases with `gpt-6-luna`, Jev included. It prints the scores and writes them, with every answer, every check's findings and every judgment, to `data/derived/eval/generation-<split>[-<model>].json`. The Answer Calls are logged to `data/derived/logs/answer_calls.jsonl` like any other. The code is [`backend/src/edgar_eval/generation.py`](../backend/src/edgar_eval/generation.py), with the checks in [`answer_checks.py`](../backend/src/edgar_eval/answer_checks.py) and the judge in [`judge.py`](../backend/src/edgar_eval/judge.py).
+It runs each Golden Set case through the whole pipeline, one real Answer Call per case, and scores the answers. Before the first Answer Call it prints the run's estimated cost. It calls the generator and the Jev judge, so it needs `JEV_API_KEY` and the key of the generator's provider (`OPENAI_API_KEY` or `ANTHROPIC_API_KEY`, as the table of compared generators, `GENERATORS` in [`generators.py`](../backend/src/edgar_eval/generators.py), says) in `backend/.env`, and it costs money: about $0.25 for version 2's 60 dev cases with `gpt-6-luna`, Jev included ($0.17 in Answer Calls and $0.08 to $0.09 in Jev judging, measured on 2026-10-17), against about $0.07 for version 1's 20. It prints the scores and writes them, with every answer, every check's findings and every judgment, to `data/derived/eval/generation-<split>[-<model>].json`. The Answer Calls are logged to `data/derived/logs/answer_calls.jsonl` like any other. The code is [`backend/src/edgar_eval/generation.py`](../backend/src/edgar_eval/generation.py), with the checks in [`answer_checks.py`](../backend/src/edgar_eval/answer_checks.py) and the judge in [`judge.py`](../backend/src/edgar_eval/judge.py).
 
 ### Method
 
@@ -270,7 +270,7 @@ make eval-brief RUNS=1          # one run each, for a quick look (a verdict need
 make eval-brief MODEL=claude-haiku-5-5 ARM=hybrid   # another generator or Arm, as eval-generation takes
 ```
 
-The [Brief Suite](golden-set.md#the-brief-suite) is a must-pass check, not an estimate: the brief's example questions, outside the dev/holdout split, so they may be tuned on ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). `make eval-brief` runs it through the generation harness (`python -m edgar_eval.generation --brief-suite`, verdicts in [`brief_suite.py`](../backend/src/edgar_eval/brief_suite.py)), so its answers get the same checks and the same Jev judgments as the Golden Set's. It needs the same keys and costs money: 5 Answer Calls per case, so 75 for the fifteen current cases (the brief's three questions and four variants of each), which cost at most about $0.47 by the estimate below and about $0.30 at version 1's average cost per answer with `gpt-6-luna`, Jev included.
+The [Brief Suite](golden-set.md#the-brief-suite) is a must-pass check, not an estimate: the brief's example questions, outside the dev/holdout split, so they may be tuned on ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). `make eval-brief` runs it through the generation harness (`python -m edgar_eval.generation --brief-suite`, verdicts in [`brief_suite.py`](../backend/src/edgar_eval/brief_suite.py)), so its answers get the same checks and the same Jev judgments as the Golden Set's. It needs the same keys and costs money: 5 Answer Calls per case, so 75 for the fifteen current cases (the brief's three questions and four variants of each), which cost at most about $0.47 by the estimate below and about $0.40 in practice with `gpt-6-luna`, Jev included ($0.39 in [the run on the fixed measurement](#re-scored-on-the-fixed-measurement-2026-10-17)).
 
 1. **Five runs.** Every case is answered 5 times (`RUNS=` changes it), each run one pass over every case, so a pass doesn't depend on one lucky answer. Every run's generation report is kept in the Brief Suite report, with every answer.
 2. **A verdict per case.** A case **passes** when every must-state Required Fact is stated in at least 4 of the 5 runs (the same share of another run count, rounded up) and no run has a Contradicted Claim. A run that could not be answered, whose Fact Recall judgment failed, or that stopped at the token cap states no fact, so it counts against the case; the truncation rule is the harness's own (`CaseResult.facts_stated`), not a copy. Details are reported and never fail it.
@@ -613,7 +613,7 @@ The saved reports of version 1 (28 generation runs) were read case by case.
   - each sentence goes to the judge with its heading and table header, so a table row or an "it" keeps its meaning (built: [Method](#method-1), step 3);
   - the Brief Suite's cases are reported one by one (built: [The Brief Suite run](#the-brief-suite-run)).
 - **The one-call rule and the local Arms:** the Answer Call is a question's only API call (decided 2026-10-17), so an Arm that embeds the question with OpenAI can't ship; two local embedding Arms join the comparison (built: see [The one-call rule and the local Arms](#the-one-call-rule-and-the-local-arms)).
-- **Another generator:** `claude-haiku-5-5`, listed at `gpt-6-luna`'s price ($0.10 in, $0.50 out per million tokens, for prompts under 100k tokens, on 2026-10-17), is the one challenger to `gpt-6-luna` on version 2. It is in the table of compared generators, so `make eval-generation MODEL=claude-haiku-5-5` answers with it, and `make eval-generators` runs the comparison by default, for about $0.15 on dev. The version 1 generators stay in the table, so their reports still price.
+- **Another generator:** `claude-haiku-5-5`, listed at `gpt-6-luna`'s price ($0.10 in, $0.50 out per million tokens, for prompts under 100k tokens, on 2026-10-17), is the one challenger to `gpt-6-luna` on version 2. It is in the table of compared generators, so `make eval-generation MODEL=claude-haiku-5-5` answers with it, and `make eval-generators` runs the comparison by default, for about $0.37 on dev (Haiku's run in issue #73: $0.28 in Answer Calls and $0.09 in Jev judging). The version 1 generators stay in the table, so their reports still price.
 
 #### The one-sided thresholds
 
@@ -774,7 +774,7 @@ The LLM split agrees on 4 more answers (McNemar p = 0.388, shown, not decided on
 
 Run on 2026-10-17 (issue #73): the first round on Golden Set version 2, with one code version, prompt v7, `gpt-6-luna` and `jev-1.13.0` at the fact cut-off 0.6, on the dev split's 60 cases (939 Required Facts, 316 of them must-state). The "How it works" page shows this round, the Brief Suite and the holdout beside dev ([Showing the results](#showing-the-results)). **Every verdict below is directional: one-sided p < 0.10, fixed before running** ([ADR 0011](adr/0011-one-sided-thresholds-and-a-control-run.md)). Each comparison is shown beside the round's Control Run, and each score with its mean paired difference (challenger minus shipped) and 95% bootstrap interval, shown and not decided on.
 
-**Nothing changes what ships.** FTS5, `gpt-6-luna`, 600-token chunks and the 32k budget all stay ([ADR 0008](adr/0008-fts5-stays-the-shipped-arm.md), [ADR 0009](adr/0009-gpt-6-luna-stays-the-generator.md), [ADR 0010](adr/0010-chunk-size-and-context-budget.md)), so the Brief Suite was not run again on a new setup. The reports are in `data/derived/eval/`: `generation-dev.json` and `generation-control-dev.json`, `brief-suite.json`, `retrieval-dev.json` and `arm-choice-dev.json`, `retrieval-dev-chunks<N>-budget<B>.json` and `settings-choice-dev.json`, and `generator-choice-dev.json`, with each challenger's generation report beside them.
+**Nothing changes what ships.** FTS5, `gpt-6-luna`, 600-token chunks and the 32k budget all stay ([ADR 0008](adr/0008-fts5-stays-the-shipped-arm.md), [ADR 0009](adr/0009-gpt-6-luna-stays-the-generator.md), [ADR 0010](adr/0010-chunk-size-and-context-budget.md)), so the Brief Suite was not run again on a new setup. The reports are in `data/derived/eval/`: `generation-dev.json` and `generation-control-dev.json`, `brief-suite.json` (since replaced by the runs on the fixed measurement, with #73's kept in `data/derived/eval-issue73/`; see [Re-scored on the fixed measurement](#re-scored-on-the-fixed-measurement-2026-10-17)), `retrieval-dev.json` and `arm-choice-dev.json`, `retrieval-dev-chunks<N>-budget<B>.json` and `settings-choice-dev.json`, and `generator-choice-dev.json`, with each challenger's generation report beside them.
 
 #### The baseline and the Control Run
 
@@ -926,6 +926,68 @@ Coverage Gaps tie for every setting (0 / 0 over 36 cases). **Chosen: 600-token c
 #### Spend
 
 Nine paid runs: the shipped run and Control Run, the Brief Suite (75 Answer Calls), two Arms, three settings and Claude Haiku 5.5. Each printed its estimate first (none above $0.51). **$1.84 in Answer Calls and $0.93 in Jev judging, $2.77 in all**, inside the $3 to $4 expected. The screens cost nothing; the hosted `dense` and `hybrid` Arms embedded the new questions once with OpenAI for the screen, at a fraction of a cent, and cached them. The holdout was scored afterwards, once ([The version 2 holdout run](#the-version-2-holdout-run)).
+
+#### Re-scored on the fixed measurement (2026-10-17)
+
+Issue #92, after the measurement fixes of spec #88 had landed: #86 keeps an answer's expected Coverage Gap sentences from Jev's Faithfulness judgment, #89 narrows the claim exemption to stated Coverage Gaps, #90 scores a truncated answer's Fact Recall 0 when its judgment failed, and #91 moves the default generator list into `generators.py`. The results above are #73's and stand as recorded: none of its comparisons is re-run or re-decided, and the holdout is not scored again, since a measurement fix changes no choice. This note gives the new baseline that the retrieval work measures against: the shipped setup (`fts5`, `gpt-6-luna`, 600 / 32k, prompt v7, `jev-1.13.0` at 0.6) answered the 60 dev cases twice, as this round's shipped run and Control Run, and the Brief Suite 5 runs a case, all on code version `b82c73f3d9280d98`.
+
+**Each fix's effect on #73's reports**, re-scored offline with no Answer Call and no Jev call (`make eval-rescore`), so the answers are #73's and only the measurement moved:
+
+| Report | Faithfulness | Contradicted Claims (answers) | Fact Recall | Brief Suite |
+|---|---|---|---|---|
+| Shipped run | 0.928 → **0.935** | 7 (7) → 7 (7) | 0.717, unchanged | – |
+| Control Run | 0.919 → **0.928** | 9 (8) → **7 (6)** | 0.712, unchanged | – |
+| Brief Suite (75 answers) | per run, 0.925–0.968 → 0.940–0.975 | 3 → 3 | unchanged | 1 of 15 → 1 of 15 |
+
+- **#86 is the one fix that moved #73's numbers.** It kept 19 Coverage Gap sentences from Jev in each dev run and 24 in the Brief Suite. In the Control Run two of them had been judged contradicted, so two answers lost their Contradicted Claim.
+- **#89 changed no claim in #73's reports**, **#90 changed nothing** (none of their answers was truncated), and **#91 changes no score.**
+
+**The new runs, on the fixed measurement:**
+
+| Run | cases | citations valid | figures exact | gaps stated | structure followed | words | Fact Recall | detail recall | Faithfulness | answers with a Contradicted Claim | $ per answer | latency s |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **Shipped** (`fts5`, `gpt-6-luna`, 600 / 32k) | 60 | 0.92 | 0.95 | 1.00 | 0.82 | 453 | **0.70** | 0.47 | **0.94** | 4 | 0.0028 | 7.4 |
+| Control Run (the same, again) | 60 | 0.95 | 0.88 | 1.00 | 0.75 | 462 | 0.73 | 0.49 | 0.92 | 6 | 0.0028 | 8.1 |
+| #73's shipped run, re-scored | 60 | 0.87 | 0.90 | 1.00 | 0.72 | 459 | 0.72 | 0.48 | 0.93 | 7 | 0.0028 | 8.2 |
+
+| Control Run against the shipped run | higher / lower | p ahead | p behind | paired (left out) | mean difference, 95% interval |
+|---|---|---|---|---|---|
+| Fact Recall | 16 / 10 | 0.163 | 0.916 | 57 (0) | +0.027 [−0.013, +0.066] |
+| Faithfulness | 14 / 15 | 0.644 | 0.500 | 58 (1) | −0.004 [−0.021, +0.013] |
+| Coverage Gaps | 0 / 0 | 1.000 | 1.000 | 36 (0) | +0.000 [+0.000, +0.000] |
+| No Contradicted Claim | 3 / 5 | 0.855 | 0.363 | 60 (0) | −0.033 [−0.133, +0.050] |
+
+- **The baseline is the shipped run: Fact Recall 0.70, Faithfulness 0.94, 4 answers with a Contradicted Claim** (4 claims), 51 of 60 answers passing. The Control Run, the same setup again, scores 0.73 and 0.92 with 6 (7 claims). It is not ahead on any score at p < 0.10, so a comparison against this round is conclusive, but its Fact Recall spread, 16 cases up and 10 down, is the noise a retrieval change has to beat.
+- **Against #73, the differences are new answers, not the fixes.** Fact Recall 0.70 and 0.73 against #73's 0.72 and 0.71, and Faithfulness 0.94 and 0.92 against the re-scored 0.935 and 0.928, sit inside one Control Run's spread. The code checks moved the same way (citations valid 0.92 and 0.95 against 0.87), with the same prompt and Sources.
+- **No judgment failed.** Jev judged `trend-jpm-revenue-snapshot`'s Faithfulness in both runs, the first time on any run, so Faithfulness pairs 58 cases. No answer stopped at the token cap, so #90 had nothing to score.
+- **#89 shows on the missing-Company cases.** Their Faithfulness is 0.72 in the shipped run and 0.58 in the Control Run, against 0.94 in #73's. `missing-citigroup` (both runs) and `followup-ge-to-honeywell` (Control Run) have no Sources, and score Faithfulness 0.0. Their uncited refusals ("Citigroup is not covered in this answer.", "I can't assess its recent performance from this material.") and a stray "[Coverage Gaps]" tag are now claims, unsupported because they cite nothing. #73's answers to these cases worded their refusals so that the exemption covers them, before #89 and after, so they had no claim left to judge and scored no Faithfulness. This is a measurement question for a later issue: such a refusal states no fact.
+
+**The Brief Suite: 1 of 15 cases passes**, as in #73. The one pass is again `brief-followup-nvda-net-income`, and 3 runs have a Contradicted Claim, as before.
+
+| Case | Verdict | must-state facts | missed (stated in fewer than 4 runs) | of them, evidence never reached | runs with a Contradicted Claim |
+|---|---|---|---|---|---|
+| `brief-risk-aapl-tsla-jpm` (the brief's first question) | fail | 9 | 2 | 1 | 0 |
+| `brief-risk-aapl-tsla-jpm-rephrased` | fail | 9 | 3 | 2 | 0 |
+| `brief-risk-msft-xom-unh` | fail | 9 | 4 | 3 | 0 |
+| `brief-risk-aapl-tsla-jpm-fy2025-quarterly-updates` | fail | 5 | 5 | 5 | 1 |
+| `brief-followup-aapl-tsla-jpm-cybersecurity` | fail | 6 | 1 | 1 | 0 |
+| `brief-outlook-nvda-revenue-two-years` (the brief's second question) | fail | 7 | 3 | 2 | 0 |
+| `brief-outlook-nvda-revenue-rephrased` | fail | 7 | 2 | 0 | 0 |
+| `brief-outlook-unh-revenue-two-years` | fail | 5 | 1 | 0 | 0 |
+| `brief-outlook-nvda-revenue-fy2024` | fail | 5 | 2 | 2 | 1 |
+| `brief-followup-nvda-net-income` | **pass** | 3 | 0 | 0 | 0 |
+| `brief-sector-pharma-regulatory` (the brief's third question) | fail | 9 | 8 | 8 | 0 |
+| `brief-sector-pharma-regulatory-rephrased` | fail | 9 | 8 | 8 | 0 |
+| `brief-sector-health-care-regulatory` | fail | 13 | 9 | 8 | 0 |
+| `brief-pharma-regulatory-pfe` | fail | 4 | 3 | 3 | 0 |
+| `brief-followup-pharma-340b` | fail | 8 | 5 | 5 | 1 |
+
+- **Still mostly retrieval misses:** 48 of the 56 must-state facts missed across the 14 failing cases have evidence that never reached the Answer Context (49 of 57 in #73). Every must-state fact the pharmaceutical question misses is still one whose evidence never reaches the prompt.
+- **Five cases moved by one fact each, all generation noise.** Retrieval is unchanged, so each fact's evidence reached the prompt in the same runs as in #73. The brief's first question now also misses JPMorgan's limit on capital distributions (stated in 1 of 5 runs, against 5 of 5), and the NVIDIA rephrasing misses the H20 export licensing effect (2 of 5, against 4). Three facts are now stated in 4 of 5 runs: Microsoft's competition (`brief-risk-msft-xom-unh`) and Tesla's unauthorized-access attempts (the cybersecurity follow-up), whose evidence reached the prompt, and Pfizer's price-control regulations (`brief-sector-health-care-regulatory`), whose evidence never did, so the answers state it from other passages. The contradicted runs moved from `brief-outlook-unh-revenue-two-years` (2 runs) to one run each of three other cases. No run was cut off or lost a judgment.
+
+**Reports.** The new reports replace #73's in `data/derived/eval/` (`generation-dev.json`, `generation-control-dev.json` and `brief-suite.json`). #73's are kept as written in `data/derived/eval-issue73/`. The "How it works" page shows the new shipped run, Control Run and Brief Suite, beside #73's generator comparison, which stands as recorded.
+
+**Spend.** The three runs printed their estimates first (up to $0.38, $0.38 and $0.47). They cost $0.25 (the shipped run: $0.168 in Answer Calls, $0.082 in Jev judging), $0.26 (the Control Run: $0.169 and $0.087) and $0.39 (the Brief Suite: $0.240 and $0.153), **$0.90 in all**. A version 2 dev run costs about $0.25, not version 1's $0.07: it has 60 cases, not 20.
 
 ### The version 2 holdout run
 
