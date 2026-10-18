@@ -59,16 +59,17 @@ _COVERAGE_IN_LINE = re.compile(r"[.!?\]]\s+(?:\*\*|__)?coverage\b[^.:]{0,20}:", 
 # - `_GAP_MARKERS` (below, with the Coverage Gap check), `check_coverage_gaps`': what a
 #   sentence stating each kind of Coverage Gap says, in any reasonable wording. Broad on
 #   purpose, since a stated gap must not be missed.
-# - The claim exemption (`claims`, `_states_gap`), narrowed in issue #89 to what #43 and
-#   #52 decided: an uncited sentence is not a claim only when it is a fixed Coverage
-#   Gap wording (`_FIXED_WORDING`), says what the Sources, Filings or Corpus lack,
-#   naming them (`_RECORDS_LACK`), or matches a `_GAP_MARKERS` pattern and either
-#   speaks of the Sources, Filings or Corpus (`_RECORDS`; for "periods differ", also
-#   of the Filings' periods, `_FILING_PERIODS`) or names a Company missing from the
-#   Corpus. Any other uncited sentence about a Company is a claim, however it reads.
-#   Issue #109 widened it for the refusals of no-Source answers that #89's rules missed:
-#   "not covered in this answer", the Sources "using" or "with", "this material", and a
-#   fragment that is only a bracketed label ("[Coverage Gaps]", `_BRACKET_LABEL`).
+# - The claim exemption (`claims`, `_states_gap`): an uncited sentence is not a claim
+#   only when it is one of these, none of which says anything a Source could support: a
+#   fixed Coverage Gap wording (`_FIXED_WORDING`); a sentence that says what the
+#   Sources, Filings or Corpus lack, naming them (`_RECORDS_LACK`); a clause that
+#   matches a `_GAP_MARKERS` pattern and names the Sources, Filings or Corpus
+#   (`_RECORDS`), or, for "periods differ", a sentence that speaks of the Filings'
+#   periods (`_FILING_PERIODS`); a sentence matching a `_GAP_MARKERS` pattern that
+#   names a Company missing from the Corpus; and a fragment that is only a bracketed
+#   label (`_BRACKET_LABEL`). Any other uncited sentence about a Company is a claim,
+#   however it reads, even when it names the records in passing ("consistent with its
+#   filings"). `docs/evaluation.md` records how the rule came to be drawn here.
 #
 # A sentence that says what the Sources lack, which has nothing to cite.
 _ABSENCE = re.compile(
@@ -93,6 +94,22 @@ materials". "Material", singular, only as a noun ("from this material."), never 
 adjective of "material weakness"."""
 _RECORDS = re.compile(_RECORDS_WORD, re.I)
 _WORDS = r"(?:[\w’'&-]+\s+){0,3}?"
+_NEGATION = (
+    r"(?:\bno\b|\bnot\b|\bnothing\b|\bneither\b|\bnor\b|\bwithout\b|\bcannot\b"
+    r"|n['’]t\b|\bunable\b|\babsent\b|\bmissing\b|\bunavailable\b)"
+)
+_NEGATED_PHRASE = (
+    r"(?:\s+(?!(?:and|but|while|whereas|although|though|because|since|yet|which|who"
+    r"|consistent|line|compared|according)\b)[\w’'&-]+){0,8}?"
+)
+"""The words a negation governs ("can't identify or describe Citigroup's risks"): no
+punctuation, and no conjunction or comparison that would start another phrase."""
+_RECORDS_END = (
+    r"(?=\s*(?:[.,;:!?)\]—–]|$)|\s+(?:provided|available|supplied|given|retrieved|cited"
+    r"|here|alone|at hand|for|about|on|to|or|and|so|because|as|but|that|which|I|we)\b)"
+)
+"""The end of the records' noun phrase: "with the Filings provided", "in the Corpus.",
+never "the filings deadline" or "its 10-K guidance"."""
 _RECORDS_LACK = re.compile(
     # "The Sources do not include ...", "The Corpus lacks ...", "Based on the materials
     # provided, I cannot ...": the records open the sentence or a clause, so "findings
@@ -100,11 +117,14 @@ _RECORDS_LACK = re.compile(
     rf"(?:^\W*|[;:—–]\s*|,\s*(?:so|therefore|but)\s+){_WORDS}{_RECORDS_WORD}[^.;]{{0,40}}"
     r"(?:\bdo(?:es)?\s+not\b|n['’]t\b|\bcannot\b|\black|\bomit|\bsilent\b|\bsay nothing\b"
     r"|\b(?:contains?|includes?|provides?|gives?|has|have|holds?|offers?|shows?)\s+no\b)"
-    # "... is not in the Filings provided", "Nothing in the excerpts ...", "... cannot be
-    # assessed from the Sources", "... would not rest on the filings"
-    r"|(?:\bno\b|\bnot\b|\bnothing\b|\bneither\b|\bnor\b|\bwithout\b|\bcannot\b"
-    r"|n['’]t\b|\bunable\b|\babsent\b|\bmissing\b|\bunavailable\b)[^.;]{0,60}"
-    rf"\b(?:in|from|among|within|across|on|using|with)\s+{_WORDS}{_RECORDS_WORD}"
+    # "... is not in the Filings provided", "... cannot be assessed from the Sources",
+    # "I can't identify ... using the available Sources": the records follow the negated
+    # phrase directly, with no comma or conjunction between, and end their noun phrase,
+    # so "consistent with its filings" and "the filings deadline" are not the records.
+    rf"|{_NEGATION}{_NEGATED_PHRASE}\s+(?:in|from|among|within|across|on|using|with|beyond)\s+"
+    rf"{_WORDS}{_RECORDS_WORD}{_RECORDS_END}"
+    # "Nothing in the excerpts covers ...": the records are in the negation's subject.
+    rf"|\bnothing\s+(?:in|from|among|within)\s+{_WORDS}{_RECORDS_WORD}"
     # "No usable Sources were found", "There are no Honeywell filings"
     rf"|\bno\s+{_WORDS}{_RECORDS_WORD}",
     re.I,
@@ -129,6 +149,7 @@ _FILING_PERIODS = re.compile(
 )
 """The Filings' periods, as a "periods differ" sentence speaks of them; "fiscal years"
 are the Companies'."""
+_CLAUSE_BREAK = re.compile(r"\s*[,;:—–]\s*")
 _TAG_RUN = re.compile(rf"(?:{_TAG_BRACKET.pattern}\s*)+")
 _BRACKET_LABEL = re.compile(r"\[[A-Za-z][\w\s&’'-]*\]")
 """A fragment that is only a bracketed label, such as a stray "[Coverage Gaps]" left
@@ -446,6 +467,7 @@ def _is_fact(figure: Figure, facts: list[Decimal]) -> bool:
 
 # --- Coverage Gaps ----------------------------------------------------------------------
 
+_PERIODS_DIFFER = "periods_differ"
 _NOT = r"(?:\bno\b|\bnot\b|n't\b|\bwithout\b|\bnor\b|\bneither\b)"
 _GAP_MARKERS: dict[str, re.Pattern[str]] = {
     # A trend asked of a Snapshot Company.
@@ -487,7 +509,7 @@ _GAP_MARKERS: dict[str, re.Pattern[str]] = {
         re.I,
     ),
     # The compared Companies' latest Filings cover different periods.
-    "periods_differ": re.compile(
+    _PERIODS_DIFFER: re.compile(
         r"\b(?:periods?|fiscal (?:years?|periods?|quarters?)|year[- ]ends?|reporting dates?)\b"
         r"[^.;]{0,60}\b(?:differ\w*|not (?:the same|aligned|identical|directly comparable)"
         r"|vary|varies|mismatch\w*)"
@@ -499,7 +521,7 @@ _GAP_MARKERS: dict[str, re.Pattern[str]] = {
 """What a sentence stating each kind of Coverage Gap says, in any reasonable wording:
 the fixed wordings of EDA notebook section 8.6 and the plain variants a model writes."""
 
-_COMPANY_FREE_GAPS = {"periods_differ"}
+_COMPANY_FREE_GAPS = {_PERIODS_DIFFER}
 """Gaps about the comparison as a whole: stated once, not once per Company."""
 
 _SENTENCE_END = re.compile(r"(?<=[.!?])\s+(?=[\[(*\"“A-Z])")
@@ -584,7 +606,7 @@ def _flatten(text: str) -> str:
     return re.sub(r"[\s\-‐-―]+", " ", text.replace("’", "'"))
 
 
-_JUDGED_GAPS = {"periods_differ"}
+_JUDGED_GAPS = {_PERIODS_DIFFER}
 """Coverage Gap kinds whose sentences still go to Jev: a "periods differ" sentence names
 each Company's Filing and Report Period, which the Sources it cites can contradict. Two
 saved dev answers gave Microsoft's cited Filing as its 10-K to 2025-06-30 when the Source
@@ -647,12 +669,13 @@ def claims(answer: str) -> list[Claim]:
     ("[Coverage Gaps]"); and, among the sentences that rest on no
     tag, lead-ins ending in a colon and sentences with nothing to cite: the fixed
     Coverage Gap wordings; the plain variants `check_coverage_gaps` recognises, but
-    only when the sentence speaks of the Sources, Filings or Corpus or names a Company
-    missing from the Corpus; and sentences that say what the Sources, Filings or
-    Corpus lack, naming them. Any other sentence that says something about a Company
-    without citing it is a claim, however much it looks like a gap: "Apple's revenue
-    grew only 2% in 2024" and "Tesla has no exposure to China tariffs" are claims. A
-    sentence that rests on a tag is judged whatever it says.
+    only when the clause stating the gap names the Sources, Filings or Corpus, or the
+    sentence names a Company missing from the Corpus; and sentences that say what the
+    Sources, Filings or Corpus lack, naming them. Any other sentence that says something
+    about a Company without citing it is a claim, however much it looks like a gap or
+    names the records in passing: "Apple's revenue grew only 2% in 2024", "Tesla has no
+    exposure to China tariffs" and "Apple has no debt, consistent with its filings" are
+    claims. A sentence that rests on a tag is judged whatever it says.
 
     Each claim carries its context for the judge: the nearest heading above it and, for
     a table row, the table's header row (`Claim.heading`, `Claim.table_header`).
@@ -681,11 +704,16 @@ def _states_gap(sentence: str) -> bool:
     kinds = [kind for kind, marker in _GAP_MARKERS.items() if marker.search(sentence)]
     if not kinds:
         return False
-    if "periods_differ" in kinds and _FILING_PERIODS.search(sentence):
+    if _PERIODS_DIFFER in kinds and _FILING_PERIODS.search(sentence):
         return True  # "The periods differ": the periods are the Filings' Report Periods
-    return bool(_RECORDS.search(sentence)) or any(
-        _names(sentence, aliases) for aliases in _missing_company_names()
-    )
+    # The records are named in the clause that states the gap, so "Apple has no debt,
+    # consistent with its filings" is a claim about Apple.
+    if any(
+        _RECORDS.search(clause) and any(_GAP_MARKERS[kind].search(clause) for kind in kinds)
+        for clause in _CLAUSE_BREAK.split(sentence)
+    ):
+        return True
+    return any(_names(sentence, aliases) for aliases in _missing_company_names())
 
 
 @cache

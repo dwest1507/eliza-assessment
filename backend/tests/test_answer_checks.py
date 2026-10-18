@@ -522,6 +522,18 @@ def test_a_plain_coverage_gap_variant_that_speaks_of_the_filings_or_sources_make
             "The provided Filings do not include Citigroup. [Coverage Gaps]",
             id="bracketed label",
         ),
+        # Refusals from the saved dev reports that the records-lack rule, tightened to
+        # the records that follow a negated phrase, keeps exempt.
+        pytest.param(
+            "I therefore can’t identify or assess Citigroup’s main risk factors from the "
+            "materials provided.",
+            id="a long negated phrase",
+        ),
+        pytest.param(
+            "I cannot give its revenue, earnings, segment trends, drivers of results or risks "
+            "without going beyond the Sources, and I will not do that.",
+            id="beyond the Sources",
+        ),
     ],
 )
 def test_an_uncited_refusal_in_a_no_source_answer_makes_no_claim(refusal):
@@ -552,6 +564,11 @@ def test_an_uncited_refusal_in_a_no_source_answer_makes_no_claim(refusal):
         "Apple reported no material weakness in its internal controls.",
         "Tesla cannot meet demand using its current factories.",
         "JPMorgan has no dispute with its regulators.",
+        # A records word after a negation that does not say what the records lack: the
+        # records are compared with, or name something else.
+        "Apple has no debt, consistent with its filings.",
+        "Tesla did not comply with the filings deadline.",
+        "Apple did not meet its targets, in line with its 10-K guidance.",
         # What a Source lacks, inside a sentence that says something about a Company.
         "Both face litigation, but Walmart also reports regulatory findings that Target's "
         "excerpt does not mention.",
