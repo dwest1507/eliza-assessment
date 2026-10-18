@@ -1978,34 +1978,34 @@
         "name": "hybrid-local",
         "cases": 60,
         "factRecall": {
-          "challengerOnly": 17,
-          "shippedOnly": 10,
-          "pValue": 0.24778856337070465,
-          "pAhead": 0.12389428168535233,
-          "pBehind": 0.9389609396457672,
+          "challengerOnly": 16,
+          "shippedOnly": 11,
+          "pValue": 0.44206833839416504,
+          "pAhead": 0.22103416919708252,
+          "pBehind": 0.8761057183146477,
           "paired": 57,
           "leftOut": 0,
           "verdict": "indistinguishable",
           "difference": {
-            "mean": 0.04686356528461791,
-            "low": -0.0034809245335561158,
-            "high": 0.10413027518290677,
+            "mean": 0.02934015302436355,
+            "low": -0.0173610502557871,
+            "high": 0.07718655613392456,
             "confidence": 0.95
           }
         },
         "faithfulness": {
           "challengerOnly": 15,
-          "shippedOnly": 15,
-          "pValue": 1.0,
-          "pAhead": 0.572232224047184,
-          "pBehind": 0.572232224047184,
-          "paired": 55,
+          "shippedOnly": 18,
+          "pValue": 0.7283324808813632,
+          "pAhead": 0.7565748791676015,
+          "pBehind": 0.3641662404406816,
+          "paired": 56,
           "leftOut": 2,
           "verdict": "indistinguishable",
           "difference": {
-            "mean": -0.007662674650003187,
-            "low": -0.02920165505445551,
-            "high": 0.0130537784793527,
+            "mean": -0.012648641915973854,
+            "low": -0.03874343474354532,
+            "high": 0.013061423885589079,
             "confidence": 0.95
           }
         },
@@ -2026,18 +2026,18 @@
           }
         },
         "contradictedClaims": {
-          "challengerOnly": 6,
+          "challengerOnly": 4,
           "shippedOnly": 2,
-          "pValue": 0.2890625,
-          "pAhead": 0.14453125,
-          "pBehind": 0.96484375,
-          "paired": 58,
-          "leftOut": 2,
+          "pValue": 0.6875,
+          "pAhead": 0.34375,
+          "pBehind": 0.890625,
+          "paired": 59,
+          "leftOut": 1,
           "verdict": "indistinguishable",
           "difference": {
-            "mean": 0.06896551724137931,
-            "low": -0.017241379310344827,
-            "high": 0.1724137931034483,
+            "mean": 0.03389830508474576,
+            "low": -0.05084745762711865,
+            "high": 0.11864406779661017,
             "confidence": 0.95
           }
         },
@@ -2047,16 +2047,16 @@
           "paired": 57,
           "leftOut": 0,
           "facts": 316,
-          "challengerStated": 235,
+          "challengerStated": 234,
           "shippedStated": 227,
-          "totalDifference": 8,
-          "pAhead": 0.18018198180181982,
-          "pBehind": 0.8488151184881512,
+          "totalDifference": 7,
+          "pAhead": 0.18248175182481752,
+          "pBehind": 0.8509149085091491,
           "verdict": "indistinguishable",
           "difference": {
-            "mean": 0.14035087719298245,
-            "low": -0.14035087719298245,
-            "high": 0.42105263157894735,
+            "mean": 0.12280701754385964,
+            "low": -0.12280701754385964,
+            "high": 0.3684210526315789,
             "confidence": 0.95
           },
           "resamples": 10000,
@@ -2078,13 +2078,13 @@
           {
             "status": "both",
             "facts": 265,
-            "challengerStated": 208,
+            "challengerStated": 205,
             "shippedStated": 208
           },
           {
             "status": "neither",
             "facts": 31,
-            "challengerStated": 14,
+            "challengerStated": 16,
             "shippedStated": 14
           },
           {
@@ -2107,34 +2107,34 @@
       "name": "Control Run",
       "cases": 60,
       "factRecall": {
-        "challengerOnly": 11,
-        "shippedOnly": 10,
-        "pValue": 1.0,
-        "pAhead": 0.5,
-        "pBehind": 0.6681880950927734,
+        "challengerOnly": 15,
+        "shippedOnly": 12,
+        "pValue": 0.7011080384254456,
+        "pAhead": 0.3505540192127228,
+        "pBehind": 0.7789658308029175,
         "paired": 57,
         "leftOut": 0,
         "verdict": "indistinguishable",
         "difference": {
-          "mean": -0.005346700083542193,
-          "low": -0.05788081314397105,
-          "high": 0.038923698134224444,
+          "mean": 0.0015769318400897362,
+          "low": -0.04178501810080757,
+          "high": 0.043329282802967016,
           "confidence": 0.95
         }
       },
       "faithfulness": {
-        "challengerOnly": 17,
-        "shippedOnly": 23,
-        "pValue": 0.42959050784338615,
-        "pAhead": 0.8659063744726154,
-        "pBehind": 0.21479525392169307,
-        "paired": 56,
-        "leftOut": 0,
+        "challengerOnly": 19,
+        "shippedOnly": 12,
+        "pValue": 0.28104151505976915,
+        "pAhead": 0.14052075752988458,
+        "pBehind": 0.9251936078071594,
+        "paired": 57,
+        "leftOut": 1,
         "verdict": "indistinguishable",
         "difference": {
-          "mean": -0.008322765708042754,
-          "low": -0.04164079377908387,
-          "high": 0.02792601559727977,
+          "mean": 0.014552054035922368,
+          "low": -0.0036911388691574557,
+          "high": 0.0332734452133181,
           "confidence": 0.95
         }
       },
@@ -2155,59 +2155,108 @@
         }
       },
       "contradictedClaims": {
-        "challengerOnly": 3,
-        "shippedOnly": 4,
-        "pValue": 1.0,
-        "pAhead": 0.7734375,
-        "pBehind": 0.5,
-        "paired": 59,
+        "challengerOnly": 8,
+        "shippedOnly": 2,
+        "pValue": 0.109375,
+        "pAhead": 0.0546875,
+        "pBehind": 0.9892578125,
+        "paired": 60,
         "leftOut": 0,
-        "verdict": "indistinguishable",
+        "verdict": "ahead",
         "difference": {
-          "mean": -0.01694915254237288,
-          "low": -0.1016949152542373,
-          "high": 0.06779661016949153,
+          "mean": 0.1,
+          "low": 0.0,
+          "high": 0.2,
           "confidence": 0.95
         }
       },
       "qualifies": false,
       "shippable": true,
-      "statedFacts": null,
-      "byEvidence": null
+      "statedFacts": {
+        "paired": 57,
+        "leftOut": 0,
+        "facts": 316,
+        "challengerStated": 226,
+        "shippedStated": 227,
+        "totalDifference": -1,
+        "pAhead": 0.595040495950405,
+        "pBehind": 0.46025397460253975,
+        "verdict": "indistinguishable",
+        "difference": {
+          "mean": -0.017543859649122806,
+          "low": -0.2631578947368421,
+          "high": 0.21052631578947367,
+          "confidence": 0.95
+        },
+        "resamples": 10000,
+        "seed": 20261017
+      },
+      "byEvidence": [
+        {
+          "status": "challenger_only",
+          "facts": 0,
+          "challengerStated": 0,
+          "shippedStated": 0
+        },
+        {
+          "status": "shipped_only",
+          "facts": 0,
+          "challengerStated": 0,
+          "shippedStated": 0
+        },
+        {
+          "status": "both",
+          "facts": 270,
+          "challengerStated": 208,
+          "shippedStated": 210
+        },
+        {
+          "status": "neither",
+          "facts": 46,
+          "challengerStated": 18,
+          "shippedStated": 17
+        },
+        {
+          "status": "unrecorded",
+          "facts": 0,
+          "challengerStated": 0,
+          "shippedStated": 0
+        }
+      ]
     },
     "comparisons": [
       {
         "name": "chunks-450-budget-48000",
         "cases": 60,
         "factRecall": {
-          "challengerOnly": 10,
-          "shippedOnly": 13,
-          "pValue": 0.6776394844055176,
-          "pAhead": 0.7975635528564453,
-          "pBehind": 0.3388197422027588,
+          "challengerOnly": 13,
+          "shippedOnly": 12,
+          "pValue": 1.0,
+          "pAhead": 0.5,
+          "pBehind": 0.6549810171127319,
           "paired": 57,
           "leftOut": 0,
           "verdict": "indistinguishable",
           "difference": {
-            "mean": -0.02527599106546475,
-            "low": -0.06711100790048158,
-            "high": 0.014230555020028705,
+            "mean": 0.0158086552823395,
+            "low": -0.018802104328420107,
+            "high": 0.05182775314354262,
             "confidence": 0.95
           }
         },
         "faithfulness": {
-          "challengerOnly": 22,
-          "shippedOnly": 18,
-          "pValue": 0.6358280026288412,
-          "pAhead": 0.3179140013144206,
-          "pBehind": 0.7852047460783069,
+          "challengerOnly": 18,
+          "shippedOnly": 12,
+          "pValue": 0.361594608053565,
+          "pAhead": 0.1807973040267825,
+          "pBehind": 0.8997557889670134,
           "paired": 56,
           "leftOut": 1,
           "verdict": "indistinguishable",
           "difference": {
-            "mean": 0.003783231921362177,
-            "low": -0.025975650171940527,
-            "high": 0.0376436149593768,
+            "mean": 0.005950976781926429,
+            "low": -0.010310638840303003,
+            "high": 0.02301468524312638,
             "confidence": 0.95
           }
         },
@@ -2228,58 +2277,107 @@
           }
         },
         "contradictedClaims": {
-          "challengerOnly": 3,
-          "shippedOnly": 3,
-          "pValue": 1.0,
-          "pAhead": 0.65625,
-          "pBehind": 0.65625,
+          "challengerOnly": 7,
+          "shippedOnly": 2,
+          "pValue": 0.1796875,
+          "pAhead": 0.08984375,
+          "pBehind": 0.98046875,
           "paired": 59,
           "leftOut": 1,
-          "verdict": "indistinguishable",
+          "verdict": "ahead",
           "difference": {
-            "mean": 0.0,
-            "low": -0.0847457627118644,
-            "high": 0.0847457627118644,
+            "mean": 0.0847457627118644,
+            "low": -0.01694915254237288,
+            "high": 0.1864406779661017,
             "confidence": 0.95
           }
         },
         "qualifies": false,
         "shippable": true,
-        "statedFacts": null,
-        "byEvidence": null
+        "statedFacts": {
+          "paired": 57,
+          "leftOut": 0,
+          "facts": 316,
+          "challengerStated": 229,
+          "shippedStated": 227,
+          "totalDifference": 2,
+          "pAhead": 0.3905609439056094,
+          "pBehind": 0.6727327267273273,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": 0.03508771929824561,
+            "low": -0.15789473684210525,
+            "high": 0.22807017543859648,
+            "confidence": 0.95
+          },
+          "resamples": 10000,
+          "seed": 20261017
+        },
+        "byEvidence": [
+          {
+            "status": "challenger_only",
+            "facts": 14,
+            "challengerStated": 12,
+            "shippedStated": 7
+          },
+          {
+            "status": "shipped_only",
+            "facts": 11,
+            "challengerStated": 6,
+            "shippedStated": 8
+          },
+          {
+            "status": "both",
+            "facts": 259,
+            "challengerStated": 200,
+            "shippedStated": 202
+          },
+          {
+            "status": "neither",
+            "facts": 32,
+            "challengerStated": 11,
+            "shippedStated": 10
+          },
+          {
+            "status": "unrecorded",
+            "facts": 0,
+            "challengerStated": 0,
+            "shippedStated": 0
+          }
+        ]
       },
       {
         "name": "chunks-600-budget-48000",
         "cases": 60,
         "factRecall": {
-          "challengerOnly": 12,
+          "challengerOnly": 15,
           "shippedOnly": 9,
-          "pValue": 0.6636238098144531,
-          "pAhead": 0.33181190490722656,
-          "pBehind": 0.808344841003418,
+          "pValue": 0.30745625495910645,
+          "pAhead": 0.15372812747955322,
+          "pBehind": 0.9242051839828491,
           "paired": 57,
           "leftOut": 0,
           "verdict": "indistinguishable",
           "difference": {
-            "mean": 0.01744405691774113,
-            "low": -0.01898077555972292,
-            "high": 0.057099820257714984,
+            "mean": 0.021975587765061443,
+            "low": -0.013998185050816632,
+            "high": 0.058455676876729507,
             "confidence": 0.95
           }
         },
         "faithfulness": {
-          "challengerOnly": 21,
+          "challengerOnly": 17,
           "shippedOnly": 17,
-          "pValue": 0.6271025701571489,
-          "pAhead": 0.31355128507857444,
-          "pBehind": 0.7911539045817335,
-          "paired": 56,
+          "pValue": 1.0,
+          "pAhead": 0.5679168797796592,
+          "pBehind": 0.5679168797796592,
+          "paired": 57,
           "leftOut": 1,
           "verdict": "indistinguishable",
           "difference": {
-            "mean": 0.014821607368461642,
-            "low": -0.018596522412588308,
-            "high": 0.050437219575598616,
+            "mean": 0.0021797139377779853,
+            "low": -0.01942428916113128,
+            "high": 0.0254841185115324,
             "confidence": 0.95
           }
         },
@@ -2300,58 +2398,107 @@
           }
         },
         "contradictedClaims": {
-          "challengerOnly": 3,
-          "shippedOnly": 2,
-          "pValue": 1.0,
-          "pAhead": 0.5,
-          "pBehind": 0.8125,
-          "paired": 59,
-          "leftOut": 1,
+          "challengerOnly": 6,
+          "shippedOnly": 3,
+          "pValue": 0.5078125,
+          "pAhead": 0.25390625,
+          "pBehind": 0.91015625,
+          "paired": 60,
+          "leftOut": 0,
           "verdict": "indistinguishable",
           "difference": {
-            "mean": 0.01694915254237288,
-            "low": -0.05084745762711865,
-            "high": 0.0847457627118644,
+            "mean": 0.05,
+            "low": -0.05,
+            "high": 0.15,
             "confidence": 0.95
           }
         },
         "qualifies": false,
         "shippable": true,
-        "statedFacts": null,
-        "byEvidence": null
+        "statedFacts": {
+          "paired": 57,
+          "leftOut": 0,
+          "facts": 316,
+          "challengerStated": 233,
+          "shippedStated": 227,
+          "totalDifference": 6,
+          "pAhead": 0.19488051194880512,
+          "pBehind": 0.8481151884811519,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": 0.10526315789473684,
+            "low": -0.12280701754385964,
+            "high": 0.3333333333333333,
+            "confidence": 0.95
+          },
+          "resamples": 10000,
+          "seed": 20261017
+        },
+        "byEvidence": [
+          {
+            "status": "challenger_only",
+            "facts": 8,
+            "challengerStated": 7,
+            "shippedStated": 5
+          },
+          {
+            "status": "shipped_only",
+            "facts": 0,
+            "challengerStated": 0,
+            "shippedStated": 0
+          },
+          {
+            "status": "both",
+            "facts": 270,
+            "challengerStated": 212,
+            "shippedStated": 210
+          },
+          {
+            "status": "neither",
+            "facts": 38,
+            "challengerStated": 14,
+            "shippedStated": 12
+          },
+          {
+            "status": "unrecorded",
+            "facts": 0,
+            "challengerStated": 0,
+            "shippedStated": 0
+          }
+        ]
       },
       {
         "name": "chunks-800-budget-48000",
         "cases": 60,
         "factRecall": {
-          "challengerOnly": 14,
-          "shippedOnly": 13,
+          "challengerOnly": 15,
+          "shippedOnly": 16,
           "pValue": 1.0,
-          "pAhead": 0.5,
-          "pBehind": 0.6494459807872772,
+          "pAhead": 0.639949934091419,
+          "pBehind": 0.5,
           "paired": 57,
           "leftOut": 0,
           "verdict": "indistinguishable",
           "difference": {
-            "mean": 0.020569927148874515,
-            "low": -0.025724032302979673,
-            "high": 0.06884358331726753,
+            "mean": 0.010399103820156456,
+            "low": -0.037002860687071204,
+            "high": 0.06005291005291006,
             "confidence": 0.95
           }
         },
         "faithfulness": {
-          "challengerOnly": 26,
-          "shippedOnly": 8,
-          "pValue": 0.0029350556433200836,
-          "pAhead": 0.0014675278216600418,
-          "pBehind": 0.9995893023442477,
-          "paired": 56,
-          "leftOut": 2,
-          "verdict": "ahead",
+          "challengerOnly": 18,
+          "shippedOnly": 14,
+          "pValue": 0.5966148958541453,
+          "pAhead": 0.29830744792707264,
+          "pBehind": 0.8114572062622756,
+          "paired": 57,
+          "leftOut": 0,
+          "verdict": "indistinguishable",
           "difference": {
-            "mean": 0.033449766766192025,
-            "low": 0.008691835524542288,
-            "high": 0.06323260248155207,
+            "mean": 0.0027888805281455677,
+            "low": -0.010851847505590663,
+            "high": 0.016354818589216506,
             "confidence": 0.95
           }
         },
@@ -2372,25 +2519,74 @@
           }
         },
         "contradictedClaims": {
-          "challengerOnly": 5,
+          "challengerOnly": 8,
           "shippedOnly": 3,
-          "pValue": 0.7265625,
-          "pAhead": 0.36328125,
-          "pBehind": 0.85546875,
-          "paired": 59,
-          "leftOut": 1,
+          "pValue": 0.2265625,
+          "pAhead": 0.11328125,
+          "pBehind": 0.96728515625,
+          "paired": 60,
+          "leftOut": 0,
           "verdict": "indistinguishable",
           "difference": {
-            "mean": 0.03389830508474576,
-            "low": -0.05084745762711865,
-            "high": 0.13559322033898305,
+            "mean": 0.08333333333333333,
+            "low": -0.016666666666666666,
+            "high": 0.2,
             "confidence": 0.95
           }
         },
         "qualifies": false,
         "shippable": true,
-        "statedFacts": null,
-        "byEvidence": null
+        "statedFacts": {
+          "paired": 57,
+          "leftOut": 0,
+          "facts": 316,
+          "challengerStated": 225,
+          "shippedStated": 227,
+          "totalDifference": -2,
+          "pAhead": 0.6395360463953604,
+          "pBehind": 0.41235876412358763,
+          "verdict": "indistinguishable",
+          "difference": {
+            "mean": -0.03508771929824561,
+            "low": -0.2807017543859649,
+            "high": 0.22807017543859648,
+            "confidence": 0.95
+          },
+          "resamples": 10000,
+          "seed": 20261017
+        },
+        "byEvidence": [
+          {
+            "status": "challenger_only",
+            "facts": 13,
+            "challengerStated": 11,
+            "shippedStated": 4
+          },
+          {
+            "status": "shipped_only",
+            "facts": 6,
+            "challengerStated": 1,
+            "shippedStated": 2
+          },
+          {
+            "status": "both",
+            "facts": 264,
+            "challengerStated": 199,
+            "shippedStated": 208
+          },
+          {
+            "status": "neither",
+            "facts": 33,
+            "challengerStated": 14,
+            "shippedStated": 13
+          },
+          {
+            "status": "unrecorded",
+            "facts": 0,
+            "challengerStated": 0,
+            "shippedStated": 0
+          }
+        ]
       }
     ]
   },
