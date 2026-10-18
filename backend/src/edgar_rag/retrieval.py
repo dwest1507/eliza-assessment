@@ -80,7 +80,11 @@ never run. The terms leave out generic words ("main", "key") and the phrases tha
 Section hint ("risks" on the risk route), which match nearly every passage of the
 Section searched: the chunks matching only those words rank after every chunk matching
 the question's other words, so they still fill the budget but never outrank the topic.
-A question with nothing else naming a topic is searched with all its words.
+A question with nothing else naming a topic is searched with all its words. A topic the
+question names (drug-pricing regulation, supply chain, competition, cybersecurity) adds
+the Filings' own wording for it from the topic table (`_topics`), ORed with the
+question's terms, per Company, since drug-pricing regulation is added for health care
+Companies only; a question naming no topic searches exactly as it would without it.
 
 The ranking step can be swapped: `prepare_answer_context` takes an optional `Ranker`,
 which is given the question, every chunk inside the hard filters and the `bm25()`
@@ -135,6 +139,7 @@ from edgar_rag._query_scope import (
     reads_latest_filings,
 )
 from edgar_rag._repeats import GAP, NEAR_DUPLICATE, NEW_TEXT, new_text, shingles
+from edgar_rag._topics import added_terms
 from edgar_rag.corpus import Filing
 from edgar_rag.paths import DERIVED_DIR
 
@@ -586,11 +591,15 @@ def prepare_answer_context(
         fact_sources, rows = _facts_sources(db, facts)
         terms = _terms(*(n.terms for n in inherited.asked))
         every_word = _terms(*(n.words for n in inherited.asked))
+        # The Filings' own wording for a topic the question names, per Company, since a
+        # topic may be held to Companies of some Sectors (`_topics`).
+        added = {c.ticker: added_terms(focus, c.sector) for c in companies}
+        added[None] = added_terms(focus, None)
         text_sources, searched = _sources(
             db,
             scope,
             filings,
-            _Search(focus, terms, ranker, every_word if every_word != terms else None),
+            _Search(focus, terms, ranker, every_word if every_word != terms else None, added),
             context_budget,
             explicit=bool(left_out),
             first_number=len(fact_sources) + 1,
@@ -764,6 +773,29 @@ class _Search:
     """Ranked after every chunk the terms match: the chunks matching only a generic or
     hint word ("risks" in Risk Factors) still fill the budget, but never outrank one
     matching the question's topic."""
+    added: Mapping[str | None, tuple[str, ...]] = field(default_factory=dict)
+    """Each Company's terms from the topic table (None for a question naming no
+    Company), ORed with the question's own."""
+
+    def for_company(self, ticker: str | None) -> _Search:
+        """The search for one Company: the question's terms widened by that Company's
+        topic terms. With none, the search as it stands."""
+        own = self.added.get(ticker, ())
+        if not own or self.terms is None:
+            return self
+        return replace(
+            self,
+            terms=_widened(self.terms, own),
+            every_word=None if self.every_word is None else _widened(self.every_word, own),
+        )
+
+
+def _widened(terms: str, added: Iterable[str]) -> str:
+    """FTS5 terms ORed with the added terms, each quoted as one phrase and skipped when
+    the terms already hold it."""
+    quoted = terms.split(" OR ")
+    extra = [f'"{t.lower()}"' for t in added if f'"{t.lower()}"' not in quoted]
+    return " OR ".join(quoted + extra)
 
 
 @dataclass(frozen=True)
@@ -858,7 +890,9 @@ def _sources(
         searched += [SearchedPlace(owner[f], f, section) for f, section in places]
         retrievals.append(
             _Retrieval(
-                candidates=_without_near_duplicates(_candidates(db, scope, ticker, search, plan)),
+                candidates=_without_near_duplicates(
+                    _candidates(db, scope, ticker, search.for_company(ticker), plan)
+                ),
                 pointers=_pointer_rows(db, plan.pointers),
             )
         )

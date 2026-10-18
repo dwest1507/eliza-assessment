@@ -37,17 +37,17 @@
             "20": 0.9824561403508771
           },
           "recallAt": {
-            "5": 0.806390977443609,
+            "5": 0.8075605680868838,
             "10": 0.8786549707602339,
             "20": 0.9154970760233918
           },
           "hitAll": 0.9824561403508771,
           "recallAll": 0.9447368421052632,
-          "mrr": 0.7569548872180452,
+          "mrr": 0.7709899749373433,
           "meanSources": 11.456140350877194,
           "facts": 939,
-          "factsReached": 780,
-          "meanSourceTokens": 27378.245614035088
+          "factsReached": 797,
+          "meanSourceTokens": 27430.80701754386
         },
         "byType": [
           {
@@ -89,8 +89,8 @@
             "mrr": 1.0,
             "meanSources": 2.6666666666666665,
             "facts": 39,
-            "factsReached": 36,
-            "meanSourceTokens": 20931.333333333332
+            "factsReached": 39,
+            "meanSourceTokens": 22174.333333333332
           },
           {
             "questionType": "outlook",
@@ -122,17 +122,17 @@
               "20": 0.9444444444444444
             },
             "recallAt": {
-              "5": 0.8796296296296297,
+              "5": 0.8611111111111112,
               "10": 0.8796296296296297,
               "20": 0.8981481481481483
             },
             "hitAll": 0.9444444444444444,
             "recallAll": 0.925925925925926,
             "mrr": 0.8101851851851852,
-            "meanSources": 8.777777777777779,
+            "meanSources": 8.833333333333334,
             "facts": 340,
-            "factsReached": 290,
-            "meanSourceTokens": 27147.055555555555
+            "factsReached": 294,
+            "meanSourceTokens": 27121.777777777777
           },
           {
             "questionType": "sector",
@@ -143,17 +143,17 @@
               "20": 1.0
             },
             "recallAt": {
-              "5": 0.7236394557823129,
+              "5": 0.7522108843537415,
               "10": 0.9166666666666667,
               "20": 0.9238095238095239
             },
             "hitAll": 1.0,
             "recallAll": 0.9238095238095239,
-            "mrr": 0.7880952380952381,
-            "meanSources": 9.142857142857142,
+            "mrr": 0.8452380952380952,
+            "meanSources": 9.071428571428571,
             "facts": 313,
-            "factsReached": 279,
-            "meanSourceTokens": 31131.285714285714
+            "factsReached": 289,
+            "meanSourceTokens": 31111.428571428572
           },
           {
             "questionType": "stale_filing",
@@ -353,17 +353,17 @@
             "20": 0.9649122807017544
           },
           "recallAt": {
-            "5": 0.798203842940685,
-            "10": 0.8830409356725146,
+            "5": 0.8052213868003342,
+            "10": 0.8771929824561403,
             "20": 0.9096491228070176
           },
           "hitAll": 0.9824561403508771,
           "recallAll": 0.9330409356725146,
-          "mrr": 0.7759923799397483,
-          "meanSources": 10.964912280701755,
+          "mrr": 0.7876882863724969,
+          "meanSources": 10.982456140350877,
           "facts": 939,
-          "factsReached": 833,
-          "meanSourceTokens": 29639.80701754386
+          "factsReached": 835,
+          "meanSourceTokens": 29646.36842105263
         },
         "byType": [
           {
@@ -406,7 +406,7 @@
             "meanSources": 3.0,
             "facts": 39,
             "factsReached": 39,
-            "meanSourceTokens": 27389.0
+            "meanSourceTokens": 27400.0
           },
           {
             "questionType": "outlook",
@@ -439,16 +439,16 @@
             },
             "recallAt": {
               "5": 0.8796296296296297,
-              "10": 0.8981481481481483,
+              "10": 0.8796296296296297,
               "20": 0.9120370370370371
             },
             "hitAll": 0.9444444444444444,
             "recallAll": 0.925925925925926,
             "mrr": 0.8305555555555555,
-            "meanSources": 8.333333333333334,
+            "meanSources": 8.277777777777779,
             "facts": 340,
-            "factsReached": 315,
-            "meanSourceTokens": 29544.61111111111
+            "factsReached": 317,
+            "meanSourceTokens": 29562.333333333332
           },
           {
             "questionType": "sector",
@@ -459,17 +459,17 @@
               "20": 1.0
             },
             "recallAt": {
-              "5": 0.7855442176870749,
+              "5": 0.8141156462585034,
               "10": 0.9166666666666667,
               "20": 0.9238095238095239
             },
             "hitAll": 1.0,
             "recallAll": 0.9238095238095239,
-            "mrr": 0.880952380952381,
-            "meanSources": 9.5,
+            "mrr": 0.9285714285714286,
+            "meanSources": 9.642857142857142,
             "facts": 313,
             "factsReached": 285,
-            "meanSourceTokens": 31677.071428571428
+            "meanSourceTokens": 31678.64285714286
           },
           {
             "questionType": "stale_filing",
@@ -511,17 +511,17 @@
             "20": 0.9824561403508771
           },
           "recallAt": {
-            "5": 0.793233082706767,
+            "5": 0.7815371762740184,
             "10": 0.8728070175438597,
             "20": 0.9111111111111111
           },
           "hitAll": 0.9824561403508771,
           "recallAll": 0.9447368421052632,
-          "mrr": 0.8103529024581656,
-          "meanSources": 11.333333333333334,
+          "mrr": 0.8015809726336043,
+          "meanSources": 11.350877192982455,
           "facts": 939,
-          "factsReached": 775,
-          "meanSourceTokens": 27352.263157894737
+          "factsReached": 786,
+          "meanSourceTokens": 27413.859649122805
         },
         "byType": [
           {
@@ -563,8 +563,8 @@
             "mrr": 1.0,
             "meanSources": 2.6666666666666665,
             "facts": 39,
-            "factsReached": 36,
-            "meanSourceTokens": 20931.333333333332
+            "factsReached": 39,
+            "meanSourceTokens": 22174.333333333332
           },
           {
             "questionType": "outlook",
@@ -596,17 +596,17 @@
               "20": 0.9444444444444444
             },
             "recallAt": {
-              "5": 0.8981481481481483,
+              "5": 0.8611111111111112,
               "10": 0.8981481481481483,
               "20": 0.8981481481481483
             },
             "hitAll": 0.9444444444444444,
             "recallAll": 0.925925925925926,
-            "mrr": 0.8611111111111112,
-            "meanSources": 8.722222222222221,
+            "mrr": 0.8333333333333334,
+            "meanSources": 8.777777777777779,
             "facts": 340,
-            "factsReached": 290,
-            "meanSourceTokens": 27139.777777777777
+            "factsReached": 294,
+            "meanSourceTokens": 27114.5
           },
           {
             "questionType": "sector",
@@ -626,8 +626,8 @@
             "mrr": 0.880952380952381,
             "meanSources": 8.714285714285714,
             "facts": 313,
-            "factsReached": 274,
-            "meanSourceTokens": 31034.85714285714
+            "factsReached": 278,
+            "meanSourceTokens": 31051.785714285714
           },
           {
             "questionType": "stale_filing",
@@ -827,17 +827,17 @@
             "20": 0.9824561403508771
           },
           "recallAt": {
-            "5": 0.759314954051796,
-            "10": 0.8874269005847953,
+            "5": 0.7663324979114453,
+            "10": 0.881578947368421,
             "20": 0.9111111111111111
           },
           "hitAll": 0.9824561403508771,
           "recallAll": 0.9403508771929825,
-          "mrr": 0.7878863826232247,
-          "meanSources": 10.771929824561404,
+          "mrr": 0.7931495405179616,
+          "meanSources": 10.807017543859649,
           "facts": 939,
-          "factsReached": 816,
-          "meanSourceTokens": 29641.929824561405
+          "factsReached": 820,
+          "meanSourceTokens": 29643.19298245614
         },
         "byType": [
           {
@@ -880,7 +880,7 @@
             "meanSources": 3.0,
             "facts": 39,
             "factsReached": 39,
-            "meanSourceTokens": 27400.666666666668
+            "meanSourceTokens": 27400.0
           },
           {
             "questionType": "outlook",
@@ -913,16 +913,16 @@
             },
             "recallAt": {
               "5": 0.8240740740740741,
-              "10": 0.8981481481481483,
+              "10": 0.8796296296296297,
               "20": 0.9120370370370371
             },
             "hitAll": 0.9444444444444444,
             "recallAll": 0.9120370370370371,
             "mrr": 0.8287037037037037,
-            "meanSources": 7.611111111111111,
+            "meanSources": 7.722222222222222,
             "facts": 340,
-            "factsReached": 299,
-            "meanSourceTokens": 29561.0
+            "factsReached": 303,
+            "meanSourceTokens": 29565.38888888889
           },
           {
             "questionType": "sector",
@@ -933,17 +933,17 @@
               "20": 1.0
             },
             "recallAt": {
-              "5": 0.7641156462585034,
+              "5": 0.7926870748299321,
               "10": 0.9166666666666667,
               "20": 0.9238095238095239
             },
             "hitAll": 1.0,
             "recallAll": 0.9238095238095239,
-            "mrr": 0.8357142857142856,
+            "mrr": 0.8571428571428571,
             "meanSources": 9.285714285714286,
             "facts": 313,
             "factsReached": 289,
-            "meanSourceTokens": 31669.0
+            "meanSourceTokens": 31668.64285714286
           },
           {
             "questionType": "stale_filing",
@@ -979,23 +979,23 @@
         "shippedArm": "fts5",
         "metric": "evidence reached",
         "facts": 939,
-        "challengerOnly": 74,
-        "shippedOnly": 79,
-        "pValue": 0.7465275303369354,
-        "pAhead": 0.6861145463998155,
-        "pBehind": 0.3732637651684677,
-        "verdict": "indistinguishable"
+        "challengerOnly": 60,
+        "shippedOnly": 82,
+        "pValue": 0.07765321401762205,
+        "pAhead": 0.9733957965263629,
+        "pBehind": 0.03882660700881103,
+        "verdict": "behind"
       },
       {
         "arm": "hybrid",
         "shippedArm": "fts5",
         "metric": "evidence reached",
         "facts": 939,
-        "challengerOnly": 69,
-        "shippedOnly": 16,
-        "pValue": 5.240266679443081e-09,
-        "pAhead": 2.6201333397215405e-09,
-        "pBehind": 0.999999999413753,
+        "challengerOnly": 55,
+        "shippedOnly": 17,
+        "pValue": 8.14003082672391e-06,
+        "pAhead": 4.070015413361955e-06,
+        "pBehind": 0.9999988013400952,
         "verdict": "ahead"
       },
       {
@@ -1003,23 +1003,23 @@
         "shippedArm": "fts5",
         "metric": "evidence reached",
         "facts": 939,
-        "challengerOnly": 10,
+        "challengerOnly": 4,
         "shippedOnly": 15,
-        "pValue": 0.42435622215270996,
-        "pAhead": 0.885238528251648,
-        "pBehind": 0.21217811107635498,
-        "verdict": "indistinguishable"
+        "pValue": 0.0192108154296875,
+        "pAhead": 0.9977874755859375,
+        "pBehind": 0.00960540771484375,
+        "verdict": "behind"
       },
       {
         "arm": "dense-local",
         "shippedArm": "fts5",
         "metric": "evidence reached",
         "facts": 939,
-        "challengerOnly": 68,
-        "shippedOnly": 95,
-        "pValue": 0.04137242299938576,
-        "pAhead": 0.9860055140440604,
-        "pBehind": 0.02068621149969288,
+        "challengerOnly": 54,
+        "shippedOnly": 98,
+        "pValue": 0.00044853172550527446,
+        "pAhead": 0.9998812865399102,
+        "pBehind": 0.00022426586275263723,
         "verdict": "behind"
       },
       {
@@ -1027,11 +1027,11 @@
         "shippedArm": "fts5",
         "metric": "evidence reached",
         "facts": 939,
-        "challengerOnly": 59,
-        "shippedOnly": 23,
-        "pValue": 8.715478657320522e-05,
-        "pAhead": 4.357739328660261e-05,
-        "pBehind": 0.9999838414369006,
+        "challengerOnly": 47,
+        "shippedOnly": 24,
+        "pValue": 0.008554538502693427,
+        "pAhead": 0.004277269251346714,
+        "pBehind": 0.9979674419376807,
         "verdict": "ahead"
       }
     ],
@@ -1039,28 +1039,27 @@
       "shipped": "fts5",
       "limit": 3,
       "kept": [
-        "hybrid-local",
-        "rerank"
+        "hybrid-local"
       ],
       "candidates": [
         {
           "name": "dense",
           "facts": 939,
           "factsReached": 775,
-          "gained": 74,
-          "lost": 79,
-          "pBehind": 0.3732637651684677,
+          "gained": 60,
+          "lost": 82,
+          "pBehind": 0.03882660700881103,
           "kept": false,
           "shippable": false,
-          "reason": "dropped: makes an API call at query time, so it can't ship (indistinguishable on Evidence Reached, p behind = 0.373; available if the one-call limit is lifted)"
+          "reason": "dropped: makes an API call at query time, so it can't ship (behind on Evidence Reached, p behind = 0.039; available if the one-call limit is lifted)"
         },
         {
           "name": "hybrid",
           "facts": 939,
-          "factsReached": 833,
-          "gained": 69,
-          "lost": 16,
-          "pBehind": 0.999999999413753,
+          "factsReached": 835,
+          "gained": 55,
+          "lost": 17,
+          "pBehind": 0.9999988013400952,
           "kept": false,
           "shippable": false,
           "reason": "dropped: makes an API call at query time, so it can't ship (ahead on Evidence Reached, p behind = 1.000; available if the one-call limit is lifted)"
@@ -1068,35 +1067,35 @@
         {
           "name": "rerank",
           "facts": 939,
-          "factsReached": 775,
-          "gained": 10,
+          "factsReached": 786,
+          "gained": 4,
           "lost": 15,
-          "pBehind": 0.21217811107635498,
-          "kept": true,
+          "pBehind": 0.00960540771484375,
+          "kept": false,
           "shippable": true,
-          "reason": "kept: not behind (p behind = 0.212), 2 of 2 not behind on Evidence Reached"
+          "reason": "dropped: behind on Evidence Reached (p behind = 0.010 < 0.20)"
         },
         {
           "name": "dense-local",
           "facts": 939,
           "factsReached": 753,
-          "gained": 68,
-          "lost": 95,
-          "pBehind": 0.02068621149969288,
+          "gained": 54,
+          "lost": 98,
+          "pBehind": 0.00022426586275263723,
           "kept": false,
           "shippable": true,
-          "reason": "dropped: behind on Evidence Reached (p behind = 0.021 < 0.20)"
+          "reason": "dropped: behind on Evidence Reached (p behind = 0.000 < 0.20)"
         },
         {
           "name": "hybrid-local",
           "facts": 939,
-          "factsReached": 816,
-          "gained": 59,
-          "lost": 23,
-          "pBehind": 0.9999838414369006,
+          "factsReached": 820,
+          "gained": 47,
+          "lost": 24,
+          "pBehind": 0.9979674419376807,
           "kept": true,
           "shippable": true,
-          "reason": "kept: not behind (p behind = 1.000), 1 of 2 not behind on Evidence Reached"
+          "reason": "kept: not behind (p behind = 0.998), 1 of 1 not behind on Evidence Reached"
         }
       ]
     }

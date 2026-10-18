@@ -6,6 +6,7 @@ import sqlite3
 
 import pytest
 
+from edgar_rag import _topics
 from edgar_rag.retrieval import (
     CHUNK_TOKENS,
     CONTEXT_BUDGET_TOKENS,
@@ -815,6 +816,61 @@ def test_a_question_of_only_generic_and_hint_words_still_gets_sources(index, que
 
     assert context.query_scope.sections
     assert _passages(context)
+
+
+# --- The topic table ---------------------------------------------------------------------
+
+
+def _without_topic_table(monkeypatch, ask):
+    with monkeypatch.context() as patch:
+        patch.setattr(_topics, "TOPICS", ())
+        return ask()
+
+
+def test_a_topic_phrases_terms_bring_in_a_passage_the_questions_own_words_miss(
+    sector_index, monkeypatch
+):
+    # Pfizer states its regulatory risk as the IRA's Medicare price negotiation and
+    # government price controls, often without the word "regulatory".
+    question = "What regulatory risks does Pfizer face?"
+    added = _topics.added_terms(question, "Health Care")
+    names_one = re.compile(r"\b(?:" + "|".join(re.escape(t) for t in added) + r")\b", re.I)
+
+    def worded_as_the_filing(context):
+        return [
+            p
+            for _, p in _passages(context)
+            if names_one.search(p) and not re.search(r"\bregulatory\b", p, re.I)
+        ]
+
+    def ask():
+        return prepare_answer_context(
+            [Message("user", question)], sector_index, context_budget=4000
+        )
+
+    assert worded_as_the_filing(ask())
+    assert not worded_as_the_filing(_without_topic_table(monkeypatch, ask))
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        BRIEF_QUESTION,
+        "How has NVIDIA's revenue changed over the last two years?",
+        "What legal proceedings is Apple involved in?",
+        "What are Tesla's main risks?",
+        # A topic held to health care Companies leaves the others' search as it was.
+        "What regulatory risks does JPMorgan face?",
+    ],
+)
+def test_a_question_with_no_topic_phrase_for_its_companies_searches_exactly_as_before(
+    index, monkeypatch, question
+):
+    context = _ask(index, question)
+    before = _without_topic_table(monkeypatch, lambda: _ask(index, question))
+
+    assert context.sources == before.sources
+    assert context.messages == before.messages
 
 
 # --- The outlook route -------------------------------------------------------------------

@@ -1262,6 +1262,51 @@ The three cases the ticket names, `fts5`, before and after:
 - **The Section metrics rise, so the Floors are re-recorded** (ADR 0014): for `fts5`, hit@10 0.947 → 0.965, recall@10 0.870 → 0.879 and MRR 0.739 → 0.757 (#124 left all three as #121 had them). With fewer Filings competing, the outlook cases' expected MD&A Sources rank higher. The Floors move to hit@10 0.96, recall@10 0.87 and MRR 0.75.
 - **The screen** still sends `hybrid-local` and `rerank` on to paid runs, and drops `dense-local`. The hosted `hybrid` Arm reaches the most evidence of any Arm (833 of 939, 285 of 316 must-state), 17 facts more than `hybrid-local`, the same gap as on #124's code. The "How it works" page is regenerated from these reports (`make eval-export`).
 
+#### A topic table of the Filings' own wording (#125, 2026-10-18)
+
+On top of #119, #120, #123, #121, #124 and #122. A small rule-based table in the core package (`edgar_rag._topics`, standard library only) adds the Filings' own wording for four topics to a question's search terms, ORed with the question's own, so it widens the match and never narrows it:
+
+| Topic | Recognised by | Held to | Added terms |
+|---|---|---|---|
+| drug-pricing regulation | "regulatory", "regulation", "drug pricing", "price controls" | health care Companies | Inflation Reduction Act, IRA, price negotiation, government price setting, price controls, 340B |
+| supply chain | "supply chain", "supplier(s)", "sourcing" | every Company | suppliers, sole source, single source, contract manufacturers, shortages |
+| competition | "competition", "compete", "competitors", "rivals" | every Company | competitors, compete, market share, new entrants |
+| cybersecurity | "cyber…", "data breach", "information security", "ransomware" | every Company | cyberattacks, security breaches, ransomware, malware, unauthorized access, security incidents, data breaches |
+
+Each term names a Filing and the phrase of it that uses the term (Lilly's FY2025 10-K: "government enacted the Inflation Reduction Act of 2022 (IRA)."). A test checks that every term matches a chunk of the full index and every phrase is in its Filing (skipped without the index), and that no term or phrase is copied from a Golden Set or Brief Suite evidence quote. Drug-pricing regulation is added per Company, for health care Companies only, so "What regulatory risks does JPMorgan face?" searches exactly as before, as does any question naming no topic.
+
+`make eval-retrieval` on dev, before (#122's code) and after (free):
+
+| Question type | all facts before | after | must-state before | after |
+|---|---|---|---|---|
+| risk | 290 of 340 | 294 | 95 of 110 | 96 |
+| sector | 279 of 313 | 289 | 100 of 111 | 104 |
+| missing_company | 36 of 39 | 39 | 9 of 10 | 10 |
+| figure_trend, outlook, stale_filing | 175 of 247 | 175 | 60 of 85 | 60 |
+| **all** | **780 of 939 (83.1%)** | **797 (84.9%)** | **264 of 316 (83.5%)** | **270 (85.4%)** |
+
+| | hit@10 | recall@10 | MRR | Source tokens | must-state planning misses | must-state ranking misses |
+|---|---|---|---|---|---|---|
+| before (#122) | 0.965 | 0.879 | 0.757 | 27,378 | 3 | 49 |
+| after | 0.965 | 0.879 | 0.771 | 27,431 | 3 | 43 |
+
+- **Evidence Reached rises, so the table is kept:** 17 facts gained and none lost, 6 of them must-state. Cybersecurity gains 11 (`sector-software-cybersecurity` 13 to 23 of 24, its must-state 4 to 8 of 8, and `risk-unh-cybersecurity` 17 to 18 of 18), competition 3 (`risk-nvda-amd-competition` 14 to 17 of 18, its must-state 5 to 6 of 6) and drug-pricing regulation 3 (`missing-bms-with-merck` 13 to 16 of 16, its must-state 3 to 4 of 4). Supply chain changes nothing on dev: its three questions' misses are ranked out by other wording. Each topic was measured alone too, and none lowers Evidence Reached. The same 17 facts were gained, with none lost, when the table was first measured on #121's code and again on #124's.
+- **The Brief Suite's pharmaceutical questions, through the retrieval seam (free, `fts5`):** must-state facts reached rise from 62 to 80 of the suite's 108, and all facts from 189 to 257 of 363. `brief-sector-pharma-regulatory` rises from 0 to 6 of 9 must-state (6 to 29 of 44 facts), its rephrasing from 1 to 5 of 9, the health care variant from 1 to 6 of 13 and the Pfizer question from 1 to 2 of 4: each Company's IRA, Medicare price negotiation and price-control passages now rank into its budget. The cybersecurity follow-up (`brief-followup-aapl-tsla-jpm-cybersecurity`) rises from 4 to 6 of 6. The 340B follow-up stays at 8 of 8. Janssen's and Merck's lawsuits over the IRA's Program are now reached. The must-state misses left are Lilly's, Merck's and (in the variants) Pfizer's Risk Factors passages on price controls and government pricing, searched but ranked just outside each Company's share of the budget, Pfizer's engagement with payors in Business, its September 2025 agreements in a 10-Q's MD&A, and, in the health care variant, Thermo Fisher's compliance and UnitedHealth's Medicare Advantage passages, which drug-pricing terms do not name.
+- **The outlook route's unused budget is not the table's.** #122 found that on a one-Company outlook question `fts5` ranks only the chunks its terms match, so Tesla's 2026 outlook gets 2,665 tokens of a 15,493-token MD&A. The table names no outlook topic and changes no outlook case. Filling the rest of a small plan with the planned Section's unmatched chunks is a ranking change of its own, left as a follow-up.
+- **MRR rises, and the Floors are re-recorded** (`make eval-floors`, ADR 0014): MRR 0.757 → 0.771, hit@10 and recall@10 unchanged. The Floors move to MRR 0.77, hit@10 0.96 and recall@10 0.87 unchanged.
+- **Every Arm, the hosted ones included, and the "How it works" page.** `retrieval-dev.json` was run on all six Arms (free, but for a fraction of a cent to embed questions the hosted Arms' cache lacked, approved by the developer) and exported with `make eval-export`. Evidence Reached, all facts and must-state, before (#122's code) and after:
+
+| Arm | before | after | must-state before | after | screen |
+|---|---|---|---|---|---|
+| `fts5` (shipped) | 780 | 797 | 264 | 270 | |
+| `hybrid` (hosted) | 833 | 835 | 285 | 285 | can't ship (one-call rule); ahead of `fts5` (55 gained, 17 lost, p ahead < 0.001) |
+| `dense` (hosted) | 775 | 775 | 269 | 269 | can't ship (one-call rule); behind (60 / 82, p behind = 0.039) |
+| `hybrid-local` | 816 | 820 | 279 | 280 | kept (47 / 24, p ahead = 0.004) |
+| `rerank` | 775 | 786 | 263 | 268 | dropped (4 / 15, p behind = 0.010) |
+| `dense-local` | 753 | 753 | 262 | 262 | dropped (54 / 98, p behind < 0.001) |
+
+  The rankers that start from the `bm25()` candidates (`fts5`, `rerank`, the hybrids) gain from the table, and the dense Arms, which rank on the question's embedding alone, do not. `fts5` gains more than the challengers, so each comparison moves its way: `hybrid-local`'s lead narrows from 59 facts gained against 23 lost to 47 against 24, and `rerank`, which gains 11 of `fts5`'s 17, falls behind and is dropped by the screen (on #122's code it was kept at p behind = 0.212). `hybrid-local` is now the one Arm the screen sends on to paid runs.
+
 ### The version 2 holdout run
 
 Run once on 2026-10-17 (issue #74), after [the version 2 comparisons on dev](#the-version-2-comparisons-on-dev) had confirmed every shipped choice, on Golden Set version 2's 20 holdout cases. It is the same round as those comparisons (code version `756bfadca63122a9`, prompt v7, Golden Set version 2) and the setup that ships: the `fts5` Arm, 600-token chunks and the 32k budget, `gpt-6-luna` at reasoning effort `low`, judged by `jev-1.13.0` at the fact cut-off 0.6. Under [the holdout rule](#the-holdout-rule) it reports and decides nothing: nothing was changed after it, and no case was relabelled. [Version 1's holdout run](#the-holdout-run) stands as recorded.
