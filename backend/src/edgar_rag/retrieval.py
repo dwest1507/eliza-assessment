@@ -41,12 +41,30 @@ one Facts Source, numbered before the text Sources. A Company and metric the sto
 answer falls back to the text, and the prompt says the answer must say so.
 
 Retrieval applies the Query Scope's Companies and time window as hard filters before
-`bm25()` ranking, and each Company gets an even share of the context budget. A Section
-hint is a preference: each Filing in the window is searched in the hinted Section, or
-whole when that Section is missing or a stub (finding 14). A risk question is routed to
-the latest 10-K's Risk Factors plus any later 10-Q that states risk text; a later 10-Q
-whose Risk Factors only point back to the 10-K is cited as it stands, never ranked
-(finding 16).
+`bm25()` ranking, and each Company starts with an even share of the context budget. A
+Company whose ranked chunks run out before its share is spent passes the rest to the
+Companies still retrieving, shared evenly among them, and a chunk too large for what is
+left of a Company's share is skipped for the next one rather than ending its retrieval.
+Risk pointers count against a Company's share first.
+
+A Section hint is a preference: each Filing in the window is searched in the hinted
+Sections, or whole when every one of them is missing or a stub (finding 14). A hint may plan several
+Sections, and `QueryScope.sections` lists every Section planned. A legal proceedings
+question also searches the Financial Statements, whose contingencies note is where a stub
+Item 3 points ("see Note 15"), so a Filing whose Item 3 is a stub is searched in its
+Financial Statements, not whole. A risk question is routed to the latest 10-K's Risk
+Factors plus any later 10-Q that states risk text; a later 10-Q whose Risk Factors only
+point back to the 10-K is cited as it stands, never ranked (finding 16). A cybersecurity
+question is routed the same way, to the Cybersecurity Section, Risk Factors and MD&A of
+the latest Filings. A risk question asking how the Companies address, manage or respond to
+their risks also searches Business and the MD&A, and a question about what Companies
+depend on (customers, suppliers, government contracts) searches Business and, with no
+other hint, Risk Factors, in the latest Filings unless it names a time phrase. An outlook
+question ("outlook", "expect", "guidance", "going forward", or "for" a year after the
+Companies' latest Filing) is routed to the MD&A of the latest Filings; a time phrase, or
+a Fiscal Period a Filing covers, replaces that window. Guidance itself stays a Coverage
+Gap. The Query Scope records the places searched (`QueryScope.searched`), so the
+answer's reader, and the evaluation, can see where retrieval looked.
 
 Repeated text costs the budget once (finding 17). A chunk repeated across a Company's
 Filings is stored once and cited from the most recent Filing in the plan that holds it,
@@ -58,7 +76,15 @@ cites only those paragraphs, from the Filing they are new in.
 
 Question text is reduced to quoted terms before it reaches FTS5 `MATCH`, so FTS5
 operators in a question (`NOT`, `NEAR`, `*`, quotes, colons) are searched as words,
-never run.
+never run. The terms leave out generic words ("main", "key") and the phrases that set a
+Section hint ("risks" on the risk route), which match nearly every passage of the
+Section searched: the chunks matching only those words rank after every chunk matching
+the question's other words, so they still fill the budget but never outrank the topic.
+A question with nothing else naming a topic is searched with all its words. A topic the
+question names (drug-pricing regulation, supply chain, competition, cybersecurity) adds
+the Filings' own wording for it from the topic table (`_topics`), ORed with the
+question's terms, per Company, since drug-pricing regulation is added for health care
+Companies only; a question naming no topic searches exactly as it would without it.
 
 The ranking step can be swapped: `prepare_answer_context` takes an optional `Ranker`,
 which is given the question, every chunk inside the hard filters and the `bm25()`
@@ -99,17 +125,21 @@ from edgar_rag._facts import FactNote, FactRow
 from edgar_rag._prompt import HISTORY_MAX_TOKENS, HISTORY_TURNS, PROMPT_VERSION, render
 from edgar_rag._query_scope import (
     LATEST,
+    RISK_FACTORS,
     MissingCompany,
     ScopeCompany,
     ScopeFiling,
     SectorPhrase,
     TimeWindow,
+    future_periods,
     in_window,
     inherit_scope,
     is_change_question,
     names_period,
+    reads_latest_filings,
 )
 from edgar_rag._repeats import GAP, NEAR_DUPLICATE, NEW_TEXT, new_text, shingles
+from edgar_rag._topics import added_terms
 from edgar_rag.corpus import Filing
 from edgar_rag.paths import DERIVED_DIR
 
@@ -136,6 +166,7 @@ __all__ = [
     "Ranker",
     "STUB_TOKENS",
     "ScopeCompany",
+    "SearchedPlace",
     "ScopeFiling",
     "SectorPhrase",
     "Source",
@@ -154,14 +185,13 @@ CHUNK_TOKENS = TARGET_TOKENS
 above four thirds of it (ADR 0010)."""
 
 CONTEXT_BUDGET_TOKENS = 32_000
-"""Tokens of Source text per Answer Call, split evenly across the Companies in scope
-(ADR 0010)."""
+"""Tokens of Source text per Answer Call, split evenly across the Companies in scope, a
+Company that can't use its share passing the rest to the others (ADR 0010)."""
 
 STUB_TOKENS = 250
 """A Section with less text than this (about 1,000 characters) is a stub, usually a
-pointer to a note or another Item, so a hint for it falls back to the whole Filing."""
-
-RISK_FACTORS = "Risk Factors"
+pointer to a note or another Item, so it is not searched, and a Filing whose hinted
+Sections are all stubs or missing is searched whole."""
 
 _CANDIDATES_PER_COMPANY = 200
 
@@ -265,10 +295,13 @@ class QueryScope:
     """The Sector phrases the question uses, each with the Sector table rows and the
     Companies it resolved to, so the answer and the front-end can name them."""
     time_window: TimeWindow
-    """The window each Company's Filings are filtered to. A risk question that names no
-    time phrase gets the latest window."""
+    """The window each Company's Filings are filtered to. A risk, cybersecurity or
+    dependence or outlook question that names no time phrase and no Fiscal Period a Filing
+    covers gets the latest window."""
     sections: tuple[str, ...]
-    """The Sections the question hints at, preferred over the rest of each Filing."""
+    """The Sections the question's hints plan, preferred over the rest of each Filing
+    (a cybersecurity question plans Cybersecurity, Risk Factors and MD&A, a legal
+    proceedings question Legal Proceedings and Financial Statements)."""
     filings: tuple[ScopeFiling, ...]
     """The named Companies' Filings inside the window, by Company and then oldest
     first. A question naming no Company searches every Company's window."""
@@ -291,6 +324,22 @@ class QueryScope:
     """Companies the question names that are not in the Corpus, from the curated list
     of notable missing Companies, in the order it names them. They are Coverage Gaps,
     never answered."""
+    searched: tuple[SearchedPlace, ...] = ()
+    """Where retrieval searched: the Section plan's places, by Company in the order the
+    question names them (every Company, by ticker, for a question naming none) and then
+    oldest Filing first. A Filing searched whole has a Section of None. A risk pointer
+    cited as it stands is not searched, so it is not listed. Empty when nothing was
+    searched (a question naming only Companies missing from the Corpus)."""
+
+
+@dataclass(frozen=True)
+class SearchedPlace:
+    """One place retrieval searched: a Section of a Filing, or the whole Filing."""
+
+    ticker: str
+    filing_id: str
+    section: str | None
+    """The Section searched, or None for the whole Filing."""
 
 
 @dataclass(frozen=True)
@@ -476,7 +525,7 @@ def prepare_answer_context(
     one does not name, and the last turns go into the prompt as history. `ranker`
     replaces the `bm25()` ranking inside the hard filters; None keeps it.
     `context_budget` is the tokens of Source text retrieved, split evenly across the
-    Companies in scope.
+    Companies in scope; a Company that can't use its share passes the rest to the others.
     """
     if not messages or messages[-1].role != "user" or not messages[-1].content.strip():
         raise ValueError("the conversation must end with a non-empty user message")
@@ -491,10 +540,17 @@ def prepare_answer_context(
         who = inherited.companies_from
         companies, sector_phrases, missing = who.companies, who.sector_phrases, who.missing
         sections = inherited.sections_from.sections
-        window = inherited.period_from.window or (
-            LATEST if RISK_FACTORS in sections else TimeWindow("all")
-        )
         periods = inherited.period_from.periods
+        # A risk, cybersecurity, dependence or outlook question that names no time phrase
+        # and no Fiscal Period a Filing covers reads the latest Filings. A future year
+        # ("Tesla's outlook for 2026") covers none.
+        latest_route = (
+            reads_latest_filings(inherited.sections_from.text) or inherited.sections_from.outlook
+        )
+        covered = set(periods) - set(future_periods(periods, companies or known))
+        window = inherited.period_from.window or (
+            LATEST if latest_route and not covered else TimeWindow("all")
+        )
         # The question as retrieval reads it: its own words, plus the words of the
         # message whose topic it inherits ("And what about Microsoft?").
         focus = "\n".join(n.text for n in inherited.asked)
@@ -533,16 +589,23 @@ def prepare_answer_context(
         )
         facts = _facts.lookup(db, companies, metrics, segments, scope.filings, scope.periods)
         fact_sources, rows = _facts_sources(db, facts)
-        terms = _terms(*(n.words for n in inherited.asked))
-        sources = fact_sources + _sources(
+        terms = _terms(*(n.terms for n in inherited.asked))
+        every_word = _terms(*(n.words for n in inherited.asked))
+        # The Filings' own wording for a topic the question names, per Company, since a
+        # topic may be held to Companies of some Sectors (`_topics`).
+        added = {c.ticker: added_terms(focus, c.sector) for c in companies}
+        added[None] = added_terms(focus, None)
+        text_sources, searched = _sources(
             db,
             scope,
             filings,
-            _Search(focus, terms, ranker),
+            _Search(focus, terms, ranker, every_word if every_word != terms else None, added),
             context_budget,
             explicit=bool(left_out),
             first_number=len(fact_sources) + 1,
         )
+        sources = fact_sources + text_sources
+        scope = replace(scope, searched=searched)
     by_ticker = {c.ticker: c for c in known}
     covered = list(companies) or [by_ticker[t] for t in dict.fromkeys(s.ticker for s in sources)]
     coverage = tuple(
@@ -657,8 +720,21 @@ class _connect:
 
 
 def _companies(db: sqlite3.Connection) -> list[ScopeCompany]:
+    latest = dict(
+        db.execute(
+            "SELECT ticker, MAX(CAST(substr(fiscal_period, -4) AS INTEGER)) FROM filings "
+            "WHERE fiscal_period IS NOT NULL GROUP BY ticker"
+        ).fetchall()
+    )
     return [
-        ScopeCompany(row["ticker"], row["name"], row["coverage"], row["sector"], row["industry"])
+        ScopeCompany(
+            row["ticker"],
+            row["name"],
+            row["coverage"],
+            row["sector"],
+            row["industry"],
+            latest.get(row["ticker"]),
+        )
         for row in db.execute(
             "SELECT ticker, name, coverage, sector, industry FROM companies ORDER BY ticker"
         )
@@ -686,12 +762,40 @@ def _terms(*words: Iterable[str]) -> str | None:
 
 @dataclass(frozen=True)
 class _Search:
-    """What retrieval searches for: the question, its FTS5 terms (None if it has none)
-    and the ranker, if any, that replaces `bm25()`."""
+    """What retrieval searches for: the question, its FTS5 terms (None if it has none),
+    the ranker, if any, that replaces `bm25()`, and the terms with the generic and hint
+    words kept (None if they are the same terms)."""
 
     question: str
     terms: str | None
     ranker: Ranker | None = None
+    every_word: str | None = None
+    """Ranked after every chunk the terms match: the chunks matching only a generic or
+    hint word ("risks" in Risk Factors) still fill the budget, but never outrank one
+    matching the question's topic."""
+    added: Mapping[str | None, tuple[str, ...]] = field(default_factory=dict)
+    """Each Company's terms from the topic table (None for a question naming no
+    Company), ORed with the question's own."""
+
+    def for_company(self, ticker: str | None) -> _Search:
+        """The search for one Company: the question's terms widened by that Company's
+        topic terms. With none, the search as it stands."""
+        own = self.added.get(ticker, ())
+        if not own or self.terms is None:
+            return self
+        return replace(
+            self,
+            terms=_widened(self.terms, own),
+            every_word=None if self.every_word is None else _widened(self.every_word, own),
+        )
+
+
+def _widened(terms: str, added: Iterable[str]) -> str:
+    """FTS5 terms ORed with the added terms, each quoted as one phrase and skipped when
+    the terms already hold it."""
+    quoted = terms.split(" OR ")
+    extra = [f'"{t.lower()}"' for t in added if f'"{t.lower()}"' not in quoted]
+    return " OR ".join(quoted + extra)
 
 
 @dataclass(frozen=True)
@@ -709,7 +813,8 @@ def _plan(db: sqlite3.Connection, scope: QueryScope, filings: Sequence[ScopeFili
 
     Each Filing is searched in its hinted Sections that have real text, or whole when it
     has none. On the risk route, a 10-Q whose Risk Factors only point back to the 10-K
-    (or that has none) is not searched: its pointer is cited instead.
+    (or that has none) is not searched: its pointer is cited instead. That holds too when
+    the plan adds Business, which a 10-Q never has (a dependence question).
     """
     if scope.time_window.kind == "all" and not scope.sections:
         return _Plan(places=None, pointers=[])
@@ -725,7 +830,10 @@ def _plan(db: sqlite3.Connection, scope: QueryScope, filings: Sequence[ScopeFili
                     row["tokens"],
                     bool(row["pointer"]),
                 )
-    risk_only = scope.sections == (RISK_FACTORS,)
+    annual_only = RISK_FACTORS in scope.sections and set(scope.sections) <= {
+        RISK_FACTORS,
+        "Business",
+    }
     places: list[tuple[str, str | None]] = []
     pointers: list[tuple[str, str]] = []
     for filing in filings:
@@ -738,7 +846,7 @@ def _plan(db: sqlite3.Connection, scope: QueryScope, filings: Sequence[ScopeFili
             pointers.append((filing.filing_id, RISK_FACTORS))
         if hinted:
             places += [(filing.filing_id, s) for s in hinted]
-        elif not (risk_only and filing.form_type == "10-Q"):
+        elif not (annual_only and filing.form_type == "10-Q"):
             places.append((filing.filing_id, None))
     return _Plan(places=places, pointers=pointers)
 
@@ -751,18 +859,19 @@ def _sources(
     context_budget: int,
     explicit: bool = False,
     first_number: int = 1,
-) -> tuple[Source, ...]:
-    """The numbered Sources for the Query Scope. `filings` holds the Filings retrieval
-    may use; with `explicit`, some were left out (a stale Filing), so retrieval is held
-    to the Filings listed even when the scope would otherwise search anywhere. A
-    question that names only Companies missing from the Corpus gets no Sources."""
+) -> tuple[tuple[Source, ...], tuple[SearchedPlace, ...]]:
+    """The numbered Sources for the Query Scope, and the places searched for them.
+    `filings` holds the Filings retrieval may use; with `explicit`, some were left out
+    (a stale Filing), so retrieval is held to the Filings listed even when the scope
+    would otherwise search anywhere. A question that names only Companies missing from
+    the Corpus gets no Sources and searches nowhere."""
     tickers: list[str | None] = [c.ticker for c in scope.companies]
     if not tickers:
         if scope.missing_companies:
-            return ()
+            return (), ()
         tickers = [None]
-    budget = context_budget // len(tickers)
-    sources: list[Source] = []
+    searched: list[SearchedPlace] = []
+    retrievals: list[_Retrieval] = []
     for ticker in tickers:
         windowed = [
             f
@@ -771,20 +880,86 @@ def _sources(
             for f in in_window(scope.time_window, own)
         ]
         if not windowed:
+            retrievals.append(_Retrieval(candidates=[], pointers=[]))
             continue  # every Filing of the Company was left out
         plan = _plan(db, scope, windowed)
         if explicit and plan.places is None:
             plan = _Plan(places=[(f.filing_id, None) for f in windowed], pointers=[])
-        pointers = _pointer_rows(db, plan.pointers)
-        chosen: list[_Row] = []
-        spent = sum(row["tokens"] for row in pointers)
-        for row in _without_near_duplicates(_candidates(db, scope, ticker, search, plan)):
-            if spent + row["tokens"] > budget:
-                break
-            spent += row["tokens"]
-            chosen.append(row)
-        sources += _group(chosen + pointers, first_number=first_number + len(sources))
-    return tuple(sources)
+        owner = {f.filing_id: f.ticker for f in windowed}
+        places = plan.places if plan.places is not None else [(f.filing_id, None) for f in windowed]
+        searched += [SearchedPlace(owner[f], f, section) for f, section in places]
+        retrievals.append(
+            _Retrieval(
+                candidates=_without_near_duplicates(
+                    _candidates(db, scope, ticker, search.for_company(ticker), plan)
+                ),
+                pointers=_pointer_rows(db, plan.pointers),
+            )
+        )
+    _spend(retrievals, context_budget)
+    sources: list[Source] = []
+    for retrieval in retrievals:
+        sources += _group(
+            retrieval.chosen() + retrieval.pointers, first_number=first_number + len(sources)
+        )
+    return tuple(sources), tuple(searched)
+
+
+@dataclass
+class _Retrieval:
+    """One Company's retrieval: its ranked candidates, best first, the risk pointers it
+    cites, and the candidates it has taken so far."""
+
+    candidates: list[_Row]
+    pointers: list[sqlite3.Row]
+    taken: set[int] = field(default_factory=set)
+    """The positions in `candidates` of the chunks taken."""
+    spent: int = 0
+
+    def __post_init__(self) -> None:
+        # Risk pointers count against the budget first.
+        self.spent = sum(row["tokens"] for row in self.pointers)
+
+    def take(self, budget: int) -> bool:
+        """Take, best first, every candidate left that fits in what is left of `budget`,
+        skipping one that doesn't fit and trying the next. True when every candidate is
+        taken: the Company has run out and can use no more of the budget."""
+        for i, row in enumerate(self.candidates):
+            if i not in self.taken and self.spent + row["tokens"] <= budget:
+                self.spent += row["tokens"]
+                self.taken.add(i)
+        return len(self.taken) == len(self.candidates)
+
+    def chosen(self) -> list[_Row]:
+        """The candidates taken, best first."""
+        return [row for i, row in enumerate(self.candidates) if i in self.taken]
+
+
+def _spend(retrievals: Sequence[_Retrieval], context_budget: int) -> None:
+    """Spend the context budget on the Companies' candidates.
+
+    Each Company starts with an even share. A Company whose candidates run out before
+    its share is spent gives the unspent tokens to the Companies still retrieving,
+    shared evenly among them (any remainder to the first named), and they take more,
+    until no Company runs out with tokens to spare or none is left retrieving.
+    """
+    if not retrievals:
+        return
+    shares = [context_budget // len(retrievals)] * len(retrievals)
+    retrieving = list(range(len(retrievals)))
+    while retrieving:
+        unspent, still = 0, []
+        for i in retrieving:
+            if retrievals[i].take(shares[i]):
+                unspent += max(0, shares[i] - retrievals[i].spent)
+            else:
+                still.append(i)
+        retrieving = still
+        if not unspent or not retrieving:
+            return
+        each, rest = divmod(unspent, len(retrieving))
+        for n, i in enumerate(retrieving):
+            shares[i] += each + (n < rest)
 
 
 def _pointer_rows(db: sqlite3.Connection, pointers: list[tuple[str, str]]) -> list[sqlite3.Row]:
@@ -825,21 +1000,30 @@ def _ranked(
             f"AND EXISTS (SELECT 1 FROM chunk_filings f WHERE f.chunk_id = c.id AND {in_place})"
         )
         listing_filter = f"AND {in_place}"
-    params = {"terms": search.terms, "ticker": ticker, "limit": _CANDIDATES_PER_COMPANY}
-    ranking = [
-        row["id"]
-        for row in db.execute(
-            f"""
-            SELECT c.id
-            FROM chunks_fts JOIN chunks c ON c.id = chunks_fts.rowid
-            WHERE chunks_fts MATCH :terms AND c.kind != 'risk_pointer' {company_filter}
-            {place_filter}
-            ORDER BY bm25(chunks_fts), c.id
-            LIMIT :limit
-            """,
-            params,
-        )
-    ]
+    params = {"ticker": ticker, "limit": _CANDIDATES_PER_COMPANY}
+
+    def matching(terms: str) -> list[int]:
+        return [
+            row["id"]
+            for row in db.execute(
+                f"""
+                SELECT c.id
+                FROM chunks_fts JOIN chunks c ON c.id = chunks_fts.rowid
+                WHERE chunks_fts MATCH :terms AND c.kind != 'risk_pointer' {company_filter}
+                {place_filter}
+                ORDER BY bm25(chunks_fts), c.id
+                LIMIT :limit
+                """,
+                params | {"terms": terms},
+            )
+        ]
+
+    ranking = matching(search.terms)
+    if search.every_word is not None and len(ranking) < _CANDIDATES_PER_COMPANY:
+        seen = set(ranking)
+        ranking += [i for i in matching(search.every_word) if i not in seen][
+            : _CANDIDATES_PER_COMPANY - len(ranking)
+        ]
     if search.ranker is not None:
         eligible = tuple(
             row["id"]

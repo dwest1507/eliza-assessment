@@ -14,14 +14,26 @@ losses, both one-sided p-values, and the mean paired difference with a 95% boots
 interval (`edgar_eval.metrics.bootstrap_interval`: a fixed seed, 10,000 resamples), shown
 but never decided on.
 
+**Fact Recall fact by fact** (ADR 0015, amending ADR 0011 for the Arm and settings
+rules): for each case both sides scored, the must-state Required Facts each side states
+are counted, and the total difference over cases, challenger minus shipped, is tested by
+a one-sided case-cluster bootstrap (`edgar_eval.metrics.cluster_bootstrap_test`: whole
+cases resampled 10,000 times from a fixed seed, centred under the null), ahead at
+p < `AHEAD_P`. A fact counts as stated at the report's fact cut-off, a truncated answer
+states none, and a case whose Fact Recall judgment failed is left out. Each comparison
+reports it (`stated_facts`) under every rule, with the paired facts split by where their
+evidence reached (challenger only, shipped only, both, neither).
+
 - **Arms** (user story 54): the Shipped Arm stays unless a challenger is **ahead on Fact
-  Recall** and **behind on no guardrail**.
+  Recall fact by fact** and **behind on no guardrail**, Fact Recall case by case among
+  them.
 - **Generators** (user story 55): the shipped generator stays unless a challenger is
   **ahead on Fact Recall or on Coverage Gaps** and **behind on none of Fact Recall and
   the guardrails**.
 
 - **Settings** (ADR 0010): a chunk size and context budget replace the shipped ones under
-  the Arm rule. Each setting's report is named by its setting (`chunks-600-budget-32000`).
+  the Arm rule, fact by fact as well. Each setting's report is named by its setting
+  (`chunks-600-budget-32000`).
 
 Under any rule, when several challengers qualify, the **cheapest** wins: the lowest
 mean answer cost, then the earliest listed.
@@ -34,11 +46,13 @@ comparison says whether it would qualify, and is labelled `UNCONSTRAINED`, "avai
 the one-call limit is lifted".
 
 `RULES` states the rules, and is the only place they differ. Choice files written under
-version 1's two-sided p < 0.05 rule are records and are not recomputed.
+version 1's two-sided p < 0.05 rule, and #73's under ADR 0011's per-case rule, are
+records and are not recomputed.
 
 **The Control Run** (ADR 0011). Every comparison also takes a Control Run: the shipped
-choice run again, compared with the shipped run under the same rule. If it comes out
-ahead of the shipped run on any of the rule's ahead metrics, the noise is larger than
+choice run again, compared with the shipped run under the same rule (fact by fact under
+the Arm and settings rules). If it comes out ahead of the shipped run on any of the
+rule's ahead metrics, the noise is larger than
 the thresholds assume: the choice is **inconclusive**, the shipped choice stands whatever
 its challengers scored, and the output says why.
 
@@ -99,7 +113,14 @@ from pathlib import Path
 from statistics import fmean
 from typing import Any, Literal, TextIO
 
-from edgar_eval.metrics import Interval, McNemarResult, Verdict, bootstrap_interval, sign_test
+from edgar_eval.metrics import (
+    Interval,
+    McNemarResult,
+    Verdict,
+    bootstrap_interval,
+    cluster_bootstrap_test,
+    sign_test,
+)
 from edgar_rag.paths import DERIVED_DIR
 
 __all__ = [
@@ -110,6 +131,9 @@ __all__ = [
     "Candidate",
     "Choice",
     "Comparison",
+    "EvidenceGroup",
+    "FactComparison",
+    "FactOutcome",
     "Rule",
     "RuleName",
     "ScoreComparison",
@@ -125,7 +149,9 @@ _INDEX_DIR = DERIVED_DIR
 the name `make eval-generation CHUNK_TOKENS=<N>` uses."""
 
 RuleName = Literal["arms", "generators", "settings"]
-Score = Literal["fact_recall", "faithfulness", "coverage_gaps", "contradicted_claims"]
+Score = Literal[
+    "fact_recall", "stated_facts", "faithfulness", "coverage_gaps", "contradicted_claims"
+]
 
 UNCONSTRAINED = "available if the one-call limit is lifted"
 """How a report labels an Arm that makes an API call at query time: it can't ship, but
@@ -339,8 +365,8 @@ class Rule:
 
 RULES: dict[RuleName, Rule] = {
     "arms": Rule(
-        ahead_on_any=("fact_recall",),
-        behind_on_none=("faithfulness", "coverage_gaps", "contradicted_claims"),
+        ahead_on_any=("stated_facts",),
+        behind_on_none=("fact_recall", "faithfulness", "coverage_gaps", "contradicted_claims"),
         named_by="arm",
         run=_run_arms,
         choice_file="arm-choice",
@@ -353,14 +379,32 @@ RULES: dict[RuleName, Rule] = {
         choice_file="generator-choice",
     ),
     "settings": Rule(
-        ahead_on_any=("fact_recall",),
-        behind_on_none=("faithfulness", "coverage_gaps", "contradicted_claims"),
+        ahead_on_any=("stated_facts",),
+        behind_on_none=("fact_recall", "faithfulness", "coverage_gaps", "contradicted_claims"),
         named_by="settings",
         run=_run_settings,
         choice_file="settings-choice",
     ),
 }
-"""The only place the rules differ."""
+"""The only place the rules differ. Under the Arm and settings rules Fact Recall is
+ahead by the fact-level test (`stated_facts`, ADR 0015) and the per-case sign test on it
+is a guardrail; the generator rule decides Fact Recall per case, as ADR 0011 states."""
+
+_UNRECORDED_CUTOFF = 0.5
+"""The fact cut-off of a generation report saved before it recorded one
+(`edgar_eval.judge.FACT_CUTOFF`'s note)."""
+
+
+@dataclass(frozen=True)
+class FactOutcome:
+    """One must-state Required Fact in one answer."""
+
+    stated: bool
+    """Whether the answer counts as stating it: Jev's probability at least the report's
+    fact cut-off, and never in a truncated answer."""
+    reached: bool | None
+    """Evidence Reached: whether its evidence quote was in the Answer Context; None in a
+    report saved before it was recorded."""
 
 
 @dataclass(frozen=True)
@@ -380,6 +424,10 @@ class Candidate:
     query_api_call: bool = False
     """Whether the candidate's Arm makes an API call at query time: if so it is never
     chosen (the one-call rule)."""
+    facts: Mapping[str, tuple[FactOutcome, ...] | None] = field(default_factory=dict)
+    """Each case's must-state Required Facts, in the case's order; None when the case
+    has none or its Fact Recall judgment failed, so it is left out of the fact-level
+    test as it is of the per-case one."""
 
     @classmethod
     def from_report(cls, report: Mapping[str, Any], rule: RuleName = "arms") -> Candidate:
@@ -401,7 +449,32 @@ class Candidate:
             cost_usd=fmean(costs) if costs and None not in costs else None,
             contradicted_claims={c["case_id"]: _no_contradiction(c) for c in cases},
             query_api_call=_query_api_call(report),
+            facts={
+                c["case_id"]: _must_state_facts(c, report.get("fact_cutoff", _UNRECORDED_CUTOFF))
+                for c in cases
+            },
         )
+
+
+def _must_state_facts(case: Mapping[str, Any], cutoff: float) -> tuple[FactOutcome, ...] | None:
+    """A report's case's must-state Required Facts, or None when it has none, its Fact
+    Recall judgment failed, or it records no judgment. A truncated answer states none,
+    as the harness scores it (`CaseResult.facts_stated`), read from the case's record."""
+    judgments = case.get("judgments")
+    if judgments is None or "facts" not in judgments:
+        return None
+    if any(f["judgment"] == "fact_recall" for f in judgments.get("failures", ())):
+        return None
+    judged = judgments["facts"]
+    tiers = case.get("fact_tiers") or ["must_state"] * len(judged)
+    reached = case.get("evidence_reached") or [None] * len(judged)
+    truncated = bool(case.get("truncated"))
+    facts = tuple(
+        FactOutcome(stated=not truncated and fact["probability"] >= cutoff, reached=r)
+        for fact, tier, r in zip(judged, tiers, reached, strict=True)
+        if tier == "must_state"
+    )
+    return facts or None
 
 
 def _query_api_call(report: Mapping[str, Any]) -> bool:
@@ -454,12 +527,65 @@ class ScoreComparison:
 
 
 @dataclass(frozen=True)
+class EvidenceGroup:
+    """The paired must-state facts of one evidence status, and how many each side
+    stated."""
+
+    facts: int
+    challenger_stated: int
+    shipped_stated: int
+
+
+EVIDENCE_STATUSES = ("challenger_only", "shipped_only", "both", "neither", "unrecorded")
+"""Where a paired fact's evidence reached: the challenger's Answer Context only, the
+shipped choice's only, both, neither, or unrecorded (a report saved before Evidence
+Reached was recorded, on either side). Each paired fact is in exactly one."""
+
+
+@dataclass(frozen=True)
+class FactComparison:
+    """Fact Recall fact by fact (ADR 0015): the must-state Required Facts each side
+    states, summed over the cases both sides scored, tested by the case-cluster
+    bootstrap (`edgar_eval.metrics.cluster_bootstrap_test`)."""
+
+    paired: int
+    """The cases both sides scored."""
+    left_out: int
+    """The cases only one side scored (the other's judgment failed, or it has no
+    answer), left out."""
+    facts: int
+    """The must-state facts of the paired cases."""
+    challenger_stated: int
+    shipped_stated: int
+    total_difference: int
+    """The statistic: challenger_stated minus shipped_stated."""
+    p_ahead: float
+    """One-sided bootstrap p-value that the challenger is ahead."""
+    p_behind: float
+    """One-sided bootstrap p-value that the challenger is behind; shown, the per-case
+    sign test being the guardrail."""
+    verdict: Verdict
+    """`ahead` at p_ahead < AHEAD_P, `behind` at p_behind < BEHIND_P, else
+    `indistinguishable`."""
+    difference: Interval | None
+    """The mean difference in facts stated per paired case, with its 95% bootstrap
+    interval; None with no pair. Shown, never decided on."""
+    by_evidence: dict[str, EvidenceGroup]
+    """The paired facts by evidence status (`EVIDENCE_STATUSES`), each counted once."""
+    resamples: int
+    seed: int
+
+
+@dataclass(frozen=True)
 class Comparison:
     """A challenger against the shipped choice, case by case."""
 
     cases: int
     """Cases both answered."""
     fact_recall: ScoreComparison
+    """Fact Recall case by case, by the sign test."""
+    stated_facts: FactComparison
+    """Fact Recall fact by fact (ADR 0015): the Arm and settings rules' ahead metric."""
     faithfulness: ScoreComparison
     coverage_gaps: ScoreComparison
     contradicted_claims: ScoreComparison
@@ -490,7 +616,8 @@ class Choice:
     """Why the choice is inconclusive; None when it is not."""
 
 
-_SCORES: tuple[Score, ...] = ("fact_recall", "faithfulness", "coverage_gaps", "contradicted_claims")
+_SCORES = ("fact_recall", "faithfulness", "coverage_gaps", "contradicted_claims")
+"""The scores compared case by case with the sign test."""
 
 
 def _compare_score(
@@ -516,8 +643,64 @@ def _compare_score(
     )
 
 
+def _compare_facts(
+    challenger: Mapping[str, tuple[FactOutcome, ...] | None],
+    shipped: Mapping[str, tuple[FactOutcome, ...] | None],
+) -> FactComparison:
+    scored_a = {c for c, v in challenger.items() if v is not None}
+    scored_b = {c for c, v in shipped.items() if v is not None}
+    both = sorted(scored_a & scored_b)
+    groups = {status: [0, 0, 0] for status in EVIDENCE_STATUSES}
+    differences = []
+    for case in both:
+        mine, theirs = challenger[case], shipped[case]
+        assert mine is not None and theirs is not None
+        if len(mine) != len(theirs):
+            raise ValueError(f"{case}: the two reports have different must-state facts")
+        for a, b in zip(mine, theirs, strict=True):
+            group = groups[_evidence_status(a.reached, b.reached)]
+            group[0] += 1
+            group[1] += a.stated
+            group[2] += b.stated
+        differences.append(sum(a.stated for a in mine) - sum(b.stated for b in theirs))
+    test = cluster_bootstrap_test(differences)
+    verdict: Verdict = "indistinguishable"
+    if test.p_ahead < AHEAD_P:
+        verdict = "ahead"
+    elif test.p_behind < BEHIND_P:
+        verdict = "behind"
+    return FactComparison(
+        paired=len(both),
+        left_out=len(scored_a ^ scored_b),
+        facts=sum(g[0] for g in groups.values()),
+        challenger_stated=sum(g[1] for g in groups.values()),
+        shipped_stated=sum(g[2] for g in groups.values()),
+        total_difference=test.total,
+        p_ahead=test.p_ahead,
+        p_behind=test.p_behind,
+        verdict=verdict,
+        difference=bootstrap_interval([float(d) for d in differences]),
+        by_evidence={s: EvidenceGroup(*g) for s, g in groups.items()},
+        resamples=test.resamples,
+        seed=test.seed,
+    )
+
+
+def _evidence_status(challenger: bool | None, shipped: bool | None) -> str:
+    if challenger is None or shipped is None:
+        return "unrecorded"
+    if challenger and shipped:
+        return "both"
+    if challenger:
+        return "challenger_only"
+    return "shipped_only" if shipped else "neither"
+
+
 def compare(challenger: Candidate, shipped: Candidate, rule: RuleName = "arms") -> Comparison:
-    scores = {f: _compare_score(getattr(challenger, f), getattr(shipped, f)) for f in _SCORES}
+    scores: dict[str, Any] = {
+        f: _compare_score(getattr(challenger, f), getattr(shipped, f)) for f in _SCORES
+    }
+    scores["stated_facts"] = _compare_facts(challenger.facts, shipped.facts)
     spec = RULES[rule]
     return Comparison(
         cases=len(set(challenger.fact_recall) & set(shipped.fact_recall)),
@@ -530,6 +713,7 @@ def compare(challenger: Candidate, shipped: Candidate, rule: RuleName = "arms") 
 
 _LABELS: dict[Score, str] = {
     "fact_recall": "Fact Recall",
+    "stated_facts": "Fact Recall fact by fact",
     "faithfulness": "Faithfulness",
     "coverage_gaps": "Coverage Gaps",
     "contradicted_claims": "No Contradicted Claim",
@@ -662,8 +846,8 @@ def main(argv: list[str] | None = None, *, out: TextIO | None = None) -> int:
 
 
 def _print_scores(c: Comparison, out: TextIO) -> None:
-    for score, label in _LABELS.items():
-        r: ScoreComparison = getattr(c, score)
+    for score in _SCORES:
+        label, r = _LABELS[score], getattr(c, score)
         d = r.difference
         shift = (
             f"; mean difference {d.mean:+.3f}, 95% interval [{d.low:+.3f}, {d.high:+.3f}]"
@@ -676,12 +860,35 @@ def _print_scores(c: Comparison, out: TextIO) -> None:
             f"{r.paired} cases paired, {r.left_out} left out{shift})",
             file=out,
         )
+        if score == "fact_recall":
+            _print_facts(c.stated_facts, out)
+
+
+def _print_facts(f: FactComparison, out: TextIO) -> None:
+    d = f.difference
+    shift = f"; per case {d.mean:+.3f}, 95% interval [{d.low:+.3f}, {d.high:+.3f}]" if d else ""
+    print(
+        f"  {_LABELS['stated_facts']}: {f.verdict} ({f.challenger_stated} of {f.facts} "
+        f"must-state facts stated against {f.shipped_stated}, {f.total_difference:+d}, "
+        f"p ahead = {f.p_ahead:.3f}, p behind = {f.p_behind:.3f}; {f.paired} cases paired, "
+        f"{f.left_out} left out{shift})",
+        file=out,
+    )
+    groups = ", ".join(
+        f"{status.replace('_', ' ')} {g.challenger_stated} / {g.shipped_stated} of {g.facts}"
+        for status, g in f.by_evidence.items()
+        if g.facts
+    )
+    if groups:
+        print(f"    stated by evidence reached (challenger / shipped): {groups}", file=out)
 
 
 def _print(choice: Choice, out: TextIO) -> None:
+    ahead = " or ".join(_LABELS[s] for s in RULES[choice.rule].ahead_on_any)
     print(
-        f"\nEach challenger against {choice.shipped}, case by case (one-sided exact sign "
-        f"test: ahead at p < {AHEAD_P:.2f}, behind at p < {BEHIND_P:.2f}):",
+        f"\nEach challenger against {choice.shipped}, case by case by the one-sided exact "
+        "sign test, and fact by fact by the case-cluster bootstrap (ahead at p < "
+        f"{AHEAD_P:.2f}, behind at p < {BEHIND_P:.2f}; ahead on {ahead} qualifies):",
         file=out,
     )
     if choice.control is not None:

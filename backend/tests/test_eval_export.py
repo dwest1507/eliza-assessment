@@ -19,6 +19,7 @@ from edgar_eval.export import coverage_grid, main
 from edgar_eval.judge import JEV_MODEL
 from edgar_eval.retrieval import Arm
 from edgar_rag.golden_set import GOLDEN_SET_V1, GOLDEN_SET_V2, load_golden_set
+from edgar_rag.retrieval import SearchedPlace
 
 TODAY = date(2026, 10, 16)
 V1 = ("--golden-set", str(GOLDEN_SET_V1))
@@ -52,8 +53,8 @@ def _every_fact_reached(messages, index, **settings):
     """The Answer Context of `_first_expected`: one Source holding every evidence quote."""
     case = _case_by_question(messages[-1].content)
     text = " ".join(f.evidence for f in case.required_facts)
-    return SimpleNamespace(
-        sources=tuple(
+    return _context(
+        *(
             SimpleNamespace(
                 kind="text",
                 ticker=s.filing_id.split("_")[0],
@@ -67,7 +68,13 @@ def _every_fact_reached(messages, index, **settings):
 
 
 def _nothing_reached(messages, index, **settings):
-    return SimpleNamespace(sources=())
+    return _context()
+
+
+def _context(*sources):
+    """A fake Answer Context of these Sources, searched in each one's Section."""
+    searched = tuple(SearchedPlace(s.ticker, s.filing_id, s.section) for s in sources)
+    return SimpleNamespace(sources=sources, query_scope=SimpleNamespace(searched=searched))
 
 
 def _write_retrieval_report(eval_dir, split="dev", golden_set=GOLDEN_SET_V2, evidence=True):
@@ -397,6 +404,118 @@ def test_the_export_carries_the_generator_comparison_with_its_control_run_and_in
         recall = test["factRecall"]
         assert (recall["paired"], recall["leftOut"]) == (1, 0)
         assert recall["difference"] == {"mean": 0.0, "low": 0.0, "high": 0.0, "confidence": 0.95}
+
+
+def _write_retrieval_choice(eval_dir, index, tmp_path, rule):
+    """The Arm (or settings) comparison's choice file, as `selection compare` writes it: a
+    challenger and the Control Run against the shipped run."""
+    shipped = _write_generation_report(eval_dir, index, tmp_path, "gpt-6-luna")
+    control = _write_generation_report(
+        eval_dir, index, tmp_path, "gpt-6-luna", name="generation-control-dev.json"
+    )
+    challenger = _write_generation_report(
+        eval_dir, index, tmp_path, "gpt-6-luna", name="generation-arms-dev-rerank.json"
+    )
+    path = eval_dir / f"{selection.RULES[rule].choice_file}-dev.json"
+    assert (
+        selection.main(
+            ["compare", str(shipped), str(challenger), "--rule", rule]
+            + ["--control", str(control), "--json", str(path)],
+            out=io.StringIO(),
+        )
+        == 0
+    )
+    return path
+
+
+def _camel(key):
+    head, *rest = key.split("_")
+    return head + "".join(word.title() for word in rest)
+
+
+@pytest.mark.parametrize(("rule", "key"), [("arms", "armChoice"), ("settings", "settingsChoice")])
+def test_the_export_carries_a_retrieval_comparison_fact_by_fact(
+    tmp_path, eval_dir, index, indexed_filings, rule, key
+):
+    _write_retrieval_report(eval_dir)
+    recorded = json.loads(_write_retrieval_choice(eval_dir, index, tmp_path, rule).read_text())
+
+    choice = _export(tmp_path, eval_dir, indexed_filings)[key]
+
+    assert choice["rule"] == rule
+    assert (choice["shipped"], choice["chosen"]) == (recorded["shipped"], recorded["chosen"])
+    assert choice["inconclusive"] is False and choice["reason"] is None
+    [comparison] = choice["comparisons"]
+    [(name, written)] = recorded["comparisons"].items()
+    assert comparison["name"] == name
+    assert (comparison["qualifies"], comparison["shippable"]) == (False, True)
+    assert comparison["cases"] == 1
+    assert comparison["factRecall"]["verdict"] == "indistinguishable"
+    for exported, source in ((comparison, written), (choice["control"], recorded["control"])):
+        facts, stated = exported["statedFacts"], source["stated_facts"]
+        # The difference, the one-sided p-values and the verdict, as the choice file has them.
+        for field in (
+            "paired",
+            "left_out",
+            "facts",
+            "challenger_stated",
+            "shipped_stated",
+            "total_difference",
+            "p_ahead",
+            "p_behind",
+            "verdict",
+            "resamples",
+            "seed",
+        ):
+            assert facts[_camel(field)] == stated[field], field
+        assert facts["difference"] == {
+            k: stated["difference"][k] for k in ("mean", "low", "high", "confidence")
+        }
+        # Each paired fact once, by where its evidence reached, in the rule's order.
+        assert [g["status"] for g in exported["byEvidence"]] == list(selection.EVIDENCE_STATUSES)
+        for group in exported["byEvidence"]:
+            source_group = stated["by_evidence"][group["status"]]
+            assert (group["facts"], group["challengerStated"], group["shippedStated"]) == (
+                source_group["facts"],
+                source_group["challenger_stated"],
+                source_group["shipped_stated"],
+            )
+        assert sum(g["facts"] for g in exported["byEvidence"]) == facts["facts"] > 0
+    # The Control Run's fact-level verdict: the same reports, so indistinguishable.
+    assert choice["control"]["name"] == "Control Run"
+    assert choice["control"]["statedFacts"]["verdict"] == "indistinguishable"
+
+
+@pytest.mark.parametrize(("rule", "key"), [("arms", "armChoice"), ("settings", "settingsChoice")])
+def test_a_retrieval_comparison_made_before_the_fact_level_test_exports_as_before(
+    tmp_path, eval_dir, index, indexed_filings, rule, key
+):
+    """A choice file written under ADR 0011's per-case rule (#73's) records no
+    `stated_facts`: it still exports, with the fact-level fields null."""
+    _write_retrieval_report(eval_dir)
+    path = _write_retrieval_choice(eval_dir, index, tmp_path, rule)
+    recorded = json.loads(path.read_text())
+    for comparison in (*recorded["comparisons"].values(), recorded["control"]):
+        del comparison["stated_facts"]
+    path.write_text(json.dumps(recorded))
+
+    choice = _export(tmp_path, eval_dir, indexed_filings)[key]
+
+    for comparison in (*choice["comparisons"], choice["control"]):
+        assert comparison["statedFacts"] is None and comparison["byEvidence"] is None
+        assert comparison["factRecall"]["verdict"] == "indistinguishable"
+        assert comparison["faithfulness"]["paired"] == 1
+    assert choice["chosen"] == recorded["chosen"]
+
+
+def test_the_retrieval_comparisons_are_left_out_until_they_have_run(
+    tmp_path, eval_dir, indexed_filings
+):
+    _write_retrieval_report(eval_dir)
+
+    data = _export(tmp_path, eval_dir, indexed_filings)
+
+    assert data["armChoice"] is None and data["settingsChoice"] is None
 
 
 def test_a_version_1_generator_comparison_still_exports(tmp_path, eval_dir, index, indexed_filings):

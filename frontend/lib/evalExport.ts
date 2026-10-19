@@ -162,17 +162,82 @@ export interface SignTest {
   difference: Difference | null
 }
 
-/** A challenger generator (or the Control Run) against the shipped one. */
-export interface GeneratorComparison {
-  model: string
+/** A challenger (or the Control Run) against the shipped choice, case by case on each score. */
+export interface RuleScores {
   cases: number
   factRecall: SignTest
   faithfulness: SignTest
   coverageGaps: SignTest
   /** Paired on "has no Contradicted Claim"; null under version 1's rule. */
   contradictedClaims: SignTest | null
-  /** Whether the challenger qualifies under the generator rule. */
+  /** Whether the challenger qualifies under the rule it was compared by. */
   qualifies: boolean
+}
+
+/** A challenger generator (or the Control Run) against the shipped one. */
+export interface GeneratorComparison extends RuleScores {
+  model: string
+}
+
+/**
+ * Fact Recall fact by fact (ADR 0015): the must-state Required Facts each side's answers
+ * state, summed over the cases both scored, and the one-sided case-cluster bootstrap's
+ * verdict on the difference.
+ */
+export interface FactTest {
+  /** The cases both sides scored, and those only one side scored, left out. */
+  paired: number
+  leftOut: number
+  /** The must-state facts of the paired cases. */
+  facts: number
+  challengerStated: number
+  shippedStated: number
+  /** The statistic: challengerStated minus shippedStated. */
+  totalDifference: number
+  pAhead: number
+  pBehind: number
+  /** `ahead`, `behind` or `indistinguishable`. */
+  verdict: string
+  /** The mean difference in facts stated per paired case; shown, never decided on. */
+  difference: Difference | null
+  /** The bootstrap's resamples of whole cases, and its fixed seed. */
+  resamples: number
+  seed: number
+}
+
+/** The paired must-state facts of one evidence status, and how many each side stated. */
+export interface EvidenceGroup {
+  /** `challenger_only`, `shipped_only`, `both`, `neither` or `unrecorded`: whose Answer
+   * Context the fact's evidence reached. */
+  status: string
+  facts: number
+  challengerStated: number
+  shippedStated: number
+}
+
+/** A challenger Arm or setting (or the Control Run) against the shipped choice. */
+export interface RetrievalChoiceComparison extends RuleScores {
+  /** The Arm, the setting (`chunks-600-budget-48000`) or `Control Run`. */
+  name: string
+  /** False for an Arm that makes an API call at query time: never chosen. */
+  shippable: boolean
+  /** Null in a choice file made before ADR 0015, decided case by case. */
+  statedFacts: FactTest | null
+  /** The paired facts by evidence status, each counted once; null with `statedFacts`. */
+  byEvidence: EvidenceGroup[] | null
+}
+
+/** The Arm comparison (`make eval-arms`) or the settings comparison (`make eval-settings`). */
+export interface RetrievalChoice {
+  /** `arms` or `settings`. */
+  rule: string
+  shipped: string
+  chosen: string
+  /** True when the Control Run came out ahead of the shipped run: the shipped choice stands. */
+  inconclusive: boolean
+  reason: string | null
+  control: RetrievalChoiceComparison | null
+  comparisons: RetrievalChoiceComparison[]
 }
 
 /** The generator comparison (`make eval-generators`) and the generator the rule chose. */
@@ -262,6 +327,10 @@ export interface EvalExport {
   generation: GenerationRun[]
   /** Null until `make eval-generators` has run on the split. */
   generatorChoice: GeneratorChoice | null
+  /** Null until `make eval-arms` has run on the split. */
+  armChoice: RetrievalChoice | null
+  /** Null until `make eval-settings` has run on the split. */
+  settingsChoice: RetrievalChoice | null
   /** Null until `make eval-brief` has run, and for a holdout export. */
   briefSuite: BriefSuiteResults | null
   /** Null until the holdout is scored, and for a holdout export itself. */
@@ -297,6 +366,11 @@ export function pValue(value: number): string {
 export function difference(d: Difference): string {
   const signed = (x: number) => `${x < 0 ? '−' : '+'}${Math.abs(x).toFixed(3)}`
   return `${signed(d.mean)} [${signed(d.low)}, ${signed(d.high)}]`
+}
+
+/** A signed whole number, e.g. `+7`, `−4` or `+0`. */
+export function signed(value: number): string {
+  return `${value < 0 ? '−' : '+'}${Math.abs(value)}`
 }
 
 /** A cost in US dollars to four decimals, or a dash when unknown. */

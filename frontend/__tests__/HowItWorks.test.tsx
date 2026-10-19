@@ -196,6 +196,68 @@ describe('the "How it works" page', () => {
     expect(screen.queryByRole('table', { name: /Choosing the generator/ })).not.toBeInTheDocument()
   })
 
+  it('shows the Arm comparison fact by fact, beside its Control Run', async () => {
+    render(<HowItWorks data={EXPORT} />)
+    await openSection('Evaluation scoreboard')
+
+    const scoreboard = section('Evaluation scoreboard')
+    const table = within(scoreboard).getByRole('table', { name: /Choosing the Arm/ })
+    const rerank = within(table).getByRole('row', { name: /rerank/ })
+    // Fact by fact: the must-state facts stated, the difference and its one-sided p-values.
+    expect(rerank).toHaveTextContent(
+      'indistinguishable (+7: 228 against 221 of 316 must-state facts, p ahead = 0.189, p behind = 0.836)'
+    )
+    expect(rerank).toHaveTextContent('+0.123 [−0.123, +0.368]') // per case, with its interval
+    // Case by case, the guardrail, beside it.
+    expect(rerank).toHaveTextContent('indistinguishable (15 higher, 10 lower')
+    expect(rerank).toHaveTextContent('no')
+    // The Control Run's fact-level verdict.
+    const control = within(table).getByRole('row', { name: /Control Run/ })
+    expect(control).toHaveTextContent('indistinguishable (+1: 222 against 221 of 316')
+    expect(scoreboard).toHaveTextContent('one-sided case-cluster bootstrap')
+    expect(scoreboard).toHaveTextContent('Chosen: fts5.')
+  })
+
+  it('splits the facts each Arm states by where their evidence reached', async () => {
+    render(<HowItWorks data={EXPORT} />)
+    await openSection('Evaluation scoreboard')
+
+    const table = within(section('Evaluation scoreboard')).getByRole('table', {
+      name: /Arm comparison: facts stated by where their evidence reached/,
+    })
+    const local = within(table).getByRole('row', { name: /hybrid-local/ })
+    expect(local).toHaveTextContent('12 / 3 of 20') // reached by the challenger only
+    expect(local).toHaveTextContent('187 / 195 of 243') // reached by both
+    // The Control Run reaches what the shipped run reaches, so it has no one-sided group.
+    const control = within(table).getByRole('row', { name: /Control Run/ })
+    expect(control).toHaveTextContent('–201 / 199 of 248')
+  })
+
+  it('shows a comparison made before the fact-level test case by case, as recorded', async () => {
+    render(<HowItWorks data={EXPORT} />)
+    await openSection('Evaluation scoreboard')
+
+    const scoreboard = section('Evaluation scoreboard')
+    const table = within(scoreboard).getByRole('table', { name: /Choosing the chunk size/ })
+    const setting = within(table).getByRole('row', { name: /chunks-600-budget-48000/ })
+    expect(setting).toHaveTextContent('–indistinguishable (12 higher, 9 lower')
+    expect(scoreboard).toHaveTextContent(
+      'Decided under ADR 0011’s per-case rule, before the fact-level test, and stands as recorded'
+    )
+    expect(scoreboard).toHaveTextContent('Chosen: chunks-600-budget-32000.')
+    expect(
+      within(scoreboard).queryByRole('table', { name: /Settings comparison: facts stated/ })
+    ).not.toBeInTheDocument()
+  })
+
+  it('leaves the Arm and settings comparisons out when they have not run', async () => {
+    render(<HowItWorks data={{ ...EXPORT, armChoice: null, settingsChoice: null }} />)
+    await openSection('Evaluation scoreboard')
+
+    expect(screen.queryByRole('table', { name: /Choosing the Arm/ })).not.toBeInTheDocument()
+    expect(screen.queryByRole('table', { name: /Choosing the chunk size/ })).not.toBeInTheDocument()
+  })
+
   it('shows the Brief Suite’s verdict case by case', async () => {
     render(<HowItWorks data={EXPORT} />)
     await openSection('The Brief Suite')

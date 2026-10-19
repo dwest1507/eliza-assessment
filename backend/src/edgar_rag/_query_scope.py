@@ -12,7 +12,26 @@ Rule-based, with no LLM (ADR 0003). It recognises:
   majors"), resolved only through the sector and industry columns of the curated Sector
   table (assumption 5). Each phrase names table values, never Companies, so the Companies
   it covers are whatever the table says.
-- Section hints: risk factors, legal proceedings, MD&A, market risk and business.
+- Section hints: risk factors, legal proceedings, MD&A, market risk (its own name, or
+  a kind of market risk with "risk", "exposure" or "sensitivity": "interest rate and
+  foreign exchange risk", "FX exposure"), business, and cybersecurity, which plans the
+  Cybersecurity Section, Risk Factors and MD&A. Legal proceedings plans Legal
+  Proceedings and the Financial Statements, where the contingencies note a stub Item 3
+  points to is. A risk question asking how Companies address, manage, mitigate, handle or
+  respond to their risks adds Business and MD&A; a question about what Companies depend
+  on ("dependent on", "reliance on", "largest customers", "suppliers", "sole source",
+  "government contracts") adds Business, and Risk Factors when no other hint is present.
+  Those phrases stay search terms, since they name the topic inside the added Sections.
+  The phrase that sets a hint, and the generic words "main", "major", "key", "primary",
+  "principal", "biggest" and "important", leave the message's search terms
+  (`ScopeNamedInMessage.terms`), except the parts of a hint phrase its pattern captures
+  ("interest rate" in "interest rate risk", "cybersecurity" in "cybersecurity risks",
+  and the legal proceedings words, which find the Financial Statements' contingencies
+  note).
+- The outlook route: "outlook", "expect", "expects", "expectations", "guidance",
+  "forecast", "going forward", "next year", or "for" a year later than the latest Fiscal
+  Period of the Companies named, set an MD&A hint. Guidance itself stays a Coverage Gap
+  (`_coverage`): the route changes where retrieval looks, not what the answer may claim.
 - Named periods: "FY2024", "fiscal 2024", "Q2 FY2025", or a bare year ("in 2023"), read
   as Fiscal Periods. A named period decides which copy of a repeated passage is cited.
 - Change questions: "how has it changed", "how did that change", "what is new", "how
@@ -54,6 +73,9 @@ class ScopeCompany:
     coverage: str | None
     sector: str | None = None
     industry: str | None = None
+    latest_fiscal_year: int | None = None
+    """The fiscal year of the Company's latest Filing, which a year named in a question
+    is measured against: a later one is a future year, which no Filing covers."""
 
 
 # Aliases the Filing names don't yield by dropping a suffix.
@@ -386,40 +408,169 @@ def in_window(window: TimeWindow, filings: Sequence[ScopeFiling]) -> list[ScopeF
 
 # --- Section hints -----------------------------------------------------------------------
 
-# In order: a phrase matched by an earlier hint is not read again by a later one, so
-# "interest rate risk" is Market Risk, not Risk Factors.
-_SECTION_HINTS: tuple[tuple[str, re.Pattern[str]], ...] = tuple(
-    (section, re.compile(pattern, re.I))
-    for section, pattern in (
+# A kind of market risk Item 7A discloses: interest rates, currencies (foreign exchange,
+# FX, exchange rates) and commodity prices.
+_MARKET_RISK_KIND = (
+    r"(?:interest[\s-]+rates?|(?:foreign[\s-]+)?(?:currency|exchange)(?:[\s-]+exchange)?"
+    r"(?:[\s-]+rates?)?|fx|commodity(?:[\s-]+prices?)?)"
+)
+# "interest rate, currency and commodity": one word after the list closes it.
+_MARKET_RISK_KINDS = (
+    rf"{_MARKET_RISK_KIND}(?:(?:\s*,\s*(?:(?:and|or)\s+)?|\s+(?:and|or|&)\s+){_MARKET_RISK_KIND})*"
+)
+
+# The outlook route's words. The MD&A holds a Company's forward-looking commentary; a
+# question naming none of these but asking "for" a future year is an outlook too.
+_OUTLOOK = re.compile(
+    r"\boutlook\b|\bexpect(?:s|ations?)?\b|\bguidance\b|\bforecasts?\b"
+    r"|\bgoing\s+forward\b|\bnext\s+(?:fiscal\s+)?year\b",
+    re.I,
+)
+_FOR_YEAR = re.compile(
+    r"\bfor\s+(?:the\s+)?(?:(?:fiscal\s+)?year\s+|fiscal\s+|FY\s?)?((?:19|20)\d{2})\b", re.I
+)
+
+# Each hint plans one or more Sections. In order: a phrase matched by an earlier hint is
+# not read again by a later one, so "interest rate risk" is Market Risk and "cybersecurity
+# risks" the Cybersecurity hint, neither of them Risk Factors alone. A phrase setting a
+# hint leaves the search terms, since nearly every passage of its Section matches it,
+# except the parts its pattern captures, which name a topic inside the Sections planned:
+# the kind of market risk ("interest rate"), and the words of a hint that also plans
+# other Sections, where they are the topic ("cybersecurity" in Risk Factors and MD&A,
+# "litigation" in the Financial Statements).
+_SECTION_HINTS: tuple[tuple[tuple[str, ...], re.Pattern[str]], ...] = tuple(
+    (sections, re.compile(pattern, re.I))
+    for sections, pattern in (
         (
-            "Market Risk",
-            r"\bmarket\s+risks?\b|\binterest[\s-]+rates?\s+risks?\b"
-            r"|\b(?:currency|exchange[\s-]+rates?|commodity(?:\s+prices?)?)\s+risks?\b"
+            ("Market Risk",),
+            r"\bmarket\s+risks?\b"
+            rf"|\b({_MARKET_RISK_KINDS})\s+(?:risks?|exposures?|sensitivit(?:y|ies))\b"
             r"|\bquantitative\s+and\s+qualitative\s+disclosures?\b",
         ),
-        ("Legal Proceedings", r"\blegal\s+proceedings?\b|\blitigation\b|\blawsuits?\b"),
         (
-            "MD&A",
+            # Item 3 often only points to the contingencies note of the Financial
+            # Statements ("see Note 15"), which states the cases. Its words are kept as
+            # search terms, since they find that note.
+            ("Legal Proceedings", "Financial Statements"),
+            r"\b(legal\s+proceedings?|litigation|lawsuits?)\b",
+        ),
+        (
+            ("MD&A",),
             r"\bMD&A\b|\bmanagement[’']?s\s+discussion\b|\bresults\s+of\s+operations\b",
         ),
         (
-            "Business",
+            ("Business",),
             r"\bbusiness\s+(?:section|overview|description)\b"
             r"|\bdescription\s+of\s+(?:the|its|their)\s+business(?:es)?\b",
         ),
-        ("Risk Factors", r"\brisk\s+factors?\b|\brisks?\b"),
+        (
+            # Item 1C states the risk management and governance, Risk Factors the risks,
+            # and the MD&A any incident and its cost (UnitedHealth's Change Healthcare).
+            ("Cybersecurity", "Risk Factors", "MD&A"),
+            r"\b(cyber(?:[\s-]?(?:security|attacks?|threats?|incidents?))?"
+            r"|data\s+breach(?:es)?|information\s+security)(?:\s+risks?)?\b",
+        ),
+        # The outlook route plans only the MD&A, so like the MD&A hint its words leave
+        # the search terms (capturing them changed no fact reached on dev, #122).
+        (("MD&A",), _OUTLOOK.pattern),
+        (("Risk Factors",), r"\brisk\s+factors?\b|\brisks?\b"),
     )
 )
 
 
+def _cut(m: re.Match[str]) -> list[tuple[int, int]]:
+    """The spans of a hint phrase outside its captured groups."""
+    kept = sorted(m.span(g) for g in range(1, (m.re.groups or 0) + 1) if m.start(g) >= 0)
+    spans, start = [], m.start()
+    for begin, end in kept:
+        if begin > start:
+            spans.append((start, begin))
+        start = max(start, end)
+    if m.end() > start:
+        spans.append((start, m.end()))
+    return spans
+
+
+RISK_FACTORS = "Risk Factors"
+
+# Asking what Companies do about their risks: the answer is in Business (risk management,
+# compliance, strategy) and the MD&A, not only in Risk Factors.
+_RESPONSE = re.compile(
+    r"\baddress(?:es|ed|ing)?\b|\bmanag(?:e|es|ed|ing)\b|\bmitigat(?:e|es|ed|ing)\b"
+    r"|\bhandl(?:e|es|ed|ing)\b|\bdeal(?:s|t|ing)?\s+with\b|\brespon(?:d|ds|ded|ding|ses?)\b",
+    re.I,
+)
+# Asking what Companies depend on: customers, suppliers, contracts. Business states the
+# concentration ("sales to Walmart were 16% of net sales") and Risk Factors the risk.
+_DEPENDENCE = re.compile(
+    r"\b(?:depend(?:s|ed|ing|ent|ence|ency)?|rel(?:y|ies|ied|ying|iance|iant))"
+    r"(?:\s+[\w’'&.-]+){0,8}?\s+(?:on|upon)\b"
+    r"|\b(?:largest|large|key|major|biggest|top|significant)\s+customers?\b"
+    r"|\bcustomer\s+concentration\b|\bconcentration\s+of\s+(?:customers|suppliers)\b"
+    r"|\bsuppliers?\b|\bsole[\s-]+sourc(?:e|ed|es|ing)\b|\bsingle[\s-]+sourc(?:e|ed|es|ing)\b"
+    r"|\bgovernment\s+contracts?\b",
+    re.I,
+)
+
+
+def takes_outlook_route(question: str, companies: Iterable[ScopeCompany]) -> bool:
+    """Whether a question takes the outlook route: it names an outlook word, or asks
+    "for" a year later than the latest fiscal year of `companies` (the Companies it
+    names, or every Company when it names none)."""
+    if _OUTLOOK.search(question):
+        return True
+    return bool(future_periods([f"FY{y}" for y in _FOR_YEAR.findall(question)], companies))
+
+
+def future_periods(periods: Sequence[str], companies: Iterable[ScopeCompany]) -> tuple[str, ...]:
+    """The named periods ("FY2026", "Q1 FY2026") whose fiscal year is later than the
+    latest fiscal year of every one of `companies`: periods no Filing of theirs covers."""
+    years = [c.latest_fiscal_year for c in companies if c.latest_fiscal_year is not None]
+    if not years:
+        return ()
+    return tuple(p for p in periods if int(p[-4:]) > max(years))
+
+
 def find_section_hints(question: str) -> tuple[str, ...]:
-    """The Sections a question hints at, in the order of `_SECTION_HINTS`."""
+    """The Sections a question's hints plan, each once, in the order of `_SECTION_HINTS`,
+    then those its response and dependence phrases add: a risk question (one the Risk
+    Factors hint itself reads) asking how Companies address, manage or respond to their
+    risks adds Business and the MD&A, and a question about what Companies depend on adds
+    Business, and Risk Factors when no other hint is present. A cybersecurity question
+    asking how a Company manages its risks already plans the Cybersecurity Section, which
+    states that."""
+    return _section_hints(question)[0]
+
+
+def reads_latest_filings(question: str) -> bool:
+    """Whether a question's hints read the latest Filings when it names no time phrase
+    and no Fiscal Period: a risk question (one whose hints plan Risk Factors, a
+    cybersecurity question among them) and a question about what Companies depend on."""
+    return RISK_FACTORS in find_section_hints(question) or bool(_DEPENDENCE.search(question))
+
+
+def _section_hints(question: str) -> tuple[tuple[str, ...], list[tuple[int, int]]]:
+    """`find_section_hints`, plus the character spans of the words that set them: each
+    hint phrase, less the parts its pattern captures. The response and dependence phrases
+    set no span: they stay search terms."""
+    text = question
     found: list[str] = []
-    for section, pattern in _SECTION_HINTS:
-        question, n = pattern.subn(" ", question)
-        if n:
-            found.append(section)
-    return tuple(found)
+    spans: list[tuple[int, int]] = []
+    risk_route = False
+    for sections, pattern in _SECTION_HINTS:
+        matches = list(pattern.finditer(text))
+        if matches:
+            found += sections
+            risk_route = risk_route or sections == (RISK_FACTORS,)
+        for m in matches:
+            spans += _cut(m)
+            # Blanked to the same length, so later spans keep their positions.
+            text = text[: m.start()] + " " * (m.end() - m.start()) + text[m.end() :]
+    if risk_route and _RESPONSE.search(question):
+        found += ["Business", "MD&A"]
+    if _DEPENDENCE.search(question):
+        found += ["Business"] if found else ["Business", RISK_FACTORS]
+    return tuple(dict.fromkeys(found)), sorted(spans)
 
 
 # --- Named periods -----------------------------------------------------------------------
@@ -579,6 +730,10 @@ _STOPWORDS = frozenset(
     please facing face faced""".split()
 )
 
+# Words that match almost every passage of a Filing ("the main risks", "key customers"):
+# they leave the search terms as stopwords do, but still count as words of the message.
+_GENERIC = frozenset("main major key primary principal biggest important".split())
+
 # Words that name no topic of their own: a follow-up made only of these ("How did that
 # change over the last two years?") asks about the topic of an earlier message.
 _NOT_TOPIC = frozenset(
@@ -604,8 +759,16 @@ class ScopeNamedInMessage:
     window: TimeWindow | None
     periods: tuple[str, ...]
     words: tuple[str, ...]
-    """The message's search terms: its words without Company names, Sector phrases or
-    stopwords."""
+    """The message's words without Company names, Sector phrases or stopwords."""
+    terms: tuple[str, ...]
+    """The message's search terms: its words without generic words (`_GENERIC`) or the
+    phrases that set a Section hint ("risks" on the risk route), which match nearly every
+    passage of the Section searched. When that leaves no word naming a topic, they are
+    all its words, so removing noise never leaves a question unsearched."""
+    outlook: bool = False
+    """Whether it takes the outlook route, whose MD&A hint reads the latest Filings when
+    no time phrase or covered Fiscal Period is named. It goes with `sections`, so a
+    follow-up inheriting the Section hints inherits the route."""
 
     @property
     def names_companies(self) -> bool:
@@ -618,7 +781,7 @@ class ScopeNamedInMessage:
     @property
     def has_topic(self) -> bool:
         """Whether it names something to search for beyond Companies and periods."""
-        return any(w not in _NOT_TOPIC and not w.isdigit() for w in self.words)
+        return _names_topic(self.words)
 
 
 def scope_named_in(
@@ -628,15 +791,27 @@ def scope_named_in(
     Companies in the Corpus and `missing` the curated Companies that are not."""
     companies, sector_phrases, spans = resolve_companies(text, known)
     missing_names, missing_spans = find_missing(text, missing, spans)
+    outlook = takes_outlook_route(text, companies or known)
+    sections, hint_spans = _section_hints(text)
+    words = _words(_without_spans(text, spans + missing_spans))
+    terms = tuple(
+        w
+        for w in _words(_without_spans(text, _merged(spans + missing_spans + hint_spans)))
+        if w not in _GENERIC
+    )
+    if outlook and "MD&A" not in sections:  # "for" a future year, with no outlook word
+        sections += ("MD&A",)
     return ScopeNamedInMessage(
         text=text,
         companies=companies,
         sector_phrases=sector_phrases,
         missing=missing_names,
-        sections=find_section_hints(text),
+        sections=sections,
+        outlook=outlook,
         window=find_time_window(text),
         periods=find_periods(text),
-        words=_words(_without_spans(text, spans + missing_spans)),
+        words=words,
+        terms=terms if _names_topic(terms) else words,
     )
 
 
@@ -701,6 +876,21 @@ def inherit_scope(
         sections_from=most_recent(lambda n: bool(n.sections)),
         topic_from=most_recent(lambda n: n.has_topic),
     )
+
+
+def _names_topic(words: Iterable[str]) -> bool:
+    return any(w not in _NOT_TOPIC and not w.isdigit() for w in words)
+
+
+def _merged(spans: list[tuple[int, int]]) -> list[tuple[int, int]]:
+    """Overlapping spans joined into one, so each stretch of text is cut out once."""
+    merged: list[tuple[int, int]] = []
+    for start, end in sorted(spans):
+        if merged and start <= merged[-1][1]:
+            merged[-1] = (merged[-1][0], max(merged[-1][1], end))
+        else:
+            merged.append((start, end))
+    return merged
 
 
 def _without_spans(text: str, spans: list[tuple[int, int]]) -> str:

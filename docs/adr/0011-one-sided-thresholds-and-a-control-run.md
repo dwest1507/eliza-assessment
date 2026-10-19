@@ -4,6 +4,8 @@ status: accepted
 
 # Comparisons call a challenger ahead at one-sided p < 0.10 and behind at p < 0.20, with a Control Run in each
 
+> **Amended on 2026-10-18 by [ADR 0015](0015-fact-level-fact-recall-for-retrieval-comparisons.md)** for the Arm and settings rules: Fact Recall is ahead by a fact-level test, the must-state facts stated summed over cases and tested by a case-cluster bootstrap, at the same p < 0.10. The per-case sign test on Fact Recall stays as a guardrail, and the Control Run is compared by the same fact-level test. The generator rule, the thresholds and everything else here are unchanged.
+
 Under ADRs 0008, 0009 and 0010 a challenger replaced the shipped choice only if the exact sign test on paired dev cases put it ahead at two-sided p < 0.05. On 20 dev cases that test finds a real gain about one time in ten (simulated: 30% of cases differ and the better side wins three quarters of them), so every comparison so far came out "indistinguishable" and the rule kept the incumbent by default. Its "behind on none" guard was passed almost automatically, for the same reason. Claude Sonnet 5.5's 5 cases higher and 0 lower on Fact Recall (p = 0.062, ADR 0009) is the example: the data lean one way and the rule cannot say so. This is a demo-stage system whose choices are cheap to reverse, so on 2026-10-17 we traded a few false switches for the power to see a real difference. The thresholds are fixed here, before any run on Golden Set version 2 (ADR 0012), and are not changed after results.
 
 - **Ahead:** the one-sided exact sign test puts the challenger ahead at p < 0.10, on Fact Recall (or, under the generator rule, on Coverage Gaps).

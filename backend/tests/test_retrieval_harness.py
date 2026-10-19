@@ -3,13 +3,14 @@ Golden Set cases through the Arms."""
 
 import io
 import json
+from dataclasses import replace
 from types import SimpleNamespace
 
 import pytest
 
 from edgar_eval.arms import ARMS
 from edgar_eval.metrics import hit_at_k, mcnemar_exact, recall_at_k, reciprocal_rank
-from edgar_eval.retrieval import Arm, evaluate, main, print_screen
+from edgar_eval.retrieval import Arm, evaluate, main, print_report, print_screen
 from edgar_rag.golden_set import (
     GOLDEN_SET_V1,
     ExpectedSource,
@@ -19,7 +20,7 @@ from edgar_rag.golden_set import (
     load_golden_set,
 )
 from edgar_rag.retrieval import Message as ChatMessage
-from edgar_rag.retrieval import prepare_answer_context
+from edgar_rag.retrieval import SearchedPlace, prepare_answer_context
 
 A = ("AAPL_10-K_2025-09-27", "Risk Factors")
 B = ("AAPL_10-Q_2025-12-27", "Risk Factors")
@@ -117,6 +118,12 @@ def _arm(name, rankings, shipped=False):
     )
 
 
+def _context(*sources):
+    """A fake Answer Context of these Sources, searched in each one's Section."""
+    searched = tuple(SearchedPlace(s.ticker, s.filing_id, s.section) for s in sources)
+    return SimpleNamespace(sources=sources, query_scope=SimpleNamespace(searched=searched))
+
+
 def _evidence_arm(name, reached, shipped=False, padding=0, query_api_call=False):
     """An Arm that prepares an Answer Context whose one Source, Apple's Risk Factors,
     holds the evidence quotes `reached[question]` (and `padding` words of other text)."""
@@ -127,7 +134,7 @@ def _evidence_arm(name, reached, shipped=False, padding=0, query_api_call=False)
         source = SimpleNamespace(
             kind="text", ticker="AAPL", filing_id=A[0], section=A[1], text=text
         )
-        return SimpleNamespace(sources=(source,))
+        return _context(source)
 
     def retrieve(messages, index, **settings):
         return [A]
@@ -409,7 +416,7 @@ def _every_fact_in_the_first_expected_source(messages, index, **settings):
         )
         for s in case.expected_sources[:1]
     )
-    return SimpleNamespace(sources=sources)
+    return _context(*sources)
 
 
 def test_the_command_scores_the_dev_split_by_default_and_writes_json(tmp_path, capsys, index):
@@ -425,7 +432,7 @@ def test_the_command_scores_the_dev_split_by_default_and_writes_json(tmp_path, c
             "nothing",
             "finds nothing",
             lambda messages, index, **settings: [],
-            prepare=lambda messages, index, **settings: SimpleNamespace(sources=()),
+            prepare=lambda messages, index, **settings: _context(),
         ),
     ]
     out = tmp_path / "retrieval-dev.json"
@@ -485,6 +492,53 @@ def test_evidence_reached_counts_the_required_facts_whose_quote_reaches_the_prom
     assert 0 < small.overall.facts_reached < full.overall.facts_reached
     assert small.cases[0].facts_reached == small.overall.facts_reached
     assert small.overall.mean_source_tokens < full.overall.mean_source_tokens <= 32_000 * 1.05
+
+
+def test_each_unreached_fact_records_its_section_and_whether_it_was_searched(capsys):
+    """A fact whose Section was not searched for its Filing is a planning miss; one whose
+    Section was searched (or whose Filing was searched whole) is a ranking miss. The
+    printout groups the must-state misses; a detail is recorded but not grouped."""
+    q10 = "AAPL_10-Q_2025-12-27"
+    facts = (
+        RequiredFact("Reached.", *A, "reached quote"),
+        RequiredFact("Ranked out.", *A, "missing one"),
+        RequiredFact("Not planned.", A[0], "MD&A", "missing two"),
+        RequiredFact("Searched whole.", q10, "MD&A", "missing three"),
+        RequiredFact("A detail.", A[0], "Legal Proceedings", "missing four", tier="detail"),
+    )
+    case = replace(_case("c1", "risk", [A], question="q1"), required_facts=facts)
+
+    def prepare(messages, index, **settings):
+        source = SimpleNamespace(
+            kind="text", ticker="AAPL", filing_id=A[0], section=A[1], text="the reached quote"
+        )
+        searched = (SearchedPlace("AAPL", A[0], "Risk Factors"), SearchedPlace("AAPL", q10, None))
+        return SimpleNamespace(sources=(source,), query_scope=SimpleNamespace(searched=searched))
+
+    arm = Arm("fts5", "", lambda m, i, **s: [A], shipped=True, prepare=prepare)
+    report = evaluate([case], [arm], index="unused")
+
+    [scored] = report.arms["fts5"].cases
+    assert [(u.fact, u.tier, u.filing_id, u.section, u.searched) for u in scored.unreached] == [
+        (1, "must_state", *A, True),
+        (2, "must_state", A[0], "MD&A", False),
+        (3, "must_state", q10, "MD&A", True),
+        (4, "detail", A[0], "Legal Proceedings", False),
+    ]
+    saved = json.loads(json.dumps(report.to_dict()))["arms"]["fts5"]["cases"][0]
+    assert saved["unreached"][1] == {
+        "fact": 2,
+        "tier": "must_state",
+        "filing_id": A[0],
+        "section": "MD&A",
+        "searched": False,
+    }
+
+    out = io.StringIO()
+    print_report(report, "dev", out)
+    printed = out.getvalue()
+    assert "Planning misses (must-state, Section not searched): 1 (c1: 1)" in printed
+    assert "Ranking misses (must-state, Section searched): 2 (c1: 2)" in printed
 
 
 def test_an_arm_measured_by_retrieval_only_reports_no_evidence():

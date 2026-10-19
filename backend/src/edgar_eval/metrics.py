@@ -1,6 +1,6 @@
-"""The harnesses' pure parts: ranking metrics, McNemar's exact test, the sign test and
-the bootstrap interval, and the judge study's agreement statistics (Cohen's kappa, the
-Wilson score interval and Fisher's exact test).
+"""The harnesses' pure parts: ranking metrics, McNemar's exact test, the sign test, the
+bootstrap interval and the case-cluster bootstrap test, and the judge study's agreement
+statistics (Cohen's kappa, the Wilson score interval and Fisher's exact test).
 
 A ranking is the list of (Filing ID, Section) pairs an Arm returns, best first, one per
 Source. `k=None` means the whole ranking: every Source that reaches the Answer Call.
@@ -155,6 +155,55 @@ def bootstrap_interval(
         low=means[cut],
         high=means[resamples - 1 - cut],
         confidence=confidence,
+        resamples=resamples,
+        seed=seed,
+    )
+
+
+@dataclass(frozen=True)
+class ClusterBootstrapTest:
+    """A one-sided test of a total over cases by the case-cluster bootstrap."""
+
+    total: int
+    """The statistic: the per-case differences summed, challenger minus shipped."""
+    p_ahead: float
+    """One-sided p-value that the challenger is ahead: the share of resampled totals,
+    centred under the null, at least `total`."""
+    p_behind: float
+    """One-sided p-value that the challenger is behind: the share at most `total`."""
+    resamples: int
+    seed: int
+
+
+def cluster_bootstrap_test(
+    differences: Sequence[int],
+    *,
+    resamples: int = BOOTSTRAP_RESAMPLES,
+    seed: int = BOOTSTRAP_SEED,
+) -> ClusterBootstrapTest:
+    """The case-cluster bootstrap test of a total of per-case differences, such as the
+    must-state Required Facts a challenger states minus those the shipped choice states
+    in each case (ADR 0015).
+
+    Whole cases are resampled with replacement `resamples` times, from a generator
+    seeded with `seed`, so facts of one answer move together and the same differences
+    give the same p-values. The resampled differences are centred under the null (each
+    less the mean difference), and a p-value is the share of resampled totals at least
+    as extreme as the observed one, counting the observed one: (1 + hits) / (1 +
+    resamples). A centred resampled total is the resampled sum less the observed total,
+    so it reaches the observed total `t` when the resampled sum reaches `2t`, a
+    comparison of integers. With no case, both p-values are 1."""
+    total, n = sum(differences), len(differences)
+    if not n:
+        return ClusterBootstrapTest(total, 1.0, 1.0, resamples, seed)
+    rng = Random(seed)
+    sums = [sum(rng.choices(differences, k=n)) for _ in range(resamples)]
+    ahead = sum(1 for s in sums if s >= 2 * total)
+    behind = sum(1 for s in sums if s <= 2 * total)
+    return ClusterBootstrapTest(
+        total=total,
+        p_ahead=(1 + ahead) / (1 + resamples),
+        p_behind=(1 + behind) / (1 + resamples),
         resamples=resamples,
         seed=seed,
     )

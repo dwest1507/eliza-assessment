@@ -19,6 +19,14 @@ last wrote for a split under `data/derived/eval/`:
   generator the rule chose. Optional. The challengers' own reports, which it names, are
   the scoreboard's other generator rows; a generation report no comparison names, such
   as a settings run or a stale report of another version, is not read.
+- `arm-choice-<split>.json` (`make eval-arms`) and `settings-choice-<split>.json`
+  (`make eval-settings`): each challenger Arm's (or setting's) and the Control Run's
+  comparison with the shipped choice, case by case on every score and, since ADR 0015,
+  fact by fact on the must-state facts stated (`stated_facts`: the difference, the
+  one-sided p-values and the verdict, with the facts split by where their evidence
+  reached), and the choice. Each optional. A choice file made before ADR 0015 (#73's)
+  records no fact-level result, and exports with those fields null. Their challengers'
+  reports are not read: the comparisons hold the scores the page shows.
 - `brief-suite.json` (`make eval-brief`): the Brief Suite's verdict per case. Optional,
   and outside the split, so it is left out of a holdout export.
 
@@ -50,7 +58,7 @@ from pathlib import Path
 from typing import Any, TextIO
 
 from edgar_eval.metrics import mcnemar_exact
-from edgar_eval.selection import AHEAD_P, BEHIND_P
+from edgar_eval.selection import AHEAD_P, BEHIND_P, EVIDENCE_STATUSES
 from edgar_rag.corpus import Filing, load_corpus, report_quarter
 from edgar_rag.golden_set import DEFAULT_GOLDEN_SET, load_brief_suite, load_golden_set
 from edgar_rag.paths import DERIVED_DIR, REPO_ROOT
@@ -99,6 +107,10 @@ def export(
     cases = golden.cases if split == "all" else golden.split(split)
     choice_path = eval_dir / f"generator-choice-{split}.json"
     choice = _read(choice_path) if choice_path.exists() else None
+    retrieval_choices = {
+        rule: _read(path) if (path := eval_dir / f"{rule}-choice-{split}.json").exists() else None
+        for rule in ("arm", "settings")
+    }
     brief_path = eval_dir / "brief-suite.json"
     return {
         "exportedOn": today.isoformat(),
@@ -117,6 +129,8 @@ def export(
             for path in _round_paths(eval_dir, split, choice)
         ],
         "generatorChoice": _generator_choice(choice) if choice else None,
+        "armChoice": _optional(_retrieval_choice, retrieval_choices["arm"]),
+        "settingsChoice": _optional(_retrieval_choice, retrieval_choices["settings"]),
         "briefSuite": (
             _brief_suite(_read(brief_path)) if split != "holdout" and brief_path.exists() else None
         ),
@@ -360,9 +374,86 @@ def _generator_choice(report: dict[str, Any]) -> dict[str, Any]:
 
 
 def _generator_comparison(model: str, c: dict[str, Any]) -> dict[str, Any]:
+    return {"model": model} | _scores(c)
+
+
+def _optional(convert, report: dict[str, Any] | None) -> dict[str, Any] | None:
+    return convert(report) if report else None
+
+
+def _retrieval_choice(report: dict[str, Any]) -> dict[str, Any]:
+    """An Arm or settings choice file (`make eval-arms`, `make eval-settings`): each
+    comparison case by case and, under ADR 0015, fact by fact."""
+    control = report.get("control")
+    return {
+        "rule": report["rule"],
+        "shipped": report["shipped"],
+        "chosen": report["chosen"],
+        "inconclusive": report.get("inconclusive", False),
+        "reason": report.get("reason"),
+        "control": _retrieval_comparison("Control Run", control) if control else None,
+        "comparisons": [
+            _retrieval_comparison(name, c) for name, c in report["comparisons"].items()
+        ],
+    }
+
+
+def _retrieval_comparison(name: str, c: dict[str, Any]) -> dict[str, Any]:
+    # A choice file made before ADR 0015 records no fact-level result.
+    facts = c.get("stated_facts")
+    return (
+        {"name": name}
+        | _scores(c)
+        | {
+            "shippable": c.get("shippable", True),
+            "statedFacts": _fact_test(facts) if facts else None,
+            "byEvidence": (
+                [
+                    {
+                        "status": status,
+                        "facts": group["facts"],
+                        "challengerStated": group["challenger_stated"],
+                        "shippedStated": group["shipped_stated"],
+                    }
+                    for status in EVIDENCE_STATUSES
+                    if (group := facts["by_evidence"].get(status))
+                ]
+                if facts
+                else None
+            ),
+        }
+    )
+
+
+def _fact_test(f: dict[str, Any]) -> dict[str, Any]:
+    """Fact Recall fact by fact (ADR 0015): the must-state facts each side stated over the
+    paired cases, and the case-cluster bootstrap's one-sided verdict on the difference."""
+    return {
+        "paired": f["paired"],
+        "leftOut": f["left_out"],
+        "facts": f["facts"],
+        "challengerStated": f["challenger_stated"],
+        "shippedStated": f["shipped_stated"],
+        "totalDifference": f["total_difference"],
+        "pAhead": f["p_ahead"],
+        "pBehind": f["p_behind"],
+        "verdict": f["verdict"],
+        "difference": _difference(f["difference"]),
+        "resamples": f["resamples"],
+        "seed": f["seed"],
+    }
+
+
+def _difference(d: dict[str, Any] | None) -> dict[str, Any] | None:
+    if not d:
+        return None
+    return {"mean": d["mean"], "low": d["low"], "high": d["high"], "confidence": d["confidence"]}
+
+
+def _scores(c: dict[str, Any]) -> dict[str, Any]:
+    """A comparison's per-case sign tests and whether the challenger qualifies."""
     contradicted = c.get("contradicted_claims")
     return {
-        "model": model,
         "cases": c["cases"],
         "factRecall": _sign_test(c["fact_recall"]),
         "faithfulness": _sign_test(c["faithfulness"]),
@@ -377,7 +468,6 @@ def _sign_test(result: dict[str, Any]) -> dict[str, Any]:
     # A version 1 choice file names the wins and losses `challenger_only` and
     # `shipped_only`, and decided at two-sided p < 0.05; one written under ADR 0011's
     # rule, `wins` and `losses`, with both one-sided p-values and the bootstrap interval.
-    difference = result.get("difference")
     return {
         "challengerOnly": result.get("wins", result.get("challenger_only")),
         "shippedOnly": result.get("losses", result.get("shipped_only")),
@@ -387,16 +477,7 @@ def _sign_test(result: dict[str, Any]) -> dict[str, Any]:
         "paired": result.get("paired"),
         "leftOut": result.get("left_out"),
         "verdict": result["verdict"],
-        "difference": (
-            {
-                "mean": difference["mean"],
-                "low": difference["low"],
-                "high": difference["high"],
-                "confidence": difference["confidence"],
-            }
-            if difference
-            else None
-        ),
+        "difference": _difference(result.get("difference")),
     }
 
 
@@ -510,6 +591,13 @@ def main(
         f"Exported Golden Set version {data['goldenSet']['version']}'s {args.split} split: "
         f"retrieval results (Arms: {arms}), generation results (runs: {models}), "
         + (f"the generator choice ({choice['chosen']}), " if choice else "")
+        + "".join(
+            f"the {label} choice ({c['chosen']}"
+            + (", fact by fact" if c["comparisons"] and c["comparisons"][0]["statedFacts"] else "")
+            + "), "
+            for label, c in (("Arm", data["armChoice"]), ("settings", data["settingsChoice"]))
+            if c
+        )
         + (
             f"the Brief Suite ({brief['casesPassed']} of {len(brief['cases'])} cases pass), "
             if brief

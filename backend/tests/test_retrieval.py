@@ -6,6 +6,7 @@ import sqlite3
 
 import pytest
 
+from edgar_rag import _topics
 from edgar_rag.retrieval import (
     CHUNK_TOKENS,
     CONTEXT_BUDGET_TOKENS,
@@ -505,7 +506,6 @@ def test_a_scope_filing_carries_its_periods(index):
     ("question", "section"),
     [
         ("What are the main risk factors in Apple's latest Filings?", "Risk Factors"),
-        ("What legal proceedings does Apple disclose in its latest Filings?", "Legal Proceedings"),
         ("What does Tesla's latest MD&A say about deliveries?", "MD&A"),
         ("What does Apple's latest management's discussion say about services?", "MD&A"),
         ("What interest rate risk does Tesla report in its latest Filings?", "Market Risk"),
@@ -526,15 +526,232 @@ def test_market_risk_phrases_are_not_read_as_risk_factors(index):
     assert context.query_scope.sections == ("Market Risk",)
 
 
-def test_a_stub_section_falls_back_to_the_whole_filing(index):
-    stub = _chunks(index, filing_id="TSLA_10-K_2025-12-31", section="Legal Proceedings")
-    assert sum(c["tokens"] for c in stub) < STUB_TOKENS  # "see Note 15" and little else
+@pytest.mark.parametrize(
+    "question",
+    [
+        # One "risk" closing a list of risk kinds.
+        "How do Apple's and Tesla's interest rate and foreign exchange risk compare?",
+        "What interest rate, currency and commodity price risks does Tesla report?",
+        "What currency risk does Apple disclose?",
+        "What FX risk does Apple report?",
+        "What foreign exchange risk does Apple disclose?",
+        "What exchange risk does Apple face?",
+        "What foreign exchange exposure does Apple report?",
+        "How large is Apple's interest rate exposure?",
+        "What interest rate sensitivity does Apple disclose?",
+        "What commodity price risk does Tesla disclose?",
+    ],
+)
+def test_market_risk_phrasings_search_market_risk_not_risk_factors(index, question):
+    context = _ask(index, question)
+
+    assert context.query_scope.sections == ("Market Risk",)
+    assert "Market Risk" in {p.section for p in context.query_scope.searched}
+    # A 10-Q whose Item 3 is a stub ("no material changes") is searched whole, so other
+    # Sections may join; the hint still plans Market Risk, never Risk Factors alone.
+    assert "Market Risk" in {s.section for s in context.sources}
+
+
+CYBER_SECTIONS = ("Cybersecurity", "Risk Factors", "MD&A")
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "What cybersecurity risks does Tesla describe?",
+        "How does Apple describe cyber threats to its systems?",
+        "What does Apple say about a data breach?",
+        "How does Tesla guard against a cyberattack?",
+        "How does Apple manage information security?",
+    ],
+)
+def test_a_cybersecurity_question_searches_cybersecurity_risk_factors_and_mdna(index, question):
+    context = _ask(index, question)
+
+    assert context.query_scope.sections == CYBER_SECTIONS
+    assert context.query_scope.time_window.label == "latest"
+    assert context.sources
+    assert {s.section for s in context.sources} <= set(CYBER_SECTIONS)
+    assert {s.filing_id for s in context.sources if s.kind == "text"} <= {
+        f.filing_id for f in context.query_scope.filings
+    }
+
+
+def test_a_cybersecurity_question_finds_the_cybersecurity_section_of_the_latest_10k(index):
+    context = _ask(index, "What cybersecurity risks does Tesla describe?")
+
+    assert _scope_filings(context, "TSLA") == ["TSLA_10-K_2025-12-31"]
+    assert ("TSLA_10-K_2025-12-31", "Cybersecurity") in {
+        (s.filing_id, s.section) for s in context.sources
+    }
+    assert {p.section for p in context.query_scope.searched} == set(CYBER_SECTIONS)
+
+
+def test_a_cybersecurity_question_with_a_time_phrase_keeps_its_window(index):
+    context = _ask(
+        index, "How has Tesla's cybersecurity disclosure changed over the last two years?"
+    )
+
+    assert context.query_scope.time_window.label == "last 2 years"
+    assert {s.section for s in context.sources} <= set(CYBER_SECTIONS)
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "What are Apple's and Tesla's regulatory risks, and how are they addressing them?",
+        "What risks does Apple face, and how is it managing them?",
+        "What risks does Tesla disclose, and how does it mitigate them?",
+        "What supply risks does Apple face, and what is it doing in response?",
+        "What risks does Tesla face, and how is it handling them?",
+    ],
+)
+def test_a_risk_question_asking_how_they_respond_also_searches_business_and_mdna(index, question):
+    context = _ask(index, question)
+
+    assert set(context.query_scope.sections) == {"Risk Factors", "Business", "MD&A"}
+    assert context.query_scope.time_window.label == "latest"
+    sections = {s.section for s in context.sources}
+    assert "Risk Factors" in sections
+    assert sections & {"Business", "MD&A"}
+    assert {s.filing_id for s in context.sources} <= {
+        f.filing_id for f in context.query_scope.filings
+    }
+
+
+def test_a_risk_question_asking_how_they_respond_still_cites_10q_risk_pointers(index):
+    context = _ask(
+        index, "What are Apple's and Tesla's regulatory risks, and how are they addressing them?"
+    )
+
+    pairs = {(s.filing_id, s.section) for s in context.sources}
+    # Apple's Q1 FY2026 10-Q points back to the 10-K: cited as it stands, never searched.
+    assert ("AAPL_10-Q_2025-12-27", "Risk Factors") in pairs
+    searched = {(p.filing_id, p.section) for p in context.query_scope.searched}
+    assert ("AAPL_10-Q_2025-12-27", "Risk Factors") not in searched
+    assert ("AAPL_10-K_2025-09-27", "Risk Factors") in searched
+    assert ("AAPL_10-K_2025-09-27", "Business") in searched
+
+
+def test_a_response_phrase_without_a_risk_hint_adds_no_section(index):
+    context = _ask(index, "How is Apple managing its services business?")
+
+    assert context.query_scope.sections == ()
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "How dependent is Apple on its largest customers?",
+        "How dependent is Tesla on its suppliers?",
+        "What is NVIDIA's customer concentration?",
+        "How much does Apple rely on outside manufacturers?",
+        "Does Tesla have sole source suppliers?",
+        "How much revenue does Target get from government contracts?",
+    ],
+)
+def test_a_dependence_question_searches_business_and_risk_factors_of_the_latest_filings(
+    index, question
+):
+    context = _ask(index, question)
+
+    assert set(context.query_scope.sections) == {"Business", "Risk Factors"}
+    assert context.query_scope.time_window.label == "latest"
+    assert "Business" in {p.section for p in context.query_scope.searched}
+    assert context.sources
+    # A 10-Q has no Business Section and its Risk Factors point back to the 10-K or are
+    # searched as Risk Factors: it is never searched whole.
+    assert {s.section for s in context.sources} <= {"Business", "Risk Factors"}
+
+
+def test_a_dependence_question_cites_the_business_section_of_the_latest_10k(index):
+    context = _ask(index, "How dependent is Apple on its suppliers?")
+
+    assert ("AAPL_10-K_2025-09-27", "Business") in {
+        (s.filing_id, s.section) for s in context.sources
+    }
+
+
+def test_a_dependence_question_with_a_time_phrase_keeps_its_window(index):
+    context = _ask(
+        index, "How has Apple's dependence on its suppliers changed over the last two years?"
+    )
+
+    assert context.query_scope.time_window.label == "last 2 years"
+    assert "Business" in context.query_scope.sections
+    searched = {(p.filing_id, p.section) for p in context.query_scope.searched}
+    assert {("AAPL_10-K_2024-09-28", "Business"), ("AAPL_10-K_2025-09-27", "Business")} <= searched
+
+
+def test_a_dependence_phrase_beside_another_hint_adds_business_to_it(index):
+    context = _ask(index, "What does Tesla's MD&A say about its reliance on suppliers?")
+
+    assert set(context.query_scope.sections) == {"MD&A", "Business"}
+    assert context.query_scope.time_window.label == "latest"
+
+
+def test_a_follow_up_inherits_the_sections_a_dependence_phrase_planned(index):
+    context = prepare_answer_context(
+        [
+            Message("user", "How dependent is Apple on its suppliers?"),
+            Message("assistant", "Apple depends on outsourcing partners [S1]."),
+            Message("user", "And Tesla?"),
+        ],
+        index,
+    )
+
+    assert [c.ticker for c in context.query_scope.companies] == ["TSLA"]
+    assert set(context.query_scope.sections) == {"Business", "Risk Factors"}
+    assert context.query_scope.time_window.label == "latest"
+
+
+LEGAL_PROCEEDINGS = ("Legal Proceedings", "Financial Statements")
+
+
+def _section_tokens(index, filing_id, section):
+    return sum(c["tokens"] for c in _chunks(index, filing_id=filing_id, section=section))
+
+
+def test_a_legal_proceedings_question_also_searches_the_financial_statements(index):
+    context = _ask(index, "What legal proceedings does Apple disclose in its latest Filings?")
+
+    assert context.query_scope.sections == LEGAL_PROCEEDINGS
+    assert _searched(context) == [
+        ("AAPL", "AAPL_10-K_2025-09-27", "Legal Proceedings"),
+        ("AAPL", "AAPL_10-K_2025-09-27", "Financial Statements"),
+        ("AAPL", "AAPL_10-Q_2025-12-27", "Legal Proceedings"),
+        ("AAPL", "AAPL_10-Q_2025-12-27", "Financial Statements"),
+    ]
+    sections = {s.section for s in context.sources}
+    assert "Legal Proceedings" in sections  # Apple's Item 3 states its cases
+    assert sections <= set(LEGAL_PROCEEDINGS)
+
+
+def test_a_stub_legal_proceedings_is_answered_from_the_financial_statements(index):
+    # Tesla's Item 3 only points to the contingencies note: "see Note 15".
+    assert _section_tokens(index, "TSLA_10-K_2025-12-31", "Legal Proceedings") < STUB_TOKENS
 
     context = _ask(index, "What legal proceedings does Tesla disclose in its latest Filings?")
 
-    assert context.query_scope.sections == ("Legal Proceedings",)
-    assert {s.filing_id for s in context.sources} == {"TSLA_10-K_2025-12-31"}
-    assert {s.section for s in context.sources} - {"Legal Proceedings"}
+    assert context.query_scope.sections == LEGAL_PROCEEDINGS
+    assert _searched(context) == [("TSLA", "TSLA_10-K_2025-12-31", "Financial Statements")]
+    assert context.sources
+    assert {(s.filing_id, s.section) for s in context.sources} == {
+        ("TSLA_10-K_2025-12-31", "Financial Statements")
+    }
+    assert any(re.search(r"legal proceedings", s.text, re.I) for s in context.sources)
+
+
+def test_a_stub_section_falls_back_to_the_whole_filing(index):
+    # JPMorgan's Item 3 and Item 8 both point to pages of its annual report.
+    for section in LEGAL_PROCEEDINGS:
+        assert _section_tokens(index, "JPM_10-K_2025-12-31", section) < STUB_TOKENS
+
+    context = _ask(index, "What legal proceedings does JPMorgan disclose in its latest Filings?")
+
+    assert context.query_scope.sections == LEGAL_PROCEEDINGS
+    assert {s.filing_id for s in context.sources} == {"JPM_10-K_2025-12-31"}
+    assert {s.section for s in context.sources} - set(LEGAL_PROCEEDINGS)
 
 
 def test_a_missing_section_falls_back_to_the_whole_filing(index):
@@ -547,6 +764,232 @@ def test_a_missing_section_falls_back_to_the_whole_filing(index):
     assert _scope_filings(context, "JPM") == ["JPM_10-Q_2025-09-30", "JPM_10-K_2025-12-31"]
     assert "JPM_10-Q_2025-09-30" in {s.filing_id for s in context.sources}
     assert {s.section for s in context.sources} - {"MD&A"}
+
+
+# --- Search terms ------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    ("question", "topic"),
+    [
+        # A Risk Factors Section's chunks nearly all say "risk", and many say "key" or
+        # "main", so those words would rank passages that never mention the topic.
+        ("What are Tesla's key competition risks?", "competi"),
+        ("What are Target's key competition risks?", "competi"),
+    ],
+)
+def test_on_the_risk_route_the_topic_word_outranks_risk_and_generic_words(index, question, topic):
+    # The ranker given the shipped ranking keeps it, and shows it to the test.
+    ranker = _Recorder()
+    context = prepare_answer_context(
+        [Message("user", question)], index, ranker=ranker, context_budget=2000
+    )
+
+    assert context.query_scope.sections == ("Risk Factors",)
+    in_scope = {f.filing_id for f in context.query_scope.filings}
+    text = {c["id"]: c["text"] for c in _chunks(index, section="Risk Factors")}
+    on_topic = {
+        c["id"]
+        for c in _chunks(index, section="Risk Factors")
+        if c["filing_id"] in in_scope and topic in c["text"].lower()
+    }
+    passages = {p for _, p in _passages(context)}
+    (request,) = ranker.requests
+    # The passages retrieved, best first: the ones on the topic rank before any other,
+    # which only fill what is left of the budget once a larger one on the topic doesn't.
+    retrieved = [topic in text[i].lower() for i in request.lexical if text[i] in passages]
+    assert 0 < sum(retrieved) < len(on_topic)  # more passages on the topic than fit
+    assert retrieved == sorted(retrieved, reverse=True)
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "What are Apple's main risks?",
+        "What are the key risk factors for Tesla?",
+        "What is Apple's biggest litigation?",
+        "What are NVIDIA's most important risks?",
+    ],
+)
+def test_a_question_of_only_generic_and_hint_words_still_gets_sources(index, question):
+    context = _ask(index, question)
+
+    assert context.query_scope.sections
+    assert _passages(context)
+
+
+# --- The topic table ---------------------------------------------------------------------
+
+
+def _without_topic_table(monkeypatch, ask):
+    with monkeypatch.context() as patch:
+        patch.setattr(_topics, "TOPICS", ())
+        return ask()
+
+
+def test_a_topic_phrases_terms_bring_in_a_passage_the_questions_own_words_miss(
+    sector_index, monkeypatch
+):
+    # Pfizer states its regulatory risk as the IRA's Medicare price negotiation and
+    # government price controls, often without the word "regulatory".
+    question = "What regulatory risks does Pfizer face?"
+    added = _topics.added_terms(question, "Health Care")
+    names_one = re.compile(r"\b(?:" + "|".join(re.escape(t) for t in added) + r")\b", re.I)
+
+    def worded_as_the_filing(context):
+        return [
+            p
+            for _, p in _passages(context)
+            if names_one.search(p) and not re.search(r"\bregulatory\b", p, re.I)
+        ]
+
+    def ask():
+        return prepare_answer_context(
+            [Message("user", question)], sector_index, context_budget=4000
+        )
+
+    assert worded_as_the_filing(ask())
+    assert not worded_as_the_filing(_without_topic_table(monkeypatch, ask))
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        BRIEF_QUESTION,
+        "How has NVIDIA's revenue changed over the last two years?",
+        "What legal proceedings is Apple involved in?",
+        "What are Tesla's main risks?",
+        # A topic held to health care Companies leaves the others' search as it was.
+        "What regulatory risks does JPMorgan face?",
+    ],
+)
+def test_a_question_with_no_topic_phrase_for_its_companies_searches_exactly_as_before(
+    index, monkeypatch, question
+):
+    context = _ask(index, question)
+    before = _without_topic_table(monkeypatch, lambda: _ask(index, question))
+
+    assert context.sources == before.sources
+    assert context.messages == before.messages
+
+
+# --- The outlook route -------------------------------------------------------------------
+
+APPLE_LATEST = ["AAPL_10-K_2025-09-27", "AAPL_10-Q_2025-12-27"]
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "What is Apple's outlook for its Services business?",
+        "What does Apple expect for its gross margin?",
+        "What does Apple say it expects from tariffs?",
+        "What are Apple's expectations for its Services revenue?",
+        "What guidance does Apple give for its gross margin?",
+        "What does Apple forecast for its Services business?",
+        "How does Apple see its gross margin going forward?",
+        "What does Apple say about its gross margin next year?",
+    ],
+)
+def test_an_outlook_question_searches_only_the_latest_mdna(index, question):
+    context = _ask(index, question)
+
+    assert context.query_scope.sections == ("MD&A",)
+    assert context.query_scope.time_window.label == "latest"
+    assert _scope_filings(context, "AAPL") == APPLE_LATEST
+    assert context.sources
+    text = [s for s in context.sources if s.kind == "text"]
+    assert {s.section for s in text} == {"MD&A"}
+    assert {s.filing_id for s in text} <= set(APPLE_LATEST)
+
+
+def test_an_outlook_question_over_the_last_two_years_keeps_that_window(index):
+    context = _ask(index, "How has NVIDIA's growth outlook changed over the last two years?")
+
+    assert context.query_scope.sections == ("MD&A",)
+    assert context.query_scope.time_window.label == "last 2 years"
+    assert len(_scope_filings(context, "NVDA")) == 8
+    assert {s.section for s in context.sources if s.kind == "text"} == {"MD&A"}
+
+
+def test_an_outlook_for_a_year_after_the_latest_filing_reads_the_latest_mdna(index):
+    # Tesla's latest Filing is its FY2025 10-K, so 2026 names no Filing of Tesla's.
+    for question in ("What is Tesla's outlook for 2026?", "What does Tesla plan for 2026?"):
+        context = _ask(index, question)
+
+        assert context.query_scope.sections == ("MD&A",), question
+        assert context.query_scope.time_window.label == "latest", question
+        assert _scope_filings(context, "TSLA") == ["TSLA_10-K_2025-12-31"]
+        assert {(s.filing_id, s.section) for s in context.sources if s.kind == "text"} == {
+            ("TSLA_10-K_2025-12-31", "MD&A")
+        }
+
+
+def test_a_year_a_filing_covers_is_not_an_outlook(index):
+    context = _ask(index, "What did Tesla say about deliveries for 2024?")
+
+    assert context.query_scope.sections == ()
+    assert context.query_scope.periods == ("FY2024",)
+    assert context.query_scope.time_window.label == "all Filings"
+
+
+def test_an_outlook_question_still_states_that_guidance_is_not_in_the_filings(index):
+    context = _ask(index, "What is Tesla's outlook for 2026?")
+
+    assert [(g.kind, g.companies) for g in context.coverage_gaps] == [("no_guidance", ("TSLA",))]
+
+
+# --- The places searched -----------------------------------------------------------------
+
+
+def _searched(context):
+    return [(p.ticker, p.filing_id, p.section) for p in context.query_scope.searched]
+
+
+def test_a_hinted_question_records_the_hinted_section_of_each_filing_searched(index):
+    context = _ask(index, "What does Tesla's latest MD&A say about deliveries?")
+
+    assert _searched(context) == [("TSLA", "TSLA_10-K_2025-12-31", "MD&A")]
+
+
+def test_a_risk_question_records_each_risk_factors_searched_and_not_the_pointer(index):
+    context = _ask(index, BRIEF_QUESTION)
+
+    # Apple's Q1 FY2026 10-Q points back to the 10-K: it is cited as it stands, not
+    # searched.
+    assert _searched(context) == [
+        ("AAPL", "AAPL_10-K_2025-09-27", "Risk Factors"),
+        ("TSLA", "TSLA_10-K_2025-12-31", "Risk Factors"),
+        ("JPM", "JPM_10-K_2025-12-31", "Risk Factors"),
+    ]
+    assert ("AAPL_10-Q_2025-12-27", "Risk Factors") in {
+        (s.filing_id, s.section) for s in context.sources
+    }
+
+
+def test_a_filing_searched_whole_is_recorded_with_no_section(index):
+    stub = _ask(index, "What legal proceedings does JPMorgan disclose in its latest Filings?")
+    unhinted = _ask(index, "How does Apple describe its services business?")
+
+    assert _searched(stub) == [("JPM", "JPM_10-K_2025-12-31", None)]
+    assert _searched(unhinted) == [
+        ("AAPL", f.filing_id, None) for f in unhinted.query_scope.filings
+    ]
+    assert len(_searched(unhinted)) == 16
+
+
+def test_a_question_naming_no_company_records_every_filing_searched_whole(index, indexed_filings):
+    context = _ask(index, "Which companies discuss artificial intelligence?")
+
+    assert {(p.filing_id, p.section) for p in context.query_scope.searched} == {
+        (f.filing_id, None) for f in indexed_filings
+    }
+
+
+def test_a_question_about_only_missing_companies_searches_nowhere(index):
+    context = _ask(index, "What are Citigroup's main risk factors?")
+
+    assert context.query_scope.searched == ()
 
 
 # --- Risk routing ------------------------------------------------------------------------
@@ -588,6 +1031,20 @@ def test_a_risk_question_with_a_time_phrase_keeps_its_window(index):
     assert {s.filing_id for s in context.sources} & {"TSLA_10-Q_2025-03-31", "TSLA_10-Q_2025-06-30"}
 
 
+@pytest.mark.parametrize(
+    "question",
+    [
+        "What risk factors did Tesla state in FY2023?",
+        "What cybersecurity risks did Tesla describe in FY2023?",
+    ],
+)
+def test_a_risk_question_naming_a_fiscal_period_is_not_held_to_the_latest_filings(index, question):
+    context = _ask(index, question)
+
+    assert context.query_scope.time_window.label == "all Filings"
+    assert "TSLA_10-K_2023-12-31" in {s.filing_id for s in context.sources}
+
+
 def test_each_company_gets_an_even_share_of_the_budget_on_the_risk_route(index):
     context = _ask(index, "Compare the risk factors of Apple, Tesla, JPMorgan and NVIDIA.")
 
@@ -597,6 +1054,44 @@ def test_each_company_gets_an_even_share_of_the_budget_on_the_risk_route(index):
     assert set(spent) == {"AAPL", "TSLA", "JPM", "NVDA"}
     share = CONTEXT_BUDGET_TOKENS / 4
     assert all(share * 0.8 <= t <= share * 1.05 for t in spent.values())
+
+
+def test_a_company_that_cannot_use_its_share_passes_the_rest_to_the_others(index):
+    # Tesla's Market Risk Sections hold under 1,000 tokens of distinct text, far less
+    # than half the budget; Apple's Market Risk, and the 10-Qs searched whole where it is
+    # a stub, hold far more.
+    context = _ask(index, "How do Apple's and Tesla's interest rate risk disclosures compare?")
+
+    spent = {}
+    for source in context.sources:
+        spent[source.ticker] = spent.get(source.ticker, 0) + count_tokens(source.text)
+    assert set(spent) == {"AAPL", "TSLA"}
+    share = CONTEXT_BUDGET_TOKENS / 2
+    assert spent["TSLA"] < share / 4
+    assert spent["AAPL"] > share * 1.5
+    assert sum(spent.values()) <= CONTEXT_BUDGET_TOKENS * 1.05
+
+
+def test_a_candidate_too_large_for_what_is_left_is_skipped_and_a_smaller_one_kept(index):
+    chunks = {
+        c["id"]: c
+        for c in _chunks(index, filing_id="TSLA_10-K_2025-12-31", section="Risk Factors")
+        if c["kind"] != "risk_pointer"
+    }
+    by_size = sorted(chunks.values(), key=lambda c: c["tokens"])
+    small, first, second = by_size[0], by_size[-1], by_size[-2]
+    assert second["tokens"] > small["tokens"] + 10
+    budget = first["tokens"] + small["tokens"] + 10
+
+    context = prepare_answer_context(
+        [Message("user", "What are Tesla's risk factors?")],
+        index,
+        ranker=_Recorder(lambda r: [first["id"], second["id"], small["id"]]),
+        context_budget=budget,
+    )
+
+    passages = [p for _, p in _passages(context)]
+    assert sorted(passages) == sorted([first["text"], small["text"]])
 
 
 def test_an_index_built_by_an_older_version_says_to_rebuild_it(tmp_path, index):

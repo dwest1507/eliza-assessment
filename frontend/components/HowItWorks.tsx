@@ -8,11 +8,14 @@ import {
   type BriefSuiteResults,
   type CoverageCompany,
   type EvalExport,
+  type FactTest,
   type GenerationRun,
   type GenerationSummary,
   type GeneratorChoice,
   type GeneratorComparison,
   type HoldoutResults,
+  type RetrievalChoice,
+  type RetrievalChoiceComparison,
   type RetrievalResults,
   type RetrievalSummary,
   type Screen,
@@ -24,6 +27,7 @@ import {
   score,
   seconds,
   shippedRun,
+  signed,
   usd,
 } from '@/lib/evalExport'
 
@@ -33,8 +37,8 @@ type Thresholds = EvalExport['thresholds']
  * The "How it works" page: a plain overview first (how an answer is made, "What's
  * covered", the shipped run's headline numbers and the known limits), then the sections
  * under "Technical details", each collapsed by default: the architecture, the evaluation scoreboard (the shipped run
- * beside its Control Run, the retrieval Arms and their screen, and the generator
- * comparison), the Brief Suite's verdicts, the holdout run beside dev and the Corpus
+ * beside its Control Run, the retrieval Arms and their screen, the Arm and settings
+ * comparisons fact by fact, and the generator comparison), the Brief Suite's verdicts, the holdout run beside dev and the Corpus
  * coverage grid, all read from the evaluation export so the evidence sits in the product.
  */
 export default function HowItWorks({ data }: { data: EvalExport }) {
@@ -121,8 +125,9 @@ function Architecture({ data }: { data: EvalExport }) {
       text: (
         <>
           <code className="font-mono text-[12.5px]">bm25()</code> search inside hard filters on
-          Company and period, each Company with its own share of the context budget. Risk and change
-          questions are routed; repeated text is dropped.
+          Company and period, each Company with its own share of the context budget, which a Company
+          that can&apos;t use it passes to the others. Risk and change questions are routed;
+          repeated text is dropped.
           {shipped && (
             <>
               {' '}
@@ -279,6 +284,10 @@ function Scoreboard({ data }: { data: EvalExport }) {
           generator and the judge, so it costs money), then{' '}
           <code className="font-mono text-[13px]">make eval-export</code>.
         </p>
+      )}
+      {data.armChoice && <RetrievalChoiceTables choice={data.armChoice} thresholds={thresholds} />}
+      {data.settingsChoice && (
+        <RetrievalChoiceTables choice={data.settingsChoice} thresholds={thresholds} />
       )}
       {data.generatorChoice && (
         <GeneratorChoiceTable choice={data.generatorChoice} thresholds={thresholds} />
@@ -785,6 +794,199 @@ function signTest(test: SignTest | null): ReactNode {
         <span className="block text-[12px] text-muted">{difference(test.difference)}</span>
       )}
     </>
+  )
+}
+
+function factTest(test: FactTest | null): ReactNode {
+  if (!test) return '–'
+  return (
+    <>
+      {test.verdict} ({signed(test.totalDifference)}: {test.challengerStated} against{' '}
+      {test.shippedStated} of {test.facts} must-state facts, p ahead = {pValue(test.pAhead)}, p
+      behind = {pValue(test.pBehind)})
+      {test.difference && (
+        <span className="block text-[12px] text-muted">per case {difference(test.difference)}</span>
+      )}
+    </>
+  )
+}
+
+/** How each comparison's facts are split by where their evidence reached, in the export's order. */
+const EVIDENCE_LABELS: Record<string, string> = {
+  challenger_only: 'Reached by the challenger only',
+  shipped_only: 'By the shipped choice only',
+  both: 'By both',
+  neither: 'By neither',
+  unrecorded: 'Not recorded',
+}
+
+const RETRIEVAL_RULES: Record<string, { what: string; caption: string; label: string }> = {
+  arms: {
+    what: 'Arm',
+    caption: 'Choosing the Arm: do a challenger’s answers state more facts?',
+    label: 'Arm comparison',
+  },
+  settings: {
+    what: 'setting',
+    caption: 'Choosing the chunk size and context budget: do a setting’s answers state more facts?',
+    label: 'Settings comparison',
+  },
+}
+
+/** The Arm or settings comparison: each challenger and the Control Run against the shipped
+ * choice, fact by fact (ADR 0015) beside the per-case sign tests, then the facts stated split
+ * by where their evidence reached. A choice file made before the fact-level test shows its
+ * per-case verdicts only, as recorded. */
+function RetrievalChoiceTables({
+  choice,
+  thresholds,
+}: {
+  choice: RetrievalChoice
+  thresholds: Thresholds
+}) {
+  const rule = RETRIEVAL_RULES[choice.rule] ?? RETRIEVAL_RULES.arms
+  const rows = [
+    ...(choice.control ? [{ label: 'Control Run', c: choice.control }] : []),
+    ...choice.comparisons.map((c) => ({ label: c.name, c })),
+  ]
+  const factLevel = rows.some(({ c }) => c.statedFacts !== null)
+  const resamples = rows.find(({ c }) => c.statedFacts)?.c.statedFacts?.resamples
+  const unshippable = choice.comparisons.some((c) => !c.shippable)
+  const ahead = thresholds ? ` (p < ${thresholds.aheadP.toFixed(2)})` : ''
+  const behind = thresholds ? ` (p < ${thresholds.behindP.toFixed(2)})` : ''
+  const name = (label: string, c: RetrievalChoiceComparison) =>
+    c === choice.control ? (
+      <>
+        Control Run
+        <span className="ml-2 text-[12px] text-muted">{choice.shipped} again</span>
+      </>
+    ) : (
+      <>
+        <code className="font-mono">{label}</code>
+        {!c.shippable && <span className={quietBadge}>API call: can’t ship</span>}
+      </>
+    )
+  return (
+    <div className="flex flex-col gap-3">
+      <div className="card overflow-x-auto p-3">
+        <table className="min-w-full border-collapse text-[13px]">
+          <caption className={caption}>{rule.caption}</caption>
+          <thead>
+            <tr>
+              <th className={th}>Against {choice.shipped}</th>
+              <th className={th}>Cases</th>
+              <th className={th}>Fact Recall fact by fact</th>
+              <th className={th}>Fact Recall case by case</th>
+              <th className={th}>Faithfulness</th>
+              <th className={th}>Coverage Gaps</th>
+              <th className={th}>No Contradicted Claim</th>
+              <th className={th}>Qualifies</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(({ label, c }) => (
+              <tr key={label}>
+                <th scope="row" className={`${td} text-left font-medium`}>
+                  {name(label, c)}
+                </th>
+                <td className={td}>{c.cases}</td>
+                <td className={td}>{factTest(c.statedFacts)}</td>
+                <td className={td}>{signTest(c.factRecall)}</td>
+                <td className={td}>{signTest(c.faithfulness)}</td>
+                <td className={td}>{signTest(c.coverageGaps)}</td>
+                <td className={td}>{signTest(c.contradictedClaims)}</td>
+                <td className={td}>{c === choice.control ? '–' : c.qualifies ? 'yes' : 'no'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <p className={note}>
+          {factLevel ? (
+            <>
+              Each challenger {rule.what} is compared with {choice.shipped} on the cases both
+              scored. It qualifies only if ahead on Fact Recall fact by fact{ahead}: the must-state
+              facts its answers state, summed over the paired cases, tested by a one-sided
+              case-cluster bootstrap
+              {resamples
+                ? ` (whole cases resampled ${resamples.toLocaleString('en-US')} times from a fixed seed)`
+                : ''}
+              . It must also be behind on none of Fact Recall case by case (an exact sign test),
+              Faithfulness, Coverage Gaps and Contradicted Claims{behind}; the cheapest qualifier
+              wins. Under each fact-level verdict, the mean difference in facts stated per case and
+              its 95% bootstrap interval, shown and not decided on. If the Control Run came out
+              ahead of the shipped run fact by fact, the comparison would be inconclusive and{' '}
+              {choice.shipped} would stand.
+            </>
+          ) : (
+            <>
+              Decided under ADR 0011’s per-case rule, before the fact-level test, and stands as
+              recorded: a challenger {rule.what} qualifies only if ahead on Fact Recall case by case
+              {ahead} and behind on none of Fact Recall, Faithfulness, Coverage Gaps and
+              Contradicted Claims{behind}, each by an exact sign test, one-sided. Its choice file
+              records no fact-level result.
+            </>
+          )}
+          {unshippable &&
+            ' A challenger whose Arm makes an API call at query time is compared but never chosen.'}{' '}
+          {choice.inconclusive && <>Inconclusive: {choice.reason}. </>}
+          <span className="font-medium text-accent-strong">Chosen: {choice.chosen}.</span>
+        </p>
+      </div>
+      {factLevel && <EvidenceTable label={rule.label} rows={rows} />}
+    </div>
+  )
+}
+
+function EvidenceTable({
+  label,
+  rows,
+}: {
+  label: string
+  rows: { label: string; c: RetrievalChoiceComparison }[]
+}) {
+  const statuses = Object.keys(EVIDENCE_LABELS).filter((status) =>
+    rows.some(({ c }) => c.byEvidence?.some((g) => g.status === status && g.facts > 0))
+  )
+  return (
+    <div className="card overflow-x-auto p-3">
+      <table className="min-w-full border-collapse text-[13px]">
+        <caption className={caption}>{label}: facts stated by where their evidence reached</caption>
+        <thead>
+          <tr>
+            <th className={th}>Stated, challenger / shipped</th>
+            {statuses.map((status) => (
+              <th key={status} className={th}>
+                {EVIDENCE_LABELS[status]}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(({ label: name, c }) => (
+            <tr key={name}>
+              <th scope="row" className={`${td} text-left font-medium`}>
+                {name === 'Control Run' ? name : <code className="font-mono">{name}</code>}
+              </th>
+              {statuses.map((status) => {
+                const group = c.byEvidence?.find((g) => g.status === status)
+                return (
+                  <td key={status} className={td}>
+                    {group && group.facts > 0
+                      ? `${group.challengerStated} / ${group.shippedStated} of ${group.facts}`
+                      : '–'}
+                  </td>
+                )
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p className={note}>
+        Each paired must-state fact once, by whose Answer Context its evidence quote reached, with
+        how many each side’s answers state. A fact only the challenger reached is a retrieval gain;
+        one both reached measures how each side’s generator used the same evidence.
+      </p>
+    </div>
   )
 }
 

@@ -12,7 +12,14 @@ harness also records **Evidence Reached** per Required Fact: whether the fact's 
 quote appears, whitespace aside, in the text of the context's Sources. The Golden Set
 labels relevance by Section, so a change of Arm, chunk size or context budget barely
 moves hit@k; Evidence Reached shows whether the passages that state the facts reach the
-prompt (ADR 0010).
+prompt (ADR 0010). `evidence_reached` is its one definition, which the generation harness
+calls too.
+
+For each fact not reached, the report records its Filing and Section and whether
+retrieval searched there, as the context's Query Scope records the places searched: a
+**planning miss** when the Section plan left that Section of that Filing out, a
+**ranking miss** when it was searched but its passage did not rank into the budget. The
+printout groups each Arm's unreached must-state facts by the two.
 
 **The gate** (ADR 0011): every challenger Arm is compared with the Shipped Arm on
 Evidence Reached, paired fact by fact, by McNemar's exact test, one-sided, under the
@@ -47,14 +54,13 @@ from __future__ import annotations
 
 import argparse
 import json
-import re
 import sys
 from collections.abc import Callable, Mapping, Sequence
 from dataclasses import asdict, dataclass, field
 from itertools import zip_longest
 from pathlib import Path
 from statistics import fmean
-from typing import Any, TextIO
+from typing import Any, Literal, TextIO
 
 from edgar_eval.metrics import (
     McNemarResult,
@@ -66,7 +72,14 @@ from edgar_eval.metrics import (
     reciprocal_rank,
 )
 from edgar_eval.selection import BEHIND_P, UNCONSTRAINED, one_sided_verdict
-from edgar_rag.golden_set import DEFAULT_GOLDEN_SET, GoldenCase, load_golden_set
+from edgar_rag.golden_set import (
+    DEFAULT_GOLDEN_SET,
+    GoldenCase,
+    RequiredFact,
+    Tier,
+    load_golden_set,
+    normalise_whitespace,
+)
 from edgar_rag.retrieval import (
     CONTEXT_BUDGET_TOKENS,
     DEFAULT_INDEX,
@@ -139,6 +152,56 @@ class CaseScore:
     source_tokens: int | None = None
     """Tokens of Source text in the Answer Context; None for an Arm measured by
     retrieval only."""
+    unreached: tuple[UnreachedFact, ...] | None = None
+    """Each Required Fact whose evidence did not reach the Answer Context, in the case's
+    fact order, with where it is and whether retrieval searched there; None for an Arm
+    measured by retrieval only."""
+
+    def misses(self, kind: Miss) -> int:
+        """How many must-state facts missed this way."""
+        return sum(u.tier == "must_state" and u.miss == kind for u in self.unreached or ())
+
+
+Miss = Literal["planning", "ranking"]
+
+
+@dataclass(frozen=True)
+class UnreachedFact:
+    """A Required Fact whose evidence quote did not reach the Answer Context."""
+
+    fact: int
+    """Its position in the case's fact order, from 0."""
+    tier: Tier
+    filing_id: str
+    section: str
+    """The Filing and Section its evidence quote is in, as the case labels it."""
+    searched: bool
+    """Whether retrieval searched that Section of that Filing (or the whole Filing) for
+    its Company: if not, the Section plan left it out (a planning miss); if so, its
+    passage was not ranked into the budget (a ranking miss)."""
+
+    @property
+    def miss(self) -> Miss:
+        return "ranking" if self.searched else "planning"
+
+
+def unreached_facts(
+    context: AnswerContext, facts: Sequence[RequiredFact], reached: Sequence[bool]
+) -> tuple[UnreachedFact, ...]:
+    """The facts not reached, each with whether its Section was among the places the
+    Answer Context records retrieval searched."""
+    searched = {(p.filing_id, p.section) for p in context.query_scope.searched}
+    return tuple(
+        UnreachedFact(
+            fact=i,
+            tier=f.tier,
+            filing_id=f.filing_id,
+            section=f.section,
+            searched=bool({(f.filing_id, f.section), (f.filing_id, None)} & searched),
+        )
+        for i, (f, hit) in enumerate(zip(facts, reached, strict=True))
+        if not hit
+    )
 
 
 @dataclass(frozen=True)
@@ -419,9 +482,10 @@ def source_ranking(context: AnswerContext) -> list[Pair]:
     """The Answer Context's text Sources as ranked (Filing ID, Section) pairs.
 
     Each Company in scope is retrieved separately with its own share of the context
-    budget, and its Sources are numbered after the previous Company's. Ranking them by
-    number would put the last Company's best Source behind every other Company's worst,
-    so the ranking takes each Company's next-best Source in turn instead.
+    budget (the share of a Company that can't use it passing to the others), and its
+    Sources are numbered after the previous Company's. Ranking them by number would put
+    the last Company's best Source behind every other Company's worst, so the ranking
+    takes each Company's next-best Source in turn instead.
 
     Facts Sources are left out: they are Financial Facts looked up by rule, not text
     retrieved by an Arm, and the Golden Set labels Sections.
@@ -434,11 +498,12 @@ def source_ranking(context: AnswerContext) -> list[Pair]:
     ]
 
 
-_SPACE = re.compile(r"\s+")
-
-
-def _squeezed(text: str) -> str:
-    return _SPACE.sub(" ", text).strip()
+def evidence_reached(context: AnswerContext, facts: Sequence[RequiredFact]) -> tuple[bool, ...]:
+    """Evidence Reached for each Required Fact, in the facts' order: whether its evidence
+    quote is in the text of the Answer Context's Sources, both compared after collapsing
+    whitespace. The one definition both the retrieval and the generation harness use."""
+    text = normalise_whitespace("\n".join(s.text for s in context.sources))
+    return tuple(normalise_whitespace(f.evidence) in text for f in facts)
 
 
 def _score_arm(
@@ -462,12 +527,12 @@ def _score_arm(
 def _score_case(
     arm: Arm, case: GoldenCase, index: Path, ks: tuple[int, ...], context_budget: int
 ) -> CaseScore:
-    reached = tokens = None
+    reached = tokens = unreached = None
     if arm.prepare is not None:
         context = arm.prepare(conversation(case), index, context_budget=context_budget)
         ranked = source_ranking(context)
-        text = _squeezed("\n".join(s.text for s in context.sources))
-        reached = tuple(_squeezed(f.evidence) in text for f in case.required_facts)
+        reached = evidence_reached(context, case.required_facts)
+        unreached = unreached_facts(context, case.required_facts, reached)
         tokens = sum(count_tokens(s.text) for s in context.sources)
     else:
         ranked = list(arm.retrieve(conversation(case), index, context_budget=context_budget))
@@ -486,6 +551,7 @@ def _score_case(
         facts_reached=None if reached is None else sum(reached),
         evidence_reached=reached,
         source_tokens=tokens,
+        unreached=unreached,
     )
 
 
@@ -563,7 +629,7 @@ def main(
         context_budget=args.context_budget,
         chunk_tokens=index_chunk_tokens(args.index) if args.index.exists() else None,
     )
-    _print_report(report, args.split, out)
+    print_report(report, args.split, out)
     if args.json:
         args.json.parent.mkdir(parents=True, exist_ok=True)
         data = {"split": args.split, "golden_set_version": golden.version} | report.to_dict()
@@ -572,7 +638,8 @@ def main(
     return 0
 
 
-def _print_report(report: RetrievalReport, split: str, out: TextIO) -> None:
+def print_report(report: RetrievalReport, split: str, out: TextIO) -> None:
+    """The scores of every Arm, its unreached evidence, the gate and the screen."""
     print(
         f"Retrieval on the {split} split: {len(report.case_ids)} cases scored, "
         f"{len(report.unscored)} with no expected Source ({', '.join(report.unscored)})",
@@ -609,6 +676,14 @@ def _print_report(report: RetrievalReport, split: str, out: TextIO) -> None:
             if c.facts_reached is not None and c.facts_reached < c.facts
         ]
         print(f"Evidence not reached: {', '.join(missed) or 'none'}", file=out)
+        if any(c.unreached is not None for c in scores.cases):
+            for kind, where in (("planning", "not searched"), ("ranking", "searched")):
+                by_case = [f"{c.case_id}: {n}" for c in scores.cases if (n := c.misses(kind))]
+                print(
+                    f"{kind.capitalize()} misses (must-state, Section {where}): "
+                    f"{sum(c.misses(kind) for c in scores.cases)} ({', '.join(by_case)})",
+                    file=out,
+                )
     for comparison in report.comparisons:
         r = comparison.result
         print(

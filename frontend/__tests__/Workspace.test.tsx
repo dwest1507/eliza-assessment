@@ -718,6 +718,52 @@ describe('Workspace', () => {
     expect(within(answer).queryByRole('link', { name: 'Source S7' })).not.toBeInTheDocument()
   })
 
+  it('shows the Sections the answer was searched in, and the Filings searched whole', async () => {
+    fetchMock.mockImplementation(async () =>
+      uiMessageStream(ANSWER, {
+        ...QUERY_SCOPE,
+        searched: [
+          { ticker: 'AAPL', filingId: 'AAPL_10-K_2025-09-27', section: 'Risk Factors' },
+          { ticker: 'AAPL', filingId: 'AAPL_10-Q_2025-12-27', section: 'MD&A' },
+          { ticker: 'TSLA', filingId: 'TSLA_10-K_2025-12-31', section: 'Risk Factors' },
+          { ticker: 'TSLA', filingId: 'TSLA_10-Q_2025-09-30', section: null },
+        ],
+      })
+    )
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    await user.click(await within(answer).findByRole('button', { name: 'How this was answered' }))
+
+    const searched = within(answer).getByRole('list', { name: 'Searched in' })
+    expect(
+      within(searched)
+        .getAllByRole('listitem')
+        .map((place) => place.textContent)
+    ).toEqual(['Risk Factors · 2 Filings', 'MD&A · 1 Filing', 'Whole Filing · 1 Filing'])
+    expect(within(searched).getByText('Risk Factors · 2 Filings').closest('li')).toHaveAttribute(
+      'title',
+      'Searched in: AAPL_10-K_2025-09-27, TSLA_10-K_2025-12-31'
+    )
+    expect(within(searched).getByText('Whole Filing · 1 Filing').closest('li')).toHaveAttribute(
+      'title',
+      'Searched whole: TSLA_10-Q_2025-09-30'
+    )
+  })
+
+  it('shows no searched places for an answer saved before they were sent', async () => {
+    fetchMock.mockImplementation(async () => uiMessageStream(ANSWER, QUERY_SCOPE))
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    await user.click(await within(answer).findByRole('button', { name: 'How this was answered' }))
+
+    expect(within(answer).getByRole('list', { name: 'Query Scope' })).toBeInTheDocument()
+    expect(within(answer).queryByRole('list', { name: 'Searched in' })).not.toBeInTheDocument()
+  })
+
   it('shows a Sector phrase with the Companies it resolved to, and the metric', async () => {
     fetchMock.mockImplementation(async () =>
       uiMessageStream(ANSWER, {

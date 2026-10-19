@@ -76,6 +76,27 @@ def test_a_follow_up_naming_a_new_company_switches_to_it_and_keeps_the_rest(swit
     assert any(s.kind == "text" for s in context.sources)
 
 
+def test_a_follow_up_after_an_outlook_question_inherits_the_latest_mdna(switch_index):
+    context = _follow_up(
+        switch_index,
+        "What is NVIDIA's outlook for its Data Center business?",
+        "NVIDIA expects demand for its data center platforms to continue [S1].",
+        "And what about Microsoft?",
+    )
+
+    scope = context.query_scope
+    assert _tickers(context) == ["MSFT"]
+    assert scope.sections == ("MD&A",)
+    assert scope.time_window.label == "latest"
+    latest = ["MSFT_10-K_2025-06-30", "MSFT_10-Q_2025-09-30", "MSFT_10-Q_2025-12-31"]
+    assert [f.filing_id for f in scope.filings] == latest
+    text = [s for s in context.sources if s.kind == "text"]
+    assert text
+    assert {s.section for s in text} == {"MD&A"}
+    assert {s.filing_id for s in text} <= set(latest)
+    assert [(g.kind, g.companies) for g in context.coverage_gaps] == [("no_guidance", ("MSFT",))]
+
+
 def test_a_follow_up_naming_a_time_window_keeps_the_companies_and_replaces_the_window(index):
     context = _follow_up(
         index,

@@ -1,15 +1,17 @@
-"""The Arm (and generator) selection rule: the shipped choice stays unless a challenger
-is ahead on Fact Recall, question by question (one-sided p < 0.10), and behind on no
-guardrail (one-sided p < 0.20 on Faithfulness, Coverage Gaps or Contradicted Claims);
-the cheapest qualifying challenger wins."""
+"""The selection rules: the shipped choice stays unless a challenger is ahead on Fact
+Recall (one-sided p < 0.10: fact by fact under the Arm and settings rules, ADR 0015;
+question by question under the generator rule) and behind on no guardrail (one-sided
+p < 0.20 on Faithfulness, Coverage Gaps or Contradicted Claims, and on Fact Recall
+question by question); the cheapest qualifying challenger wins."""
 
 import io
 import json
 from pathlib import Path
+from statistics import fmean
 
 import pytest
 
-from edgar_eval.selection import Candidate, choose, sign_test
+from edgar_eval.selection import AHEAD_P, RULES, Candidate, FactOutcome, choose, sign_test
 
 
 def test_the_sign_test_counts_cases_where_one_side_scored_higher():
@@ -27,10 +29,30 @@ def test_the_sign_test_skips_cases_either_side_could_not_score():
     assert result.verdict == "ahead"
 
 
+def _facts(recall):
+    """Two must-state Required Facts whose share stated is `recall` (0, 0.5 or 1), as
+    the fact-level test reads a case; None for a case whose judgment failed."""
+    if recall is None:
+        return None
+    stated = round(2 * recall)
+    return tuple(FactOutcome(stated=i < stated, reached=None) for i in range(2))
+
+
+def _judged(recall):
+    """A generation report case's record of the two must-state Required Facts whose
+    share stated is `recall`, as `_facts` makes them; a failed judgment for None."""
+    if recall is None:
+        return {"judgments": {"facts": [], "failures": [{"judgment": "fact_recall"}]}}
+    stated = round(2 * recall)
+    facts = [{"fact": f"f{i}", "probability": 0.9 if i < stated else 0.1} for i in range(2)]
+    return {"fact_tiers": ["must_state"] * 2, "judgments": {"facts": facts, "failures": []}}
+
+
 def _candidate(name, recall, faithful=None, gaps=None, cost=0.002):
     cases = [f"c{i}" for i in range(len(recall))]
     return Candidate(
         name=name,
+        facts={c: _facts(r) for c, r in zip(cases, recall, strict=True)},
         fact_recall=dict(zip(cases, recall, strict=True)),
         faithfulness=dict(zip(cases, faithful or [1.0] * len(recall), strict=True)),
         coverage_gaps=dict(zip(cases, gaps or [None] * len(recall), strict=True)),
@@ -43,12 +65,13 @@ SHIPPED = _candidate("fts5", [0.0] * 8)
 
 def test_the_shipped_choice_stays_when_no_challenger_is_distinguishably_better():
     shipped = _candidate("fts5", [0.0] * 5 + [1.0] + [0.0] * 2)
-    close = _candidate("dense", [1.0] * 5 + [0.0] * 3)  # 5 wins to 1: one-sided p = 0.109
+    close = _candidate("dense", [1.0] * 2 + [0.0] * 6)  # 2 cases higher to 1 lower
 
     choice = choose(shipped, [close])
 
     assert choice.chosen == "fts5"
     assert choice.comparisons["dense"].fact_recall.verdict == "indistinguishable"
+    assert choice.comparisons["dense"].stated_facts.verdict == "indistinguishable"
 
 
 def test_a_challenger_better_on_fact_recall_and_no_worse_elsewhere_is_chosen():
@@ -93,6 +116,7 @@ def test_the_command_reports_the_cases_each_score_left_out(tmp_path, capsys):
     def report(arm, recall):
         cases = [
             {"case_id": f"c{i}", "fact_recall": r, "faithfulness": 1.0, "coverage_gaps": None}
+            | _judged(r)
             for i, r in enumerate(recall)
         ]
         path = tmp_path / f"generation-arms-dev-{arm}.json"
@@ -125,6 +149,7 @@ def test_the_command_compares_generation_reports_and_writes_the_choice(tmp_path,
                 "coverage_gaps": None,
                 "cost_usd": 0.002,
             }
+            | _judged(r)
             for i, r in enumerate(recall)
         ]
         path = tmp_path / f"generation-arms-dev-{arm}.json"
@@ -210,6 +235,7 @@ def _against(challenger_recall, shipped_recall, *, faithful=None, contradicted=N
     def candidate(name, recall, faith, clean, cost):
         return Candidate(
             name=name,
+            facts={c: _facts(r) for c, r in zip(cases, recall, strict=True)},
             fact_recall=dict(zip(cases, recall, strict=True)),
             faithfulness=dict(zip(cases, faith, strict=True)),
             coverage_gaps=dict.fromkeys(cases),
@@ -223,7 +249,12 @@ def _against(challenger_recall, shipped_recall, *, faithful=None, contradicted=N
     )
 
 
-@pytest.mark.parametrize("rule", ["arms", "generators", "settings"])
+# Under the Arm and settings rules the per-case sign test on Fact Recall is a guardrail
+# and the fact-level test decides ahead (ADR 0015); under the generator rule the sign
+# test still decides it.
+
+
+@pytest.mark.parametrize("rule", ["generators"])
 def test_ahead_on_fact_recall_just_under_one_sided_p_0_10_qualifies(rule):
     challenger, shipped = _against(*_scores(7, 2))  # p = 46/512 = 0.090
 
@@ -234,7 +265,7 @@ def test_ahead_on_fact_recall_just_under_one_sided_p_0_10_qualifies(rule):
     assert comparison.qualifies
 
 
-@pytest.mark.parametrize("rule", ["arms", "generators", "settings"])
+@pytest.mark.parametrize("rule", ["generators"])
 def test_ahead_on_fact_recall_just_over_one_sided_p_0_10_does_not_qualify(rule):
     challenger, shipped = _against(*_scores(11, 5))  # p = 6885/65536 = 0.105
 
@@ -458,6 +489,7 @@ def test_setting_reports_are_named_by_their_setting_and_judged_by_the_arm_rule(t
                 "coverage_gaps": None if g is None else {"missing": [] if g else ["x"]},
                 "cost_usd": cost,
             }
+            | _judged(r)
             for i, (r, g) in enumerate(zip(recall, gaps, strict=True))
         ]
         data = {"arm": "fts5", "model": "gpt-6-luna", "settings": settings, "cases": cases}
@@ -644,6 +676,7 @@ def test_a_control_run_within_noise_keeps_the_shipped_choice_with_no_challenger_
 def _report(path, name, recall, *, key="arm", **fields):
     cases = [
         {"case_id": f"c{i}", "fact_recall": r, "faithfulness": 1.0, "coverage_gaps": None}
+        | _judged(r)
         for i, r in enumerate(recall)
     ]
     path.write_text(json.dumps({key: name, "split": "dev", "cases": cases} | fields))
@@ -931,3 +964,250 @@ def test_the_settings_command_answers_only_the_settings_the_screen_keeps(
     reasons = {c["name"]: c["reason"] for c in choice["screen"]["candidates"]}
     assert reasons["chunks-600-budget-24000"].startswith("dropped: behind")
     assert "chunks-600-budget-24000: " in printed and "Go on: chunks-600-budget-48000" in printed
+
+
+# --- The fact-level Fact Recall test (ADR 0015) --------------------------------------------
+# Under the Arm and settings rules a challenger is ahead on Fact Recall when the must-state
+# Required Facts it states, summed over the cases both sides scored, exceed the shipped
+# choice's at one-sided p < 0.10 by a case-cluster bootstrap (10,000 resamples of whole
+# cases, a fixed seed, centred under the null). The per-case sign test on Fact Recall
+# stays as a guardrail; the generator rule is unchanged.
+
+
+def _fact_report(name, stated, *, reached=None, key="arm", truncated=(), failed=(), detail=()):
+    """A generation report whose case c<i> has one must-state Required Fact per entry of
+    `stated[i]`, stated or not (Jev's probability 0.9 or 0.1), with Evidence Reached from
+    `reached[i]` (every fact reached when not given). Cases in `truncated` stopped at the
+    token cap; cases in `failed` had their Fact Recall judgment fail; cases in `detail`
+    also have a stated detail fact, which Fact Recall does not count."""
+    cases = []
+    for i, facts in enumerate(stated):
+        judged = [{"fact": f"f{j}", "probability": 0.9 if s else 0.1} for j, s in enumerate(facts)]
+        tiers = ["must_state"] * len(facts)
+        evidence = list(reached[i]) if reached else [True] * len(facts)
+        if i in detail:
+            judged.append({"fact": "detail", "probability": 0.9})
+            tiers.append("detail")
+            evidence.append(True)
+        failures = [{"judgment": "fact_recall", "items": judged}] if i in failed else []
+        recall = None if i in failed else (0.0 if i in truncated else fmean(facts))
+        cases.append(
+            {
+                "case_id": f"c{i}",
+                "fact_recall": recall,
+                "faithfulness": 1.0,
+                "coverage_gaps": None,
+                "cost_usd": 0.002,
+                "fact_tiers": tiers,
+                "evidence_reached": evidence,
+                "truncated": i in truncated,
+                "stop_reason": "token_cap" if i in truncated else "complete",
+                "judgments": {"facts": [] if i in failed else judged, "failures": failures},
+                "contradictions": {"claims": [], "count": 0, "passed": True},
+            }
+        )
+    return {key: name, "split": "dev", "fact_cutoff": 0.6, "cases": cases}
+
+
+def _facts_against(gains, losses, ties, rule="arms"):
+    """Shipped and challenger Candidates on `gains + losses + ties` cases of one
+    must-state fact each: the challenger alone states it in `gains` cases, the shipped
+    choice alone in `losses`, and neither in the ties."""
+    challenger = [[True]] * gains + [[False]] * losses + [[False]] * ties
+    shipped = [[False]] * gains + [[True]] * losses + [[False]] * ties
+    key = RULES[rule].named_by
+    return (
+        Candidate.from_report(_fact_report("shipped", shipped, key=key), rule),
+        Candidate.from_report(_fact_report("challenger", challenger, key=key), rule),
+    )
+
+
+@pytest.mark.parametrize("rule", ["arms", "settings"])
+def test_a_few_more_facts_stated_in_a_few_cases_with_ties_elsewhere_is_ahead(rule):
+    # 3 of 60 cases gain a fact, none loses one: the sign test cannot see it (p = 1/8).
+    shipped, challenger = _facts_against(3, 0, 57, rule)
+
+    comparison = choose(shipped, [challenger], rule).comparisons["challenger"]
+
+    assert comparison.fact_recall.p_ahead == pytest.approx(0.125)
+    assert comparison.fact_recall.verdict == "indistinguishable"
+    facts = comparison.stated_facts
+    assert (facts.paired, facts.facts, facts.challenger_stated, facts.shipped_stated) == (
+        60,
+        60,
+        3,
+        0,
+    )
+    assert facts.total_difference == 3
+    assert facts.p_ahead < 0.10 and facts.verdict == "ahead"
+    assert comparison.qualifies
+    assert choose(shipped, [challenger], rule).chosen == "challenger"
+
+
+@pytest.mark.parametrize("rule", ["arms", "settings"])
+def test_more_facts_stated_just_under_one_sided_p_0_10_is_ahead(rule):
+    # 6 cases gain a fact and 2 lose one, of 20: the sign test is not ahead (p = 0.145).
+    shipped, challenger = _facts_against(6, 2, 12, rule)
+
+    comparison = choose(shipped, [challenger], rule).comparisons["challenger"]
+
+    assert comparison.fact_recall.p_ahead == pytest.approx(37 / 256)
+    assert comparison.stated_facts.total_difference == 4
+    assert 0.09 < comparison.stated_facts.p_ahead < AHEAD_P  # 0.091
+    assert comparison.stated_facts.verdict == "ahead"
+    assert comparison.qualifies
+
+
+@pytest.mark.parametrize("rule", ["arms", "settings"])
+def test_more_facts_stated_just_over_one_sided_p_0_10_is_not_ahead(rule):
+    shipped, challenger = _facts_against(4, 1, 15, rule)
+
+    choice = choose(shipped, [challenger], rule)
+    comparison = choice.comparisons["challenger"]
+
+    assert comparison.stated_facts.total_difference == 3
+    assert AHEAD_P < comparison.stated_facts.p_ahead < 0.12  # 0.118
+    assert comparison.stated_facts.verdict == "indistinguishable"
+    assert not comparison.qualifies and choice.chosen == "shipped"
+
+
+@pytest.mark.parametrize("rule", ["arms", "settings"])
+def test_ahead_on_facts_but_behind_case_by_case_does_not_qualify(rule):
+    # Of 60 cases of four facts, the challenger states all four where the shipped choice
+    # states none in 15, and one fewer in 25: 35 more facts in all, but 15 cases higher
+    # to 25 lower is behind case by case (p = 0.077).
+    key = RULES[rule].named_by
+    none, one, every = [False] * 4, [True] + [False] * 3, [True] * 4
+    shipped = [none] * 15 + [one] * 25 + [none] * 20
+    challenger = [every] * 15 + [none] * 25 + [none] * 20
+    shipped = Candidate.from_report(_fact_report("shipped", shipped, key=key), rule)
+    challenger = Candidate.from_report(_fact_report("challenger", challenger, key=key), rule)
+
+    comparison = choose(shipped, [challenger], rule).comparisons["challenger"]
+
+    assert comparison.stated_facts.total_difference == 35
+    assert comparison.stated_facts.verdict == "ahead"
+    assert comparison.fact_recall.p_behind == pytest.approx(0.0769, abs=1e-4)
+    assert comparison.fact_recall.verdict == "behind"
+    assert not comparison.qualifies
+
+
+@pytest.mark.parametrize("rule", ["arms", "settings"])
+def test_a_control_run_ahead_fact_by_fact_makes_the_comparison_inconclusive(rule):
+    shipped, challenger = _facts_against(6, 0, 14, rule)
+    _, control = _facts_against(3, 0, 17, rule)  # the shipped choice again, 3 facts up
+    control = Candidate(**{**vars(control), "name": "shipped"})
+
+    choice = choose(shipped, [challenger], rule, control=control)
+
+    assert choice.comparisons["challenger"].qualifies
+    assert choice.control.fact_recall.verdict == "indistinguishable"  # sign test: p = 1/8
+    assert choice.control.stated_facts.verdict == "ahead"
+    assert choice.inconclusive and choice.chosen == "shipped"
+    assert "Fact Recall fact by fact" in choice.reason
+
+
+def test_the_generator_rule_does_not_decide_fact_by_fact():
+    shipped, challenger = _facts_against(3, 0, 57, "generators")
+
+    comparison = choose(shipped, [challenger], "generators").comparisons["challenger"]
+
+    assert comparison.stated_facts.verdict == "ahead"  # reported beside the sign test
+    assert comparison.fact_recall.verdict == "indistinguishable"
+    assert not comparison.qualifies
+
+
+def test_the_same_reports_give_the_same_fact_level_p_value():
+    def stated_facts():
+        shipped, challenger = _facts_against(6, 2, 12)
+        return choose(shipped, [challenger]).comparisons["challenger"].stated_facts
+
+    first, again = stated_facts(), stated_facts()
+
+    assert (first.resamples, first.seed) == (10_000, 20261017)
+    assert again.p_ahead == first.p_ahead and again.p_behind == first.p_behind
+    assert again.difference == first.difference
+
+
+def test_the_evidence_status_split_counts_each_fact_once():
+    # c0: both reached both facts; c1: only the challenger reached its fact; c2: only the
+    # shipped choice; c3: neither reached either fact.
+    challenger = _fact_report(
+        "dense",
+        [[True, True], [True], [False], [False, True]],
+        reached=[[True, True], [True], [False], [False, False]],
+    )
+    shipped = _fact_report(
+        "fts5",
+        [[True, False], [False], [True], [False, False]],
+        reached=[[True, True], [False], [True], [False, False]],
+    )
+
+    split = (
+        choose(Candidate.from_report(shipped), [Candidate.from_report(challenger)])
+        .comparisons["dense"]
+        .stated_facts
+    )
+
+    groups = {
+        k: (g.facts, g.challenger_stated, g.shipped_stated) for k, g in split.by_evidence.items()
+    }
+    assert groups == {
+        "both": (2, 2, 1),
+        "challenger_only": (1, 1, 0),
+        "shipped_only": (1, 0, 1),
+        "neither": (2, 1, 0),
+        "unrecorded": (0, 0, 0),
+    }
+    assert sum(g[0] for g in groups.values()) == split.facts == 6
+    assert (split.challenger_stated, split.shipped_stated) == (4, 2)
+
+
+def test_a_truncated_answer_states_no_fact_and_a_failed_judgment_leaves_its_case_out():
+    # c0 is cut off at the token cap for the challenger, though Jev judged its facts
+    # stated; c1's Fact Recall judgment failed for the shipped choice.
+    challenger = _fact_report("dense", [[True, True], [True], [True]], truncated=(0,))
+    shipped = _fact_report("fts5", [[False, False], [False], [False]], failed=(1,))
+
+    facts = (
+        choose(Candidate.from_report(shipped), [Candidate.from_report(challenger)])
+        .comparisons["dense"]
+        .stated_facts
+    )
+
+    assert (facts.paired, facts.left_out, facts.facts) == (2, 1, 3)
+    assert (facts.challenger_stated, facts.shipped_stated) == (1, 0)  # c2's fact only
+
+
+def test_detail_facts_are_not_counted_fact_by_fact():
+    challenger = _fact_report("dense", [[False]], detail=(0,))
+    shipped = _fact_report("fts5", [[False]])
+
+    facts = (
+        choose(Candidate.from_report(shipped), [Candidate.from_report(challenger)])
+        .comparisons["dense"]
+        .stated_facts
+    )
+
+    assert (facts.facts, facts.challenger_stated, facts.total_difference) == (1, 0, 0)
+
+
+def test_the_compare_command_prints_and_saves_the_fact_level_result(tmp_path, capsys):
+    from edgar_eval.selection import main
+
+    shipped = tmp_path / "generation-dev.json"
+    challenger = tmp_path / "generation-arms-dev-hybrid-local.json"
+    shipped.write_text(json.dumps(_fact_report("fts5", [[False]] * 3 + [[False]] * 57)))
+    challenger.write_text(json.dumps(_fact_report("hybrid-local", [[True]] * 3 + [[False]] * 57)))
+    out = tmp_path / "arm-choice-dev.json"
+
+    main(["compare", str(shipped), str(challenger), "--json", str(out)])
+
+    printed = capsys.readouterr().out
+    stated = "Fact Recall fact by fact: ahead (3 of 60 must-state facts stated against 0, +3"
+    assert stated in printed
+    assert "Chosen: hybrid-local" in printed
+    saved = json.loads(out.read_text())["comparisons"]["hybrid-local"]["stated_facts"]
+    assert (saved["paired"], saved["facts"], saved["total_difference"]) == (60, 60, 3)
+    both = {"facts": 60, "challenger_stated": 3, "shipped_stated": 0}
+    assert saved["by_evidence"]["both"] == both

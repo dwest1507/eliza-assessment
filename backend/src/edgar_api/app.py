@@ -8,7 +8,8 @@ front-end's `useChat` reads it as is:
 1. `start`;
 2. `data-query-scope`: the Query Scope the rules resolved, shown as chips above the
    answer: the Companies, the Sector phrases and the Companies each resolved to, the
-   time window, the Section hints and the metric;
+   time window, the Section hints, the metric and the places retrieval searched (each
+   Filing's Section, or a `section` of null for a Filing searched whole);
 3. `data-sources`: every numbered Source with its tag, Filing metadata and passage, so
    citations are clickable before the answer arrives;
 4. `data-coverage-gaps`: every Coverage Gap (its kind, label, Companies and fixed
@@ -274,6 +275,10 @@ def _query_scope(scope: QueryScope) -> dict[str, Any]:
         "timeWindow": {"kind": window.kind, "count": window.count, "label": window.label},
         "sections": list(scope.sections),
         "metric": scope.metric,
+        "searched": [
+            {"ticker": p.ticker, "filingId": p.filing_id, "section": p.section}
+            for p in scope.searched
+        ],
     }
 
 
