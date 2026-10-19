@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.4.0](https://github.com/dwest1507/eliza-assessment/compare/eliza-assessment-v0.3.1...eliza-assessment-v0.4.0) (2026-10-19)
+
+
+### Features
+
+* **eval:** decide retrieval comparisons on Fact Recall fact by fact ([a39eb0d](https://github.com/dwest1507/eliza-assessment/commit/a39eb0d61886657c4a48666a1db9a8d636618682)), closes [#118](https://github.com/dwest1507/eliza-assessment/issues/118)
+* **export:** show the Arm and settings comparisons fact by fact ([7c285ff](https://github.com/dwest1507/eliza-assessment/commit/7c285ffb2c14276928d4503e2b188d8b3dde1b94)), closes [#131](https://github.com/dwest1507/eliza-assessment/issues/131)
+* **retrieval:** a topic table adds the Filings' own wording to the search ([9d601e5](https://github.com/dwest1507/eliza-assessment/commit/9d601e51a565dcce4ae91044b97c15ddb35e7588)), closes [#125](https://github.com/dwest1507/eliza-assessment/issues/125)
+* **retrieval:** an outlook route to the latest MD&A ([379b10f](https://github.com/dwest1507/eliza-assessment/commit/379b10f331e112368f12b8d9b2534b25270103d4)), closes [#122](https://github.com/dwest1507/eliza-assessment/issues/122)
+* **retrieval:** get the Required Facts' evidence into the Answer Context ([c055d9d](https://github.com/dwest1507/eliza-assessment/commit/c055d9d9372d4701755c9d2079e7a12e0b797d7b))
+* **retrieval:** legal proceedings questions also search the Financial Statements ([e239de7](https://github.com/dwest1507/eliza-assessment/commit/e239de7e708219c1af040cfe6727b452392c65fd)), closes [#120](https://github.com/dwest1507/eliza-assessment/issues/120)
+* **retrieval:** Market Risk phrasings and a cybersecurity route ([89ff5cc](https://github.com/dwest1507/eliza-assessment/commit/89ff5ccff9dd431c70bdee8e40894ce0b4696410)), closes [#119](https://github.com/dwest1507/eliza-assessment/issues/119)
+* **retrieval:** one Evidence Reached function, and the searched Sections shown end to end ([271a2e8](https://github.com/dwest1507/eliza-assessment/commit/271a2e8345ab80ec490cb54cb92249e99068cc85)), closes [#117](https://github.com/dwest1507/eliza-assessment/issues/117)
+* **retrieval:** response and dependence phrases add Business and MD&A ([59a8620](https://github.com/dwest1507/eliza-assessment/commit/59a8620105ea5f4f67249982a6c6d073af8fe27e)), closes [#121](https://github.com/dwest1507/eliza-assessment/issues/121)
+* **retrieval:** search terms drop generic words and the words that set a Section hint ([a2697f5](https://github.com/dwest1507/eliza-assessment/commit/a2697f55973fa2628ee3d02b307c8a2b600b923d)), closes [#123](https://github.com/dwest1507/eliza-assessment/issues/123)
+* **retrieval:** the context budget passes to Companies that can use it ([6f4a622](https://github.com/dwest1507/eliza-assessment/commit/6f4a6229d2fb002eb23abe6016875215746bebc1)), closes [#124](https://github.com/dwest1507/eliza-assessment/issues/124)
+
 ## [0.3.1](https://github.com/dwest1507/eliza-assessment/compare/eliza-assessment-v0.3.0...eliza-assessment-v0.3.1) (2026-10-18)
 
 
