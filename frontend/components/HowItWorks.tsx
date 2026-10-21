@@ -218,6 +218,8 @@ function Lane({
 const th =
   'border-b border-line bg-raised px-3 py-1.5 text-left font-mono text-[12px] font-medium tracking-wide whitespace-nowrap text-muted'
 const td = 'border-b border-line px-3 py-1.5 whitespace-nowrap tabular-nums'
+/** A cell whose text wraps, as a long verdict does. */
+const tdWrap = 'border-b border-line px-3 py-1.5 tabular-nums'
 const caption = 'mb-3 text-left text-[14px] font-semibold text-white'
 const note = 'mt-2 text-[12.5px] leading-relaxed text-muted'
 const badge =
@@ -253,8 +255,8 @@ function Scoreboard({ data }: { data: EvalExport }) {
         split={split}
         splitCases={goldenSet.splitCases}
         thresholds={thresholds}
+        screen={retrieval.screen}
       />
-      {retrieval.screen && <ScreenTable screen={retrieval.screen} thresholds={thresholds} />}
       {data.generation.length > 0 ? (
         <GenerationTable
           runs={data.generation}
@@ -329,6 +331,7 @@ function RetrievalTable({
   splitCases,
   thresholds,
   beside,
+  screen,
 }: {
   retrieval: RetrievalResults
   split: string
@@ -336,6 +339,9 @@ function RetrievalTable({
   thresholds: Thresholds
   /** Another split's Shipped Arm, shown as an extra row for comparison. */
   beside?: { label: string; summary: RetrievalSummary }
+  /** The screen before the paid answer runs: each challenger's row says whether it went
+   * on to them. */
+  screen?: Screen | null
 }) {
   const verdicts = new Map(retrieval.comparisons.map((c) => [c.arm, c]))
   const shipped = retrieval.arms.find((arm) => arm.shipped)
@@ -352,7 +358,10 @@ function RetrievalTable({
             <RetrievalHeader
               retrieval={retrieval}
               first="Arm"
-              extra={retrieval.comparisons.length > 0 ? 'Against the Shipped Arm' : undefined}
+              extras={[
+                ...(retrieval.comparisons.length > 0 ? ['Against the Shipped Arm'] : []),
+                ...(screen ? ['Paid run'] : []),
+              ]}
             />
           </thead>
           <tbody>
@@ -367,13 +376,16 @@ function RetrievalTable({
                   </th>
                   <RetrievalCells summary={arm.overall} retrieval={retrieval} />
                   {retrieval.comparisons.length > 0 && (
-                    <td className={td}>
+                    <td className={`${tdWrap} min-w-[14rem]`}>
                       {c
                         ? c.pAhead !== null && c.pBehind !== null
                           ? `${c.verdict} (${c.challengerOnly} facts gained, ${c.shippedOnly} lost, p ahead = ${pValue(c.pAhead)}, p behind = ${pValue(c.pBehind)})`
                           : `${c.verdict} (${c.challengerOnly} won, ${c.shippedOnly} lost, p = ${c.pValue.toFixed(2)})`
                         : '–'}
                     </td>
+                  )}
+                  {screen && (
+                    <td className={`${tdWrap} min-w-[8rem]`}>{paidRun(arm.name, screen)}</td>
                   )}
                 </tr>
               )
@@ -385,6 +397,7 @@ function RetrievalTable({
                 </th>
                 <RetrievalCells summary={beside.summary} retrieval={retrieval} />
                 {retrieval.comparisons.length > 0 && <td className={td}>–</td>}
+                {screen && <td className={td}>–</td>}
               </tr>
             )}
           </tbody>
@@ -412,6 +425,20 @@ function RetrievalTable({
           )}
           {unshippable &&
             ' An Arm that makes an API call at query time is measured but can’t ship: the Answer Call is a question’s only API call.'}
+          {screen && (
+            <>
+              {' '}
+              Free, before any paid run: a challenger goes on to paid answer runs only if it can
+              ship and is not behind on Evidence Reached
+              {thresholds ? ` (one-sided p < ${thresholds.behindP.toFixed(2)})` : ''}; at most{' '}
+              {screen.limit} go on, the most Evidence Reached first.{' '}
+              <span className="font-medium text-accent-strong">
+                Went on to paid answer runs: {screen.kept.join(', ') || 'none'}.
+              </span>
+              {screen.kept.length > 0 &&
+                ` ${screen.shipped} still ships: none came out ahead on the facts its answers stated.`}
+            </>
+          )}
           {shipped && shipped.missed.length > 0 && (
             <>
               {' '}
@@ -452,11 +479,12 @@ function RetrievalTable({
 function RetrievalHeader({
   retrieval,
   first,
-  extra,
+  extras = [],
 }: {
   retrieval: RetrievalResults
   first: string
-  extra?: string
+  /** Further columns after the scores. */
+  extras?: string[]
 }) {
   return (
     <tr>
@@ -472,7 +500,11 @@ function RetrievalHeader({
       <th className={th}>MRR</th>
       <th className={th}>Sources</th>
       {retrieval.gatingMetric === 'evidence reached' && <th className={th}>Evidence Reached</th>}
-      {extra && <th className={th}>{extra}</th>}
+      {extras.map((name) => (
+        <th key={name} className={th}>
+          {name}
+        </th>
+      ))}
     </tr>
   )
 }
@@ -510,53 +542,15 @@ function RetrievalCells({
   )
 }
 
-function ScreenTable({ screen, thresholds }: { screen: Screen; thresholds: Thresholds }) {
-  return (
-    <div className="card overflow-x-auto p-3">
-      <table className="min-w-full border-collapse text-[13px]">
-        <caption className={caption}>
-          The screen: which challengers go on to paid Answer Calls?
-        </caption>
-        <thead>
-          <tr>
-            <th className={th}>Candidate</th>
-            <th className={th}>Can ship</th>
-            <th className={th}>Evidence Reached</th>
-            <th className={th}>Gained / lost</th>
-            <th className={th}>p behind</th>
-            <th className={th}>Screen</th>
-          </tr>
-        </thead>
-        <tbody>
-          {screen.candidates.map((c) => (
-            <tr key={c.name}>
-              <th scope="row" className={`${td} text-left font-medium`}>
-                <code className="font-mono">{c.name}</code>
-              </th>
-              <td className={td}>{c.shippable ? 'yes' : 'no: API call at query time'}</td>
-              <td className={td}>
-                {c.factsReached} of {c.facts}
-              </td>
-              <td className={td}>
-                {c.gained} / {c.lost}
-              </td>
-              <td className={td}>{pValue(c.pBehind)}</td>
-              <td className={`${td} whitespace-normal`}>{c.reason}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <p className={note}>
-        Free, before any paid run: each candidate is compared with {screen.shipped} on Evidence
-        Reached, and goes on only if not behind
-        {thresholds ? ` (one-sided p < ${thresholds.behindP.toFixed(2)})` : ''} and able to ship; at
-        most {screen.limit} go on, the most Evidence Reached first.{' '}
-        <span className="font-medium text-accent-strong">
-          Go on: {screen.kept.join(', ') || 'none'}.
-        </span>
-      </p>
-    </div>
-  )
+/** Whether a challenger went on to the paid answer runs, and if not, why: the screen's
+ * reason, shortened. The Shipped Arm, and an Arm the screen didn't see, show a dash. */
+function paidRun(arm: string, screen: Screen): string {
+  const candidate = screen.candidates.find((c) => c.name === arm)
+  if (!candidate) return '–'
+  if (candidate.kept) return 'yes'
+  if (!candidate.shippable) return 'no: needs a second API call'
+  if (candidate.reason.startsWith('dropped: behind')) return 'no: behind'
+  return `no: only ${screen.limit} go on`
 }
 
 const GENERATION_COLUMNS: [string, (s: GenerationSummary) => string][] = [

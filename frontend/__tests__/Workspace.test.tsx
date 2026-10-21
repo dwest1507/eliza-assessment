@@ -1398,9 +1398,9 @@ describe('The Calendar tab', () => {
       .map((tab) => tab.textContent)
   const calendarTable = (ticker: string) =>
     screen.getByRole('table', { name: `${ticker} fiscal calendar` })
-  /** The table's rows for one fiscal period, by its first cell. */
+  /** The table's row for one fiscal period, by its first cell, never its band's heading. */
   const row = (table: HTMLElement, fiscalPeriod: string) =>
-    within(table).getByRole('row', { name: new RegExp(`^${fiscalPeriod}\\b`) })
+    within(table).getByRole('row', { name: new RegExp(`^${fiscalPeriod}\\b.+`) })
 
   /** Two answers: Apple and Tesla (Microsoft retrieved too, but not in the Query Scope),
    * then NVIDIA and McDonald's. */
@@ -1470,7 +1470,7 @@ describe('The Calendar tab', () => {
     expect(calendarTable('AAPL')).toBeInTheDocument()
   })
 
-  it("shows a ticker's calendar newest first, banded by calendar year, its revenue traceable", async () => {
+  it("shows a ticker's calendar newest first, banded by fiscal year, its revenue traceable", async () => {
     const user = userEvent.setup()
     render(<Workspace calendars={CALENDARS} />)
     await twoAnswers(user)
@@ -1480,12 +1480,19 @@ describe('The Calendar tab', () => {
     expect(panel).toHaveTextContent('Fiscal year ends late January')
     const table = calendarTable('NVDA')
 
-    // Banded by the calendar year each period ends in, newest first.
-    const bands = within(table)
-      .getAllByRole('rowgroup')
-      .slice(1)
-      .map((band) => band.getAttribute('aria-label'))
-    expect(bands.slice(0, 4)).toEqual(['2025', '2024', '2023', '2022'])
+    // Banded by fiscal year, newest first; the calendar months sit beside each period.
+    const bands = within(table).getAllByRole('rowgroup').slice(1)
+    expect(bands.slice(0, 4).map((band) => band.getAttribute('aria-label'))).toEqual([
+      'FY2026',
+      'FY2025',
+      'FY2024',
+      'FY2023',
+    ])
+    // A fiscal year's band holds its year and its quarters, never the next year's first.
+    const fy2025 = within(bands[1])
+      .getAllByRole('row')
+      .map((r) => r.querySelector('th')?.textContent)
+    expect(fy2025).toEqual(['FY2025', 'FY2025', 'Q4 FY2025', 'Q3 FY2025', 'Q2 FY2025', 'Q1 FY2025'])
 
     const q3 = row(table, 'Q3 FY2026')
     expect(q3).toHaveTextContent('Aug–Oct 2025')
@@ -1513,7 +1520,7 @@ describe('The Calendar tab', () => {
     const periods = within(table)
       .getAllByRole('row')
       .slice(1)
-      .map((r) => r.querySelector('th')?.textContent)
+      .map((r) => r.querySelector('th[scope="row"]')?.textContent)
       .filter((p) => p && /FY/.test(p))
     expect(periods.slice(0, 5)).toEqual([
       'Q3 FY2026',
@@ -1596,22 +1603,55 @@ describe('The Calendar follows the conversation', () => {
     })
   }
 
-  it('opens on the Calendar once the first answer naming a Company completes, never while it streams', async () => {
-    const { response, release } = heldUiMessageStream((part) => part.type === 'text-delta')
+  it("opens on the Calendar as soon as the first answer's Query Scope arrives, before its text", async () => {
+    const { response, release } = heldUiMessageStream((part) => part.type === 'data-query-scope')
     fetchMock.mockImplementation(async () => response)
     const user = userEvent.setup()
     render(<Workspace calendars={CALENDARS} />)
     await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
 
-    // The Query Scope has arrived and the answer is streaming: the panel stays shut.
-    await screen.findByText(/trade policy/)
-    expect(sidePanel()).not.toBeInTheDocument()
-
-    release()
+    // Only the Query Scope has arrived: the Calendar already shows its Companies.
     expect(await screen.findByRole('tabpanel', { name: 'Calendar' })).toBeInTheDocument()
+    expect(screen.queryByText(/trade policy/)).not.toBeInTheDocument()
     expect(railCalendar()).toHaveAttribute('aria-pressed', 'true')
     // Apple and Tesla: the alphabetically first is shown.
     expect(shownTicker()).toBe('AAPL')
+
+    release()
+    await screen.findByText(/trade policy/)
+    expect(shownTicker()).toBe('AAPL')
+  })
+
+  it("shows the streaming answer's Sources when the Sources tab is chosen, before any citation", async () => {
+    const { response, release } = heldUiMessageStream((part) => part.type === 'text-delta')
+    fetchMock.mockImplementation(async () => response)
+    const user = userEvent.setup()
+    render(<Workspace calendars={CALENDARS} />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByRole('tabpanel', { name: 'Calendar' })
+
+    // The answer is still streaming; the Sources tab shows its Sources at the first.
+    await user.click(
+      within(screen.getByRole('tablist', { name: 'Panel tabs' })).getByRole('tab', {
+        name: 'Sources',
+      })
+    )
+    const panel = screen.getByRole('tabpanel', { name: 'Sources' })
+    expect(panel).not.toHaveTextContent(/No Sources yet/)
+    expect(
+      within(within(panel).getByRole('navigation', { name: "This answer's Sources" }))
+        .getAllByRole('button')
+        .map((tab) => tab.textContent)
+    ).toEqual(['S1', 'S2'])
+    expect(within(panel).getByRole('region', { name: /^S1/ })).toHaveTextContent('Apple')
+
+    // A Source opens from the panel while the answer is written.
+    await user.click(within(panel).getByRole('button', { name: 'S2' }))
+    expect(within(panel).getByRole('region', { name: /^S2/ })).toHaveTextContent('Tesla')
+    release()
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Stop' })).not.toBeInTheDocument()
+    )
   })
 
   it('stays closed once closed, through "New conversation" and a refresh; the rail reopens it', async () => {

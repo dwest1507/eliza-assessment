@@ -593,7 +593,7 @@ Every Golden Set report it reads must record the version it describes: a dev or 
 
 The page shows what the reports hold, nothing more, with version 2's verdicts worded as directional ("one-sided p < 0.10 for ahead and p < 0.20 for behind, fixed before running"):
 
-- **Retrieval:** per Arm, hit@k, recall@10, recall@all, MRR, the mean number of Sources and Evidence Reached, the gate, with each challenger's one-sided McNemar verdict on it (facts gained and lost, p ahead and p behind) and whether it can ship under the one-call rule; then the screen, every candidate with its Evidence Reached, gains and losses and why it was kept or dropped. hit@k, recall@k and MRR are reported, not gated on.
+- **Retrieval:** per Arm, hit@k, recall@10, recall@all, MRR, the mean number of Sources and Evidence Reached, the gate, with each challenger's one-sided McNemar verdict on it (facts gained and lost, p ahead and p behind) and whether it can ship under the one-call rule, and the screen's decision in the same table: a "Paid run" column saying whether each challenger went on to paid answer runs, or why not (behind, needs a second API call, or past the three places), with the Arms that went on named beneath it (#153: the separate screen table repeated the retrieval table's Evidence Reached, gains and losses). hit@k, recall@k and MRR are reported, not gated on.
 - **Answers:** the latest round's shipped run beside its Control Run and each challenger generator of that round, with the code checks, must-state Fact Recall and detail recall, Faithfulness, the answers with a Contradicted Claim, cost and latency, overall and per question type, and the fact cut-off.
 - **The generator comparison:** the round's Control Run and each challenger against the shipped generator on Fact Recall, Faithfulness, Coverage Gaps and Contradicted Claims (higher and lower, both one-sided p-values, the mean paired difference and its 95% bootstrap interval), whether it qualifies, and the choice.
 - **The holdout run:** the latest run's retrieval and answer scores beside dev's Shipped Arm, shipped run and Control Run, with the small-sample caveat.
@@ -2370,6 +2370,15 @@ The one change the freeze made is a docstring: `MAX_EARLIER_MESSAGE_CHARS` in `e
 - **JPMorgan's overview has no results:** "How is JP Morgan doing?" opens by saying the excerpts give no revenue, earnings or trend figures. Its 10-K's Item 7 is a 99-token stub pointing to the annual report, which the Corpus holds under Other, so the Overview route plans its Business and Risk Factors only. This is the known limit [above](#the-overview-route-the-document-order-fill-and-latest-for-open-questions-145-2026-10-20).
 - **No Calendar for an open question:** the tariffs question names no Company, so the Calendar adds none, although the answer covers about fifteen. As specified: the Calendar follows the Query Scope.
 - **One odd sentence:** the Wells Fargo answer says the Sector table "resolves the comparison to JPMorgan Chase & Co. and Wells Fargo"; Wells Fargo comes from the list of missing Companies, not the Sector table. The rest of the answer, and its Coverage note, say rightly that it is not covered.
+
+**After the rehearsal, the developer's notes** (2026-10-21), all in the front-end, so the code version and every answer are unchanged:
+- **The Calendar moves as soon as an answer's Query Scope arrives,** before its text (`useChat`'s `onData`), no longer once the answer is complete.
+- **The Sources tab shows the latest answer's Sources** when chosen after the Calendar opened by itself, even while the answer streams; it was empty until a citation was clicked.
+- **The Company Calendar is banded by fiscal year** ("FY2026"), not the calendar year a period ends in, which read as a fiscal year in the Fiscal period column.
+- **"Known limits" no longer names the human check;** its figures stay in [The human check](#the-human-check).
+- **The scoreboard's screen table is folded into the retrieval table** as a "Paid run" column.
+
+JPMorgan's revenue, also raised, is extracted correctly but held back with every Snapshot Company's, from the Calendar and the answers alike; whether to extend Financial Facts to them is the developer's decision, and would unfreeze the answer path.
 
 **Sign-off.** The developer signs the rehearsal off on #153 before the final round starts. **Spend:** 18 Answer Calls, $0.06; no Jev call.
 

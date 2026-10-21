@@ -29,7 +29,8 @@ import type { CompanyCalendar } from '@/lib/evalExport'
 import { followUps } from '@/lib/followUps'
 import { STARTERS } from '@/lib/starters'
 
-/** Which answer's Sources the panel's Sources tab shows, and which of them is open. */
+/** Which answer's Sources the panel's Sources tab shows, and which of them is open; with
+ * none chosen, the tab shows the latest answer's, even while it streams. */
 interface OpenSource {
   messageId: string
   tag: string | null
@@ -39,19 +40,20 @@ interface OpenSource {
  * The research workspace: a conversation thread, starter prompts on an empty
  * conversation, and one right-hand side panel with a toolbar that is always visible. A
  * citation click opens the panel's Sources tab at that Source; the toolbar's Sources icon
- * opens it at the latest answer's first Source, or closes it. The conversation is
+ * opens it at the latest answer's first Source, or closes it, and so does choosing the
+ * Sources tab after another answer's citation; the latest answer's Sources show as soon
+ * as they arrive, before its text. The conversation is
  * kept in session storage, so it survives a page refresh, and "New conversation" clears
  * it, so an old Query Scope can't leak into a new topic. With a Corpus coverage summary,
  * the empty conversation also says how many Companies are covered. The latest answer,
  * once complete, is followed by suggested follow-up questions. The toolbar's Calendar
  * icon opens the panel's Calendar tab: a ticker tab for every Company the conversation's
  * Query Scopes named, each showing its Company Calendar from `calendars`. The Calendar
- * follows the conversation: the first answer naming a Company opens the panel on it once
- * the answer is complete (never while it streams, so the thread doesn't narrow mid-answer),
- * unless the panel has been closed in this browser session; while it shows, each new answer
- * naming a Company selects its alphabetically first; and while the panel is closed, an
- * answer naming a Company not seen before puts a dot on the calendar icon until the
- * Calendar is next opened.
+ * follows the conversation as each answer's Query Scope arrives, before its text: the
+ * first answer naming a Company opens the panel on it, unless the panel has been closed in
+ * this browser session; while it shows, each new answer naming a Company selects its
+ * alphabetically first; and while the panel is closed, an answer naming a Company not seen
+ * before puts a dot on the calendar icon until the Calendar is next opened.
  */
 export default function Workspace({
   coverage,
@@ -67,8 +69,8 @@ export default function Workspace({
     useChat<ResearchMessage>({
       transport,
       // A restored conversation never streams, so only a new answer moves the Calendar.
-      onFinish: ({ messages: thread, isError, isDisconnect }) => {
-        if (!isError && !isDisconnect) followAnswer(thread)
+      onData: (part) => {
+        if (part.type === 'data-query-scope') followScope(part.data.companies)
       },
     })
   const [input, setInput] = useState('')
@@ -97,15 +99,14 @@ export default function Workspace({
   const busy = status === 'submitted' || status === 'streaming'
 
   /**
-   * Moves the Calendar along with the answer that just completed, the last of `thread`
-   * (see the component's doc).
+   * Moves the Calendar along with the answer whose Query Scope just arrived, naming
+   * `companies` (see the component's doc). The answer's own message doesn't hold its
+   * Query Scope yet, so every Query Scope in `messages` is an earlier answer's.
    */
-  function followAnswer(thread: ResearchMessage[]) {
-    const answer = thread.at(-1)
-    if (answer?.role !== 'assistant') return
-    const named = scopeTickers(answer)
+  function followScope(companies: { ticker: string }[]) {
+    const named = companies.map((c) => c.ticker).sort()
     if (named.length === 0) return
-    const before = new Set(thread.slice(0, -1).flatMap(scopeTickers))
+    const before = new Set(messages.flatMap(scopeTickers))
     const autoOpen = panel === null && before.size === 0 && !autoOpenOff && !calendarAutoOpenOff()
     if (panel === 'calendar' || autoOpen) {
       showPanel('calendar')
@@ -226,19 +227,25 @@ export default function Workspace({
       closePanel()
       return
     }
-    if (tab === 'sources') {
-      const latest = messages.findLast((m) => m.role === 'assistant')
-      setOpen(latest ? { messageId: latest.id, tag: null } : null)
-    }
+    if (tab === 'sources') setOpen(null)
     showPanel(tab)
   }
 
-  const openMessage = open ? messages.find((m) => m.id === open.messageId) : undefined
+  /** A panel tab: Sources shows the latest answer's, keeping the open Source if it is one
+   * of them. */
+  function chooseTab(tab: PanelTab) {
+    if (tab === 'sources' && open?.messageId !== latestAnswer?.id) setOpen(null)
+    showPanel(tab)
+  }
+
+  const latestAnswer = messages.findLast((m) => m.role === 'assistant')
+  const openMessage = open ? messages.find((m) => m.id === open.messageId) : latestAnswer
   const openSources = openMessage ? messageSources(openMessage) : []
   const openCited = new Set(
     openMessage ? citedSources(messageText(openMessage), openSources).map((s) => s.tag) : []
   )
-  const shownTag = panel === 'sources' && open ? (open.tag ?? openSources[0]?.tag ?? null) : null
+  const shownTag =
+    panel === 'sources' && openMessage ? (open?.tag ?? openSources[0]?.tag ?? null) : null
   // Every Company any answer's Query Scope named, alphabetical: the Calendar's tickers.
   const calendarTickers = [...new Set(messages.flatMap(scopeTickers))].sort()
   const last = messages.at(-1)
@@ -277,7 +284,7 @@ export default function Workspace({
         scope={messageDataPart(message, 'query-scope')}
         gaps={messageDataPart(message, 'coverage-gaps')?.gaps ?? []}
         complete={answerComplete(message, messages, status)}
-        openTag={open?.messageId === message.id ? shownTag : null}
+        openTag={openMessage?.id === message.id ? shownTag : null}
         onCite={(tag) => cite(message.id, tag)}
       />
     )
@@ -425,7 +432,7 @@ export default function Workspace({
         </main>
 
         {panel && (
-          <SidePanel tab={panel} onTab={showPanel} onClose={closePanel}>
+          <SidePanel tab={panel} onTab={chooseTab} onClose={closePanel}>
             {panel === 'calendar' ? (
               <CalendarPanel
                 tickers={calendarTickers}
@@ -438,7 +445,7 @@ export default function Workspace({
                 sources={openSources}
                 cited={openCited}
                 selected={shownTag}
-                onSelect={(tag) => open && setOpen({ ...open, tag })}
+                onSelect={(tag) => openMessage && setOpen({ messageId: openMessage.id, tag })}
               />
             )}
           </SidePanel>

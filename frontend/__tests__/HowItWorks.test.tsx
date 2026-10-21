@@ -75,21 +75,21 @@ describe('the "How it works" page', () => {
     expect(section('Evaluation scoreboard')).toHaveTextContent('The gate is Evidence Reached')
   })
 
-  it('shows the screen: which challengers went on, and why each was kept or dropped', async () => {
+  it('marks in the retrieval table which challengers went on to paid answer runs, with no separate screen table', async () => {
     render(<HowItWorks data={EXPORT} />)
     await openSection('Evaluation scoreboard')
 
-    const table = within(section('Evaluation scoreboard')).getByRole('table', {
-      name: /The screen/,
-    })
-    const hosted = within(table).getByRole('row', { name: /^hybrid/ })
-    expect(hosted).toHaveTextContent('no: API call at query time')
-    expect(hosted).toHaveTextContent('available if the one-call limit is lifted')
-    expect(within(table).getByRole('row', { name: /dense-local/ })).toHaveTextContent(
-      'dropped: behind on Evidence Reached'
+    const scoreboard = section('Evaluation scoreboard')
+    expect(within(scoreboard).queryByRole('table', { name: /The screen/ })).not.toBeInTheDocument()
+    const table = within(scoreboard).getByRole('table', { name: /Retrieval/ })
+    expect(within(table).getByRole('columnheader', { name: 'Paid run' })).toBeInTheDocument()
+    expect(within(table).getByRole('row', { name: /^hybrid/ })).toHaveTextContent(
+      'no: needs a second API call'
     )
-    expect(within(table).getByRole('row', { name: /rerank/ })).toHaveTextContent('kept')
-    expect(section('Evaluation scoreboard')).toHaveTextContent('Go on: hybrid-local, rerank.')
+    expect(within(table).getByRole('row', { name: /dense-local/ })).toHaveTextContent('no: behind')
+    expect(within(table).getByRole('row', { name: /rerank/ })).toHaveTextContent(/yes$/)
+    expect(scoreboard).toHaveTextContent('Went on to paid answer runs: hybrid-local, rerank.')
+    expect(scoreboard).toHaveTextContent('fts5 still ships')
   })
 
   it('shows a version 1 export as version 1 gated it, with its two-sided rule', async () => {
@@ -346,7 +346,7 @@ describe('the "How it works" overview', () => {
     render(<HowItWorks data={EXPORT} />)
 
     const limits = within(section('Known limits')).getAllByRole('listitem')
-    expect(limits).toHaveLength(5)
+    expect(limits).toHaveLength(4)
     const text = limits.map((li) => li.textContent).join(' ')
     expect(text).toMatch(/only from the filings/i)
     expect(text).toMatch(/guidance/i)
@@ -354,16 +354,11 @@ describe('the "How it works" overview', () => {
     expect(text).toMatch(/one AI call/i)
   })
 
-  it('says a person checked 15 of the grading labels, and what is still AI alone', () => {
+  it('leaves the human check of the grading out of the known limits', () => {
     render(<HowItWorks data={EXPORT} />)
 
-    const [grading] = within(section('Known limits'))
-      .getAllByRole('listitem')
-      .filter((li) => /a person checked/i.test(li.textContent ?? ''))
-    expect(grading).toHaveTextContent('15')
-    expect(grading).toHaveTextContent('80%')
-    expect(grading).toHaveTextContent('87%')
-    expect(grading).toHaveTextContent(/still checked by AI alone/i)
+    expect(section('Known limits')).not.toHaveTextContent(/checked by a person/i)
+    expect(section('Known limits')).not.toHaveTextContent(/a person checked/i)
   })
 
   it('keeps domain terms out of the overview’s text', () => {

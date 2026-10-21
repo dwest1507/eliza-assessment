@@ -222,7 +222,8 @@ export interface CalendarPeriod {
   kind: string
   /** The calendar months it covers, e.g. `Aug–Oct 2025` or `Feb 2024–Jan 2025`. */
   months: string
-  /** The calendar year the period ends in, which bands the rows. */
+  /** The calendar year the period ends in. The rows are banded by fiscal year, read from
+   * `fiscalPeriod`. */
   calendarYear: number
   /** The Filing that reports it (a fourth quarter's is the 10-K ending it), or null when
    * the Corpus has none. */

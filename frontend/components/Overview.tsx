@@ -186,14 +186,9 @@ const LIMITS: { title: string; text: string }[] = [
     title: 'It makes one AI call per question.',
     text: 'There is no second pass to check or extend an answer, so a question that needs several rounds of research gets one answer from the passages found first.',
   },
-  {
-    title: 'Its grading was checked by a person only on a small sample.',
-    text: 'An AI wrote the labels the answers are graded against, and an AI grades them. A person checked 15 labels on whether an answer states a key fact, agreeing with 80% of the AI’s labels and 87% of the grader’s verdicts. Whether each cited passage backs its claim is still checked by AI alone.',
-  },
 ]
 
-/** The known limits, consistent with `docs/assumptions.md` (1, 2, 7 and 9) and, for the
- * grading, `docs/evaluation.md`'s "The human check". */
+/** The known limits, consistent with `docs/assumptions.md` (1, 2, 7 and 9). */
 export function KnownLimits() {
   return (
     <OverviewSection id="known-limits" title="Known limits">

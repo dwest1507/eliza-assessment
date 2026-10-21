@@ -17,13 +17,20 @@ function revenueSource(revenue: CalendarRevenue): string {
     : `${revenue.filingId} · ${revenue.label}`
 }
 
-/** The periods grouped by the calendar year they end in, newest first, as they come. */
-function bands(periods: CalendarPeriod[]): [number, CalendarPeriod[]][] {
-  const out: [number, CalendarPeriod[]][] = []
+/** The fiscal year a period belongs to, from its own label: `FY2026` for `Q3 FY2026`. */
+function fiscalYear(period: CalendarPeriod): string {
+  return period.fiscalPeriod.match(/FY\d{4}/)?.[0] ?? period.fiscalPeriod
+}
+
+/** The periods grouped by fiscal year, newest first, as they come: each year's row
+ * before its quarters. */
+function bands(periods: CalendarPeriod[]): [string, CalendarPeriod[]][] {
+  const out: [string, CalendarPeriod[]][] = []
   for (const period of periods) {
     const last = out.at(-1)
-    if (last && last[0] === period.calendarYear) last[1].push(period)
-    else out.push([period.calendarYear, [period]])
+    const year = fiscalYear(period)
+    if (last && last[0] === year) last[1].push(period)
+    else out.push([year, [period]])
   }
   return out
 }
@@ -32,8 +39,8 @@ function bands(periods: CalendarPeriod[]): [number, CalendarPeriod[]][] {
  * A Company Calendar: one row per fiscal quarter from the Company's first Filing in the
  * Corpus to its latest, newest first, each beside its calendar months, its Filing (or
  * "not in the filings", in grey) and, for a Tracked Company, its revenue, with each
- * fiscal year's row in bold beside its fourth quarter. Rows are banded by the calendar
- * year the period ends in, so the fiscal year's alignment shows at a glance. A hover on
+ * fiscal year's row in bold beside its fourth quarter. Rows are banded by fiscal year, so
+ * a fiscal year's quarters sit together, their calendar months beside them. A hover on
  * a figure names its Filing and the label it prints; a derived fourth quarter is marked
  * as derived. Shared by the workspace's Calendar tab and "What's covered".
  */
@@ -88,7 +95,7 @@ export default function CompanyCalendar({
           {bands(calendar.periods).map(([year, periods], i) => (
             <tbody
               key={year}
-              aria-label={String(year)}
+              aria-label={year}
               className={i % 2 === 0 ? 'bg-white/[0.035]' : undefined}
             >
               <tr>
