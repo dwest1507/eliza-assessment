@@ -84,6 +84,8 @@ interface PanelToolbarProps {
   /** The tab the panel shows, or null while it is closed. */
   open: PanelTab | null
   onToggle: (tab: PanelTab) => void
+  /** The tab whose icon carries a dot, for something new there, or null for none. */
+  dot?: PanelTab | null
   /**
    * "rail": the column of icons on the right edge of a wide screen; "buttons": the row
    * above the question box on a narrow one.
@@ -94,9 +96,10 @@ interface PanelToolbarProps {
 /**
  * The panel's toolbar, always visible: one icon per tab, highlighted while its tab is
  * open. Clicking an icon opens the panel on its tab, and clicking the open tab's icon
- * closes it.
+ * closes it. An icon can carry a dot, when its tab has something new (the Calendar, when an
+ * answer names Companies while the panel is closed); its hover text says so.
  */
-export function PanelToolbar({ open, onToggle, variant }: PanelToolbarProps) {
+export function PanelToolbar({ open, onToggle, dot = null, variant }: PanelToolbarProps) {
   const rail = variant === 'rail'
   return (
     <div
@@ -114,14 +117,23 @@ export function PanelToolbar({ open, onToggle, variant }: PanelToolbarProps) {
           type="button"
           aria-label={name}
           aria-pressed={open === tab}
-          title={open === tab ? `Close ${name}` : `Open ${name}`}
+          title={
+            (open === tab ? `Close ${name}` : `Open ${name}`) +
+            (dot === tab ? ' · new companies' : '')
+          }
           onClick={() => onToggle(tab)}
-          className={`flex items-center gap-1.5 rounded-md text-muted transition-colors hover:bg-raised hover:text-ink aria-pressed:bg-accent/15 aria-pressed:text-accent-strong ${
+          className={`relative flex items-center gap-1.5 rounded-md text-muted transition-colors hover:bg-raised hover:text-ink aria-pressed:bg-accent/15 aria-pressed:text-accent-strong ${
             rail ? 'p-2' : 'border border-line px-2.5 py-1 text-[13px]'
           }`}
         >
           {icon}
           {!rail && <span aria-hidden="true">{name}</span>}
+          {dot === tab && (
+            <span
+              aria-hidden="true"
+              className="absolute top-1 right-1 h-2 w-2 rounded-full bg-accent ring-2 ring-canvas"
+            />
+          )}
         </button>
       ))}
     </div>

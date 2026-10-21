@@ -292,7 +292,8 @@ describe('Workspace', () => {
     await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
     await screen.findByText('trade policy')
 
-    expect(screen.queryByRole('complementary', { name: 'Side panel' })).not.toBeInTheDocument()
+    // The panel may have opened by itself, but on the Calendar.
+    expect(screen.queryByRole('tabpanel', { name: 'Sources' })).not.toBeInTheDocument()
 
     const answer = screen.getByRole('article', { name: 'Answer' })
     await user.click(within(answer).getByRole('link', { name: 'Source S2' }))
@@ -1392,6 +1393,9 @@ describe('The Calendar tab', () => {
     await screen.findByText('trade policy')
     await user.type(screen.getByRole('textbox', { name: 'Question' }), 'And NVIDIA?{Enter}')
     await screen.findByText('fast')
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Stop' })).not.toBeInTheDocument()
+    )
   }
 
   it('opens from the calendar icon, and says so when no company has been asked about', async () => {
@@ -1417,9 +1421,11 @@ describe('The Calendar tab', () => {
     render(<Workspace calendars={CALENDARS} />)
     await twoAnswers(user)
 
-    await user.click(railCalendar())
+    // The panel opened on the Calendar after the first answer and followed the second.
+    expect(railCalendar()).toHaveAttribute('aria-pressed', 'true')
     // Microsoft was only retrieved as a Source, never in a Query Scope.
     expect(tickers()).toEqual(['AAPL', 'MCD', 'NVDA', 'TSLA'])
+    await user.click(screen.getByRole('button', { name: 'AAPL' }))
     expect(
       within(screen.getByRole('navigation', { name: 'Companies asked about' })).getByRole(
         'button',
@@ -1433,7 +1439,6 @@ describe('The Calendar tab', () => {
     const user = userEvent.setup()
     render(<Workspace calendars={CALENDARS} />)
     await twoAnswers(user)
-    await user.click(railCalendar())
     await user.click(screen.getByRole('button', { name: 'NVDA' }))
 
     const panel = screen.getByRole('tabpanel', { name: 'Calendar' })
@@ -1488,7 +1493,6 @@ describe('The Calendar tab', () => {
     const user = userEvent.setup()
     render(<Workspace calendars={CALENDARS} />)
     await twoAnswers(user)
-    await user.click(railCalendar())
     await user.click(screen.getByRole('button', { name: 'MCD' }))
 
     const panel = screen.getByRole('tabpanel', { name: 'Calendar' })
@@ -1504,5 +1508,207 @@ describe('The Calendar tab', () => {
     expect(gap).toHaveTextContent('Jul–Sep 2024')
     expect(gap).toHaveTextContent('not in the filings')
     expect(gap).toHaveClass('text-muted')
+  })
+})
+
+describe('The Calendar follows the conversation', () => {
+  const CALENDARS = (evalExport as EvalExport).companies
+
+  const rail = () => screen.getByRole('group', { name: 'Panel toolbar' })
+  const railCalendar = () => within(rail()).getByRole('button', { name: 'Calendar' })
+  const buttonsCalendar = () =>
+    within(screen.getByRole('group', { name: 'Panel buttons' })).getByRole('button', {
+      name: 'Calendar',
+    })
+  const sidePanel = () => screen.queryByRole('complementary', { name: 'Side panel' })
+  const shownTicker = () =>
+    within(screen.getByRole('navigation', { name: 'Companies asked about' }))
+      .getAllByRole('button')
+      .find((tab) => tab.getAttribute('aria-pressed') === 'true')?.textContent
+
+  /** An answer about NVIDIA and McDonald's: two Companies not asked about before. */
+  const nvidiaAnswer = (messageId: string) =>
+    uiMessageStream(
+      ['NVIDIA grew **fast** [S1].'],
+      {
+        ...QUERY_SCOPE,
+        companies: [
+          { ticker: 'NVDA', name: 'NVIDIA Corp', coverage: 'tracked' },
+          { ticker: 'MCD', name: "McDonald's Corp", coverage: 'snapshot' },
+        ],
+      },
+      [FACTS_SOURCE],
+      [],
+      messageId
+    )
+  /** An answer whose Query Scope names no Company, as for the tariffs starter. */
+  const tariffsAnswer = (messageId: string) =>
+    uiMessageStream(
+      ['No Company is named, so **every filing** was searched.'],
+      { ...QUERY_SCOPE, companies: [] },
+      SOURCES,
+      [],
+      messageId
+    )
+
+  /** Types a question and waits for its answer, with `text` in it, to complete. */
+  async function ask(user: ReturnType<typeof userEvent.setup>, question: string, text: string) {
+    const before = screen.queryAllByText(text).length
+    await user.type(screen.getByRole('textbox', { name: 'Question' }), `${question}{Enter}`)
+    await waitFor(() => {
+      expect(screen.getAllByText(text)).toHaveLength(before + 1)
+      expect(screen.queryByRole('button', { name: 'Stop' })).not.toBeInTheDocument()
+    })
+  }
+
+  it('opens on the Calendar once the first answer naming a Company completes, never while it streams', async () => {
+    const { response, release } = heldUiMessageStream((part) => part.type === 'text-delta')
+    fetchMock.mockImplementation(async () => response)
+    const user = userEvent.setup()
+    render(<Workspace calendars={CALENDARS} />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+
+    // The Query Scope has arrived and the answer is streaming: the panel stays shut.
+    await screen.findByText(/trade policy/)
+    expect(sidePanel()).not.toBeInTheDocument()
+
+    release()
+    expect(await screen.findByRole('tabpanel', { name: 'Calendar' })).toBeInTheDocument()
+    expect(railCalendar()).toHaveAttribute('aria-pressed', 'true')
+    // Apple and Tesla: the alphabetically first is shown.
+    expect(shownTicker()).toBe('AAPL')
+  })
+
+  it('stays closed once closed, through "New conversation" and a refresh; the rail reopens it', async () => {
+    fetchMock
+      .mockImplementationOnce(async () => uiMessageStream())
+      .mockImplementationOnce(async () => nvidiaAnswer('msg-2'))
+      .mockImplementationOnce(async () =>
+        uiMessageStream(ANSWER, QUERY_SCOPE, SOURCES, [], 'msg-3')
+      )
+      .mockImplementationOnce(async () =>
+        uiMessageStream(ANSWER, QUERY_SCOPE, SOURCES, [], 'msg-4')
+      )
+    const user = userEvent.setup()
+    const { unmount } = render(<Workspace calendars={CALENDARS} />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByRole('tabpanel', { name: 'Calendar' })
+
+    await user.click(screen.getByRole('button', { name: 'Close panel' }))
+    await ask(user, 'And NVIDIA?', 'fast')
+    expect(sidePanel()).not.toBeInTheDocument()
+
+    // A new conversation's first answer naming a Company doesn't reopen it either.
+    await user.click(screen.getByRole('button', { name: 'New conversation' }))
+    await ask(user, 'Compare Apple and Tesla', 'trade policy')
+    expect(sidePanel()).not.toBeInTheDocument()
+
+    // Nor after a refresh in the same browser session.
+    await user.click(screen.getByRole('button', { name: 'New conversation' }))
+    unmount()
+    render(<Workspace calendars={CALENDARS} />)
+    await ask(user, 'Compare Apple and Tesla', 'trade policy')
+    expect(sidePanel()).not.toBeInTheDocument()
+
+    // The rail is the way back.
+    await user.click(railCalendar())
+    expect(screen.getByRole('tabpanel', { name: 'Calendar' })).toBeInTheDocument()
+    expect(shownTicker()).toBe('AAPL')
+  })
+
+  it('closing it from its toolbar icon turns auto-open off too', async () => {
+    fetchMock
+      .mockImplementationOnce(async () => uiMessageStream())
+      .mockImplementationOnce(async () =>
+        uiMessageStream(ANSWER, QUERY_SCOPE, SOURCES, [], 'msg-2')
+      )
+    const user = userEvent.setup()
+    render(<Workspace calendars={CALENDARS} />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByRole('tabpanel', { name: 'Calendar' })
+
+    await user.click(railCalendar())
+    await user.click(screen.getByRole('button', { name: 'New conversation' }))
+    await ask(user, 'Compare Apple and Tesla', 'trade policy')
+    expect(sidePanel()).not.toBeInTheDocument()
+  })
+
+  it("follows each new answer's alphabetically first Company while it shows; citations still open Sources", async () => {
+    fetchMock
+      .mockImplementationOnce(async () => uiMessageStream())
+      .mockImplementationOnce(async () => nvidiaAnswer('msg-2'))
+      .mockImplementationOnce(async () => tariffsAnswer('msg-3'))
+      .mockImplementationOnce(async () =>
+        uiMessageStream(ANSWER, QUERY_SCOPE, SOURCES, [], 'msg-4')
+      )
+    const user = userEvent.setup()
+    render(<Workspace calendars={CALENDARS} />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByRole('tabpanel', { name: 'Calendar' })
+    await user.click(screen.getByRole('button', { name: 'TSLA' }))
+    expect(shownTicker()).toBe('TSLA')
+
+    // NVIDIA and McDonald's: McDonald's comes first.
+    await ask(user, 'And NVIDIA?', 'fast')
+    expect(shownTicker()).toBe('MCD')
+
+    // An answer naming no Company leaves the shown Company alone.
+    await ask(user, 'Which companies are most exposed to tariffs?', 'every filing')
+    expect(shownTicker()).toBe('MCD')
+
+    // A citation opens Sources, and the next answer leaves it there.
+    const answers = screen.getAllByRole('article', { name: 'Answer' })
+    await user.click(within(answers[1]).getByRole('link', { name: 'Source S1' }))
+    expect(screen.getByRole('tabpanel', { name: 'Sources' })).toBeInTheDocument()
+    await ask(user, 'Compare Apple and Tesla again', 'trade policy')
+    expect(screen.getByRole('tabpanel', { name: 'Sources' })).toBeInTheDocument()
+  })
+
+  it('puts a dot on the calendar icon when an answer adds Companies while closed, until the Calendar opens', async () => {
+    fetchMock
+      .mockImplementationOnce(async () => uiMessageStream())
+      .mockImplementationOnce(async () =>
+        uiMessageStream(ANSWER, QUERY_SCOPE, SOURCES, [], 'msg-2')
+      )
+      .mockImplementationOnce(async () => nvidiaAnswer('msg-3'))
+    const user = userEvent.setup()
+    render(<Workspace calendars={CALENDARS} />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByRole('tabpanel', { name: 'Calendar' })
+    await user.click(screen.getByRole('button', { name: 'Close panel' }))
+    expect(railCalendar()).not.toHaveAccessibleDescription(/new companies/)
+
+    // The same Companies again add nothing.
+    await ask(user, 'Compare Apple and Tesla again', 'trade policy')
+    expect(railCalendar()).not.toHaveAccessibleDescription(/new companies/)
+
+    await ask(user, 'And NVIDIA?', 'fast')
+    expect(sidePanel()).not.toBeInTheDocument()
+    expect(railCalendar()).toHaveAccessibleDescription(/new companies/)
+    expect(buttonsCalendar()).toHaveAccessibleDescription(/new companies/)
+
+    // Opening Sources leaves the dot; opening the Calendar clears it.
+    await user.click(within(rail()).getByRole('button', { name: 'Sources' }))
+    expect(railCalendar()).toHaveAccessibleDescription(/new companies/)
+    await user.click(
+      within(screen.getByRole('tablist', { name: 'Panel tabs' })).getByRole('tab', {
+        name: 'Calendar',
+      })
+    )
+    expect(railCalendar()).not.toHaveAccessibleDescription(/new companies/)
+    expect(buttonsCalendar()).not.toHaveAccessibleDescription(/new companies/)
+  })
+
+  it('neither opens nor adds tickers for an answer whose Query Scope names no Company', async () => {
+    fetchMock.mockImplementationOnce(async () => tariffsAnswer('msg-1'))
+    const user = userEvent.setup()
+    render(<Workspace calendars={CALENDARS} />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByText('every filing')
+
+    expect(sidePanel()).not.toBeInTheDocument()
+    expect(railCalendar()).not.toHaveAccessibleDescription(/new companies/)
+    await user.click(railCalendar())
+    expect(screen.getByRole('tabpanel', { name: 'Calendar' })).toHaveTextContent(/No companies yet/)
   })
 })

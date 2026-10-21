@@ -18,7 +18,12 @@ import {
   rejectionReason,
   type ResearchMessage,
 } from '@/lib/chat'
-import { loadConversation, saveConversation } from '@/lib/conversation'
+import {
+  calendarAutoOpenOff,
+  loadConversation,
+  saveConversation,
+  turnCalendarAutoOpenOff,
+} from '@/lib/conversation'
 import { ASK_PARAM, WHATS_COVERED_ID, type CoverageSummary } from '@/lib/coverage'
 import type { CompanyCalendar } from '@/lib/evalExport'
 import { followUps } from '@/lib/followUps'
@@ -40,7 +45,13 @@ interface OpenSource {
  * the empty conversation also says how many Companies are covered. The latest answer,
  * once complete, is followed by suggested follow-up questions. The toolbar's Calendar
  * icon opens the panel's Calendar tab: a ticker tab for every Company the conversation's
- * Query Scopes named, each showing its Company Calendar from `calendars`.
+ * Query Scopes named, each showing its Company Calendar from `calendars`. The Calendar
+ * follows the conversation: the first answer naming a Company opens the panel on it once
+ * the answer is complete (never while it streams, so the thread doesn't narrow mid-answer),
+ * unless the panel has been closed in this browser session; while it shows, each new answer
+ * naming a Company selects its alphabetically first; and while the panel is closed, an
+ * answer naming a Company not seen before puts a dot on the calendar icon until the
+ * Calendar is next opened.
  */
 export default function Workspace({
   coverage,
@@ -55,6 +66,10 @@ export default function Workspace({
   const { messages, sendMessage, regenerate, setMessages, status, stop, error } =
     useChat<ResearchMessage>({
       transport,
+      // A restored conversation never streams, so only a new answer moves the Calendar.
+      onFinish: ({ messages: thread, isError, isDisconnect }) => {
+        if (!isError && !isDisconnect) followAnswer(thread)
+      },
     })
   const [input, setInput] = useState('')
   // The tab the side panel shows, or null while it is closed.
@@ -62,6 +77,11 @@ export default function Workspace({
   const [open, setOpen] = useState<OpenSource | null>(null)
   // The ticker the Calendar tab shows, or null for its first.
   const [calendarTicker, setCalendarTicker] = useState<string | null>(null)
+  // Whether an answer named Companies new to the Calendar while the panel was closed.
+  const [calendarDot, setCalendarDot] = useState(false)
+  // Whether the panel was closed on this page: the Calendar no longer opens by itself.
+  // Session storage keeps it for the browser session, when storage is available.
+  const [autoOpenOff, setAutoOpenOff] = useState(false)
   const calendarsByTicker = useMemo(
     () => new Map(calendars.map((calendar) => [calendar.ticker, calendar])),
     [calendars]
@@ -75,6 +95,25 @@ export default function Workspace({
   const [endBelow, setEndBelow] = useState(false)
 
   const busy = status === 'submitted' || status === 'streaming'
+
+  /**
+   * Moves the Calendar along with the answer that just completed, the last of `thread`
+   * (see the component's doc).
+   */
+  function followAnswer(thread: ResearchMessage[]) {
+    const answer = thread.at(-1)
+    if (answer?.role !== 'assistant') return
+    const named = scopeTickers(answer)
+    if (named.length === 0) return
+    const before = new Set(thread.slice(0, -1).flatMap(scopeTickers))
+    const autoOpen = panel === null && before.size === 0 && !autoOpenOff && !calendarAutoOpenOff()
+    if (panel === 'calendar' || autoOpen) {
+      showPanel('calendar')
+      setCalendarTicker(named[0])
+    } else if (panel === null && named.some((ticker) => !before.has(ticker))) {
+      setCalendarDot(true)
+    }
+  }
 
   // Session storage is read after the first render, so the server-rendered page (which
   // has no storage) and the browser's first render agree.
@@ -151,6 +190,7 @@ export default function Workspace({
     setPanel(null)
     setOpen(null)
     setCalendarTicker(null)
+    setCalendarDot(false)
     setInput('')
   }
 
@@ -164,20 +204,33 @@ export default function Workspace({
   /** Opens the Sources tab at one answer's Source, whatever the panel showed. */
   function cite(messageId: string, tag: string) {
     setOpen({ messageId, tag })
-    setPanel('sources')
+    showPanel('sources')
+  }
+
+  /** Opens the panel on a tab; opening the Calendar clears its icon's dot. */
+  function showPanel(tab: PanelTab) {
+    setPanel(tab)
+    if (tab === 'calendar') setCalendarDot(false)
+  }
+
+  /** The user closes the panel: from now on, the Calendar never opens by itself. */
+  function closePanel() {
+    setPanel(null)
+    setAutoOpenOff(true)
+    turnCalendarAutoOpenOff()
   }
 
   /** A toolbar icon: opens the panel on its tab, or closes it when that tab is showing. */
   function toggle(tab: PanelTab) {
     if (panel === tab) {
-      setPanel(null)
+      closePanel()
       return
     }
     if (tab === 'sources') {
       const latest = messages.findLast((m) => m.role === 'assistant')
       setOpen(latest ? { messageId: latest.id, tag: null } : null)
     }
-    setPanel(tab)
+    showPanel(tab)
   }
 
   const openMessage = open ? messages.find((m) => m.id === open.messageId) : undefined
@@ -187,15 +240,7 @@ export default function Workspace({
   )
   const shownTag = panel === 'sources' && open ? (open.tag ?? openSources[0]?.tag ?? null) : null
   // Every Company any answer's Query Scope named, alphabetical: the Calendar's tickers.
-  const calendarTickers = [
-    ...new Set(
-      messages.flatMap((m) =>
-        m.role === 'assistant'
-          ? (messageDataPart(m, 'query-scope')?.companies ?? []).map((c) => c.ticker)
-          : []
-      )
-    ),
-  ].sort()
+  const calendarTickers = [...new Set(messages.flatMap(scopeTickers))].sort()
   const last = messages.at(-1)
   const writing = status === 'streaming' && last?.role === 'assistant' && !messageText(last)
   const turns = groupTurns(messages)
@@ -342,7 +387,12 @@ export default function Workspace({
             onSubmit={handleSubmit}
             className="shrink-0 border-t border-line bg-canvas/80 px-5 py-3 backdrop-blur-xl"
           >
-            <PanelToolbar open={panel} onToggle={toggle} variant="buttons" />
+            <PanelToolbar
+              open={panel}
+              onToggle={toggle}
+              dot={calendarDot ? 'calendar' : null}
+              variant="buttons"
+            />
             <div className="mx-auto flex max-w-3xl gap-2">
               <input
                 ref={questionRef}
@@ -375,7 +425,7 @@ export default function Workspace({
         </main>
 
         {panel && (
-          <SidePanel tab={panel} onTab={setPanel} onClose={() => setPanel(null)}>
+          <SidePanel tab={panel} onTab={showPanel} onClose={closePanel}>
             {panel === 'calendar' ? (
               <CalendarPanel
                 tickers={calendarTickers}
@@ -393,7 +443,12 @@ export default function Workspace({
             )}
           </SidePanel>
         )}
-        <PanelToolbar open={panel} onToggle={toggle} variant="rail" />
+        <PanelToolbar
+          open={panel}
+          onToggle={toggle}
+          dot={calendarDot ? 'calendar' : null}
+          variant="rail"
+        />
       </div>
     </div>
   )
@@ -410,6 +465,12 @@ function groupTurns(messages: ResearchMessage[]): ResearchMessage[][] {
     else turns[turns.length - 1].push(message)
   }
   return turns
+}
+
+/** The tickers an answer's Query Scope named, alphabetical; none for a question. */
+function scopeTickers(message: ResearchMessage): string[] {
+  if (message.role !== 'assistant') return []
+  return (messageDataPart(message, 'query-scope')?.companies ?? []).map((c) => c.ticker).sort()
 }
 
 /** Smooth scrolling, unless the user prefers reduced motion. */
