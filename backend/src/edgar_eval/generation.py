@@ -89,6 +89,7 @@ from edgar_eval.answer_checks import (
     checked_gaps,
     claims,
     split_gap_claims,
+    table_figures,
 )
 from edgar_eval.generators import answer_cost, answer_model
 from edgar_eval.judge import FACT_CUTOFF, Evidence, Judgments
@@ -110,6 +111,7 @@ from edgar_rag.retrieval import (
     CONTEXT_BUDGET_TOKENS,
     DEFAULT_INDEX,
     PROMPT_VERSION,
+    FactRow,
     Source,
     index_chunk_tokens,
     prepare_answer_context,
@@ -484,7 +486,7 @@ def _run_case(
         first_token_s=record.first_token_s,
         cost_usd=answer_cost(record.model, record.input_tokens, record.output_tokens),
         citations=check_citations(answer, passages),
-        figures=check_answer_figures(answer, context.sources, fact_values),
+        figures=check_answer_figures(answer, context.sources, fact_values, context.financial_facts),
         coverage_gaps=check_coverage_gaps(answer, gaps, names) if checked_gaps(gaps) else None,
         judgments=judge.judge(answer, [f.fact for f in case.required_facts], judged, evidence),
         structure=check_structure(answer, covered),
@@ -497,14 +499,20 @@ def _run_case(
 
 
 def check_answer_figures(
-    answer: str, sources: Sequence[Source], fact_values: FactValues
+    answer: str,
+    sources: Sequence[Source],
+    fact_values: FactValues,
+    table: Sequence[FactRow] = (),
 ) -> FigureCheck:
-    """The figure check against the turn's Sources: their passages, and the Financial
-    Facts of each one's Filing. The harness and the offline re-score both run it."""
+    """The figure check against the turn's Sources: their passages, the Financial Facts
+    of each one's Filing, and the figures the turn's Financial Facts table (`table`, the
+    Answer Context's `financial_facts`) renders for it, derived rows included. The
+    harness and the offline re-score both run it."""
     return check_figures(
         answer,
         {s.number: s.text for s in sources},
         {s.number: fact_values(s.filing_id) for s in sources},
+        table_figures(sources, table),
     )
 
 

@@ -18,7 +18,7 @@ from decimal import Decimal
 from functools import cache
 
 from edgar_rag.golden_set import CoverageGapLabel
-from edgar_rag.retrieval import load_missing_companies
+from edgar_rag.retrieval import FactRow, Source, load_missing_companies
 
 __all__ = [
     "CitationCheck",
@@ -31,6 +31,7 @@ __all__ = [
     "check_citations",
     "check_coverage_gaps",
     "check_figures",
+    "table_figures",
     "check_structure",
     "claims",
     "figures",
@@ -416,26 +417,32 @@ def figures(text: str) -> list[Figure]:
 
 
 def check_figures(
-    answer: str, passages: Mapping[int, str], fact_values: Mapping[int, Iterable[int]]
+    answer: str,
+    passages: Mapping[int, str],
+    fact_values: Mapping[int, Iterable[int]],
+    table: Mapping[int, Iterable[str]] | None = None,
 ) -> FigureCheck:
     """Every figure in the answer matches a Financial Fact of a Filing the answer cites,
-    or appears in a passage the answer cites.
+    or appears in a passage the answer cites, or is a figure the Financial Facts table
+    renders for a Filing the answer cites.
 
     `passages` maps each of this turn's Source numbers to its text, and `fact_values`
     maps each to the values, in whole US dollars, of the Financial Facts its Filing
-    reports. Only the Sources the answer cites count, so a figure for another Report
-    Period, or from a Filing the answer never cites, does not pass.
+    reports. `table` maps each to the figures the Financial Facts table renders for its
+    Filing, as rendered ("$7,610 million", "-14.6%"), its derived rows included: a
+    fourth quarter derived from a 10-K less its three 10-Qs, and a change from a year
+    earlier (`table_figures`). Only the Sources the answer cites count, so a figure for
+    another Report Period, or from a Filing the answer never cites, does not pass.
 
     A figure may be rounded and rescaled: "$416.2 billion" appears in a passage that
     reads "416,161" in a table in millions, and matches a revenue fact of
-    416,161,000,000. A percentage must appear in a passage as written.
+    416,161,000,000. A percentage must appear in a passage, or in the table, as written.
     """
     cited = source_numbers_cited(answer)
+    texts = [text for number, text in passages.items() if number in cited]
+    texts += [f for number, rendered in (table or {}).items() if number in cited for f in rendered]
     numbers = {
-        abs(Decimal(n.replace(",", "")))
-        for number, text in passages.items()
-        if number in cited
-        for n in _PASSAGE_NUMBER.findall(text)
+        abs(Decimal(n.replace(",", ""))) for text in texts for n in _PASSAGE_NUMBER.findall(text)
     }
     facts = [
         abs(Decimal(v)) for number, values in fact_values.items() if number in cited for v in values
@@ -445,6 +452,23 @@ def check_figures(
         f.text for f in stated if not (_in_passages(f, numbers) or _is_fact(f, facts))
     )
     return FigureCheck(figures=len(stated), unmatched=unmatched)
+
+
+def table_figures(sources: Sequence[Source], table: Sequence[FactRow]) -> dict[int, list[str]]:
+    """The figures the Financial Facts table renders for each Source's Filing, keyed by
+    Source number, as `check_figures` reads them: each row's value counts for every
+    Filing the row cites, and its change from a year earlier for every Filing the change
+    cites. So a derived fourth quarter counts for the 10-K and the three 10-Qs it comes
+    from, whichever of their Sources, Facts or text, the answer cites."""
+    filing_of = {s.tag: s.filing_id for s in sources}
+    by_filing: dict[str, list[str]] = {}
+    for row in table:
+        for tag in row.sources:
+            by_filing.setdefault(filing_of[tag], []).append(row.value_text)
+        if row.year_on_year_text is not None:
+            for tag in row.year_on_year_sources:
+                by_filing.setdefault(filing_of[tag], []).append(row.year_on_year_text)
+    return {s.number: by_filing[s.filing_id] for s in sources if s.filing_id in by_filing}
 
 
 def _in_passages(figure: Figure, numbers: set[Decimal]) -> bool:

@@ -136,7 +136,11 @@ def rescore_figures(
                 f"{case['case_id']}: the Answer Context now has {len(context.sources)} "
                 f"Sources, not the {case['sources']} the answer was given"
             )
-        case["figures"] = asdict(check_answer_figures(case["answer"], context.sources, fact_values))
+        case["figures"] = asdict(
+            check_answer_figures(
+                case["answer"], context.sources, fact_values, context.financial_facts
+            )
+        )
 
     def figures_exact(group: Iterable[dict]) -> float:
         return fmean(not c["figures"]["unmatched"] for c in group)

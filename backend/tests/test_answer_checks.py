@@ -10,7 +10,9 @@ from edgar_eval.answer_checks import (
     claims,
     figures,
 )
+from edgar_eval.generation import check_answer_figures
 from edgar_rag.golden_set import CoverageGapLabel
+from edgar_rag.retrieval import FactRow, Source
 
 # --- Citation validity --------------------------------------------------------------------
 
@@ -178,6 +180,86 @@ def test_only_passages_the_answer_cites_count():
 def test_a_percentage_must_appear_as_written_not_rescaled():
     # 46.9 appears in the passage, but 0.0469% is not 46.9%.
     assert not check_figures("Margin was 0.0469% [S1].", PASSAGES, fact_values={}).passed
+
+
+# The Financial Facts table's derived rows: ExxonMobil's FY2025 10-K (S1, its Facts
+# Source; S3, its MD&A) and its Q3 10-Q (S2, a Facts Source). The table derives the
+# fourth quarter as the 10-K's year less the three 10-Qs, and its change from a year
+# earlier; neither is a value any Filing reports.
+K, Q3 = "XOM_10-K_2025-12-31", "XOM_10-Q_2025-09-30"
+
+
+def _xom_source(number: int, filing_id: str, kind: str, text: str) -> Source:
+    return Source(
+        number=number,
+        filing_id=filing_id,
+        ticker="XOM",
+        company="Exxon Mobil Corporation",
+        form_type="10-K" if filing_id == K else "10-Q",
+        report_period=filing_id.rsplit("_", 1)[-1],
+        fiscal_period="FY2025" if filing_id == K else "Q3 FY2025",
+        section="Financial Facts" if kind == "facts" else "MD&A",
+        item=None if kind == "facts" else "7",
+        text=text,
+        kind=kind,  # type: ignore[arg-type]
+    )
+
+
+XOM_SOURCES = (
+    _xom_source(1, K, "facts", "Net income, FY2025: $28,844 million"),
+    _xom_source(2, Q3, "facts", "Net income, Q3 FY2025: $7,548 million"),
+    _xom_source(3, K, "text", "Earnings were lower on weaker crude realizations."),
+)
+XOM_TABLE = (
+    FactRow(
+        ticker="XOM",
+        company="Exxon Mobil Corporation",
+        metric="net_income",
+        segment=None,
+        fiscal_period="Q4 FY2025",
+        report_period="2025-12-31",
+        months=3,
+        value=7_610_000_000,
+        filing_id=None,
+        derived="FY2025 less Q1–Q3 FY2025",
+        sources=("S1", "S2"),
+        year_on_year=-0.1463,
+        year_on_year_sources=("S1", "S2"),
+    ),
+)
+XOM_FACTS = {K: (28_844_000_000,), Q3: (7_548_000_000,)}
+
+
+def xom_fact_values(filing_id: str) -> tuple[int, ...]:
+    return XOM_FACTS.get(filing_id, ())
+
+
+def test_a_figure_matching_a_derived_row_the_table_renders_for_a_cited_filing_is_exact():
+    # S3 is the 10-K's text, S2 the Q3 10-Q's Facts: each is a Filing the derived row cites.
+    for tag in ("S3", "S2"):
+        answer = f"Fourth-quarter net income was $7.61 billion (derived), down 14.6% [{tag}]."
+
+        check = check_answer_figures(answer, XOM_SOURCES, xom_fact_values, XOM_TABLE)
+
+        assert check.passed, check.unmatched
+
+
+def test_a_computed_figure_the_table_does_not_render_is_not_exact():
+    # The FY2025 decline from FY2024, computed by the answer: no row renders it.
+    answer = "Net income fell $4,836 million, or 14.4%, to $28,844 million [S1] [S3]."
+
+    check = check_answer_figures(answer, XOM_SOURCES, xom_fact_values, XOM_TABLE)
+
+    assert check.unmatched == ("$4,836 million", "14.4%")
+
+
+def test_a_derived_row_counts_only_for_the_filings_it_cites():
+    other = _xom_source(4, "XOM_10-Q_2025-06-30", "text", "Upstream volumes rose.")
+    answer = "Fourth-quarter net income was $7,610 million (derived) [S4]."
+
+    check = check_answer_figures(answer, (*XOM_SOURCES, other), xom_fact_values, XOM_TABLE)
+
+    assert check.unmatched == ("$7,610 million",)
 
 
 # --- Coverage Gaps ------------------------------------------------------------------------

@@ -138,6 +138,12 @@ class FactRow:
         return money(self.value)
 
     @property
+    def year_on_year_text(self) -> str | None:
+        """The derived change from a year earlier as the table renders it, e.g. "-14.6%",
+        or None when the table derives none."""
+        return None if self.year_on_year is None else percent(self.year_on_year)
+
+    @property
     def metric_name(self) -> str:
         name = METRIC_NAMES[self.metric]
         return f"{name}: {self.segment}" if self.segment else name
