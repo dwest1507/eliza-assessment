@@ -40,10 +40,12 @@ page shows the holdout run (or runs) next to the numbers the choices were made o
 
 It adds the Corpus coverage grid (each Company's Filings by the calendar quarter of
 their Report Periods, Tracked Companies first), each Company's Company Calendar (its
-fiscal year end, and every fiscal quarter and year from its first Filing to its latest
-with their calendar months, their Filing and, for a Tracked Company, their revenue
-Financial Fact, fourth quarters derived and marked as derived), which the workspace's
-Calendar tab shows, and the curated list of notable Companies missing from the Corpus.
+common names from the Query Scope parser's alias table, so "What's covered" is searched
+by the names questions are matched by, its fiscal year end, and every fiscal quarter and
+year from its first Filing to its latest with their calendar months, their Filing and,
+for a Tracked Company, their revenue Financial Fact, fourth quarters derived and marked
+as derived), which the workspace's Calendar tab and "What's covered" show, and the
+curated list of notable Companies missing from the Corpus, which its search names.
 It writes everything, in the front-end's camelCase, to `frontend/data/eval-export.json`.
 The file is committed, so the page shows the results without anyone rerunning the
 harnesses.
@@ -69,7 +71,7 @@ from edgar_rag.corpus import MONTH_NAMES, Filing, load_corpus, month_span, repor
 from edgar_rag.financial_facts import extract_financial_facts
 from edgar_rag.golden_set import DEFAULT_GOLDEN_SET, load_brief_suite, load_golden_set
 from edgar_rag.paths import DERIVED_DIR, REPO_ROOT
-from edgar_rag.retrieval import load_missing_companies
+from edgar_rag.retrieval import common_names, load_missing_companies
 
 __all__ = [
     "DEFAULT_EVAL_DIR",
@@ -236,9 +238,10 @@ _FISCAL_PERIOD = re.compile(r"^(?:Q([1-4]) )?FY(\d{4})$")
 
 
 def company_calendars(filings: Iterable[Filing]) -> list[dict[str, Any]]:
-    """Each Company's Company Calendar, by ticker: its fiscal year end and every fiscal
-    quarter from its first Filing's to its latest's, newest first, each fiscal year's row
-    just before its fourth quarter's (they end together).
+    """Each Company's Company Calendar, by ticker: its common names (the names besides
+    its Filings' one that a question names it by, `common_names`), its fiscal year end and
+    every fiscal quarter from its first Filing's to its latest's, newest first, each
+    fiscal year's row just before its fourth quarter's (they end together).
 
     Each period carries its calendar months ("Aug–Oct 2025") and the calendar year it ends
     in, the Filing that reports it (a fourth quarter's is the 10-K that ends it), or None
@@ -309,6 +312,7 @@ def _calendar(filings: list[Filing]) -> dict[str, Any]:
     return {
         "ticker": first.ticker,
         "company": first.company,
+        "commonNames": list(common_names(first.ticker, first.company)),
         "sector": first.sector,
         "coverage": first.coverage,
         "fiscalYearEnd": _fiscal_year_end(filings),

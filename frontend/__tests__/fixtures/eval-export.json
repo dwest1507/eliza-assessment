@@ -1762,6 +1762,7 @@
     {
       "ticker": "AAPL",
       "company": "Apple Inc",
+      "commonNames": ["Apple"],
       "sector": "Information Technology",
       "coverage": "tracked",
       "fiscalYearEnd": "late September",
@@ -1871,8 +1872,70 @@
       ]
     },
     {
+      "ticker": "GOOG",
+      "company": "Alphabet Inc",
+      "commonNames": ["Alphabet", "Google"],
+      "sector": "Communication Services",
+      "coverage": "tracked",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan–Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "GOOG_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": {
+            "value": 402836000000,
+            "filingId": "GOOG_10-K_2025-12-31",
+            "label": "Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct–Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "GOOG_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": {
+            "value": 113828000000,
+            "filingId": "GOOG_10-K_2025-12-31",
+            "label": null,
+            "derived": "FY2025 less Q1–Q3 FY2025"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2025",
+          "kind": "quarter",
+          "months": "Jul–Sep 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "GOOG_10-Q_2025-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-30"
+          },
+          "revenue": {
+            "value": 102346000000,
+            "filingId": "GOOG_10-Q_2025-09-30",
+            "label": "Revenues",
+            "derived": null
+          }
+        }
+      ]
+    },
+    {
       "ticker": "JPM",
       "company": "JPMorgan Chase & Co",
+      "commonNames": ["JPMorgan Chase", "JPMorgan", "JP Morgan", "J.P. Morgan"],
       "sector": "Financials",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -1936,6 +1999,67 @@
             "reportPeriod": "2025-03-31"
           },
           "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "NVDA",
+      "company": "NVIDIA Corporation",
+      "commonNames": ["NVIDIA"],
+      "sector": "Information Technology",
+      "coverage": "tracked",
+      "fiscalYearEnd": "late January",
+      "periods": [
+        {
+          "fiscalPeriod": "Q3 FY2026",
+          "kind": "quarter",
+          "months": "Aug–Oct 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "NVDA_10-Q_2025-10-26",
+            "formType": "10-Q",
+            "reportPeriod": "2025-10-26"
+          },
+          "revenue": {
+            "value": 57006000000,
+            "filingId": "NVDA_10-Q_2025-10-26",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2026",
+          "kind": "quarter",
+          "months": "May–Jul 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "NVDA_10-Q_2025-07-27",
+            "formType": "10-Q",
+            "reportPeriod": "2025-07-27"
+          },
+          "revenue": {
+            "value": 46743000000,
+            "filingId": "NVDA_10-Q_2025-07-27",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2026",
+          "kind": "quarter",
+          "months": "Feb–Apr 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "NVDA_10-Q_2025-04-27",
+            "formType": "10-Q",
+            "reportPeriod": "2025-04-27"
+          },
+          "revenue": {
+            "value": 44062000000,
+            "filingId": "NVDA_10-Q_2025-04-27",
+            "label": "Revenue",
+            "derived": null
+          }
         }
       ]
     }

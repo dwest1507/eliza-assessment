@@ -350,6 +350,9 @@ export interface CalendarPeriod {
 export interface CompanyCalendar {
   ticker: string
   company: string
+  /** The names besides its Filings' one that a question names it by, from the Query
+   * Scope parser's alias table: "Alphabet" and "Google" for Alphabet Inc. */
+  commonNames: string[]
   sector: string | null
   /** `tracked` or `snapshot`. */
   coverage: string | null

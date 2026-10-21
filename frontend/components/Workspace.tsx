@@ -19,7 +19,7 @@ import {
   type ResearchMessage,
 } from '@/lib/chat'
 import { loadConversation, saveConversation } from '@/lib/conversation'
-import { WHATS_COVERED_ID, type CoverageSummary } from '@/lib/coverage'
+import { ASK_PARAM, WHATS_COVERED_ID, type CoverageSummary } from '@/lib/coverage'
 import type { CompanyCalendar } from '@/lib/evalExport'
 import { followUps } from '@/lib/followUps'
 import { STARTERS } from '@/lib/starters'
@@ -67,6 +67,7 @@ export default function Workspace({
     [calendars]
   )
   const threadRef = useRef<HTMLDivElement>(null)
+  const questionRef = useRef<HTMLInputElement>(null)
   const lastQuestionRef = useRef<HTMLDivElement>(null)
   // How to scroll the next question into place once it renders, or null for not at all.
   const pendingScroll = useRef<ScrollBehavior | null>(null)
@@ -85,6 +86,25 @@ export default function Workspace({
       setMessages(saved)
     }
   }, [setMessages])
+
+  // A question "What's covered" asks about is filled in, never sent, and leaves the
+  // address so a refresh doesn't fill it in again. Read after the first render, like
+  // session storage, since the server-rendered page has no address to read.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const question = params.get(ASK_PARAM)
+    if (!question) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- synced once from the address
+    setInput(question)
+    params.delete(ASK_PARAM)
+    const search = params.toString()
+    window.history.replaceState(
+      window.history.state,
+      '',
+      `${window.location.pathname}${search ? `?${search}` : ''}${window.location.hash}`
+    )
+    questionRef.current?.focus()
+  }, [])
 
   // Saved once each answer is complete, never half-written. Only "New conversation"
   // clears it, so the empty first render never overwrites a saved conversation.
@@ -316,6 +336,7 @@ export default function Workspace({
             <PanelToolbar open={panel} onToggle={toggle} variant="buttons" />
             <div className="mx-auto flex max-w-3xl gap-2">
               <input
+                ref={questionRef}
                 type="text"
                 aria-label="Question"
                 value={input}

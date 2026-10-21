@@ -177,6 +177,6 @@ describe("the copy of the backend's company-name shortening", () => {
     expect(queryScope).toContain(
       'return _THE.sub("", _SUFFIX.sub("", name.strip())).strip() or name'
     )
-    expect(queryScope).toContain('names.add(short.removesuffix(".com"))')
+    expect(queryScope).toContain('short.removesuffix(".com")')
   })
 })

@@ -32,10 +32,15 @@ export function followUps(scope: QueryScope, question: string): string[] {
     .slice(0, MAX_FOLLOW_UPS)
 }
 
+/** The question "What's covered" fills in to ask about one Company: its main risks. */
+export function askAboutCompany(name: string): string {
+  return `What are ${possessive(shortName(name))} main risk factors?`
+}
+
 function oneCompany(company: ScopeCompany): string[] {
   const owner = possessive(shortName(company.name))
   return [
-    `What are ${owner} main risk factors?`,
+    askAboutCompany(company.name),
     company.coverage === 'tracked'
       ? `How has ${owner} revenue changed over the last two years?`
       : `What was ${owner} revenue in its latest filing?`,

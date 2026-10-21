@@ -37,17 +37,26 @@ function bands(periods: CalendarPeriod[]): [number, CalendarPeriod[]][] {
  * a figure names its Filing and the label it prints; a derived fourth quarter is marked
  * as derived. Shared by the workspace's Calendar tab and "What's covered".
  */
-export default function CompanyCalendar({ calendar }: { calendar: Calendar }) {
+export default function CompanyCalendar({
+  calendar,
+  showName = true,
+}: {
+  calendar: Calendar
+  /** False where the Company is already named above, as on a "What's covered" card. */
+  showName?: boolean
+}) {
   const tracked = calendar.coverage === 'tracked'
   return (
     <div className="flex flex-col gap-3">
       <div>
-        <h3 className="text-[15px] leading-snug font-semibold text-white">
-          {calendar.company}
-          <span className="ml-2 font-mono text-[12.5px] font-normal text-muted">
-            {calendar.ticker}
-          </span>
-        </h3>
+        {showName && (
+          <h3 className="text-[15px] leading-snug font-semibold text-white">
+            {calendar.company}
+            <span className="ml-2 font-mono text-[12.5px] font-normal text-muted">
+              {calendar.ticker}
+            </span>
+          </h3>
+        )}
         {calendar.fiscalYearEnd && (
           <p className="mt-0.5 text-[13px] text-muted">Fiscal year ends {calendar.fiscalYearEnd}</p>
         )}

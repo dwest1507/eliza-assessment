@@ -5780,6 +5780,9 @@
     {
       "ticker": "AAPL",
       "company": "Apple Inc",
+      "commonNames": [
+        "Apple"
+      ],
       "sector": "Information Technology",
       "coverage": "tracked",
       "fiscalYearEnd": "late September",
@@ -6124,6 +6127,9 @@
     {
       "ticker": "ABBV",
       "company": "AbbVie Inc",
+      "commonNames": [
+        "AbbVie"
+      ],
       "sector": "Health Care",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -6157,6 +6163,9 @@
     {
       "ticker": "ADBE",
       "company": "Adobe Inc",
+      "commonNames": [
+        "Adobe"
+      ],
       "sector": "Information Technology",
       "coverage": "snapshot",
       "fiscalYearEnd": "late November",
@@ -6190,6 +6199,9 @@
     {
       "ticker": "AMD",
       "company": "Advanced Micro Devices Inc",
+      "commonNames": [
+        "Advanced Micro Devices"
+      ],
       "sector": "Information Technology",
       "coverage": "snapshot",
       "fiscalYearEnd": "late December",
@@ -6223,6 +6235,10 @@
     {
       "ticker": "AMZN",
       "company": "Amazon.com Inc",
+      "commonNames": [
+        "Amazon.com",
+        "Amazon"
+      ],
       "sector": "Consumer Discretionary",
       "coverage": "tracked",
       "fiscalYearEnd": "December 31",
@@ -6572,6 +6588,10 @@
     {
       "ticker": "AXP",
       "company": "American Express Company",
+      "commonNames": [
+        "American Express",
+        "Amex"
+      ],
       "sector": "Financials",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -6605,6 +6625,9 @@
     {
       "ticker": "BA",
       "company": "The Boeing Company",
+      "commonNames": [
+        "Boeing"
+      ],
       "sector": "Industrials",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -6638,6 +6661,10 @@
     {
       "ticker": "BAC",
       "company": "Bank of America Corporation",
+      "commonNames": [
+        "Bank of America",
+        "BofA"
+      ],
       "sector": "Financials",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -6707,6 +6734,9 @@
     {
       "ticker": "BLK",
       "company": "BlackRock Inc",
+      "commonNames": [
+        "BlackRock"
+      ],
       "sector": "Financials",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -6740,6 +6770,10 @@
     {
       "ticker": "BRK",
       "company": "Berkshire Hathaway Inc",
+      "commonNames": [
+        "Berkshire Hathaway",
+        "Berkshire"
+      ],
       "sector": "Financials",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -6773,6 +6807,9 @@
     {
       "ticker": "CAT",
       "company": "Caterpillar Inc",
+      "commonNames": [
+        "Caterpillar"
+      ],
       "sector": "Industrials",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -6806,6 +6843,9 @@
     {
       "ticker": "CMCSA",
       "company": "Comcast Corporation",
+      "commonNames": [
+        "Comcast"
+      ],
       "sector": "Communication Services",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -6839,6 +6879,10 @@
     {
       "ticker": "COST",
       "company": "Costco Wholesale Corporation",
+      "commonNames": [
+        "Costco Wholesale",
+        "Costco"
+      ],
       "sector": "Consumer Staples",
       "coverage": "snapshot",
       "fiscalYearEnd": "August 31",
@@ -6872,6 +6916,9 @@
     {
       "ticker": "CRM",
       "company": "Salesforce Inc",
+      "commonNames": [
+        "Salesforce"
+      ],
       "sector": "Information Technology",
       "coverage": "snapshot",
       "fiscalYearEnd": "January 31",
@@ -6905,6 +6952,10 @@
     {
       "ticker": "CSCO",
       "company": "Cisco Systems Inc",
+      "commonNames": [
+        "Cisco Systems",
+        "Cisco"
+      ],
       "sector": "Information Technology",
       "coverage": "snapshot",
       "fiscalYearEnd": "late July",
@@ -6938,6 +6989,9 @@
     {
       "ticker": "CVX",
       "company": "Chevron Corporation",
+      "commonNames": [
+        "Chevron"
+      ],
       "sector": "Energy",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -6971,6 +7025,10 @@
     {
       "ticker": "DE",
       "company": "Deere & Company",
+      "commonNames": [
+        "Deere",
+        "John Deere"
+      ],
       "sector": "Industrials",
       "coverage": "snapshot",
       "fiscalYearEnd": "late October or early November",
@@ -7004,6 +7062,10 @@
     {
       "ticker": "DIS",
       "company": "The Walt Disney Company",
+      "commonNames": [
+        "Walt Disney",
+        "Disney"
+      ],
       "sector": "Communication Services",
       "coverage": "tracked",
       "fiscalYearEnd": "late September or early October",
@@ -7370,6 +7432,10 @@
     {
       "ticker": "GE",
       "company": "General Electric Company",
+      "commonNames": [
+        "General Electric",
+        "GE Capital"
+      ],
       "sector": "Financials",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -7403,6 +7469,10 @@
     {
       "ticker": "GOOG",
       "company": "Alphabet Inc",
+      "commonNames": [
+        "Alphabet",
+        "Google"
+      ],
       "sector": "Communication Services",
       "coverage": "tracked",
       "fiscalYearEnd": "December 31",
@@ -7713,6 +7783,10 @@
     {
       "ticker": "GS",
       "company": "Goldman Sachs Group Inc",
+      "commonNames": [
+        "Goldman Sachs",
+        "Goldman"
+      ],
       "sector": "Financials",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -7746,6 +7820,9 @@
     {
       "ticker": "HD",
       "company": "The Home Depot Inc",
+      "commonNames": [
+        "Home Depot"
+      ],
       "sector": "Consumer Discretionary",
       "coverage": "snapshot",
       "fiscalYearEnd": "late January or early February",
@@ -7779,6 +7856,9 @@
     {
       "ticker": "IBM",
       "company": "International Business Machines Corp",
+      "commonNames": [
+        "International Business Machines"
+      ],
       "sector": "Information Technology",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -7812,6 +7892,9 @@
     {
       "ticker": "INTC",
       "company": "Intel Corporation",
+      "commonNames": [
+        "Intel"
+      ],
       "sector": "Information Technology",
       "coverage": "snapshot",
       "fiscalYearEnd": "late December",
@@ -7845,6 +7928,9 @@
     {
       "ticker": "JNJ",
       "company": "Johnson & Johnson",
+      "commonNames": [
+        "J&J"
+      ],
       "sector": "Health Care",
       "coverage": "tracked",
       "fiscalYearEnd": "late December or early January",
@@ -8223,6 +8309,12 @@
     {
       "ticker": "JPM",
       "company": "JPMorgan Chase & Co",
+      "commonNames": [
+        "JPMorgan Chase",
+        "JPMorgan",
+        "JP Morgan",
+        "J.P. Morgan"
+      ],
       "sector": "Financials",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -8292,6 +8384,11 @@
     {
       "ticker": "KO",
       "company": "The Coca-Cola Company",
+      "commonNames": [
+        "Coca-Cola",
+        "Coca Cola",
+        "Coke"
+      ],
       "sector": "Consumer Staples",
       "coverage": "tracked",
       "fiscalYearEnd": "December 31",
@@ -8607,6 +8704,10 @@
     {
       "ticker": "LLY",
       "company": "Eli Lilly and Company",
+      "commonNames": [
+        "Eli Lilly",
+        "Lilly"
+      ],
       "sector": "Health Care",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -8640,6 +8741,10 @@
     {
       "ticker": "LMT",
       "company": "Lockheed Martin Corporation",
+      "commonNames": [
+        "Lockheed Martin",
+        "Lockheed"
+      ],
       "sector": "Industrials",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -8673,6 +8778,9 @@
     {
       "ticker": "MA",
       "company": "Mastercard Inc",
+      "commonNames": [
+        "Mastercard"
+      ],
       "sector": "Financials",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -8706,6 +8814,11 @@
     {
       "ticker": "MCD",
       "company": "McDonalds Corporation",
+      "commonNames": [
+        "McDonalds",
+        "McDonald's",
+        "McDonald\u2019s"
+      ],
       "sector": "Consumer Discretionary",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -8807,6 +8920,11 @@
     {
       "ticker": "META",
       "company": "Meta Platforms Inc",
+      "commonNames": [
+        "Meta Platforms",
+        "Meta",
+        "Facebook"
+      ],
       "sector": "Communication Services",
       "coverage": "tracked",
       "fiscalYearEnd": "December 31",
@@ -8986,6 +9104,9 @@
     {
       "ticker": "MRK",
       "company": "Merck & Co Inc",
+      "commonNames": [
+        "Merck"
+      ],
       "sector": "Health Care",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -9019,6 +9140,7 @@
     {
       "ticker": "MS",
       "company": "Morgan Stanley",
+      "commonNames": [],
       "sector": "Financials",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -9052,6 +9174,9 @@
     {
       "ticker": "MSFT",
       "company": "Microsoft Corporation",
+      "commonNames": [
+        "Microsoft"
+      ],
       "sector": "Information Technology",
       "coverage": "tracked",
       "fiscalYearEnd": "June 30",
@@ -9396,6 +9521,9 @@
     {
       "ticker": "NFLX",
       "company": "Netflix Inc",
+      "commonNames": [
+        "Netflix"
+      ],
       "sector": "Communication Services",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -9429,6 +9557,9 @@
     {
       "ticker": "NKE",
       "company": "Nike Inc",
+      "commonNames": [
+        "Nike"
+      ],
       "sector": "Consumer Discretionary",
       "coverage": "snapshot",
       "fiscalYearEnd": "May 31",
@@ -9462,6 +9593,9 @@
     {
       "ticker": "NVDA",
       "company": "NVIDIA Corporation",
+      "commonNames": [
+        "NVIDIA"
+      ],
       "sector": "Information Technology",
       "coverage": "tracked",
       "fiscalYearEnd": "late January",
@@ -9806,6 +9940,9 @@
     {
       "ticker": "ORCL",
       "company": "Oracle Corporation",
+      "commonNames": [
+        "Oracle"
+      ],
       "sector": "Information Technology",
       "coverage": "snapshot",
       "fiscalYearEnd": "May 31",
@@ -9839,6 +9976,10 @@
     {
       "ticker": "PEP",
       "company": "PepsiCo Inc",
+      "commonNames": [
+        "PepsiCo",
+        "Pepsi"
+      ],
       "sector": "Consumer Staples",
       "coverage": "snapshot",
       "fiscalYearEnd": "late December",
@@ -9980,6 +10121,9 @@
     {
       "ticker": "PFE",
       "company": "Pfizer Inc",
+      "commonNames": [
+        "Pfizer"
+      ],
       "sector": "Health Care",
       "coverage": "tracked",
       "fiscalYearEnd": "December 31",
@@ -10295,6 +10439,10 @@
     {
       "ticker": "PG",
       "company": "Procter & Gamble Company",
+      "commonNames": [
+        "Procter & Gamble",
+        "P&G"
+      ],
       "sector": "Consumer Staples",
       "coverage": "snapshot",
       "fiscalYearEnd": "June 30",
@@ -10328,6 +10476,10 @@
     {
       "ticker": "RTX",
       "company": "RTX Corporation",
+      "commonNames": [
+        "RTX",
+        "Raytheon"
+      ],
       "sector": "Industrials",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -10361,6 +10513,9 @@
     {
       "ticker": "SBUX",
       "company": "Starbucks Corporation",
+      "commonNames": [
+        "Starbucks"
+      ],
       "sector": "Consumer Discretionary",
       "coverage": "snapshot",
       "fiscalYearEnd": "late September",
@@ -10394,6 +10549,9 @@
     {
       "ticker": "T",
       "company": "AT&T Inc",
+      "commonNames": [
+        "AT&T"
+      ],
       "sector": "Communication Services",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -10427,6 +10585,9 @@
     {
       "ticker": "TGT",
       "company": "Target Corporation",
+      "commonNames": [
+        "Target"
+      ],
       "sector": "Consumer Staples",
       "coverage": "snapshot",
       "fiscalYearEnd": "late January or early February",
@@ -10460,6 +10621,10 @@
     {
       "ticker": "TMO",
       "company": "Thermo Fisher Scientific Inc",
+      "commonNames": [
+        "Thermo Fisher Scientific",
+        "Thermo Fisher"
+      ],
       "sector": "Health Care",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -10493,6 +10658,9 @@
     {
       "ticker": "TSLA",
       "company": "Tesla Inc",
+      "commonNames": [
+        "Tesla"
+      ],
       "sector": "Consumer Discretionary",
       "coverage": "tracked",
       "fiscalYearEnd": "December 31",
@@ -10842,6 +11010,9 @@
     {
       "ticker": "UNH",
       "company": "UnitedHealth Group Inc",
+      "commonNames": [
+        "UnitedHealth"
+      ],
       "sector": "Health Care",
       "coverage": "tracked",
       "fiscalYearEnd": "December 31",
@@ -11157,6 +11328,9 @@
     {
       "ticker": "UPS",
       "company": "United Parcel Service Inc",
+      "commonNames": [
+        "United Parcel Service"
+      ],
       "sector": "Industrials",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -11190,6 +11364,9 @@
     {
       "ticker": "V",
       "company": "Visa Inc",
+      "commonNames": [
+        "Visa"
+      ],
       "sector": "Financials",
       "coverage": "snapshot",
       "fiscalYearEnd": "September 30",
@@ -11223,6 +11400,10 @@
     {
       "ticker": "VZ",
       "company": "Verizon Communications Inc",
+      "commonNames": [
+        "Verizon Communications",
+        "Verizon"
+      ],
       "sector": "Communication Services",
       "coverage": "snapshot",
       "fiscalYearEnd": "December 31",
@@ -11256,6 +11437,9 @@
     {
       "ticker": "WMT",
       "company": "Walmart Inc",
+      "commonNames": [
+        "Walmart"
+      ],
       "sector": "Consumer Staples",
       "coverage": "snapshot",
       "fiscalYearEnd": "January 31",
@@ -11289,6 +11473,11 @@
     {
       "ticker": "XOM",
       "company": "Exxon Mobil Corporation",
+      "commonNames": [
+        "Exxon Mobil",
+        "Exxon",
+        "ExxonMobil"
+      ],
       "sector": "Energy",
       "coverage": "tracked",
       "fiscalYearEnd": "December 31",

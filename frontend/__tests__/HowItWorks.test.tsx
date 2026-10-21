@@ -339,35 +339,6 @@ describe('the "How it works" page', () => {
     ).toHaveLength(1)
   })
 
-  it('lists what’s covered, grouped by how much history each Company has', () => {
-    render(<HowItWorks data={EXPORT} />)
-
-    const covered = section('What’s covered')
-    expect(covered).toHaveAttribute('id', 'whats-covered')
-    const tracked = within(covered).getByRole('list', { name: /two or more years/i })
-    expect(
-      within(tracked)
-        .getAllByRole('listitem')
-        .map((li) => li.textContent)
-    ).toEqual(['Apple Inc. (AAPL)'])
-    const snapshot = within(covered).getByRole('list', { name: /only a few filings/i })
-    expect(
-      within(snapshot)
-        .getAllByRole('listitem')
-        .map((li) => li.textContent)
-    ).toEqual(['JPMorgan Chase & Co. (JPM)'])
-    // Plain words by default, the domain terms on hover.
-    expect(within(covered).getByTitle('Tracked Companies')).toBeInTheDocument()
-    expect(within(covered).getByTitle('Snapshot Companies')).toBeInTheDocument()
-  })
-
-  it('lists every Company of the export in what’s covered', () => {
-    render(<HowItWorks data={EXPORT} />)
-
-    const covered = section('What’s covered')
-    expect(within(covered).getAllByRole('listitem')).toHaveLength(EXPORT.coverage.companies.length)
-  })
-
   it('scrolls the coverage grid in its own area, which the keyboard can reach', async () => {
     render(<HowItWorks data={EXPORT} />)
     await openSection('Corpus coverage')
@@ -610,6 +581,156 @@ describe('the "How it works" technical details', () => {
   })
 })
 
+/** Types a search into "What's covered", replacing what was there, and returns the section. */
+async function searchCovered(query: string) {
+  const covered = section('What’s covered')
+  const box = within(covered).getByRole('searchbox', { name: /search companies/i })
+  const user = userEvent.setup()
+  await user.clear(box)
+  await user.type(box, query)
+  return covered
+}
+
+describe('the "How it works" "What’s covered"', () => {
+  it('opens with the summary line, at the anchor the workspace links to', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const covered = section('What’s covered')
+    expect(covered).toHaveAttribute('id', 'whats-covered')
+    expect(covered).toHaveTextContent(
+      '4 companies · 3 with two or more years of quarterly filings · 1 with a few filings'
+    )
+  })
+
+  it.each([
+    ['NVDA', 'NVIDIA Corporation'],
+    ['nvidia', 'NVIDIA Corporation'],
+    ['Google', 'Alphabet Inc'],
+    ['jp morgan', 'JPMorgan Chase & Co'],
+  ])('opens the right card on searching “%s”', async (query, company) => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const covered = await searchCovered(query)
+
+    const cards = within(covered).getAllByRole('article')
+    expect(cards).toHaveLength(1)
+    expect(cards[0]).toHaveAccessibleName(
+      new RegExp(company.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    )
+  })
+
+  it('shows the card’s Sector, coverage badge and the shared Company Calendar', async () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const card = within(await searchCovered('NVDA')).getByRole('article')
+    expect(card).toHaveTextContent('Information Technology')
+    expect(within(card).getByText('Two or more years')).toHaveAttribute('title', 'Tracked Company')
+    // The Company Calendar the workspace's Calendar tab shows.
+    const calendar = within(card).getByRole('table', { name: 'NVDA fiscal calendar' })
+    expect(within(calendar).getByRole('rowheader', { name: 'Q3 FY2026' })).toBeInTheDocument()
+    expect(card).toHaveTextContent('Fiscal year ends late January')
+
+    const snapshot = within(await searchCovered('JPM')).getByRole('article')
+    expect(within(snapshot).getByText('A few filings')).toHaveAttribute('title', 'Snapshot Company')
+  })
+
+  it('asks about the Company in the workspace, filling the question in without sending it', async () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const card = within(await searchCovered('Google')).getByRole('article')
+    const ask = within(card).getByRole('link', { name: 'Ask about this company' })
+    expect(ask).toHaveAttribute(
+      'href',
+      `/?ask=${encodeURIComponent("What are Alphabet's main risk factors?")}`
+    )
+  })
+
+  it('says plainly that a Company missing from the Corpus isn’t in the filings', async () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const covered = await searchCovered('Wells Fargo')
+
+    expect(within(covered).queryByRole('article')).not.toBeInTheDocument()
+    expect(within(covered).getByRole('status')).toHaveTextContent(
+      'Wells Fargo isn’t in the filings'
+    )
+    // Its aliases and ticker find it too.
+    expect(within(await searchCovered('Citi')).getByRole('status')).toHaveTextContent(
+      'Citigroup isn’t in the filings'
+    )
+  })
+
+  it('shows no match for a nonsense query', async () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const covered = await searchCovered('zzqx')
+
+    expect(within(covered).queryByRole('article')).not.toBeInTheDocument()
+    expect(within(covered).getByRole('status')).toHaveTextContent('No company matches “zzqx”')
+  })
+
+  it('lists the other Companies a search matches, each opening its card', async () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    // "a" starts Alphabet and Apple, which tie, so the first alphabetically opens.
+    const covered = await searchCovered('a')
+    expect(within(covered).getByRole('article')).toHaveAccessibleName(/Alphabet/)
+    const others = within(covered).getByRole('list', { name: 'Also matching' })
+
+    await userEvent.setup().click(within(others).getByRole('button', { name: 'Apple Inc (AAPL)' }))
+
+    expect(within(covered).getByRole('article')).toHaveAccessibleName(/Apple/)
+  })
+
+  it('shows all companies grouped by coverage, each row opening its card', async () => {
+    render(<HowItWorks data={EXPORT} />)
+    const user = userEvent.setup()
+    const covered = section('What’s covered')
+    expect(within(covered).queryByRole('list', { name: /two or more years/i })).toBeNull()
+
+    await user.click(within(covered).getByRole('button', { name: 'Show all companies' }))
+
+    const tracked = within(covered).getByRole('list', { name: /two or more years/i })
+    expect(
+      within(tracked)
+        .getAllByRole('button')
+        .map((b) => b.textContent)
+    ).toEqual(['Alphabet Inc (GOOG)', 'Apple Inc (AAPL)', 'NVIDIA Corporation (NVDA)'])
+    const snapshot = within(covered).getByRole('list', { name: /a few filings/i })
+    expect(
+      within(snapshot)
+        .getAllByRole('button')
+        .map((b) => b.textContent)
+    ).toEqual(['JPMorgan Chase & Co (JPM)'])
+    // Plain words, the domain terms on hover.
+    expect(within(covered).getByTitle('Tracked Companies')).toBeInTheDocument()
+    expect(within(covered).getByTitle('Snapshot Companies')).toBeInTheDocument()
+
+    await user.click(within(snapshot).getByRole('button', { name: /JPM/ }))
+    expect(within(covered).getByRole('article')).toHaveAccessibleName(/JPMorgan Chase/)
+  })
+
+  it('filters all companies by Sector', async () => {
+    render(<HowItWorks data={EXPORT} />)
+    const user = userEvent.setup()
+    const covered = section('What’s covered')
+    await user.click(within(covered).getByRole('button', { name: 'Show all companies' }))
+
+    await user.selectOptions(
+      within(covered).getByRole('combobox', { name: 'Sector' }),
+      'Information Technology'
+    )
+
+    const tracked = within(covered).getByRole('list', { name: /two or more years/i })
+    expect(
+      within(tracked)
+        .getAllByRole('button')
+        .map((b) => b.textContent)
+    ).toEqual(['Apple Inc (AAPL)', 'NVIDIA Corporation (NVDA)'])
+    expect(within(covered).queryByRole('list', { name: /a few filings/i })).toBeNull()
+  })
+})
+
 describe('the workspace', () => {
   it('links to the "How it works" page', () => {
     render(<Workspace />)
@@ -628,6 +749,24 @@ describe('the workspace', () => {
       '2 companies covered · 1 with two or more years of quarterly filings'
     )
     expect(within(line).getByRole('link')).toHaveAttribute('href', '/how-it-works#whats-covered')
+  })
+
+  it('fills in the question “Ask about this company” links with, without sending it', () => {
+    window.history.replaceState(
+      null,
+      '',
+      `/?ask=${encodeURIComponent("What are Alphabet's main risk factors?")}`
+    )
+
+    render(<Workspace />)
+
+    expect(screen.getByRole('textbox', { name: 'Question' })).toHaveValue(
+      "What are Alphabet's main risk factors?"
+    )
+    // Nothing was sent: the empty screen's starter prompts still show.
+    expect(screen.getByRole('list', { name: 'Starter prompts' })).toBeInTheDocument()
+    // The question leaves the address, so a refresh doesn't fill it in again.
+    expect(window.location.search).toBe('')
   })
 
   it('shows no coverage line without the coverage summary', () => {

@@ -187,13 +187,18 @@ def short_name(name: str) -> str:
     return _THE.sub("", _SUFFIX.sub("", name.strip())).strip() or name
 
 
+def common_names(ticker: str, name: str) -> tuple[str, ...]:
+    """The names besides the one in its Filings that a question names a Company by: the
+    name without its legal suffix, without ".com", then its aliases, in that order and
+    each once: "Alphabet Inc" (GOOG) → ("Alphabet", "Google")."""
+    short = short_name(name.strip())
+    names = [short, short.removesuffix(".com"), *_ALIASES.get(ticker, ())]
+    return tuple(n for n in dict.fromkeys(names) if n and n != name.strip())
+
+
 def _names(company: ScopeCompany) -> set[str]:
     full = company.name.strip()
-    short = short_name(full)
-    names = {full, short, *_ALIASES.get(company.ticker, ())}
-    if short.endswith(".com"):
-        names.add(short.removesuffix(".com"))
-    return {n for n in names if n}
+    return {n for n in (full, *common_names(company.ticker, full)) if n}
 
 
 # --- Sector phrases ----------------------------------------------------------------------

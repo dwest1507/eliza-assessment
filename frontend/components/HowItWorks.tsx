@@ -3,7 +3,6 @@ import type { ReactNode } from 'react'
 import { HeadlineNumbers, HowAnswersAreMade, KnownLimits } from '@/components/Overview'
 import TechnicalDetails, { TechnicalSection } from '@/components/TechnicalDetails'
 import WhatsCovered from '@/components/WhatsCovered'
-import { coverageSummary } from '@/lib/coverage'
 import {
   type BriefSuiteResults,
   type CoverageCompany,
@@ -63,7 +62,7 @@ export default function HowItWorks({ data }: { data: EvalExport }) {
       <main className="flex flex-col gap-20 px-5 py-14">
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-16">
           <HowAnswersAreMade />
-          <WhatsCovered summary={coverageSummary(data.coverage)} />
+          <WhatsCovered companies={data.companies} missing={data.missingCompanies} />
           {shipped && <HeadlineNumbers run={shipped} />}
           <KnownLimits />
         </div>

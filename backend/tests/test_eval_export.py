@@ -18,6 +18,8 @@ from edgar_eval import generation, retrieval, selection
 from edgar_eval.export import company_calendars, coverage_grid, main
 from edgar_eval.judge import JEV_MODEL
 from edgar_eval.retrieval import Arm
+from edgar_rag._query_scope import ScopeCompany, find_companies
+from edgar_rag.corpus import load_corpus
 from edgar_rag.golden_set import GOLDEN_SET_V1, GOLDEN_SET_V2, load_golden_set
 from edgar_rag.retrieval import SearchedPlace
 
@@ -880,3 +882,21 @@ def test_a_quarter_with_no_filing_is_listed_without_one_and_its_year_is_not_spli
     assert gap["months"] == "May–Jul 2024"
     assert _period(nvda, "Q4 FY2025")["revenue"] is None
     assert _period(nvda, "FY2025")["revenue"]["value"] == 130_497_000_000
+
+
+def test_each_calendar_carries_the_common_names_questions_match_it_by():
+    filings = [f for f in load_corpus() if f.ticker in {"GOOG", "KO", "META", "NVDA"}]
+
+    calendars = {c["ticker"]: c for c in company_calendars(filings)}
+
+    assert calendars["GOOG"]["commonNames"] == ["Alphabet", "Google"]
+    assert calendars["KO"]["commonNames"] == ["Coca-Cola", "Coca Cola", "Coke"]
+    assert calendars["META"]["commonNames"] == ["Meta Platforms", "Meta", "Facebook"]
+    assert calendars["NVDA"]["commonNames"] == ["NVIDIA"]
+    # Taken from the Query Scope parser's alias table, so each is a name a question is
+    # matched by: the search on "What's covered" can't drift from what questions understand.
+    companies = [ScopeCompany(c["ticker"], c["company"], c["coverage"]) for c in calendars.values()]
+    for calendar in calendars.values():
+        for name in calendar["commonNames"]:
+            named, _ = find_companies(f"What does {name} say?", companies)
+            assert [c.ticker for c in named] == [calendar["ticker"]], name
