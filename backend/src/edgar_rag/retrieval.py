@@ -64,19 +64,23 @@ Sections, or whole when every one of them is missing or a stub (finding 14). A h
 Sections, and `QueryScope.sections` lists every Section planned. A legal proceedings
 question also searches the Financial Statements, whose contingencies note is where a stub
 Item 3 points ("see Note 15"), so a Filing whose Item 3 is a stub is searched in its
-Financial Statements, not whole. A risk question is routed to the latest 10-K's Risk
-Factors plus any later 10-Q that states risk text; a later 10-Q whose Risk Factors only
-point back to the 10-K is cited as it stands, never ranked (finding 16). A cybersecurity
-question is routed the same way, to the Cybersecurity Section, Risk Factors and MD&A of
-the latest Filings. A risk question asking how the Companies address, manage or respond to
-their risks also searches Business and the MD&A, and a question about what Companies
-depend on (customers, suppliers, government contracts) searches Business and, with no
-other hint, Risk Factors, in the latest Filings unless it names a time phrase. An outlook
-question ("outlook", "expect", "guidance", "going forward", or "for" a year after the
-Companies' latest Filing) is routed to the MD&A of the latest Filings; a time phrase, or
-a Fiscal Period a Filing covers, replaces that window. Guidance itself stays a Coverage
-Gap. The Query Scope records the places searched (`QueryScope.searched`), so the
-answer's reader, and the evaluation, can see where retrieval looked.
+Financial Statements, not whole. Each Company's Legal Proceedings chunks are ranked into
+its share before its Financial Statements', so its own case list is never crowded out by
+the contingencies note and its Legal Proceedings Source comes first; a Filing whose two
+Sections are both stubs is still searched whole, ranked as it stands. A risk question is
+routed to the latest 10-K's Risk Factors plus any later 10-Q that states risk text; a later
+10-Q whose Risk Factors only point back to the 10-K is cited as it stands, never ranked
+(finding 16). A cybersecurity question is routed the same way, to the Cybersecurity
+Section, Risk Factors and MD&A of the latest Filings. A risk question asking how the
+Companies address, manage or respond to their risks also searches Business and the MD&A,
+and a question about what Companies depend on (customers, suppliers, government contracts)
+searches Business and, with no other hint, Risk Factors, in the latest Filings unless it
+names a time phrase. An outlook question ("outlook", "expect", "guidance", "going forward",
+or "for" a year after the Companies' latest Filing) is routed to the MD&A of the latest
+Filings; a time phrase, or a Fiscal Period a Filing covers, replaces that window. Guidance
+itself stays a Coverage Gap. The Query Scope records the places searched
+(`QueryScope.searched`), so the answer's reader, and the evaluation, can see where
+retrieval looked.
 
 Repeated text costs the budget once (finding 17). A chunk repeated across a Company's
 Filings is stored once and cited from the most recent Filing in the plan that holds it,
@@ -216,6 +220,9 @@ pointer to a note or another Item, so it is not searched, and a Filing whose hin
 Sections are all stubs or missing is searched whole."""
 
 _CANDIDATES_PER_COMPANY = 200
+
+_LEGAL_PROCEEDINGS = "Legal Proceedings"
+"""Ranked before the Financial Statements on the legal proceedings route."""
 
 INDEX_VERSION = 6
 """Bumped whenever the index's tables change, so an older index is rebuilt, not misread.
@@ -957,9 +964,8 @@ def _sources(
         owner = {f.filing_id: f.ticker for f in windowed}
         places = plan.places if plan.places is not None else [(f.filing_id, None) for f in windowed]
         searched += [SearchedPlace(owner[f], f, section) for f, section in places]
-        candidates = _candidates(
-            scope, _ranked(db, ticker, search.for_company(ticker), plan.places)
-        )
+        ranked = _ranked(db, ticker, search.for_company(ticker), plan.places)
+        candidates = _candidates(scope, _legal_proceedings_first(ranked, plan))
         retrievals.append(
             _Retrieval(
                 candidates=_without_near_duplicates(candidates),
@@ -1045,6 +1051,18 @@ def _spend(retrievals: Sequence[_Retrieval], shares: list[int]) -> None:
         each, rest = divmod(unspent, len(retrieving))
         for n, i in enumerate(retrieving):
             shares[i] += each + (n < rest)
+
+
+def _legal_proceedings_first(rows: Sequence[_Row], plan: _Plan) -> list[_Row]:
+    """The ranked chunks with those of a planned Legal Proceedings Section first, each
+    part in its ranked order: a legal proceedings question spends a Company's share on
+    its own case list before the Financial Statements' contingencies note, and its
+    Legal Proceedings Source comes first. A Filing searched whole (both Sections stubs)
+    plans no Legal Proceedings Section, so its ranking is unchanged."""
+    legal = {place for place in plan.places or [] if place[1] == _LEGAL_PROCEEDINGS}
+    if not legal:
+        return list(rows)
+    return sorted(rows, key=lambda row: (row["filing_id"], row["section"]) not in legal)
 
 
 def _latest_of_each_section(plan: _Plan, filings: Sequence[ScopeFiling]) -> _Plan:

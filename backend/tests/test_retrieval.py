@@ -722,6 +722,48 @@ def test_a_legal_proceedings_question_also_searches_the_financial_statements(ind
     assert sections <= set(LEGAL_PROCEEDINGS)
 
 
+@pytest.mark.parametrize(
+    "question",
+    [
+        "What legal proceedings does Apple disclose in its latest Filings?",
+        "What legal proceedings does Target disclose in its latest Filings?",
+        "Compare the legal proceedings Apple and Target disclose in their latest Filings.",
+    ],
+)
+def test_a_legal_proceedings_question_orders_each_companys_legal_proceedings_first(index, question):
+    context = _ask(index, question)
+
+    for ticker in {s.ticker for s in context.sources}:
+        sections = [s.section for s in context.sources if s.ticker == ticker]
+        assert "Legal Proceedings" in sections
+        # Every Legal Proceedings Source of the Company, from each of its Filings,
+        # before any of its Financial Statements Sources.
+        assert sections == sorted(sections, key=lambda s: s != "Legal Proceedings")
+
+
+def test_a_legal_proceedings_question_ranks_the_legal_proceedings_into_the_budget_first(index):
+    question = "What legal proceedings does Apple disclose in its latest Filings?"
+    planned = [
+        _section_tokens(index, f, "Legal Proceedings")
+        for f in ("AAPL_10-K_2025-09-27", "AAPL_10-Q_2025-12-27")
+    ]
+
+    def legal_text(context):
+        return [s.text for s in context.sources if s.section == "Legal Proceedings"]
+
+    full = _ask(index, question)
+    tight = prepare_answer_context(
+        [Message("user", question)], index, context_budget=sum(planned) + 100
+    )
+
+    # A budget that holds Apple's Legal Proceedings takes all of it before any of the
+    # Financial Statements, which only fill what is left.
+    assert legal_text(tight) == legal_text(full)
+    assert sum(count_tokens(s.text) for s in tight.sources if s.section != "Legal Proceedings") < (
+        sum(count_tokens(s.text) for s in full.sources if s.section != "Legal Proceedings")
+    )
+
+
 def test_a_stub_legal_proceedings_is_answered_from_the_financial_statements(index):
     # Tesla's Item 3 only points to the contingencies note: "see Note 15".
     assert _section_tokens(index, "TSLA_10-K_2025-12-31", "Legal Proceedings") < STUB_TOKENS
@@ -747,6 +789,19 @@ def test_a_stub_section_falls_back_to_the_whole_filing(index):
     assert context.query_scope.sections == LEGAL_PROCEEDINGS
     assert {s.filing_id for s in context.sources} == {"JPM_10-K_2025-12-31"}
     assert {s.section for s in context.sources} - set(LEGAL_PROCEEDINGS)
+
+
+def test_a_filing_with_both_legal_sections_stubs_is_still_searched_whole(index):
+    # NVIDIA's FY2025 10-K points from Item 3 and Item 8 to its annual report's pages;
+    # its 10-Qs state the cases in their Financial Statements.
+    for section in LEGAL_PROCEEDINGS:
+        assert _section_tokens(index, "NVDA_10-K_2025-01-26", section) < STUB_TOKENS
+
+    context = _ask(index, "What legal proceedings does NVIDIA disclose in its latest Filings?")
+
+    assert ("NVDA", "NVDA_10-K_2025-01-26", None) in _searched(context)
+    whole = [s for s in context.sources if s.filing_id == "NVDA_10-K_2025-01-26"]
+    assert {s.section for s in whole} - set(LEGAL_PROCEEDINGS)
 
 
 def test_a_missing_section_falls_back_to_the_whole_filing(index):
