@@ -39,9 +39,14 @@ and every `generation-holdout[-<suffix>].json`, when the holdout has been scored
 page shows the holdout run (or runs) next to the numbers the choices were made on.
 
 It adds the Corpus coverage grid (each Company's Filings by the calendar quarter of
-their Report Periods, Tracked Companies first) and writes everything, in the
-front-end's camelCase, to `frontend/data/eval-export.json`. The file is committed, so
-the page shows the results without anyone rerunning the harnesses.
+their Report Periods, Tracked Companies first), each Company's Company Calendar (its
+fiscal year end, and every fiscal quarter and year from its first Filing to its latest
+with their calendar months, their Filing and, for a Tracked Company, their revenue
+Financial Fact, fourth quarters derived and marked as derived), which the workspace's
+Calendar tab shows, and the curated list of notable Companies missing from the Corpus.
+It writes everything, in the front-end's camelCase, to `frontend/data/eval-export.json`.
+The file is committed, so the page shows the results without anyone rerunning the
+harnesses.
 
     python -m edgar_eval.export [--split dev|holdout|all] [--golden-set PATH]
         [--eval-dir DIR] [--out PATH]
@@ -51,19 +56,29 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from collections.abc import Iterable, Sequence
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 from typing import Any, TextIO
 
 from edgar_eval.metrics import mcnemar_exact
 from edgar_eval.selection import AHEAD_P, BEHIND_P, EVIDENCE_STATUSES
 from edgar_rag.corpus import Filing, load_corpus, report_quarter
+from edgar_rag.financial_facts import extract_financial_facts
 from edgar_rag.golden_set import DEFAULT_GOLDEN_SET, load_brief_suite, load_golden_set
 from edgar_rag.paths import DERIVED_DIR, REPO_ROOT
+from edgar_rag.retrieval import load_missing_companies
 
-__all__ = ["DEFAULT_EVAL_DIR", "DEFAULT_EXPORT", "coverage_grid", "export", "main"]
+__all__ = [
+    "DEFAULT_EVAL_DIR",
+    "DEFAULT_EXPORT",
+    "company_calendars",
+    "coverage_grid",
+    "export",
+    "main",
+]
 
 DEFAULT_EVAL_DIR = DERIVED_DIR / "eval"
 DEFAULT_EXPORT = REPO_ROOT / "frontend" / "data" / "eval-export.json"
@@ -138,6 +153,11 @@ def export(
             None if split == "holdout" else _holdout(eval_dir, len(golden.split("holdout")), read)
         ),
         "coverage": coverage_grid(filings),
+        "companies": company_calendars(filings),
+        "missingCompanies": [
+            {"name": m.name, "ticker": m.ticker, "aliases": list(m.aliases), "sector": m.sector}
+            for m in load_missing_companies()
+        ],
     }
 
 
@@ -210,6 +230,144 @@ def coverage_grid(filings: Iterable[Filing]) -> dict[str, Any]:
     )
     periods = sorted({f["period"] for c in rows for f in c["filings"]})
     return {"periods": periods, "companies": rows}
+
+
+_MONTH_NAMES = (
+    "January February March April May June July August September October November December"
+).split()
+_FISCAL_PERIOD = re.compile(r"^(?:Q([1-4]) )?FY(\d{4})$")
+
+
+def company_calendars(filings: Iterable[Filing]) -> list[dict[str, Any]]:
+    """Each Company's Company Calendar, by ticker: its fiscal year end and every fiscal
+    quarter from its first Filing's to its latest's, newest first, each fiscal year's row
+    just before its fourth quarter's (they end together).
+
+    Each period carries its calendar months ("Aug–Oct 2025") and the calendar year it ends
+    in, the Filing that reports it (a fourth quarter's is the 10-K that ends it), or None
+    where the Corpus has none, and, for a Tracked Company, its revenue Financial Fact. A
+    fourth quarter's revenue is derived as the 10-K's year less its three 10-Q quarters,
+    when all three are in the Corpus, and marked as derived. A Snapshot Company has no
+    revenue (ADR 0001: its Financial Facts are not extracted)."""
+    by_ticker: dict[str, list[Filing]] = {}
+    for filing in filings:
+        by_ticker.setdefault(filing.ticker, []).append(filing)
+    return [_calendar(by_ticker[ticker]) for ticker in sorted(by_ticker)]
+
+
+def _calendar(filings: list[Filing]) -> dict[str, Any]:
+    first = filings[0]
+    end_month = first.fiscal_year_end_month
+    tracked = first.coverage == "tracked"
+    # Each Filing by its fiscal quarter, counted as year * 4 + quarter - 1 (a 10-K's is
+    # its fiscal year's fourth quarter).
+    by_quarter: dict[int, Filing] = {}
+    for filing in filings:
+        m = _FISCAL_PERIOD.match(filing.fiscal_period or "")
+        if m:
+            by_quarter[int(m.group(2)) * 4 + int(m.group(1) or 4) - 1] = filing
+    revenue = {
+        f.filing_id: fact
+        for f in (filings if tracked else ())
+        for fact in extract_financial_facts(f)
+        if fact.metric == "revenue" and fact.segment is None
+    }
+
+    def reported(filing: Filing | None, months: int) -> dict[str, Any] | None:
+        fact = revenue.get(filing.filing_id) if filing else None
+        if fact is None or fact.period_months != months:
+            return None
+        return {
+            "value": fact.value,
+            "filingId": fact.filing_id,
+            "label": fact.label,
+            "derived": None,
+        }
+
+    periods: list[dict[str, Any]] = []
+    for index in range(max(by_quarter, default=-1), min(by_quarter, default=0) - 1, -1):
+        year, quarter = divmod(index, 4)
+        quarter += 1
+        filing = by_quarter.get(index)
+        if quarter < 4:
+            periods.append(
+                _period(
+                    f"Q{quarter} FY{year}", year, quarter, end_month, filing, reported(filing, 3)
+                )
+            )
+            continue
+        annual = filing if filing and filing.form_type == "10-K" else None
+        year_revenue = reported(annual, 12)
+        parts = [reported(by_quarter.get(year * 4 + q), 3) for q in range(3)]
+        fourth = None
+        if year_revenue and all(parts):
+            fourth = {
+                "value": year_revenue["value"] - sum(p["value"] for p in parts if p),
+                "filingId": year_revenue["filingId"],
+                "label": None,
+                "derived": f"FY{year} less Q1–Q3 FY{year}",
+            }
+        periods.append(_period(f"FY{year}", year, None, end_month, annual, year_revenue))
+        periods.append(_period(f"Q4 FY{year}", year, 4, end_month, annual, fourth))
+    return {
+        "ticker": first.ticker,
+        "company": first.company,
+        "sector": first.sector,
+        "coverage": first.coverage,
+        "fiscalYearEnd": _fiscal_year_end(filings),
+        "periods": periods,
+    }
+
+
+def _period(
+    fiscal_period: str,
+    fiscal_year: int,
+    quarter: int | None,
+    end_month: int | None,
+    filing: Filing | None,
+    revenue: dict[str, Any] | None,
+) -> dict[str, Any]:
+    """One row of a Company Calendar: a fiscal quarter, or (`quarter` None) a fiscal year."""
+    # Fiscal year Y ends in month `end_month` of calendar year Y; each quarter before the
+    # fourth ends three months earlier than the next.
+    end = fiscal_year * 12 + (end_month or 12) - 1 - 3 * (4 - (quarter or 4))
+    start = end - (2 if quarter else 11)
+    (start_year, start_month), (end_year, end_month_index) = divmod(start, 12), divmod(end, 12)
+    first = _MONTH_NAMES[start_month][:3]
+    last = f"{_MONTH_NAMES[end_month_index][:3]} {end_year}"
+    return {
+        "fiscalPeriod": fiscal_period,
+        "kind": "quarter" if quarter else "year",
+        "months": f"{first}–{last}" if start_year == end_year else f"{first} {start_year}–{last}",
+        "calendarYear": end_year,
+        "filing": (
+            {
+                "filingId": filing.filing_id,
+                "formType": filing.form_type,
+                "reportPeriod": filing.report_period.isoformat(),
+            }
+            if filing
+            else None
+        ),
+        "revenue": revenue,
+    }
+
+
+def _fiscal_year_end(filings: list[Filing]) -> str | None:
+    """When the Company's fiscal year ends, as its 10-Ks date it: "December 31" when each
+    ends on the same last day of a month, else "late January" for a 52/53-week year, or
+    "late January or early February" when one ends in the first days of the next month
+    (which stand for the end of the month before)."""
+    month = filings[0].fiscal_year_end_month
+    ends = [f.report_period for f in filings if f.form_type == "10-K"]
+    if month is None or not ends:
+        return None
+    name = _MONTH_NAMES[month - 1]
+    if all((d + timedelta(days=1)).day == 1 for d in ends) and len({d.day for d in ends}) == 1:
+        return f"{name} {ends[0].day}"
+    if any(d.month != month for d in ends):
+        return f"late {name} or early {_MONTH_NAMES[month % 12]}"
+    return f"late {name}"
 
 
 def _read(path: Path) -> dict[str, Any]:
@@ -604,7 +762,7 @@ def main(
             else ""
         )
         + (f"{len(holdout['generation'])} holdout generation run(s), " if holdout else "")
-        + f"and the coverage of {len(data['coverage']['companies'])} Companies to "
+        + f"and the coverage and Company Calendars of {len(data['companies'])} Companies to "
         f"{args.out.resolve()}",
         file=out,
     )

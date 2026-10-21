@@ -313,6 +313,59 @@ export interface CoverageCompany {
   filings: CoverageFiling[]
 }
 
+/** A revenue Financial Fact in a Company Calendar: reported by one Filing, or derived. */
+export interface CalendarRevenue {
+  /** In whole US dollars. */
+  value: number
+  /** The Filing that reports it; for a derived fourth quarter, the 10-K whose year it splits. */
+  filingId: string
+  /** The row label as the Filing prints it, e.g. `Total net sales`; null when derived. */
+  label: string | null
+  /** How a derived figure was computed, e.g. `FY2025 less Q1–Q3 FY2025`; null when reported. */
+  derived: string | null
+}
+
+/** One row of a Company Calendar: a fiscal quarter, or a fiscal year. */
+export interface CalendarPeriod {
+  /** `Q3 FY2026` or `FY2025`. */
+  fiscalPeriod: string
+  /** `quarter` or `year`. */
+  kind: string
+  /** The calendar months it covers, e.g. `Aug–Oct 2025` or `Feb 2024–Jan 2025`. */
+  months: string
+  /** The calendar year the period ends in, which bands the rows. */
+  calendarYear: number
+  /** The Filing that reports it (a fourth quarter's is the 10-K ending it), or null when
+   * the Corpus has none. */
+  filing: { filingId: string; formType: string; reportPeriod: string } | null
+  /** Null for a Snapshot Company, a period with no Filing, or a fourth quarter whose
+   * year's three 10-Qs are not all in the Corpus. */
+  revenue: CalendarRevenue | null
+}
+
+/**
+ * A Company Calendar: a Company's fiscal quarters and years from its first Filing in the
+ * Corpus to its latest, newest first, each fiscal year just before its fourth quarter.
+ */
+export interface CompanyCalendar {
+  ticker: string
+  company: string
+  sector: string | null
+  /** `tracked` or `snapshot`. */
+  coverage: string | null
+  /** When its fiscal year ends, e.g. `late January` or `December 31`. */
+  fiscalYearEnd: string | null
+  periods: CalendarPeriod[]
+}
+
+/** A notable Company not in the Corpus, from the curated list. */
+export interface MissingCompany {
+  name: string
+  ticker: string
+  aliases: string[]
+  sector: string
+}
+
 export interface EvalExport {
   exportedOn: string
   /** The Golden Set split the results are for: `dev`, `holdout` or `all`. */
@@ -336,6 +389,10 @@ export interface EvalExport {
   /** Null until the holdout is scored, and for a holdout export itself. */
   holdout: HoldoutResults | null
   coverage: { periods: string[]; companies: CoverageCompany[] }
+  /** Every Company's Company Calendar, by ticker. */
+  companies: CompanyCalendar[]
+  /** The notable Companies not in the Corpus. */
+  missingCompanies: MissingCompany[]
 }
 
 /**

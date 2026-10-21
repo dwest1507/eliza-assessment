@@ -2,6 +2,8 @@ import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Workspace from '@/components/Workspace'
+import evalExport from '@/data/eval-export.json'
+import type { EvalExport } from '@/lib/evalExport'
 import { STARTERS } from '@/lib/starters'
 
 /** The parts the chat API streams, in its order: the Query Scope and Sources first. */
@@ -1281,5 +1283,162 @@ describe('Follow-up suggestions', () => {
     await user.type(screen.getByRole('textbox', { name: 'Question' }), 'And Microsoft?{Enter}')
     await screen.findByRole('alert')
     expect(screen.queryByRole('list', { name: 'Suggested follow-ups' })).not.toBeInTheDocument()
+  })
+})
+
+describe('The Calendar tab', () => {
+  /** The committed export's Company Calendars, as the workspace page passes them. */
+  const CALENDARS = (evalExport as EvalExport).companies
+
+  const rail = () => screen.getByRole('group', { name: 'Panel toolbar' })
+  const railCalendar = () => within(rail()).getByRole('button', { name: 'Calendar' })
+  const tickers = () =>
+    within(screen.getByRole('navigation', { name: 'Companies asked about' }))
+      .getAllByRole('button')
+      .map((tab) => tab.textContent)
+  const calendarTable = (ticker: string) =>
+    screen.getByRole('table', { name: `${ticker} fiscal calendar` })
+  /** The table's rows for one fiscal period, by its first cell. */
+  const row = (table: HTMLElement, fiscalPeriod: string) =>
+    within(table).getByRole('row', { name: new RegExp(`^${fiscalPeriod}\\b`) })
+
+  /** Two answers: Apple and Tesla (Microsoft retrieved too, but not in the Query Scope),
+   * then NVIDIA and McDonald's. */
+  async function twoAnswers(user: ReturnType<typeof userEvent.setup>) {
+    fetchMock
+      .mockImplementationOnce(async () =>
+        uiMessageStream(ANSWER, QUERY_SCOPE, [...SOURCES, UNCITED_SOURCE])
+      )
+      .mockImplementationOnce(async () =>
+        uiMessageStream(
+          ['NVIDIA grew **fast** [S1].'],
+          {
+            ...QUERY_SCOPE,
+            companies: [
+              { ticker: 'NVDA', name: 'NVIDIA Corp', coverage: 'tracked' },
+              { ticker: 'MCD', name: "McDonald's Corp", coverage: 'snapshot' },
+            ],
+          },
+          [FACTS_SOURCE],
+          [],
+          'msg-2'
+        )
+      )
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByText('trade policy')
+    await user.type(screen.getByRole('textbox', { name: 'Question' }), 'And NVIDIA?{Enter}')
+    await screen.findByText('fast')
+  }
+
+  it('opens from the calendar icon, and says so when no company has been asked about', async () => {
+    const user = userEvent.setup()
+    render(<Workspace calendars={CALENDARS} />)
+
+    expect(railCalendar()).toHaveAttribute('aria-pressed', 'false')
+    await user.click(railCalendar())
+    expect(railCalendar()).toHaveAttribute('aria-pressed', 'true')
+    expect(
+      within(screen.getByRole('tablist', { name: 'Panel tabs' })).getByRole('tab', {
+        name: 'Calendar',
+      })
+    ).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tabpanel', { name: 'Calendar' })).toHaveTextContent(/No companies yet/)
+
+    await user.click(railCalendar())
+    expect(screen.queryByRole('complementary', { name: 'Side panel' })).not.toBeInTheDocument()
+  })
+
+  it("lists every Query Scope's Companies seen so far as alphabetical ticker tabs", async () => {
+    const user = userEvent.setup()
+    render(<Workspace calendars={CALENDARS} />)
+    await twoAnswers(user)
+
+    await user.click(railCalendar())
+    // Microsoft was only retrieved as a Source, never in a Query Scope.
+    expect(tickers()).toEqual(['AAPL', 'MCD', 'NVDA', 'TSLA'])
+    expect(
+      within(screen.getByRole('navigation', { name: 'Companies asked about' })).getByRole(
+        'button',
+        { name: 'AAPL' }
+      )
+    ).toHaveAttribute('aria-pressed', 'true')
+    expect(calendarTable('AAPL')).toBeInTheDocument()
+  })
+
+  it("shows a ticker's calendar newest first, banded by calendar year, its revenue traceable", async () => {
+    const user = userEvent.setup()
+    render(<Workspace calendars={CALENDARS} />)
+    await twoAnswers(user)
+    await user.click(railCalendar())
+    await user.click(screen.getByRole('button', { name: 'NVDA' }))
+
+    const panel = screen.getByRole('tabpanel', { name: 'Calendar' })
+    expect(panel).toHaveTextContent('Fiscal year ends late January')
+    const table = calendarTable('NVDA')
+
+    // Banded by the calendar year each period ends in, newest first.
+    const bands = within(table)
+      .getAllByRole('rowgroup')
+      .slice(1)
+      .map((band) => band.getAttribute('aria-label'))
+    expect(bands.slice(0, 4)).toEqual(['2025', '2024', '2023', '2022'])
+
+    const q3 = row(table, 'Q3 FY2026')
+    expect(q3).toHaveTextContent('Aug–Oct 2025')
+    expect(q3).toHaveTextContent('10-Q')
+    expect(within(q3).getByText('$57,006M')).toHaveAttribute(
+      'title',
+      'NVDA_10-Q_2025-10-26 · Revenue'
+    )
+    const fy = row(table, 'FY2025')
+    expect(fy).toHaveTextContent('Feb 2024–Jan 2025')
+    expect(within(fy).getByText('$130,497M')).toHaveAttribute(
+      'title',
+      'NVDA_10-K_2025-01-26 · Revenue'
+    )
+    expect(fy).toHaveClass('font-semibold')
+    // The fiscal year's row sits beside its fourth quarter, whose revenue is derived.
+    const q4 = row(table, 'Q4 FY2025')
+    expect(fy.compareDocumentPosition(q4) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(q4).toHaveTextContent('$39,331Mderived')
+    expect(within(q4).getByText('$39,331M')).toHaveAttribute(
+      'title',
+      expect.stringContaining('FY2025 less Q1–Q3 FY2025')
+    )
+    // Every row, newest first.
+    const periods = within(table)
+      .getAllByRole('row')
+      .slice(1)
+      .map((r) => r.querySelector('th')?.textContent)
+      .filter((p) => p && /FY/.test(p))
+    expect(periods.slice(0, 5)).toEqual([
+      'Q3 FY2026',
+      'Q2 FY2026',
+      'Q1 FY2026',
+      'FY2025',
+      'Q4 FY2025',
+    ])
+  })
+
+  it('greys the periods with no Filing, and explains a Snapshot Company has no revenue', async () => {
+    const user = userEvent.setup()
+    render(<Workspace calendars={CALENDARS} />)
+    await twoAnswers(user)
+    await user.click(railCalendar())
+    await user.click(screen.getByRole('button', { name: 'MCD' }))
+
+    const panel = screen.getByRole('tabpanel', { name: 'Calendar' })
+    expect(panel).toHaveTextContent(
+      'Revenue figures are extracted for companies with two or more years of filings.'
+    )
+    const table = calendarTable('MCD')
+    expect(within(table).queryByRole('columnheader', { name: 'Revenue' })).not.toBeInTheDocument()
+    const filed = row(table, 'FY2024')
+    expect(filed).toHaveTextContent('10-K')
+    expect(filed).not.toHaveClass('text-muted')
+    const gap = row(table, 'Q3 FY2024')
+    expect(gap).toHaveTextContent('Jul–Sep 2024')
+    expect(gap).toHaveTextContent('not in the filings')
+    expect(gap).toHaveClass('text-muted')
   })
 })

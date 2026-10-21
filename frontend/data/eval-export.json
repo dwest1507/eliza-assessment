@@ -1,5 +1,5 @@
 {
-  "exportedOn": "2026-10-18",
+  "exportedOn": "2026-10-20",
   "split": "dev",
   "goldenSet": {
     "version": 2,
@@ -5649,5 +5649,6208 @@
         ]
       }
     ]
-  }
+  },
+  "companies": [
+    {
+      "ticker": "AAPL",
+      "company": "Apple Inc",
+      "sector": "Information Technology",
+      "coverage": "tracked",
+      "fiscalYearEnd": "late September",
+      "periods": [
+        {
+          "fiscalPeriod": "Q1 FY2026",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "AAPL_10-Q_2025-12-27",
+            "formType": "10-Q",
+            "reportPeriod": "2025-12-27"
+          },
+          "revenue": {
+            "value": 143756000000,
+            "filingId": "AAPL_10-Q_2025-12-27",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Oct 2024\u2013Sep 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "AAPL_10-K_2025-09-27",
+            "formType": "10-K",
+            "reportPeriod": "2025-09-27"
+          },
+          "revenue": {
+            "value": 416161000000,
+            "filingId": "AAPL_10-K_2025-09-27",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "AAPL_10-K_2025-09-27",
+            "formType": "10-K",
+            "reportPeriod": "2025-09-27"
+          },
+          "revenue": {
+            "value": 102466000000,
+            "filingId": "AAPL_10-K_2025-09-27",
+            "label": null,
+            "derived": "FY2025 less Q1\u2013Q3 FY2025"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2025",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "AAPL_10-Q_2025-06-28",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-28"
+          },
+          "revenue": {
+            "value": 94036000000,
+            "filingId": "AAPL_10-Q_2025-06-28",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2025",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "AAPL_10-Q_2025-03-29",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-29"
+          },
+          "revenue": {
+            "value": 95359000000,
+            "filingId": "AAPL_10-Q_2025-03-29",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "AAPL_10-Q_2024-12-28",
+            "formType": "10-Q",
+            "reportPeriod": "2024-12-28"
+          },
+          "revenue": {
+            "value": 124300000000,
+            "filingId": "AAPL_10-Q_2024-12-28",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Oct 2023\u2013Sep 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "AAPL_10-K_2024-09-28",
+            "formType": "10-K",
+            "reportPeriod": "2024-09-28"
+          },
+          "revenue": {
+            "value": 391035000000,
+            "filingId": "AAPL_10-K_2024-09-28",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "AAPL_10-K_2024-09-28",
+            "formType": "10-K",
+            "reportPeriod": "2024-09-28"
+          },
+          "revenue": {
+            "value": 94930000000,
+            "filingId": "AAPL_10-K_2024-09-28",
+            "label": null,
+            "derived": "FY2024 less Q1\u2013Q3 FY2024"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2024",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "AAPL_10-Q_2024-06-29",
+            "formType": "10-Q",
+            "reportPeriod": "2024-06-29"
+          },
+          "revenue": {
+            "value": 85777000000,
+            "filingId": "AAPL_10-Q_2024-06-29",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2024",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "AAPL_10-Q_2024-03-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-30"
+          },
+          "revenue": {
+            "value": 90753000000,
+            "filingId": "AAPL_10-Q_2024-03-30",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2024",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "AAPL_10-Q_2023-12-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-12-30"
+          },
+          "revenue": {
+            "value": 119575000000,
+            "filingId": "AAPL_10-Q_2023-12-30",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2023",
+          "kind": "year",
+          "months": "Oct 2022\u2013Sep 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "AAPL_10-K_2023-09-30",
+            "formType": "10-K",
+            "reportPeriod": "2023-09-30"
+          },
+          "revenue": {
+            "value": 383285000000,
+            "filingId": "AAPL_10-K_2023-09-30",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2023",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "AAPL_10-K_2023-09-30",
+            "formType": "10-K",
+            "reportPeriod": "2023-09-30"
+          },
+          "revenue": {
+            "value": 89498000000,
+            "filingId": "AAPL_10-K_2023-09-30",
+            "label": null,
+            "derived": "FY2023 less Q1\u2013Q3 FY2023"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2023",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "AAPL_10-Q_2023-07-01",
+            "formType": "10-Q",
+            "reportPeriod": "2023-07-01"
+          },
+          "revenue": {
+            "value": 81797000000,
+            "filingId": "AAPL_10-Q_2023-07-01",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2023",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "AAPL_10-Q_2023-04-01",
+            "formType": "10-Q",
+            "reportPeriod": "2023-04-01"
+          },
+          "revenue": {
+            "value": 94836000000,
+            "filingId": "AAPL_10-Q_2023-04-01",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2023",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "AAPL_10-Q_2022-12-31",
+            "formType": "10-Q",
+            "reportPeriod": "2022-12-31"
+          },
+          "revenue": {
+            "value": 117154000000,
+            "filingId": "AAPL_10-Q_2022-12-31",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2022",
+          "kind": "year",
+          "months": "Oct 2021\u2013Sep 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "AAPL_10-K_2022-09-24",
+            "formType": "10-K",
+            "reportPeriod": "2022-09-24"
+          },
+          "revenue": {
+            "value": 394328000000,
+            "filingId": "AAPL_10-K_2022-09-24",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2022",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "AAPL_10-K_2022-09-24",
+            "formType": "10-K",
+            "reportPeriod": "2022-09-24"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q3 FY2022",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "AAPL_10-Q_2022-06-25",
+            "formType": "10-Q",
+            "reportPeriod": "2022-06-25"
+          },
+          "revenue": {
+            "value": 82959000000,
+            "filingId": "AAPL_10-Q_2022-06-25",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2022",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "AAPL_10-Q_2022-03-26",
+            "formType": "10-Q",
+            "reportPeriod": "2022-03-26"
+          },
+          "revenue": {
+            "value": 97278000000,
+            "filingId": "AAPL_10-Q_2022-03-26",
+            "label": "Total net sales",
+            "derived": null
+          }
+        }
+      ]
+    },
+    {
+      "ticker": "ABBV",
+      "company": "AbbVie Inc",
+      "sector": "Health Care",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "ABBV_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "ABBV_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "ADBE",
+      "company": "Adobe Inc",
+      "sector": "Information Technology",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "late November",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Dec 2024\u2013Nov 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "ADBE_10-K_2025-11-28",
+            "formType": "10-K",
+            "reportPeriod": "2025-11-28"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Sep\u2013Nov 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "ADBE_10-K_2025-11-28",
+            "formType": "10-K",
+            "reportPeriod": "2025-11-28"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "AMD",
+      "company": "Advanced Micro Devices Inc",
+      "sector": "Information Technology",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "late December",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "AMD_10-K_2025-12-27",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-27"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "AMD_10-K_2025-12-27",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-27"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "AMZN",
+      "company": "Amazon.com Inc",
+      "sector": "Consumer Discretionary",
+      "coverage": "tracked",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "AMZN_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": {
+            "value": 716924000000,
+            "filingId": "AMZN_10-K_2025-12-31",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "AMZN_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": {
+            "value": 213386000000,
+            "filingId": "AMZN_10-K_2025-12-31",
+            "label": null,
+            "derived": "FY2025 less Q1\u2013Q3 FY2025"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2025",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "AMZN_10-Q_2025-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-30"
+          },
+          "revenue": {
+            "value": 180169000000,
+            "filingId": "AMZN_10-Q_2025-09-30",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2025",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "AMZN_10-Q_2025-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-30"
+          },
+          "revenue": {
+            "value": 167702000000,
+            "filingId": "AMZN_10-Q_2025-06-30",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2025",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "AMZN_10-Q_2025-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-31"
+          },
+          "revenue": {
+            "value": 155667000000,
+            "filingId": "AMZN_10-Q_2025-03-31",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "AMZN_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": {
+            "value": 637959000000,
+            "filingId": "AMZN_10-K_2024-12-31",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "AMZN_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": {
+            "value": 187792000000,
+            "filingId": "AMZN_10-K_2024-12-31",
+            "label": null,
+            "derived": "FY2024 less Q1\u2013Q3 FY2024"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2024",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "AMZN_10-Q_2024-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-09-30"
+          },
+          "revenue": {
+            "value": 158877000000,
+            "filingId": "AMZN_10-Q_2024-09-30",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2024",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "AMZN_10-Q_2024-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-06-30"
+          },
+          "revenue": {
+            "value": 147977000000,
+            "filingId": "AMZN_10-Q_2024-06-30",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2024",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "AMZN_10-Q_2024-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-31"
+          },
+          "revenue": {
+            "value": 143313000000,
+            "filingId": "AMZN_10-Q_2024-03-31",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2023",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "AMZN_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31"
+          },
+          "revenue": {
+            "value": 574785000000,
+            "filingId": "AMZN_10-K_2023-12-31",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2023",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "AMZN_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31"
+          },
+          "revenue": {
+            "value": 169961000000,
+            "filingId": "AMZN_10-K_2023-12-31",
+            "label": null,
+            "derived": "FY2023 less Q1\u2013Q3 FY2023"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2023",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "AMZN_10-Q_2023-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-09-30"
+          },
+          "revenue": {
+            "value": 143083000000,
+            "filingId": "AMZN_10-Q_2023-09-30",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2023",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "AMZN_10-Q_2023-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-06-30"
+          },
+          "revenue": {
+            "value": 134383000000,
+            "filingId": "AMZN_10-Q_2023-06-30",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2023",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "AMZN_10-Q_2023-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2023-03-31"
+          },
+          "revenue": {
+            "value": 127358000000,
+            "filingId": "AMZN_10-Q_2023-03-31",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2022",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "AMZN_10-K_2022-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2022-12-31"
+          },
+          "revenue": {
+            "value": 513983000000,
+            "filingId": "AMZN_10-K_2022-12-31",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2022",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "AMZN_10-K_2022-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2022-12-31"
+          },
+          "revenue": {
+            "value": 149204000000,
+            "filingId": "AMZN_10-K_2022-12-31",
+            "label": null,
+            "derived": "FY2022 less Q1\u2013Q3 FY2022"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2022",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "AMZN_10-Q_2022-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-09-30"
+          },
+          "revenue": {
+            "value": 127101000000,
+            "filingId": "AMZN_10-Q_2022-09-30",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2022",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "AMZN_10-Q_2022-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-06-30"
+          },
+          "revenue": {
+            "value": 121234000000,
+            "filingId": "AMZN_10-Q_2022-06-30",
+            "label": "Total net sales",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2022",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "AMZN_10-Q_2022-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2022-03-31"
+          },
+          "revenue": {
+            "value": 116444000000,
+            "filingId": "AMZN_10-Q_2022-03-31",
+            "label": "Total net sales",
+            "derived": null
+          }
+        }
+      ]
+    },
+    {
+      "ticker": "AXP",
+      "company": "American Express Company",
+      "sector": "Financials",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "AXP_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "AXP_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "BA",
+      "company": "The Boeing Company",
+      "sector": "Industrials",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "BA_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "BA_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "BAC",
+      "company": "Bank of America Corporation",
+      "sector": "Financials",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "Q3 FY2025",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "BAC_10-Q_2025-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-30"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q2 FY2025",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "BAC_10-Q_2025-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-30"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q1 FY2025",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "BAC_10-Q_2025-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "BAC_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "BAC_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "BLK",
+      "company": "BlackRock Inc",
+      "sector": "Financials",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2023",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "BLK_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2023",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "BLK_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "BRK",
+      "company": "Berkshire Hathaway Inc",
+      "sector": "Financials",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "BRK_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "BRK_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "CAT",
+      "company": "Caterpillar Inc",
+      "sector": "Industrials",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "CAT_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "CAT_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "CMCSA",
+      "company": "Comcast Corporation",
+      "sector": "Communication Services",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "CMCSA_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "CMCSA_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "COST",
+      "company": "Costco Wholesale Corporation",
+      "sector": "Consumer Staples",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "August 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Sep 2024\u2013Aug 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "COST_10-K_2025-08-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-08-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Jun\u2013Aug 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "COST_10-K_2025-08-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-08-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "CRM",
+      "company": "Salesforce Inc",
+      "sector": "Information Technology",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "January 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Feb 2024\u2013Jan 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "CRM_10-K_2025-01-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-01-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Nov 2024\u2013Jan 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "CRM_10-K_2025-01-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-01-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "CSCO",
+      "company": "Cisco Systems Inc",
+      "sector": "Information Technology",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "late July",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Aug 2024\u2013Jul 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "CSCO_10-K_2025-07-26",
+            "formType": "10-K",
+            "reportPeriod": "2025-07-26"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "May\u2013Jul 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "CSCO_10-K_2025-07-26",
+            "formType": "10-K",
+            "reportPeriod": "2025-07-26"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "CVX",
+      "company": "Chevron Corporation",
+      "sector": "Energy",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "CVX_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "CVX_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "DE",
+      "company": "Deere & Company",
+      "sector": "Industrials",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "late October or early November",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Nov 2024\u2013Oct 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "DE_10-K_2025-11-02",
+            "formType": "10-K",
+            "reportPeriod": "2025-11-02"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Aug\u2013Oct 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "DE_10-K_2025-11-02",
+            "formType": "10-K",
+            "reportPeriod": "2025-11-02"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "DIS",
+      "company": "The Walt Disney Company",
+      "sector": "Communication Services",
+      "coverage": "tracked",
+      "fiscalYearEnd": "late September or early October",
+      "periods": [
+        {
+          "fiscalPeriod": "Q1 FY2026",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "DIS_10-Q_2025-12-27",
+            "formType": "10-Q",
+            "reportPeriod": "2025-12-27"
+          },
+          "revenue": {
+            "value": 25981000000,
+            "filingId": "DIS_10-Q_2025-12-27",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Oct 2024\u2013Sep 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "DIS_10-K_2025-09-27",
+            "formType": "10-K",
+            "reportPeriod": "2025-09-27"
+          },
+          "revenue": {
+            "value": 94425000000,
+            "filingId": "DIS_10-K_2025-09-27",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "DIS_10-K_2025-09-27",
+            "formType": "10-K",
+            "reportPeriod": "2025-09-27"
+          },
+          "revenue": {
+            "value": 22464000000,
+            "filingId": "DIS_10-K_2025-09-27",
+            "label": null,
+            "derived": "FY2025 less Q1\u2013Q3 FY2025"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2025",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "DIS_10-Q_2025-06-28",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-28"
+          },
+          "revenue": {
+            "value": 23650000000,
+            "filingId": "DIS_10-Q_2025-06-28",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2025",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "DIS_10-Q_2025-03-29",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-29"
+          },
+          "revenue": {
+            "value": 23621000000,
+            "filingId": "DIS_10-Q_2025-03-29",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "DIS_10-Q_2024-12-28",
+            "formType": "10-Q",
+            "reportPeriod": "2024-12-28"
+          },
+          "revenue": {
+            "value": 24690000000,
+            "filingId": "DIS_10-Q_2024-12-28",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Oct 2023\u2013Sep 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "DIS_10-K_2024-09-28",
+            "formType": "10-K",
+            "reportPeriod": "2024-09-28"
+          },
+          "revenue": {
+            "value": 91361000000,
+            "filingId": "DIS_10-K_2024-09-28",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "DIS_10-K_2024-09-28",
+            "formType": "10-K",
+            "reportPeriod": "2024-09-28"
+          },
+          "revenue": {
+            "value": 22574000000,
+            "filingId": "DIS_10-K_2024-09-28",
+            "label": null,
+            "derived": "FY2024 less Q1\u2013Q3 FY2024"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2024",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "DIS_10-Q_2024-06-29",
+            "formType": "10-Q",
+            "reportPeriod": "2024-06-29"
+          },
+          "revenue": {
+            "value": 23155000000,
+            "filingId": "DIS_10-Q_2024-06-29",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2024",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "DIS_10-Q_2024-03-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-30"
+          },
+          "revenue": {
+            "value": 22083000000,
+            "filingId": "DIS_10-Q_2024-03-30",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2024",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "DIS_10-Q_2023-12-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-12-30"
+          },
+          "revenue": {
+            "value": 23549000000,
+            "filingId": "DIS_10-Q_2023-12-30",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2023",
+          "kind": "year",
+          "months": "Oct 2022\u2013Sep 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "DIS_10-K_2023-09-30",
+            "formType": "10-K",
+            "reportPeriod": "2023-09-30"
+          },
+          "revenue": {
+            "value": 88898000000,
+            "filingId": "DIS_10-K_2023-09-30",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2023",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "DIS_10-K_2023-09-30",
+            "formType": "10-K",
+            "reportPeriod": "2023-09-30"
+          },
+          "revenue": {
+            "value": 21241000000,
+            "filingId": "DIS_10-K_2023-09-30",
+            "label": null,
+            "derived": "FY2023 less Q1\u2013Q3 FY2023"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2023",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "DIS_10-Q_2023-07-01",
+            "formType": "10-Q",
+            "reportPeriod": "2023-07-01"
+          },
+          "revenue": {
+            "value": 22330000000,
+            "filingId": "DIS_10-Q_2023-07-01",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2023",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "DIS_10-Q_2023-04-01",
+            "formType": "10-Q",
+            "reportPeriod": "2023-04-01"
+          },
+          "revenue": {
+            "value": 21815000000,
+            "filingId": "DIS_10-Q_2023-04-01",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2023",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "DIS_10-Q_2022-12-31",
+            "formType": "10-Q",
+            "reportPeriod": "2022-12-31"
+          },
+          "revenue": {
+            "value": 23512000000,
+            "filingId": "DIS_10-Q_2022-12-31",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2022",
+          "kind": "year",
+          "months": "Oct 2021\u2013Sep 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "DIS_10-K_2022-10-01",
+            "formType": "10-K",
+            "reportPeriod": "2022-10-01"
+          },
+          "revenue": {
+            "value": 82722000000,
+            "filingId": "DIS_10-K_2022-10-01",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2022",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "DIS_10-K_2022-10-01",
+            "formType": "10-K",
+            "reportPeriod": "2022-10-01"
+          },
+          "revenue": {
+            "value": 20150000000,
+            "filingId": "DIS_10-K_2022-10-01",
+            "label": null,
+            "derived": "FY2022 less Q1\u2013Q3 FY2022"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2022",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "DIS_10-Q_2022-07-02",
+            "formType": "10-Q",
+            "reportPeriod": "2022-07-02"
+          },
+          "revenue": {
+            "value": 21504000000,
+            "filingId": "DIS_10-Q_2022-07-02",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2022",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "DIS_10-Q_2022-04-02",
+            "formType": "10-Q",
+            "reportPeriod": "2022-04-02"
+          },
+          "revenue": {
+            "value": 19249000000,
+            "filingId": "DIS_10-Q_2022-04-02",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2022",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2021",
+          "calendarYear": 2021,
+          "filing": {
+            "filingId": "DIS_10-Q_2022-01-01",
+            "formType": "10-Q",
+            "reportPeriod": "2022-01-01"
+          },
+          "revenue": {
+            "value": 21819000000,
+            "filingId": "DIS_10-Q_2022-01-01",
+            "label": "Total revenues",
+            "derived": null
+          }
+        }
+      ]
+    },
+    {
+      "ticker": "GE",
+      "company": "General Electric Company",
+      "sector": "Financials",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2014",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2014",
+          "calendarYear": 2014,
+          "filing": {
+            "filingId": "GE_10-K_2014-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2014-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2014",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2014",
+          "calendarYear": 2014,
+          "filing": {
+            "filingId": "GE_10-K_2014-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2014-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "GOOG",
+      "company": "Alphabet Inc",
+      "sector": "Communication Services",
+      "coverage": "tracked",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "GOOG_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": {
+            "value": 402836000000,
+            "filingId": "GOOG_10-K_2025-12-31",
+            "label": "Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "GOOG_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": {
+            "value": 113828000000,
+            "filingId": "GOOG_10-K_2025-12-31",
+            "label": null,
+            "derived": "FY2025 less Q1\u2013Q3 FY2025"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2025",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "GOOG_10-Q_2025-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-30"
+          },
+          "revenue": {
+            "value": 102346000000,
+            "filingId": "GOOG_10-Q_2025-09-30",
+            "label": "Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2025",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "GOOG_10-Q_2025-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-30"
+          },
+          "revenue": {
+            "value": 96428000000,
+            "filingId": "GOOG_10-Q_2025-06-30",
+            "label": "Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2025",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "GOOG_10-Q_2025-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-31"
+          },
+          "revenue": {
+            "value": 90234000000,
+            "filingId": "GOOG_10-Q_2025-03-31",
+            "label": "Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "GOOG_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": {
+            "value": 350018000000,
+            "filingId": "GOOG_10-K_2024-12-31",
+            "label": "Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "GOOG_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": {
+            "value": 96469000000,
+            "filingId": "GOOG_10-K_2024-12-31",
+            "label": null,
+            "derived": "FY2024 less Q1\u2013Q3 FY2024"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2024",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "GOOG_10-Q_2024-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-09-30"
+          },
+          "revenue": {
+            "value": 88268000000,
+            "filingId": "GOOG_10-Q_2024-09-30",
+            "label": "Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2024",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "GOOG_10-Q_2024-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-06-30"
+          },
+          "revenue": {
+            "value": 84742000000,
+            "filingId": "GOOG_10-Q_2024-06-30",
+            "label": "Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2024",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "GOOG_10-Q_2024-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-31"
+          },
+          "revenue": {
+            "value": 80539000000,
+            "filingId": "GOOG_10-Q_2024-03-31",
+            "label": "Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2023",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "GOOG_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31"
+          },
+          "revenue": {
+            "value": 307394000000,
+            "filingId": "GOOG_10-K_2023-12-31",
+            "label": "Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2023",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "GOOG_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31"
+          },
+          "revenue": {
+            "value": 86310000000,
+            "filingId": "GOOG_10-K_2023-12-31",
+            "label": null,
+            "derived": "FY2023 less Q1\u2013Q3 FY2023"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2023",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "GOOG_10-Q_2023-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-09-30"
+          },
+          "revenue": {
+            "value": 76693000000,
+            "filingId": "GOOG_10-Q_2023-09-30",
+            "label": "Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2023",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "GOOG_10-Q_2023-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-06-30"
+          },
+          "revenue": {
+            "value": 74604000000,
+            "filingId": "GOOG_10-Q_2023-06-30",
+            "label": "Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2023",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "GOOG_10-Q_2023-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2023-03-31"
+          },
+          "revenue": {
+            "value": 69787000000,
+            "filingId": "GOOG_10-Q_2023-03-31",
+            "label": "Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2022",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "GOOG_10-K_2022-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2022-12-31"
+          },
+          "revenue": {
+            "value": 282836000000,
+            "filingId": "GOOG_10-K_2022-12-31",
+            "label": "Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2022",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "GOOG_10-K_2022-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2022-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q3 FY2022",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "GOOG_10-Q_2022-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-09-30"
+          },
+          "revenue": {
+            "value": 69092000000,
+            "filingId": "GOOG_10-Q_2022-09-30",
+            "label": "Revenues",
+            "derived": null
+          }
+        }
+      ]
+    },
+    {
+      "ticker": "GS",
+      "company": "Goldman Sachs Group Inc",
+      "sector": "Financials",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "GS_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "GS_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "HD",
+      "company": "The Home Depot Inc",
+      "sector": "Consumer Discretionary",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "late January or early February",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Feb 2024\u2013Jan 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "HD_10-K_2025-02-02",
+            "formType": "10-K",
+            "reportPeriod": "2025-02-02"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Nov 2024\u2013Jan 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "HD_10-K_2025-02-02",
+            "formType": "10-K",
+            "reportPeriod": "2025-02-02"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "IBM",
+      "company": "International Business Machines Corp",
+      "sector": "Information Technology",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "IBM_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "IBM_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "INTC",
+      "company": "Intel Corporation",
+      "sector": "Information Technology",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "late December",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "INTC_10-K_2025-12-27",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-27"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "INTC_10-K_2025-12-27",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-27"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "JNJ",
+      "company": "Johnson & Johnson",
+      "sector": "Health Care",
+      "coverage": "tracked",
+      "fiscalYearEnd": "late December or early January",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "JNJ_10-K_2025-12-28",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-28"
+          },
+          "revenue": {
+            "value": 94193000000,
+            "filingId": "JNJ_10-K_2025-12-28",
+            "label": "Sales to customers",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "JNJ_10-K_2025-12-28",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-28"
+          },
+          "revenue": {
+            "value": 24564000000,
+            "filingId": "JNJ_10-K_2025-12-28",
+            "label": null,
+            "derived": "FY2025 less Q1\u2013Q3 FY2025"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2025",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "JNJ_10-Q_2025-09-28",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-28"
+          },
+          "revenue": {
+            "value": 23993000000,
+            "filingId": "JNJ_10-Q_2025-09-28",
+            "label": "Sales to customers (Note 9)",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2025",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "JNJ_10-Q_2025-06-29",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-29"
+          },
+          "revenue": {
+            "value": 23743000000,
+            "filingId": "JNJ_10-Q_2025-06-29",
+            "label": "Sales to customers (Note 9)",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2025",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "JNJ_10-Q_2025-03-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-30"
+          },
+          "revenue": {
+            "value": 21893000000,
+            "filingId": "JNJ_10-Q_2025-03-30",
+            "label": "Sales to customers (Note 9)",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "JNJ_10-K_2024-12-29",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-29"
+          },
+          "revenue": {
+            "value": 88821000000,
+            "filingId": "JNJ_10-K_2024-12-29",
+            "label": "Sales to customers",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "JNJ_10-K_2024-12-29",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-29"
+          },
+          "revenue": {
+            "value": 22520000000,
+            "filingId": "JNJ_10-K_2024-12-29",
+            "label": null,
+            "derived": "FY2024 less Q1\u2013Q3 FY2024"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2024",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "JNJ_10-Q_2024-09-29",
+            "formType": "10-Q",
+            "reportPeriod": "2024-09-29"
+          },
+          "revenue": {
+            "value": 22471000000,
+            "filingId": "JNJ_10-Q_2024-09-29",
+            "label": "Sales to customers (Note 9)",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2024",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "JNJ_10-Q_2024-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-06-30"
+          },
+          "revenue": {
+            "value": 22447000000,
+            "filingId": "JNJ_10-Q_2024-06-30",
+            "label": "Sales to customers (Note 9)",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2024",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "JNJ_10-Q_2024-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-31"
+          },
+          "revenue": {
+            "value": 21383000000,
+            "filingId": "JNJ_10-Q_2024-03-31",
+            "label": "Sales to customers (Note 9)",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2023",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "JNJ_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31"
+          },
+          "revenue": {
+            "value": 85159000000,
+            "filingId": "JNJ_10-K_2023-12-31",
+            "label": "Sales to customers",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2023",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "JNJ_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31"
+          },
+          "revenue": {
+            "value": 13532000000,
+            "filingId": "JNJ_10-K_2023-12-31",
+            "label": null,
+            "derived": "FY2023 less Q1\u2013Q3 FY2023"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2023",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "JNJ_10-Q_2023-10-01",
+            "formType": "10-Q",
+            "reportPeriod": "2023-10-01"
+          },
+          "revenue": {
+            "value": 21351000000,
+            "filingId": "JNJ_10-Q_2023-10-01",
+            "label": "Sales to customers (Note 9)",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2023",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "JNJ_10-Q_2023-07-02",
+            "formType": "10-Q",
+            "reportPeriod": "2023-07-02"
+          },
+          "revenue": {
+            "value": 25530000000,
+            "filingId": "JNJ_10-Q_2023-07-02",
+            "label": "Sales to customers (Note 9)",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2023",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "JNJ_10-Q_2023-04-02",
+            "formType": "10-Q",
+            "reportPeriod": "2023-04-02"
+          },
+          "revenue": {
+            "value": 24746000000,
+            "filingId": "JNJ_10-Q_2023-04-02",
+            "label": "Sales to customers (Note 9)",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2022",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "JNJ_10-K_2023-01-01",
+            "formType": "10-K",
+            "reportPeriod": "2023-01-01"
+          },
+          "revenue": {
+            "value": 94943000000,
+            "filingId": "JNJ_10-K_2023-01-01",
+            "label": "Sales to customers",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2022",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "JNJ_10-K_2023-01-01",
+            "formType": "10-K",
+            "reportPeriod": "2023-01-01"
+          },
+          "revenue": {
+            "value": 23706000000,
+            "filingId": "JNJ_10-K_2023-01-01",
+            "label": null,
+            "derived": "FY2022 less Q1\u2013Q3 FY2022"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2022",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "JNJ_10-Q_2022-10-02",
+            "formType": "10-Q",
+            "reportPeriod": "2022-10-02"
+          },
+          "revenue": {
+            "value": 23791000000,
+            "filingId": "JNJ_10-Q_2022-10-02",
+            "label": "Sales to customers (Note 9)",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2022",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "JNJ_10-Q_2022-07-03",
+            "formType": "10-Q",
+            "reportPeriod": "2022-07-03"
+          },
+          "revenue": {
+            "value": 24020000000,
+            "filingId": "JNJ_10-Q_2022-07-03",
+            "label": "Sales to customers (Note 9)",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2022",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "JNJ_10-Q_2022-04-03",
+            "formType": "10-Q",
+            "reportPeriod": "2022-04-03"
+          },
+          "revenue": {
+            "value": 23426000000,
+            "filingId": "JNJ_10-Q_2022-04-03",
+            "label": "Sales to customers (Note 9)",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2021",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2021",
+          "calendarYear": 2021,
+          "filing": {
+            "filingId": "JNJ_10-K_2022-01-02",
+            "formType": "10-K",
+            "reportPeriod": "2022-01-02"
+          },
+          "revenue": {
+            "value": 93775000000,
+            "filingId": "JNJ_10-K_2022-01-02",
+            "label": "Sales to customers",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2021",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2021",
+          "calendarYear": 2021,
+          "filing": {
+            "filingId": "JNJ_10-K_2022-01-02",
+            "formType": "10-K",
+            "reportPeriod": "2022-01-02"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "JPM",
+      "company": "JPMorgan Chase & Co",
+      "sector": "Financials",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "JPM_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "JPM_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q3 FY2025",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "JPM_10-Q_2025-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-30"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q2 FY2025",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "JPM_10-Q_2025-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-30"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q1 FY2025",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "JPM_10-Q_2025-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "KO",
+      "company": "The Coca-Cola Company",
+      "sector": "Consumer Staples",
+      "coverage": "tracked",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "Q3 FY2025",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "KO_10-Q_2025-09-26",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-26"
+          },
+          "revenue": {
+            "value": 12455000000,
+            "filingId": "KO_10-Q_2025-09-26",
+            "label": "Net Operating Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2025",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "KO_10-Q_2025-06-27",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-27"
+          },
+          "revenue": {
+            "value": 12535000000,
+            "filingId": "KO_10-Q_2025-06-27",
+            "label": "Net Operating Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2025",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "KO_10-Q_2025-03-28",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-28"
+          },
+          "revenue": {
+            "value": 11129000000,
+            "filingId": "KO_10-Q_2025-03-28",
+            "label": "Net Operating Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "KO_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": {
+            "value": 47061000000,
+            "filingId": "KO_10-K_2024-12-31",
+            "label": "Net Operating Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "KO_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": {
+            "value": 11544000000,
+            "filingId": "KO_10-K_2024-12-31",
+            "label": null,
+            "derived": "FY2024 less Q1\u2013Q3 FY2024"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2024",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "KO_10-Q_2024-09-27",
+            "formType": "10-Q",
+            "reportPeriod": "2024-09-27"
+          },
+          "revenue": {
+            "value": 11854000000,
+            "filingId": "KO_10-Q_2024-09-27",
+            "label": "Net Operating Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2024",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "KO_10-Q_2024-06-28",
+            "formType": "10-Q",
+            "reportPeriod": "2024-06-28"
+          },
+          "revenue": {
+            "value": 12363000000,
+            "filingId": "KO_10-Q_2024-06-28",
+            "label": "Net Operating Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2024",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "KO_10-Q_2024-03-29",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-29"
+          },
+          "revenue": {
+            "value": 11300000000,
+            "filingId": "KO_10-Q_2024-03-29",
+            "label": "Net Operating Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2023",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "KO_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31"
+          },
+          "revenue": {
+            "value": 45754000000,
+            "filingId": "KO_10-K_2023-12-31",
+            "label": "Net Operating Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2023",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "KO_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31"
+          },
+          "revenue": {
+            "value": 10849000000,
+            "filingId": "KO_10-K_2023-12-31",
+            "label": null,
+            "derived": "FY2023 less Q1\u2013Q3 FY2023"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2023",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "KO_10-Q_2023-09-29",
+            "formType": "10-Q",
+            "reportPeriod": "2023-09-29"
+          },
+          "revenue": {
+            "value": 11953000000,
+            "filingId": "KO_10-Q_2023-09-29",
+            "label": "Net Operating Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2023",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "KO_10-Q_2023-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-06-30"
+          },
+          "revenue": {
+            "value": 11972000000,
+            "filingId": "KO_10-Q_2023-06-30",
+            "label": "Net Operating Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2023",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "KO_10-Q_2023-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2023-03-31"
+          },
+          "revenue": {
+            "value": 10980000000,
+            "filingId": "KO_10-Q_2023-03-31",
+            "label": "Net Operating Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2022",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "KO_10-K_2022-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2022-12-31"
+          },
+          "revenue": {
+            "value": 43004000000,
+            "filingId": "KO_10-K_2022-12-31",
+            "label": "Net Operating Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2022",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "KO_10-K_2022-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2022-12-31"
+          },
+          "revenue": {
+            "value": 10125000000,
+            "filingId": "KO_10-K_2022-12-31",
+            "label": null,
+            "derived": "FY2022 less Q1\u2013Q3 FY2022"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2022",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "KO_10-Q_2022-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-09-30"
+          },
+          "revenue": {
+            "value": 11063000000,
+            "filingId": "KO_10-Q_2022-09-30",
+            "label": "Net Operating Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2022",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "KO_10-Q_2022-07-01",
+            "formType": "10-Q",
+            "reportPeriod": "2022-07-01"
+          },
+          "revenue": {
+            "value": 11325000000,
+            "filingId": "KO_10-Q_2022-07-01",
+            "label": "Net Operating Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2022",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "KO_10-Q_2022-04-01",
+            "formType": "10-Q",
+            "reportPeriod": "2022-04-01"
+          },
+          "revenue": {
+            "value": 10491000000,
+            "filingId": "KO_10-Q_2022-04-01",
+            "label": "Net Operating Revenues",
+            "derived": null
+          }
+        }
+      ]
+    },
+    {
+      "ticker": "LLY",
+      "company": "Eli Lilly and Company",
+      "sector": "Health Care",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "LLY_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "LLY_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "LMT",
+      "company": "Lockheed Martin Corporation",
+      "sector": "Industrials",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "LMT_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "LMT_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "MA",
+      "company": "Mastercard Inc",
+      "sector": "Financials",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "MA_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "MA_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "MCD",
+      "company": "McDonalds Corporation",
+      "sector": "Consumer Discretionary",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "MCD_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "MCD_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q3 FY2024",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2024",
+          "calendarYear": 2024,
+          "filing": null,
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q2 FY2024",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2024",
+          "calendarYear": 2024,
+          "filing": null,
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q1 FY2024",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2024",
+          "calendarYear": 2024,
+          "filing": null,
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "FY2023",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": null,
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2023",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": null,
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q3 FY2023",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2023",
+          "calendarYear": 2023,
+          "filing": null,
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q2 FY2023",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2023",
+          "calendarYear": 2023,
+          "filing": null,
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q1 FY2023",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "MCD_10-Q_2023-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2023-03-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "META",
+      "company": "Meta Platforms Inc",
+      "sector": "Communication Services",
+      "coverage": "tracked",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "META_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": {
+            "value": 200966000000,
+            "filingId": "META_10-K_2025-12-31",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "META_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": {
+            "value": 59894000000,
+            "filingId": "META_10-K_2025-12-31",
+            "label": null,
+            "derived": "FY2025 less Q1\u2013Q3 FY2025"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2025",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "META_10-Q_2025-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-30"
+          },
+          "revenue": {
+            "value": 51242000000,
+            "filingId": "META_10-Q_2025-09-30",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2025",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "META_10-Q_2025-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-30"
+          },
+          "revenue": {
+            "value": 47516000000,
+            "filingId": "META_10-Q_2025-06-30",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2025",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "META_10-Q_2025-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-31"
+          },
+          "revenue": {
+            "value": 42314000000,
+            "filingId": "META_10-Q_2025-03-31",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "META_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": {
+            "value": 164501000000,
+            "filingId": "META_10-K_2024-12-31",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "META_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": {
+            "value": 48386000000,
+            "filingId": "META_10-K_2024-12-31",
+            "label": null,
+            "derived": "FY2024 less Q1\u2013Q3 FY2024"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2024",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "META_10-Q_2024-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-09-30"
+          },
+          "revenue": {
+            "value": 40589000000,
+            "filingId": "META_10-Q_2024-09-30",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2024",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "META_10-Q_2024-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-06-30"
+          },
+          "revenue": {
+            "value": 39071000000,
+            "filingId": "META_10-Q_2024-06-30",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2024",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "META_10-Q_2024-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-31"
+          },
+          "revenue": {
+            "value": 36455000000,
+            "filingId": "META_10-Q_2024-03-31",
+            "label": "Revenue",
+            "derived": null
+          }
+        }
+      ]
+    },
+    {
+      "ticker": "MRK",
+      "company": "Merck & Co Inc",
+      "sector": "Health Care",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "MRK_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "MRK_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "MS",
+      "company": "Morgan Stanley",
+      "sector": "Financials",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "MS_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "MS_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "MSFT",
+      "company": "Microsoft Corporation",
+      "sector": "Information Technology",
+      "coverage": "tracked",
+      "fiscalYearEnd": "June 30",
+      "periods": [
+        {
+          "fiscalPeriod": "Q2 FY2026",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "MSFT_10-Q_2025-12-31",
+            "formType": "10-Q",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": {
+            "value": 81273000000,
+            "filingId": "MSFT_10-Q_2025-12-31",
+            "label": "Total revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2026",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "MSFT_10-Q_2025-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-30"
+          },
+          "revenue": {
+            "value": 77673000000,
+            "filingId": "MSFT_10-Q_2025-09-30",
+            "label": "Total revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jul 2024\u2013Jun 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "MSFT_10-K_2025-06-30",
+            "formType": "10-K",
+            "reportPeriod": "2025-06-30"
+          },
+          "revenue": {
+            "value": 281724000000,
+            "filingId": "MSFT_10-K_2025-06-30",
+            "label": "Total revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "MSFT_10-K_2025-06-30",
+            "formType": "10-K",
+            "reportPeriod": "2025-06-30"
+          },
+          "revenue": {
+            "value": 76441000000,
+            "filingId": "MSFT_10-K_2025-06-30",
+            "label": null,
+            "derived": "FY2025 less Q1\u2013Q3 FY2025"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2025",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "MSFT_10-Q_2025-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-31"
+          },
+          "revenue": {
+            "value": 70066000000,
+            "filingId": "MSFT_10-Q_2025-03-31",
+            "label": "Total revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "MSFT_10-Q_2024-12-31",
+            "formType": "10-Q",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": {
+            "value": 69632000000,
+            "filingId": "MSFT_10-Q_2024-12-31",
+            "label": "Total revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2025",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "MSFT_10-Q_2024-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-09-30"
+          },
+          "revenue": {
+            "value": 65585000000,
+            "filingId": "MSFT_10-Q_2024-09-30",
+            "label": "Total revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Jul 2023\u2013Jun 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "MSFT_10-K_2024-06-30",
+            "formType": "10-K",
+            "reportPeriod": "2024-06-30"
+          },
+          "revenue": {
+            "value": 245122000000,
+            "filingId": "MSFT_10-K_2024-06-30",
+            "label": "Total revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "MSFT_10-K_2024-06-30",
+            "formType": "10-K",
+            "reportPeriod": "2024-06-30"
+          },
+          "revenue": {
+            "value": 64727000000,
+            "filingId": "MSFT_10-K_2024-06-30",
+            "label": null,
+            "derived": "FY2024 less Q1\u2013Q3 FY2024"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2024",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "MSFT_10-Q_2024-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-31"
+          },
+          "revenue": {
+            "value": 61858000000,
+            "filingId": "MSFT_10-Q_2024-03-31",
+            "label": "Total revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2024",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "MSFT_10-Q_2023-12-31",
+            "formType": "10-Q",
+            "reportPeriod": "2023-12-31"
+          },
+          "revenue": {
+            "value": 62020000000,
+            "filingId": "MSFT_10-Q_2023-12-31",
+            "label": "Total revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2024",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "MSFT_10-Q_2023-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-09-30"
+          },
+          "revenue": {
+            "value": 56517000000,
+            "filingId": "MSFT_10-Q_2023-09-30",
+            "label": "Total revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2023",
+          "kind": "year",
+          "months": "Jul 2022\u2013Jun 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "MSFT_10-K_2023-06-30",
+            "formType": "10-K",
+            "reportPeriod": "2023-06-30"
+          },
+          "revenue": {
+            "value": 211915000000,
+            "filingId": "MSFT_10-K_2023-06-30",
+            "label": "Total revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2023",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "MSFT_10-K_2023-06-30",
+            "formType": "10-K",
+            "reportPeriod": "2023-06-30"
+          },
+          "revenue": {
+            "value": 56189000000,
+            "filingId": "MSFT_10-K_2023-06-30",
+            "label": null,
+            "derived": "FY2023 less Q1\u2013Q3 FY2023"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2023",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "MSFT_10-Q_2023-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2023-03-31"
+          },
+          "revenue": {
+            "value": 52857000000,
+            "filingId": "MSFT_10-Q_2023-03-31",
+            "label": "Total revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2023",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "MSFT_10-Q_2022-12-31",
+            "formType": "10-Q",
+            "reportPeriod": "2022-12-31"
+          },
+          "revenue": {
+            "value": 52747000000,
+            "filingId": "MSFT_10-Q_2022-12-31",
+            "label": "Total revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2023",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "MSFT_10-Q_2022-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-09-30"
+          },
+          "revenue": {
+            "value": 50122000000,
+            "filingId": "MSFT_10-Q_2022-09-30",
+            "label": "Total revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2022",
+          "kind": "year",
+          "months": "Jul 2021\u2013Jun 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "MSFT_10-K_2022-06-30",
+            "formType": "10-K",
+            "reportPeriod": "2022-06-30"
+          },
+          "revenue": {
+            "value": 198270000000,
+            "filingId": "MSFT_10-K_2022-06-30",
+            "label": "Total revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2022",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "MSFT_10-K_2022-06-30",
+            "formType": "10-K",
+            "reportPeriod": "2022-06-30"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q3 FY2022",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "MSFT_10-Q_2022-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2022-03-31"
+          },
+          "revenue": {
+            "value": 49360000000,
+            "filingId": "MSFT_10-Q_2022-03-31",
+            "label": "Total revenue",
+            "derived": null
+          }
+        }
+      ]
+    },
+    {
+      "ticker": "NFLX",
+      "company": "Netflix Inc",
+      "sector": "Communication Services",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "NFLX_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "NFLX_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "NKE",
+      "company": "Nike Inc",
+      "sector": "Consumer Discretionary",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "May 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jun 2024\u2013May 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "NKE_10-K_2025-05-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-05-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Mar\u2013May 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "NKE_10-K_2025-05-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-05-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "NVDA",
+      "company": "NVIDIA Corporation",
+      "sector": "Information Technology",
+      "coverage": "tracked",
+      "fiscalYearEnd": "late January",
+      "periods": [
+        {
+          "fiscalPeriod": "Q3 FY2026",
+          "kind": "quarter",
+          "months": "Aug\u2013Oct 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "NVDA_10-Q_2025-10-26",
+            "formType": "10-Q",
+            "reportPeriod": "2025-10-26"
+          },
+          "revenue": {
+            "value": 57006000000,
+            "filingId": "NVDA_10-Q_2025-10-26",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2026",
+          "kind": "quarter",
+          "months": "May\u2013Jul 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "NVDA_10-Q_2025-07-27",
+            "formType": "10-Q",
+            "reportPeriod": "2025-07-27"
+          },
+          "revenue": {
+            "value": 46743000000,
+            "filingId": "NVDA_10-Q_2025-07-27",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2026",
+          "kind": "quarter",
+          "months": "Feb\u2013Apr 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "NVDA_10-Q_2025-04-27",
+            "formType": "10-Q",
+            "reportPeriod": "2025-04-27"
+          },
+          "revenue": {
+            "value": 44062000000,
+            "filingId": "NVDA_10-Q_2025-04-27",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Feb 2024\u2013Jan 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "NVDA_10-K_2025-01-26",
+            "formType": "10-K",
+            "reportPeriod": "2025-01-26"
+          },
+          "revenue": {
+            "value": 130497000000,
+            "filingId": "NVDA_10-K_2025-01-26",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Nov 2024\u2013Jan 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "NVDA_10-K_2025-01-26",
+            "formType": "10-K",
+            "reportPeriod": "2025-01-26"
+          },
+          "revenue": {
+            "value": 39331000000,
+            "filingId": "NVDA_10-K_2025-01-26",
+            "label": null,
+            "derived": "FY2025 less Q1\u2013Q3 FY2025"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2025",
+          "kind": "quarter",
+          "months": "Aug\u2013Oct 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "NVDA_10-Q_2024-10-27",
+            "formType": "10-Q",
+            "reportPeriod": "2024-10-27"
+          },
+          "revenue": {
+            "value": 35082000000,
+            "filingId": "NVDA_10-Q_2024-10-27",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2025",
+          "kind": "quarter",
+          "months": "May\u2013Jul 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "NVDA_10-Q_2024-07-28",
+            "formType": "10-Q",
+            "reportPeriod": "2024-07-28"
+          },
+          "revenue": {
+            "value": 30040000000,
+            "filingId": "NVDA_10-Q_2024-07-28",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2025",
+          "kind": "quarter",
+          "months": "Feb\u2013Apr 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "NVDA_10-Q_2024-04-28",
+            "formType": "10-Q",
+            "reportPeriod": "2024-04-28"
+          },
+          "revenue": {
+            "value": 26044000000,
+            "filingId": "NVDA_10-Q_2024-04-28",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Feb 2023\u2013Jan 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "NVDA_10-K_2024-01-28",
+            "formType": "10-K",
+            "reportPeriod": "2024-01-28"
+          },
+          "revenue": {
+            "value": 60922000000,
+            "filingId": "NVDA_10-K_2024-01-28",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Nov 2023\u2013Jan 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "NVDA_10-K_2024-01-28",
+            "formType": "10-K",
+            "reportPeriod": "2024-01-28"
+          },
+          "revenue": {
+            "value": 22103000000,
+            "filingId": "NVDA_10-K_2024-01-28",
+            "label": null,
+            "derived": "FY2024 less Q1\u2013Q3 FY2024"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2024",
+          "kind": "quarter",
+          "months": "Aug\u2013Oct 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "NVDA_10-Q_2023-10-29",
+            "formType": "10-Q",
+            "reportPeriod": "2023-10-29"
+          },
+          "revenue": {
+            "value": 18120000000,
+            "filingId": "NVDA_10-Q_2023-10-29",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2024",
+          "kind": "quarter",
+          "months": "May\u2013Jul 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "NVDA_10-Q_2023-07-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-07-30"
+          },
+          "revenue": {
+            "value": 13507000000,
+            "filingId": "NVDA_10-Q_2023-07-30",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2024",
+          "kind": "quarter",
+          "months": "Feb\u2013Apr 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "NVDA_10-Q_2023-04-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-04-30"
+          },
+          "revenue": {
+            "value": 7192000000,
+            "filingId": "NVDA_10-Q_2023-04-30",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2023",
+          "kind": "year",
+          "months": "Feb 2022\u2013Jan 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "NVDA_10-K_2023-01-29",
+            "formType": "10-K",
+            "reportPeriod": "2023-01-29"
+          },
+          "revenue": {
+            "value": 26974000000,
+            "filingId": "NVDA_10-K_2023-01-29",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2023",
+          "kind": "quarter",
+          "months": "Nov 2022\u2013Jan 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "NVDA_10-K_2023-01-29",
+            "formType": "10-K",
+            "reportPeriod": "2023-01-29"
+          },
+          "revenue": {
+            "value": 6051000000,
+            "filingId": "NVDA_10-K_2023-01-29",
+            "label": null,
+            "derived": "FY2023 less Q1\u2013Q3 FY2023"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2023",
+          "kind": "quarter",
+          "months": "Aug\u2013Oct 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "NVDA_10-Q_2022-10-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-10-30"
+          },
+          "revenue": {
+            "value": 5931000000,
+            "filingId": "NVDA_10-Q_2022-10-30",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2023",
+          "kind": "quarter",
+          "months": "May\u2013Jul 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "NVDA_10-Q_2022-07-31",
+            "formType": "10-Q",
+            "reportPeriod": "2022-07-31"
+          },
+          "revenue": {
+            "value": 6704000000,
+            "filingId": "NVDA_10-Q_2022-07-31",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2023",
+          "kind": "quarter",
+          "months": "Feb\u2013Apr 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "NVDA_10-Q_2022-05-01",
+            "formType": "10-Q",
+            "reportPeriod": "2022-05-01"
+          },
+          "revenue": {
+            "value": 8288000000,
+            "filingId": "NVDA_10-Q_2022-05-01",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2022",
+          "kind": "year",
+          "months": "Feb 2021\u2013Jan 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "NVDA_10-K_2022-01-30",
+            "formType": "10-K",
+            "reportPeriod": "2022-01-30"
+          },
+          "revenue": {
+            "value": 26914000000,
+            "filingId": "NVDA_10-K_2022-01-30",
+            "label": "Revenue",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2022",
+          "kind": "quarter",
+          "months": "Nov 2021\u2013Jan 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "NVDA_10-K_2022-01-30",
+            "formType": "10-K",
+            "reportPeriod": "2022-01-30"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "ORCL",
+      "company": "Oracle Corporation",
+      "sector": "Information Technology",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "May 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jun 2024\u2013May 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "ORCL_10-K_2025-05-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-05-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Mar\u2013May 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "ORCL_10-K_2025-05-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-05-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "PEP",
+      "company": "PepsiCo Inc",
+      "sector": "Consumer Staples",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "late December",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "PEP_10-K_2025-12-27",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-27"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "PEP_10-K_2025-12-27",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-27"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q3 FY2025",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2025",
+          "calendarYear": 2025,
+          "filing": null,
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q2 FY2025",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2025",
+          "calendarYear": 2025,
+          "filing": null,
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q1 FY2025",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2025",
+          "calendarYear": 2025,
+          "filing": null,
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": null,
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": null,
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q3 FY2024",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2024",
+          "calendarYear": 2024,
+          "filing": null,
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q2 FY2024",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2024",
+          "calendarYear": 2024,
+          "filing": null,
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q1 FY2024",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2024",
+          "calendarYear": 2024,
+          "filing": null,
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "FY2023",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": null,
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2023",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": null,
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q3 FY2023",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2023",
+          "calendarYear": 2023,
+          "filing": null,
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q2 FY2023",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2023",
+          "calendarYear": 2023,
+          "filing": null,
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q1 FY2023",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "PEP_10-Q_2023-03-25",
+            "formType": "10-Q",
+            "reportPeriod": "2023-03-25"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "PFE",
+      "company": "Pfizer Inc",
+      "sector": "Health Care",
+      "coverage": "tracked",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "Q3 FY2025",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "PFE_10-Q_2025-09-28",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-28"
+          },
+          "revenue": {
+            "value": 16654000000,
+            "filingId": "PFE_10-Q_2025-09-28",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2025",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "PFE_10-Q_2025-06-29",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-29"
+          },
+          "revenue": {
+            "value": 14653000000,
+            "filingId": "PFE_10-Q_2025-06-29",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2025",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "PFE_10-Q_2025-03-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-30"
+          },
+          "revenue": {
+            "value": 13715000000,
+            "filingId": "PFE_10-Q_2025-03-30",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "PFE_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": {
+            "value": 63627000000,
+            "filingId": "PFE_10-K_2024-12-31",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "PFE_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": {
+            "value": 17763000000,
+            "filingId": "PFE_10-K_2024-12-31",
+            "label": null,
+            "derived": "FY2024 less Q1\u2013Q3 FY2024"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2024",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "PFE_10-Q_2024-09-29",
+            "formType": "10-Q",
+            "reportPeriod": "2024-09-29"
+          },
+          "revenue": {
+            "value": 17702000000,
+            "filingId": "PFE_10-Q_2024-09-29",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2024",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "PFE_10-Q_2024-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-06-30"
+          },
+          "revenue": {
+            "value": 13283000000,
+            "filingId": "PFE_10-Q_2024-06-30",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2024",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "PFE_10-Q_2024-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-31"
+          },
+          "revenue": {
+            "value": 14879000000,
+            "filingId": "PFE_10-Q_2024-03-31",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2023",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "PFE_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31"
+          },
+          "revenue": {
+            "value": 58496000000,
+            "filingId": "PFE_10-K_2023-12-31",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2023",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "PFE_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31"
+          },
+          "revenue": {
+            "value": 14248000000,
+            "filingId": "PFE_10-K_2023-12-31",
+            "label": null,
+            "derived": "FY2023 less Q1\u2013Q3 FY2023"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2023",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "PFE_10-Q_2023-10-01",
+            "formType": "10-Q",
+            "reportPeriod": "2023-10-01"
+          },
+          "revenue": {
+            "value": 13232000000,
+            "filingId": "PFE_10-Q_2023-10-01",
+            "label": "Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2023",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "PFE_10-Q_2023-07-02",
+            "formType": "10-Q",
+            "reportPeriod": "2023-07-02"
+          },
+          "revenue": {
+            "value": 12734000000,
+            "filingId": "PFE_10-Q_2023-07-02",
+            "label": "Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2023",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "PFE_10-Q_2023-04-02",
+            "formType": "10-Q",
+            "reportPeriod": "2023-04-02"
+          },
+          "revenue": {
+            "value": 18282000000,
+            "filingId": "PFE_10-Q_2023-04-02",
+            "label": "Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2022",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "PFE_10-K_2022-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2022-12-31"
+          },
+          "revenue": {
+            "value": 100330000000,
+            "filingId": "PFE_10-K_2022-12-31",
+            "label": "Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2022",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "PFE_10-K_2022-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2022-12-31"
+          },
+          "revenue": {
+            "value": 24289000000,
+            "filingId": "PFE_10-K_2022-12-31",
+            "label": null,
+            "derived": "FY2022 less Q1\u2013Q3 FY2022"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2022",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "PFE_10-Q_2022-10-02",
+            "formType": "10-Q",
+            "reportPeriod": "2022-10-02"
+          },
+          "revenue": {
+            "value": 22638000000,
+            "filingId": "PFE_10-Q_2022-10-02",
+            "label": "Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2022",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "PFE_10-Q_2022-07-03",
+            "formType": "10-Q",
+            "reportPeriod": "2022-07-03"
+          },
+          "revenue": {
+            "value": 27742000000,
+            "filingId": "PFE_10-Q_2022-07-03",
+            "label": "Revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2022",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "PFE_10-Q_2022-04-03",
+            "formType": "10-Q",
+            "reportPeriod": "2022-04-03"
+          },
+          "revenue": {
+            "value": 25661000000,
+            "filingId": "PFE_10-Q_2022-04-03",
+            "label": "Revenues",
+            "derived": null
+          }
+        }
+      ]
+    },
+    {
+      "ticker": "PG",
+      "company": "Procter & Gamble Company",
+      "sector": "Consumer Staples",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "June 30",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jul 2024\u2013Jun 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "PG_10-K_2025-06-30",
+            "formType": "10-K",
+            "reportPeriod": "2025-06-30"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "PG_10-K_2025-06-30",
+            "formType": "10-K",
+            "reportPeriod": "2025-06-30"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "RTX",
+      "company": "RTX Corporation",
+      "sector": "Industrials",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "RTX_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "RTX_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "SBUX",
+      "company": "Starbucks Corporation",
+      "sector": "Consumer Discretionary",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "late September",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Oct 2024\u2013Sep 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "SBUX_10-K_2025-09-28",
+            "formType": "10-K",
+            "reportPeriod": "2025-09-28"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "SBUX_10-K_2025-09-28",
+            "formType": "10-K",
+            "reportPeriod": "2025-09-28"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "T",
+      "company": "AT&T Inc",
+      "sector": "Communication Services",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "T_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "T_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "TGT",
+      "company": "Target Corporation",
+      "sector": "Consumer Staples",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "late January or early February",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Feb 2024\u2013Jan 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "TGT_10-K_2025-02-01",
+            "formType": "10-K",
+            "reportPeriod": "2025-02-01"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Nov 2024\u2013Jan 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "TGT_10-K_2025-02-01",
+            "formType": "10-K",
+            "reportPeriod": "2025-02-01"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "TMO",
+      "company": "Thermo Fisher Scientific Inc",
+      "sector": "Health Care",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "TMO_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "TMO_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "TSLA",
+      "company": "Tesla Inc",
+      "sector": "Consumer Discretionary",
+      "coverage": "tracked",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "TSLA_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": {
+            "value": 94827000000,
+            "filingId": "TSLA_10-K_2025-12-31",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "TSLA_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": {
+            "value": 24901000000,
+            "filingId": "TSLA_10-K_2025-12-31",
+            "label": null,
+            "derived": "FY2025 less Q1\u2013Q3 FY2025"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2025",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "TSLA_10-Q_2025-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-30"
+          },
+          "revenue": {
+            "value": 28095000000,
+            "filingId": "TSLA_10-Q_2025-09-30",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2025",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "TSLA_10-Q_2025-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-30"
+          },
+          "revenue": {
+            "value": 22496000000,
+            "filingId": "TSLA_10-Q_2025-06-30",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2025",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "TSLA_10-Q_2025-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-31"
+          },
+          "revenue": {
+            "value": 19335000000,
+            "filingId": "TSLA_10-Q_2025-03-31",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "TSLA_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": {
+            "value": 97690000000,
+            "filingId": "TSLA_10-K_2024-12-31",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "TSLA_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": {
+            "value": 25707000000,
+            "filingId": "TSLA_10-K_2024-12-31",
+            "label": null,
+            "derived": "FY2024 less Q1\u2013Q3 FY2024"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2024",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "TSLA_10-Q_2024-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-09-30"
+          },
+          "revenue": {
+            "value": 25182000000,
+            "filingId": "TSLA_10-Q_2024-09-30",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2024",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "TSLA_10-Q_2024-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-06-30"
+          },
+          "revenue": {
+            "value": 25500000000,
+            "filingId": "TSLA_10-Q_2024-06-30",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2024",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "TSLA_10-Q_2024-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-31"
+          },
+          "revenue": {
+            "value": 21301000000,
+            "filingId": "TSLA_10-Q_2024-03-31",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2023",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "TSLA_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31"
+          },
+          "revenue": {
+            "value": 96773000000,
+            "filingId": "TSLA_10-K_2023-12-31",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2023",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "TSLA_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31"
+          },
+          "revenue": {
+            "value": 25167000000,
+            "filingId": "TSLA_10-K_2023-12-31",
+            "label": null,
+            "derived": "FY2023 less Q1\u2013Q3 FY2023"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2023",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "TSLA_10-Q_2023-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-09-30"
+          },
+          "revenue": {
+            "value": 23350000000,
+            "filingId": "TSLA_10-Q_2023-09-30",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2023",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "TSLA_10-Q_2023-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-06-30"
+          },
+          "revenue": {
+            "value": 24927000000,
+            "filingId": "TSLA_10-Q_2023-06-30",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2023",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "TSLA_10-Q_2023-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2023-03-31"
+          },
+          "revenue": {
+            "value": 23329000000,
+            "filingId": "TSLA_10-Q_2023-03-31",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2022",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "TSLA_10-K_2022-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2022-12-31"
+          },
+          "revenue": {
+            "value": 81462000000,
+            "filingId": "TSLA_10-K_2022-12-31",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2022",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "TSLA_10-K_2022-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2022-12-31"
+          },
+          "revenue": {
+            "value": 24318000000,
+            "filingId": "TSLA_10-K_2022-12-31",
+            "label": null,
+            "derived": "FY2022 less Q1\u2013Q3 FY2022"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2022",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "TSLA_10-Q_2022-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-09-30"
+          },
+          "revenue": {
+            "value": 21454000000,
+            "filingId": "TSLA_10-Q_2022-09-30",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2022",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "TSLA_10-Q_2022-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-06-30"
+          },
+          "revenue": {
+            "value": 16934000000,
+            "filingId": "TSLA_10-Q_2022-06-30",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2022",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "TSLA_10-Q_2022-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2022-03-31"
+          },
+          "revenue": {
+            "value": 18756000000,
+            "filingId": "TSLA_10-Q_2022-03-31",
+            "label": "Total revenues",
+            "derived": null
+          }
+        }
+      ]
+    },
+    {
+      "ticker": "UNH",
+      "company": "UnitedHealth Group Inc",
+      "sector": "Health Care",
+      "coverage": "tracked",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "Q3 FY2025",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "UNH_10-Q_2025-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-30"
+          },
+          "revenue": {
+            "value": 113161000000,
+            "filingId": "UNH_10-Q_2025-09-30",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2025",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "UNH_10-Q_2025-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-30"
+          },
+          "revenue": {
+            "value": 111616000000,
+            "filingId": "UNH_10-Q_2025-06-30",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2025",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "UNH_10-Q_2025-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-31"
+          },
+          "revenue": {
+            "value": 109575000000,
+            "filingId": "UNH_10-Q_2025-03-31",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "UNH_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": {
+            "value": 400278000000,
+            "filingId": "UNH_10-K_2024-12-31",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "UNH_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": {
+            "value": 100807000000,
+            "filingId": "UNH_10-K_2024-12-31",
+            "label": null,
+            "derived": "FY2024 less Q1\u2013Q3 FY2024"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2024",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "UNH_10-Q_2024-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-09-30"
+          },
+          "revenue": {
+            "value": 100820000000,
+            "filingId": "UNH_10-Q_2024-09-30",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2024",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "UNH_10-Q_2024-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-06-30"
+          },
+          "revenue": {
+            "value": 98855000000,
+            "filingId": "UNH_10-Q_2024-06-30",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2024",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "UNH_10-Q_2024-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-31"
+          },
+          "revenue": {
+            "value": 99796000000,
+            "filingId": "UNH_10-Q_2024-03-31",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2023",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "UNH_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31"
+          },
+          "revenue": {
+            "value": 371622000000,
+            "filingId": "UNH_10-K_2023-12-31",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2023",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "UNH_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31"
+          },
+          "revenue": {
+            "value": 94427000000,
+            "filingId": "UNH_10-K_2023-12-31",
+            "label": null,
+            "derived": "FY2023 less Q1\u2013Q3 FY2023"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2023",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "UNH_10-Q_2023-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-09-30"
+          },
+          "revenue": {
+            "value": 92361000000,
+            "filingId": "UNH_10-Q_2023-09-30",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2023",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "UNH_10-Q_2023-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-06-30"
+          },
+          "revenue": {
+            "value": 92903000000,
+            "filingId": "UNH_10-Q_2023-06-30",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2023",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "UNH_10-Q_2023-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2023-03-31"
+          },
+          "revenue": {
+            "value": 91931000000,
+            "filingId": "UNH_10-Q_2023-03-31",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2022",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "UNH_10-K_2022-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2022-12-31"
+          },
+          "revenue": {
+            "value": 324162000000,
+            "filingId": "UNH_10-K_2022-12-31",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2022",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "UNH_10-K_2022-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2022-12-31"
+          },
+          "revenue": {
+            "value": 82787000000,
+            "filingId": "UNH_10-K_2022-12-31",
+            "label": null,
+            "derived": "FY2022 less Q1\u2013Q3 FY2022"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2022",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "UNH_10-Q_2022-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-09-30"
+          },
+          "revenue": {
+            "value": 80894000000,
+            "filingId": "UNH_10-Q_2022-09-30",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2022",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "UNH_10-Q_2022-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-06-30"
+          },
+          "revenue": {
+            "value": 80332000000,
+            "filingId": "UNH_10-Q_2022-06-30",
+            "label": "Total revenues",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2022",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "UNH_10-Q_2022-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2022-03-31"
+          },
+          "revenue": {
+            "value": 80149000000,
+            "filingId": "UNH_10-Q_2022-03-31",
+            "label": "Total revenues",
+            "derived": null
+          }
+        }
+      ]
+    },
+    {
+      "ticker": "UPS",
+      "company": "United Parcel Service Inc",
+      "sector": "Industrials",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "UPS_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "UPS_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "V",
+      "company": "Visa Inc",
+      "sector": "Financials",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "September 30",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Oct 2024\u2013Sep 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "V_10-K_2025-09-30",
+            "formType": "10-K",
+            "reportPeriod": "2025-09-30"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "V_10-K_2025-09-30",
+            "formType": "10-K",
+            "reportPeriod": "2025-09-30"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "VZ",
+      "company": "Verizon Communications Inc",
+      "sector": "Communication Services",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "VZ_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "VZ_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "WMT",
+      "company": "Walmart Inc",
+      "sector": "Consumer Staples",
+      "coverage": "snapshot",
+      "fiscalYearEnd": "January 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Feb 2024\u2013Jan 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "WMT_10-K_2025-01-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-01-31"
+          },
+          "revenue": null
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Nov 2024\u2013Jan 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "WMT_10-K_2025-01-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-01-31"
+          },
+          "revenue": null
+        }
+      ]
+    },
+    {
+      "ticker": "XOM",
+      "company": "Exxon Mobil Corporation",
+      "sector": "Energy",
+      "coverage": "tracked",
+      "fiscalYearEnd": "December 31",
+      "periods": [
+        {
+          "fiscalPeriod": "FY2025",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "XOM_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": {
+            "value": 332238000000,
+            "filingId": "XOM_10-K_2025-12-31",
+            "label": "Total revenues and other income",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2025",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "XOM_10-K_2025-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2025-12-31"
+          },
+          "revenue": {
+            "value": 82308000000,
+            "filingId": "XOM_10-K_2025-12-31",
+            "label": null,
+            "derived": "FY2025 less Q1\u2013Q3 FY2025"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2025",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "XOM_10-Q_2025-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-09-30"
+          },
+          "revenue": {
+            "value": 85294000000,
+            "filingId": "XOM_10-Q_2025-09-30",
+            "label": "Total revenues and other income",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2025",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "XOM_10-Q_2025-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2025-06-30"
+          },
+          "revenue": {
+            "value": 81506000000,
+            "filingId": "XOM_10-Q_2025-06-30",
+            "label": "Total revenues and other income",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2025",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2025",
+          "calendarYear": 2025,
+          "filing": {
+            "filingId": "XOM_10-Q_2025-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2025-03-31"
+          },
+          "revenue": {
+            "value": 83130000000,
+            "filingId": "XOM_10-Q_2025-03-31",
+            "label": "Total revenues and other income",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2024",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "XOM_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": {
+            "value": 349585000000,
+            "filingId": "XOM_10-K_2024-12-31",
+            "label": "Total revenues and other income",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2024",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "XOM_10-K_2024-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2024-12-31"
+          },
+          "revenue": {
+            "value": 83426000000,
+            "filingId": "XOM_10-K_2024-12-31",
+            "label": null,
+            "derived": "FY2024 less Q1\u2013Q3 FY2024"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2024",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "XOM_10-Q_2024-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-09-30"
+          },
+          "revenue": {
+            "value": 90016000000,
+            "filingId": "XOM_10-Q_2024-09-30",
+            "label": "Total revenues and other income",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2024",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "XOM_10-Q_2024-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2024-06-30"
+          },
+          "revenue": {
+            "value": 93060000000,
+            "filingId": "XOM_10-Q_2024-06-30",
+            "label": "Total revenues and other income",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2024",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2024",
+          "calendarYear": 2024,
+          "filing": {
+            "filingId": "XOM_10-Q_2024-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2024-03-31"
+          },
+          "revenue": {
+            "value": 83083000000,
+            "filingId": "XOM_10-Q_2024-03-31",
+            "label": "Total revenues and other income",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2023",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "XOM_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31"
+          },
+          "revenue": {
+            "value": 344582000000,
+            "filingId": "XOM_10-K_2023-12-31",
+            "label": "Total revenues and other income",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2023",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "XOM_10-K_2023-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2023-12-31"
+          },
+          "revenue": {
+            "value": 84344000000,
+            "filingId": "XOM_10-K_2023-12-31",
+            "label": null,
+            "derived": "FY2023 less Q1\u2013Q3 FY2023"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2023",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "XOM_10-Q_2023-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-09-30"
+          },
+          "revenue": {
+            "value": 90760000000,
+            "filingId": "XOM_10-Q_2023-09-30",
+            "label": "Total revenues and other income",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2023",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "XOM_10-Q_2023-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2023-06-30"
+          },
+          "revenue": {
+            "value": 82914000000,
+            "filingId": "XOM_10-Q_2023-06-30",
+            "label": "Total revenues and other income",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2023",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2023",
+          "calendarYear": 2023,
+          "filing": {
+            "filingId": "XOM_10-Q_2023-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2023-03-31"
+          },
+          "revenue": {
+            "value": 86564000000,
+            "filingId": "XOM_10-Q_2023-03-31",
+            "label": "Total revenues and other income",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "FY2022",
+          "kind": "year",
+          "months": "Jan\u2013Dec 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "XOM_10-K_2022-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2022-12-31"
+          },
+          "revenue": {
+            "value": 413680000000,
+            "filingId": "XOM_10-K_2022-12-31",
+            "label": "Total revenues and other income",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q4 FY2022",
+          "kind": "quarter",
+          "months": "Oct\u2013Dec 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "XOM_10-K_2022-12-31",
+            "formType": "10-K",
+            "reportPeriod": "2022-12-31"
+          },
+          "revenue": {
+            "value": 95429000000,
+            "filingId": "XOM_10-K_2022-12-31",
+            "label": null,
+            "derived": "FY2022 less Q1\u2013Q3 FY2022"
+          }
+        },
+        {
+          "fiscalPeriod": "Q3 FY2022",
+          "kind": "quarter",
+          "months": "Jul\u2013Sep 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "XOM_10-Q_2022-09-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-09-30"
+          },
+          "revenue": {
+            "value": 112070000000,
+            "filingId": "XOM_10-Q_2022-09-30",
+            "label": "Total revenues and other income",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q2 FY2022",
+          "kind": "quarter",
+          "months": "Apr\u2013Jun 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "XOM_10-Q_2022-06-30",
+            "formType": "10-Q",
+            "reportPeriod": "2022-06-30"
+          },
+          "revenue": {
+            "value": 115681000000,
+            "filingId": "XOM_10-Q_2022-06-30",
+            "label": "Total revenues and other income",
+            "derived": null
+          }
+        },
+        {
+          "fiscalPeriod": "Q1 FY2022",
+          "kind": "quarter",
+          "months": "Jan\u2013Mar 2022",
+          "calendarYear": 2022,
+          "filing": {
+            "filingId": "XOM_10-Q_2022-03-31",
+            "formType": "10-Q",
+            "reportPeriod": "2022-03-31"
+          },
+          "revenue": {
+            "value": 90500000000,
+            "filingId": "XOM_10-Q_2022-03-31",
+            "label": "Total revenues and other income",
+            "derived": null
+          }
+        }
+      ]
+    }
+  ],
+  "missingCompanies": [
+    {
+      "name": "Wells Fargo",
+      "ticker": "WFC",
+      "aliases": [
+        "Wells Fargo & Company",
+        "WFC"
+      ],
+      "sector": "Financials"
+    },
+    {
+      "name": "Citigroup",
+      "ticker": "C",
+      "aliases": [
+        "Citi",
+        "Citibank"
+      ],
+      "sector": "Financials"
+    },
+    {
+      "name": "U.S. Bancorp",
+      "ticker": "USB",
+      "aliases": [
+        "US Bancorp"
+      ],
+      "sector": "Financials"
+    },
+    {
+      "name": "PNC Financial Services",
+      "ticker": "PNC",
+      "aliases": [
+        "PNC Financial",
+        "PNC"
+      ],
+      "sector": "Financials"
+    },
+    {
+      "name": "Truist Financial",
+      "ticker": "TFC",
+      "aliases": [
+        "Truist"
+      ],
+      "sector": "Financials"
+    },
+    {
+      "name": "Capital One",
+      "ticker": "COF",
+      "aliases": [
+        "Capital One Financial"
+      ],
+      "sector": "Financials"
+    },
+    {
+      "name": "Charles Schwab",
+      "ticker": "SCHW",
+      "aliases": [
+        "Schwab",
+        "SCHW"
+      ],
+      "sector": "Financials"
+    },
+    {
+      "name": "PayPal",
+      "ticker": "PYPL",
+      "aliases": [
+        "PayPal Holdings",
+        "PYPL"
+      ],
+      "sector": "Financials"
+    },
+    {
+      "name": "Bristol Myers Squibb",
+      "ticker": "BMY",
+      "aliases": [
+        "Bristol-Myers Squibb",
+        "Bristol Myers",
+        "BMS",
+        "BMY"
+      ],
+      "sector": "Health Care"
+    },
+    {
+      "name": "Amgen",
+      "ticker": "AMGN",
+      "aliases": [
+        "AMGN"
+      ],
+      "sector": "Health Care"
+    },
+    {
+      "name": "Gilead Sciences",
+      "ticker": "GILD",
+      "aliases": [
+        "Gilead",
+        "GILD"
+      ],
+      "sector": "Health Care"
+    },
+    {
+      "name": "Regeneron",
+      "ticker": "REGN",
+      "aliases": [
+        "Regeneron Pharmaceuticals",
+        "REGN"
+      ],
+      "sector": "Health Care"
+    },
+    {
+      "name": "Moderna",
+      "ticker": "MRNA",
+      "aliases": [
+        "MRNA"
+      ],
+      "sector": "Health Care"
+    },
+    {
+      "name": "Abbott Laboratories",
+      "ticker": "ABT",
+      "aliases": [
+        "Abbott",
+        "ABT"
+      ],
+      "sector": "Health Care"
+    },
+    {
+      "name": "Medtronic",
+      "ticker": "MDT",
+      "aliases": [
+        "MDT"
+      ],
+      "sector": "Health Care"
+    },
+    {
+      "name": "Danaher",
+      "ticker": "DHR",
+      "aliases": [
+        "DHR"
+      ],
+      "sector": "Health Care"
+    },
+    {
+      "name": "CVS Health",
+      "ticker": "CVS",
+      "aliases": [
+        "CVS"
+      ],
+      "sector": "Health Care"
+    },
+    {
+      "name": "Elevance Health",
+      "ticker": "ELV",
+      "aliases": [
+        "Elevance",
+        "Anthem"
+      ],
+      "sector": "Health Care"
+    },
+    {
+      "name": "Cigna",
+      "ticker": "CI",
+      "aliases": [
+        "The Cigna Group"
+      ],
+      "sector": "Health Care"
+    },
+    {
+      "name": "Honeywell",
+      "ticker": "HON",
+      "aliases": [
+        "Honeywell International",
+        "HON"
+      ],
+      "sector": "Industrials"
+    },
+    {
+      "name": "3M",
+      "ticker": "MMM",
+      "aliases": [
+        "3M Company",
+        "MMM"
+      ],
+      "sector": "Industrials"
+    },
+    {
+      "name": "Northrop Grumman",
+      "ticker": "NOC",
+      "aliases": [
+        "Northrop",
+        "NOC"
+      ],
+      "sector": "Industrials"
+    },
+    {
+      "name": "General Dynamics",
+      "ticker": "GD",
+      "aliases": [],
+      "sector": "Industrials"
+    },
+    {
+      "name": "Union Pacific",
+      "ticker": "UNP",
+      "aliases": [
+        "UNP"
+      ],
+      "sector": "Industrials"
+    },
+    {
+      "name": "FedEx",
+      "ticker": "FDX",
+      "aliases": [
+        "FDX"
+      ],
+      "sector": "Industrials"
+    },
+    {
+      "name": "General Motors",
+      "ticker": "GM",
+      "aliases": [
+        "GM"
+      ],
+      "sector": "Consumer Discretionary"
+    },
+    {
+      "name": "Ford Motor",
+      "ticker": "F",
+      "aliases": [
+        "Ford"
+      ],
+      "sector": "Consumer Discretionary"
+    },
+    {
+      "name": "Lowe's",
+      "ticker": "LOW",
+      "aliases": [
+        "Lowe\u2019s",
+        "Lowes"
+      ],
+      "sector": "Consumer Discretionary"
+    },
+    {
+      "name": "Uber Technologies",
+      "ticker": "UBER",
+      "aliases": [
+        "Uber"
+      ],
+      "sector": "Industrials"
+    },
+    {
+      "name": "Philip Morris International",
+      "ticker": "PM",
+      "aliases": [
+        "Philip Morris"
+      ],
+      "sector": "Consumer Staples"
+    },
+    {
+      "name": "Mondelez International",
+      "ticker": "MDLZ",
+      "aliases": [
+        "Mondelez",
+        "MDLZ"
+      ],
+      "sector": "Consumer Staples"
+    },
+    {
+      "name": "Kroger",
+      "ticker": "KR",
+      "aliases": [],
+      "sector": "Consumer Staples"
+    },
+    {
+      "name": "ConocoPhillips",
+      "ticker": "COP",
+      "aliases": [
+        "Conoco"
+      ],
+      "sector": "Energy"
+    },
+    {
+      "name": "Occidental Petroleum",
+      "ticker": "OXY",
+      "aliases": [
+        "Occidental",
+        "OXY"
+      ],
+      "sector": "Energy"
+    },
+    {
+      "name": "Broadcom",
+      "ticker": "AVGO",
+      "aliases": [
+        "AVGO"
+      ],
+      "sector": "Information Technology"
+    },
+    {
+      "name": "Qualcomm",
+      "ticker": "QCOM",
+      "aliases": [
+        "QCOM"
+      ],
+      "sector": "Information Technology"
+    },
+    {
+      "name": "Texas Instruments",
+      "ticker": "TXN",
+      "aliases": [
+        "TXN"
+      ],
+      "sector": "Information Technology"
+    },
+    {
+      "name": "Micron Technology",
+      "ticker": "MU",
+      "aliases": [
+        "Micron"
+      ],
+      "sector": "Information Technology"
+    },
+    {
+      "name": "Accenture",
+      "ticker": "ACN",
+      "aliases": [
+        "ACN"
+      ],
+      "sector": "Information Technology"
+    },
+    {
+      "name": "ServiceNow",
+      "ticker": "NOW",
+      "aliases": [],
+      "sector": "Information Technology"
+    },
+    {
+      "name": "T-Mobile US",
+      "ticker": "TMUS",
+      "aliases": [
+        "T-Mobile",
+        "TMUS"
+      ],
+      "sector": "Communication Services"
+    }
+  ]
 }

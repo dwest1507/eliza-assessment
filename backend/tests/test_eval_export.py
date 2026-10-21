@@ -15,7 +15,7 @@ from types import SimpleNamespace
 import pytest
 
 from edgar_eval import generation, retrieval, selection
-from edgar_eval.export import coverage_grid, main
+from edgar_eval.export import company_calendars, coverage_grid, main
 from edgar_eval.judge import JEV_MODEL
 from edgar_eval.retrieval import Arm
 from edgar_rag.golden_set import GOLDEN_SET_V1, GOLDEN_SET_V2, load_golden_set
@@ -720,3 +720,163 @@ def test_the_coverage_grid_lists_tracked_companies_before_snapshot_companies(ind
     classes = [c["coverage"] for c in grid["companies"]]
     assert classes == sorted(classes, key=["tracked", "snapshot"].index)
     assert "snapshot" in classes and "tracked" in classes
+
+
+# --- The Company Calendars ----------------------------------------------------------------
+
+
+MONTHS = re.compile(
+    r"^(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)(?: \d{4})?"
+    r"–(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4}$"
+)
+
+
+@pytest.fixture(scope="module")
+def calendars(indexed_filings):
+    return {c["ticker"]: c for c in company_calendars(indexed_filings)}
+
+
+def _period(calendar, fiscal_period):
+    return next(p for p in calendar["periods"] if p["fiscalPeriod"] == fiscal_period)
+
+
+def test_the_export_carries_every_companys_calendar_and_the_missing_companies(
+    tmp_path, eval_dir, indexed_filings
+):
+    _write_retrieval_report(eval_dir)
+
+    data = _export(tmp_path, eval_dir, indexed_filings)
+
+    assert [c["ticker"] for c in data["companies"]] == sorted({f.ticker for f in indexed_filings})
+    nvda = next(c for c in data["companies"] if c["ticker"] == "NVDA")
+    assert nvda["company"] == "NVIDIA Corporation"
+    assert nvda["sector"] == "Information Technology"
+    assert nvda["coverage"] == "tracked"
+    # The curated list of notable Companies not in the Corpus, as the Query Scope reads it.
+    assert {
+        "name": "Wells Fargo",
+        "ticker": "WFC",
+        "aliases": ["Wells Fargo & Company", "WFC"],
+        "sector": "Financials",
+    } in data["missingCompanies"]
+
+
+def test_every_period_of_every_calendar_carries_its_calendar_months(calendars):
+    for calendar in calendars.values():
+        assert calendar["periods"], calendar["ticker"]
+        for period in calendar["periods"]:
+            assert MONTHS.match(period["months"]), (calendar["ticker"], period)
+            assert period["calendarYear"] == int(period["months"][-4:])
+
+
+def test_the_fiscal_year_end_is_named_as_the_filings_date_it(calendars):
+    # NVIDIA's 52/53-week year ends on the last Sunday of January, Apple's on the last
+    # Saturday of September; Tesla's on 31 December.
+    assert calendars["NVDA"]["fiscalYearEnd"] == "late January"
+    assert calendars["AAPL"]["fiscalYearEnd"] == "late September"
+    assert calendars["TSLA"]["fiscalYearEnd"] == "December 31"
+    # Target's only 10-K ends on 1 February, which stands for the end of January.
+    assert calendars["TGT"]["fiscalYearEnd"] == "late January or early February"
+
+
+def test_nvidias_calendar_places_its_fiscal_periods_in_calendar_months(calendars):
+    nvda = calendars["NVDA"]
+
+    q3 = _period(nvda, "Q3 FY2026")
+    assert q3 | {"revenue": None} == {
+        "fiscalPeriod": "Q3 FY2026",
+        "kind": "quarter",
+        "months": "Aug–Oct 2025",
+        "calendarYear": 2025,
+        "filing": {
+            "filingId": "NVDA_10-Q_2025-10-26",
+            "formType": "10-Q",
+            "reportPeriod": "2025-10-26",
+        },
+        "revenue": None,
+    }
+    assert q3["revenue"] == {
+        "value": 57_006_000_000,
+        "filingId": "NVDA_10-Q_2025-10-26",
+        "label": "Revenue",
+        "derived": None,
+    }
+
+    fy = _period(nvda, "FY2025")
+    assert fy["kind"] == "year"
+    assert fy["months"] == "Feb 2024–Jan 2025"
+    assert fy["calendarYear"] == 2025
+    assert fy["filing"]["filingId"] == "NVDA_10-K_2025-01-26"
+    assert fy["revenue"]["value"] == 130_497_000_000
+    assert fy["revenue"]["derived"] is None
+
+
+def test_a_fourth_quarter_is_derived_from_the_year_and_marked_as_derived(calendars):
+    q4 = _period(calendars["NVDA"], "Q4 FY2025")
+
+    assert q4["months"] == "Nov 2024–Jan 2025"
+    # The 10-K's year less its three 10-Q quarters: 130,497 − 26,044 − 30,040 − 35,082.
+    assert q4["filing"]["filingId"] == "NVDA_10-K_2025-01-26"
+    assert q4["revenue"] == {
+        "value": 39_331_000_000,
+        "filingId": "NVDA_10-K_2025-01-26",
+        "label": None,
+        "derived": "FY2025 less Q1–Q3 FY2025",
+    }
+
+
+def test_a_calendar_runs_newest_first_with_each_year_beside_its_fourth_quarter(calendars):
+    periods = [p["fiscalPeriod"] for p in calendars["NVDA"]["periods"]]
+
+    # From the latest Filing (Q3 FY2026) back to the first, every quarter once.
+    assert periods[:6] == [
+        "Q3 FY2026",
+        "Q2 FY2026",
+        "Q1 FY2026",
+        "FY2025",
+        "Q4 FY2025",
+        "Q3 FY2025",
+    ]
+    quarters = [p for p in periods if p.startswith("Q")]
+    assert len(quarters) == len(set(quarters))
+    assert periods[-1] == "Q4 FY2022" or periods[-1].startswith("Q1")
+
+
+def test_tracked_companies_have_revenue_for_every_filed_quarter_and_year(calendars):
+    for ticker in ("AAPL", "NVDA", "TSLA"):
+        periods = {p["fiscalPeriod"]: p for p in calendars[ticker]["periods"]}
+        for name, period in periods.items():
+            year = name.split("FY")[1]
+            # A fourth quarter is derived only when its year's three 10-Qs are filed.
+            filed = (
+                all(periods.get(f"Q{q} FY{year}", {}).get("filing") for q in (1, 2, 3))
+                if name.startswith("Q4")
+                else period["filing"]
+            )
+            assert bool(period["revenue"]) == bool(filed), (ticker, name)
+    # Apple's Corpus starts at its second quarter of fiscal 2022, so that year's fourth
+    # quarter can't be derived.
+    assert _period(calendars["AAPL"], "Q4 FY2022")["revenue"] is None
+    assert _period(calendars["AAPL"], "Q4 FY2023")["revenue"]["derived"]
+
+
+def test_snapshot_companies_have_no_revenue(calendars):
+    for ticker in ("JPM", "TGT"):
+        assert calendars[ticker]["coverage"] == "snapshot"
+        assert all(p["revenue"] is None for p in calendars[ticker]["periods"])
+
+
+def test_a_quarter_with_no_filing_is_listed_without_one_and_its_year_is_not_split(
+    indexed_filings,
+):
+    # Without NVIDIA's Q2 FY2025 10-Q, that quarter is a gap and its fourth quarter
+    # can't be derived.
+    filings = [f for f in indexed_filings if f.filing_id != "NVDA_10-Q_2024-07-28"]
+
+    nvda = next(c for c in company_calendars(filings) if c["ticker"] == "NVDA")
+
+    gap = _period(nvda, "Q2 FY2025")
+    assert gap["filing"] is None and gap["revenue"] is None
+    assert gap["months"] == "May–Jul 2024"
+    assert _period(nvda, "Q4 FY2025")["revenue"] is None
+    assert _period(nvda, "FY2025")["revenue"]["value"] == 130_497_000_000

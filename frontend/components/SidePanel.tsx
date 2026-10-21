@@ -3,10 +3,11 @@
 import { useId, type ReactNode } from 'react'
 
 /** The side panel's tabs, in the order the toolbar and the tab strip show them. */
-export type PanelTab = 'sources'
+export type PanelTab = 'sources' | 'calendar'
 
 const TABS: { tab: PanelTab; name: string; icon: ReactNode }[] = [
   { tab: 'sources', name: 'Sources', icon: <DocumentIcon /> },
+  { tab: 'calendar', name: 'Calendar', icon: <CalendarIcon /> },
 ]
 
 interface SidePanelProps {
@@ -18,7 +19,7 @@ interface SidePanelProps {
 }
 
 /**
- * The workspace's one right-hand panel: its tabs (Sources, for now), a close control and
+ * The workspace's one right-hand panel: its tabs (Sources and Calendar), a close control and
  * the open tab's content. On a wide screen it sits beside the thread; on a narrow one it
  * is a full-screen sheet.
  */
@@ -141,6 +142,24 @@ function DocumentIcon() {
     >
       <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z" />
       <path d="M14 3v5h5M9 13h6M9 17h6" />
+    </svg>
+  )
+}
+
+function CalendarIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className="h-[18px] w-[18px]"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M16 3v4M8 3v4M3 10h18M8 14h2M14 14h2M8 17h2" />
     </svg>
   )
 }

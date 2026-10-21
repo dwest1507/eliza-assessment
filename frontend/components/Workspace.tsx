@@ -1,10 +1,11 @@
 'use client'
 
-import { useEffect, useRef, useState, type FormEvent, type Ref } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent, type Ref } from 'react'
 import Link from 'next/link'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import AnswerMessage from '@/components/AnswerMessage'
+import CalendarPanel from '@/components/CalendarPanel'
 import FollowUps from '@/components/FollowUps'
 import SidePanel, { PanelToolbar, type PanelTab } from '@/components/SidePanel'
 import SourcesPanel from '@/components/SourcesPanel'
@@ -19,6 +20,7 @@ import {
 } from '@/lib/chat'
 import { loadConversation, saveConversation } from '@/lib/conversation'
 import { WHATS_COVERED_ID, type CoverageSummary } from '@/lib/coverage'
+import type { CompanyCalendar } from '@/lib/evalExport'
 import { followUps } from '@/lib/followUps'
 import { STARTERS } from '@/lib/starters'
 
@@ -36,9 +38,17 @@ interface OpenSource {
  * kept in session storage, so it survives a page refresh, and "New conversation" clears
  * it, so an old Query Scope can't leak into a new topic. With a Corpus coverage summary,
  * the empty conversation also says how many Companies are covered. The latest answer,
- * once complete, is followed by suggested follow-up questions.
+ * once complete, is followed by suggested follow-up questions. The toolbar's Calendar
+ * icon opens the panel's Calendar tab: a ticker tab for every Company the conversation's
+ * Query Scopes named, each showing its Company Calendar from `calendars`.
  */
-export default function Workspace({ coverage }: { coverage?: CoverageSummary }) {
+export default function Workspace({
+  coverage,
+  calendars = [],
+}: {
+  coverage?: CoverageSummary
+  calendars?: CompanyCalendar[]
+}) {
   const [transport] = useState(
     () => new DefaultChatTransport<ResearchMessage>({ api: '/api/chat' })
   )
@@ -50,6 +60,12 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
   // The tab the side panel shows, or null while it is closed.
   const [panel, setPanel] = useState<PanelTab | null>(null)
   const [open, setOpen] = useState<OpenSource | null>(null)
+  // The ticker the Calendar tab shows, or null for its first.
+  const [calendarTicker, setCalendarTicker] = useState<string | null>(null)
+  const calendarsByTicker = useMemo(
+    () => new Map(calendars.map((calendar) => [calendar.ticker, calendar])),
+    [calendars]
+  )
   const threadRef = useRef<HTMLDivElement>(null)
   const lastQuestionRef = useRef<HTMLDivElement>(null)
   // How to scroll the next question into place once it renders, or null for not at all.
@@ -114,6 +130,7 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
     saveConversation([])
     setPanel(null)
     setOpen(null)
+    setCalendarTicker(null)
     setInput('')
   }
 
@@ -149,6 +166,16 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
     openMessage ? citedSources(messageText(openMessage), openSources).map((s) => s.tag) : []
   )
   const shownTag = panel === 'sources' && open ? (open.tag ?? openSources[0]?.tag ?? null) : null
+  // Every Company any answer's Query Scope named, alphabetical: the Calendar's tickers.
+  const calendarTickers = [
+    ...new Set(
+      messages.flatMap((m) =>
+        m.role === 'assistant'
+          ? (messageDataPart(m, 'query-scope')?.companies ?? []).map((c) => c.ticker)
+          : []
+      )
+    ),
+  ].sort()
   const last = messages.at(-1)
   const writing = status === 'streaming' && last?.role === 'assistant' && !messageText(last)
   const turns = groupTurns(messages)
@@ -319,12 +346,21 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
 
         {panel && (
           <SidePanel tab={panel} onTab={setPanel} onClose={() => setPanel(null)}>
-            <SourcesPanel
-              sources={openSources}
-              cited={openCited}
-              selected={shownTag}
-              onSelect={(tag) => open && setOpen({ ...open, tag })}
-            />
+            {panel === 'calendar' ? (
+              <CalendarPanel
+                tickers={calendarTickers}
+                calendars={calendarsByTicker}
+                selected={calendarTicker}
+                onSelect={setCalendarTicker}
+              />
+            ) : (
+              <SourcesPanel
+                sources={openSources}
+                cited={openCited}
+                selected={shownTag}
+                onSelect={(tag) => open && setOpen({ ...open, tag })}
+              />
+            )}
           </SidePanel>
         )}
         <PanelToolbar open={panel} onToggle={toggle} variant="rail" />
