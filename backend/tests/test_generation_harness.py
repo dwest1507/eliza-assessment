@@ -947,6 +947,78 @@ def test_a_report_records_the_round_it_was_run_in(index, tmp_path):
     assert now["golden_set_version"] == data["golden_set_version"] == 2
 
 
+def test_a_named_run_records_its_name_and_an_unnamed_one_none(index, tmp_path):
+    """`--name` labels a candidate's report (a prompt version or a retrieval change), the
+    name the prompt rules compare it by (ADR 0017)."""
+    import io
+    import json
+
+    from edgar_eval.generation import main
+
+    for name in ("v16", None):
+        path = tmp_path / f"generation-dev-{name}.json"
+        main(
+            ["--case", "risk-unh-cybersecurity", "--index", str(index)]
+            + ["--log", str(tmp_path / "l"), "--json", str(path)]
+            + (["--name", name] if name else []),
+            model=FakeModel(ANSWER),
+            judge=FakeJudge(),
+            fact_values=lambda tickers: [],
+            out=io.StringIO(),
+        )
+
+        assert json.loads(path.read_text())["name"] == name
+
+
+def _make_dry_run(*argv: str) -> list[str]:
+    """The commands `make` would run for `argv`, without running them."""
+    import os
+    import subprocess
+    from pathlib import Path
+
+    repo = Path(__file__).resolve().parents[2]
+    unset = {"NAME", "MODEL", "ARM", "CHUNK_TOKENS", "CONTEXT_BUDGET", "MAKEFLAGS", "MFLAGS"}
+    env = {k: v for k, v in os.environ.items() if k not in unset}
+    index = "data/derived/edgar_rag.sqlite"  # treated as built, so nothing is rebuilt
+    return (
+        subprocess.run(
+            ["make", "--no-print-directory", "-n", "-o", index, *argv],
+            cwd=repo,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        .stdout.replace("\\\n", " ")
+        .splitlines()
+    )  # each command on one line
+
+
+@pytest.mark.parametrize(
+    ("assignments", "report", "name"),
+    [
+        (("NAME=x",), "generation-dev-x.json", "--name x"),
+        (
+            ("NAME=legal-route", "SPLIT=all"),
+            "generation-all-legal-route.json",
+            "--name legal-route",
+        ),
+        ((), "generation-dev.json", None),
+        (("MODEL=claude-haiku-5-5",), "generation-dev-claude-haiku-5-5.json", None),
+    ],
+)
+def test_make_eval_generation_names_a_candidates_report_by_name(assignments, report, name):
+    import shutil
+
+    if shutil.which("make") is None:
+        pytest.skip("needs make")
+    lines = _make_dry_run("eval-generation", *assignments)
+    [line] = [x for x in lines if "edgar_eval.generation " in x]
+
+    assert line.rstrip().endswith(f"--json ../data/derived/eval/{report}")
+    assert (name in line) if name else ("--name" not in line)
+
+
 def test_the_code_version_changes_with_any_source_file(tmp_path):
     from edgar_eval.generation import code_version
 

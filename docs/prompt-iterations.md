@@ -2,7 +2,7 @@
 
 Every version of the Answer Call's prompt template, newest last. The template lives in [`backend/src/edgar_rag/_prompt.py`](../backend/src/edgar_rag/_prompt.py), and its `PROMPT_VERSION` constant is logged with every Answer Call (`data/derived/logs/answer_calls.jsonl`), so each logged answer can be traced to the template that produced it.
 
-A change to the template bumps `PROMPT_VERSION` and adds an entry here: what changed, why, and the dev-split scores before and after (retrieval and generation harnesses, on the Golden Set's dev cases only). The holdout split is scored once per final setup, on the final version, and never used to choose ([the holdout rule](evaluation.md#the-holdout-rule)).
+A change to the template bumps `PROMPT_VERSION` and adds an entry here: what changed, why, and the dev-split scores before and after (retrieval and generation harnesses, on the Golden Set's dev cases only). Up to v15 each version was kept or discarded by a rule written on its ticket before its run, recorded in its entry; from v16, a version is decided by [ADR 0017](adr/0017-prompt-changes-decided-by-two-rules.md)'s `prompts` or `prompt-fix` rule, applied offline to its report (`make eval-generation NAME=v16`, then `python -m edgar_eval.selection compare ... --rule prompts`). The holdout split is scored once per final setup, on the final version, and never used to choose ([the holdout rule](evaluation.md#the-holdout-rule)).
 
 ## v1: the tracer bullet
 
@@ -336,7 +336,9 @@ The over-length answers are left as they are, as after v9. A five-Company compar
 
 ## v15: Coverage Gaps shown by the product, comparison tables (ADR 0016) and calendar months
 
-Spec #136, issue #139, 2026-10-20. v8 to v14 already name discarded versions above, so this one is v15. It is the first change of the spec's prompt: the spec's calendar months for fiscal periods and #132's prompt decisions join v15 rather than making a v16, so its dev scores are taken once all of them are in, with `gpt-6-luna`, before the freeze and the final round.
+Spec #136, issue #139, 2026-10-20. v8 to v14 already name discarded versions above, so this one is v15. It is the first change of the spec's prompt, and the spec's calendar months for fiscal periods join it. Its dev scores are taken once #136's answer-path changes are all in, with `gpt-6-luna`, before the freeze and the final round.
+
+**Corrected (#157, 2026-10-21).** This entry first said #132's prompt decisions would join v15 rather than make a v16. They don't: spec #132's candidates are each built on v15 alone and numbered v16 onwards (v16 state each point in full, v17 length scaled to Companies, v18 quote figures), with a confirmed combination taking the next number, and each is decided against v15 by [ADR 0017](adr/0017-prompt-changes-decided-by-two-rules.md)'s rules. The version that freezes may so be v15 or a later one.
 
 **What.** Four changes to the system rules; the user message is unchanged (it still lists the Coverage Gaps, or "None.", so the answer knows what it cannot cover).
 

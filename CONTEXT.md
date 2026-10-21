@@ -24,6 +24,10 @@ _Avoid_: Filters, entities, intent
 One numbered, citable item in an Answer Call's context: the retrieved text of one Section of one Filing, or the Financial Facts taken from one Filing.
 _Avoid_: Reference, document, context item
 
+**Answer Context**:
+Everything one Answer Call is given to answer from: the Sources, each Company's coverage, the Financial Facts and the Coverage Gaps, prepared by retrieval from the Query Scope.
+_Avoid_: Prompt context, retrieved context
+
 **Coverage Gap**:
 A part of a question the Corpus cannot answer (a trend asked of a Snapshot Company, a Company not in the Corpus, a stale Filing, guidance the Filings don't contain, or Companies whose latest periods differ). Every Coverage Gap is shown with the answer, in a fixed wording, as a Coverage note after it; the answer never fills one from general knowledge, and says in its own words only those that leave part of the question unanswered.
 _Avoid_: Limitation, missing data, caveat
@@ -57,6 +61,14 @@ _Avoid_: Error, hallucination
 **Evidence Reached**:
 Whether a Required Fact's evidence quote is in the text of an Answer Context's Sources: retrieval's measure of whether an answer could state that fact at all.
 _Avoid_: Recall (unqualified), coverage
+
+**Generation Miss**:
+A must-state Required Fact whose evidence reached the Answer Context (Evidence Reached) but which the answer did not state: a fact lost by generation, not by retrieval.
+_Avoid_: Answer miss, recall miss
+
+**Retrieval Miss**:
+A must-state Required Fact whose evidence did not reach the Answer Context: a planning miss (the Section plan left its Section out) or a ranking miss (its Section was searched, but the passage was not ranked into the context budget).
+_Avoid_: Search miss, recall miss
 
 **Control Run**:
 The shipped choice run again beside its challengers in a comparison, so the comparison shows its own run-to-run noise. If it comes out ahead of the shipped run, the comparison is inconclusive and the shipped choice stands. The comparisons of one round (the same code, prompt and Golden Set version) share one shipped run and one Control Run.

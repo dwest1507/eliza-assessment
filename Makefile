@@ -113,12 +113,16 @@ eval-retrieval: $(EVAL_INDEX) $(if $(filter dense hybrid,$(or $(ARMS),dense)),$(
 		$(SETTINGS_ARGS) $(if $(GOLDEN_SET),--golden-set ../$(GOLDEN_SET)) \
 		--json ../data/derived/eval/retrieval-$(SPLIT)$(SETTINGS).json
 
-eval-generation: $(EVAL_INDEX) $(if $(filter dense hybrid,$(ARM)),$(EMBEDDINGS)) $(if $(filter dense-local hybrid-local,$(ARM)),$(LOCAL_EMBEDDINGS)) ## Score answers on the Golden Set: make eval-generation [SPLIT=...] [MODEL=...] [ARM=...] [CHUNK_TOKENS=...] [CONTEXT_BUDGET=...] (costs money)
+# NAME names a candidate's report (a prompt version or a retrieval change, ADR 0017):
+# generation-<split>-<NAME>.json, so it never overwrites the round's shipped run.
+GENERATION_REPORT = $(if $(NAME),$(SPLIT)-$(NAME),$(if $(ARM),arms-$(SPLIT)-$(ARM),$(SPLIT)$(if $(MODEL),-$(MODEL)))$(SETTINGS))
+
+eval-generation: $(EVAL_INDEX) $(if $(filter dense hybrid,$(ARM)),$(EMBEDDINGS)) $(if $(filter dense-local hybrid-local,$(ARM)),$(LOCAL_EMBEDDINGS)) ## Score answers on the Golden Set: make eval-generation [SPLIT=...] [MODEL=...] [ARM=...] [CHUNK_TOKENS=...] [CONTEXT_BUDGET=...] [NAME=...] (costs money)
 	@keys=$$($(GENERATOR_KEYS) $(MODEL)) || exit 1; \
 	$(call require_keys,$$keys JEV_API_KEY)
 	$(UV) python -m edgar_eval.generation --split $(SPLIT) $(if $(MODEL),--model $(MODEL)) \
-		$(if $(ARM),--arm $(ARM)) $(SETTINGS_ARGS) \
-		--json ../data/derived/eval/generation-$(if $(ARM),arms-$(SPLIT)-$(ARM),$(SPLIT)$(if $(MODEL),-$(MODEL)))$(SETTINGS).json
+		$(if $(ARM),--arm $(ARM)) $(SETTINGS_ARGS) $(if $(NAME),--name $(NAME)) \
+		--json ../data/derived/eval/generation-$(GENERATION_REPORT).json
 
 eval-brief: $(EVAL_INDEX) $(if $(filter dense hybrid,$(ARM)),$(EMBEDDINGS)) $(if $(filter dense-local hybrid-local,$(ARM)),$(LOCAL_EMBEDDINGS)) ## Run the Brief Suite, 5 runs a case, a verdict per case: make eval-brief [RUNS=...] [MODEL=...] [ARM=...] [CHUNK_TOKENS=...] [CONTEXT_BUDGET=...] (costs money)
 	@keys=$$($(GENERATOR_KEYS) $(MODEL)) || exit 1; \

@@ -1,11 +1,15 @@
-"""The selection rules: which retrieval Arm, and which generator, ships, decided by the
-generation harness's scores on paired cases.
+"""The selection rules: which retrieval Arm, which generator, which chunk size and
+context budget, and which prompt candidate ships, decided by the generation harness's
+scores on paired cases.
 
 Each score is compared case by case with the one-sided exact sign test, under one pair
 of thresholds for every rule (ADR 0011): a challenger is **ahead** on a score at
 one-sided p < `AHEAD_P` (0.10) and **behind** at one-sided p < `BEHIND_P` (0.20). The
-scores are Fact Recall, Faithfulness, Coverage Gaps and Contradicted Claims, the last
-paired per case on "has no Contradicted Claim"; the last three are the guardrails.
+scores are Fact Recall, Faithfulness, Coverage Gaps, Contradicted Claims (paired per case
+on "has no Contradicted Claim") and structure followed (the structure check, per case);
+Faithfulness, Coverage Gaps and Contradicted Claims are every rule's guardrails, and
+structure the prompt rules' only. Each comparison also counts the cases failing the
+figure check on each side (`figures`), the `prompt-fix` rule's ahead metric.
 
 Each score pairs only the cases both sides scored: a case one side could not score (its
 judgment failed, or it was not answered) is left out of that score's test, never counted
@@ -34,6 +38,20 @@ evidence reached (challenger only, shipped only, both, neither).
 - **Settings** (ADR 0010): a chunk size and context budget replace the shipped ones under
   the Arm rule, fact by fact as well. Each setting's report is named by its setting
   (`chunks-600-budget-32000`).
+- **Prompts** (ADR 0017), for a change meant to raise the facts stated (a prompt version,
+  a retrieval change such as the legal proceedings route): the Arm rule, **ahead on Fact
+  Recall fact by fact** and **behind on no guardrail**, with structure followed added to
+  the guardrails.
+- **Prompt-fix** (ADR 0017), for a correctness change (the figures prompt): it qualifies
+  when **fewer cases fail the figure check** than in the shipped run, a count, not a
+  test, and it is **behind on none** of the prompt rule's guardrails nor on Fact Recall
+  fact by fact.
+
+The prompt rules have no command of their own: `compare --rule prompts|prompt-fix`
+applies them offline to the round's shipped run, a candidate's report (written by `make
+eval-generation NAME=...`, which records `name`) and the Control Run. A candidate is
+named by its report's `name`, else its prompt version; a challenger whose name another
+already has takes its report's file name beside it (`v7 (generation-dev-x)`).
 
 Under any rule, when several challengers qualify, the **cheapest** wins: the lowest
 mean answer cost, then the earliest listed.
@@ -68,7 +86,8 @@ the shipped setup and of this round, and otherwise runs them again first.
     python -m edgar_eval.selection generators [--split dev] [--reuse] [--model MODEL... | --all]
     python -m edgar_eval.selection settings [--split dev] [--reuse] --setting CHUNKS:BUDGET...
     python -m edgar_eval.selection compare SHIPPED.json CHALLENGER.json...
-        [--control CONTROL.json] [--rule arms|generators|settings] [--json PATH]
+        [--control CONTROL.json] [--rule arms|generators|settings|prompts|prompt-fix]
+        [--json PATH]
 
 **The screen** (ADR 0011): before any paid Answer Call, the `arms` and `settings`
 commands score every candidate with the retrieval harness, which is free, and answer only
@@ -99,8 +118,10 @@ generators and Jev, so they cost money. `compare` applies a rule to generation r
 already written, the first being the shipped choice, with `--control` the Control Run's
 (without one, as for version 1's reports, it says the noise is not shown). All print the
 comparison and every answer of each run that stopped at the token cap (`capped`), and
-write them, with the choice, to `--json` (by default
-`data/derived/eval/<arm|generator|settings>-choice-<split>.json`).
+write them, with the choice and the prompt and code versions each side's report records
+(`versions`), to `--json` (by default
+`data/derived/eval/<arm|generator|settings>-choice-<split>.json`; `compare` writes only
+when `--json` names a file).
 """
 
 from __future__ import annotations
@@ -134,6 +155,7 @@ __all__ = [
     "Comparison",
     "EvidenceGroup",
     "FactComparison",
+    "FigureComparison",
     "FactOutcome",
     "Rule",
     "RuleName",
@@ -149,9 +171,15 @@ _INDEX_DIR = DERIVED_DIR
 """Where an index of another chunk size is, or is built: `edgar_rag-chunks<N>.sqlite`,
 the name `make eval-generation CHUNK_TOKENS=<N>` uses."""
 
-RuleName = Literal["arms", "generators", "settings"]
+RuleName = Literal["arms", "generators", "settings", "prompts", "prompt-fix"]
 Score = Literal[
-    "fact_recall", "stated_facts", "faithfulness", "coverage_gaps", "contradicted_claims"
+    "fact_recall",
+    "stated_facts",
+    "faithfulness",
+    "coverage_gaps",
+    "contradicted_claims",
+    "structure",
+    "figures",
 ]
 
 UNCONSTRAINED = "available if the one-call limit is lifted"
@@ -351,18 +379,32 @@ class Rule:
     ahead_on_any: tuple[Score, ...]
     behind_on_none: tuple[Score, ...]
     named_by: str
-    """The generation report field that names a candidate (falling back to its model)."""
-    run: Callable[..., tuple[list[Path], dict | None]]
+    """The generation report field that names a candidate (falling back to `fallback`,
+    then to its model)."""
+    run: Callable[..., tuple[list[Path], dict | None]] | None
     """Runs the generation harness once per challenger on a split (reusing reports
     already written when asked) and returns their reports, with the screen that chose
     the challengers (None for a rule that does not screen); the shipped run and Control
     Run come from the round (`_round_runs`). The Arm and settings rules' screen every
     candidate on Evidence Reached first (ADR 0011) and answer only through the ones it
     keeps. The generator rule's also takes `only`, the models to limit the run to; the
-    settings rule's `settings`, the (chunk size, context budget) pairs to compare."""
+    settings rule's `settings`, the (chunk size, context budget) pairs to compare. None
+    for a rule that `compare` alone applies: the prompt rules, whose candidates are run
+    by `make eval-generation NAME=...`."""
     choice_file: str
     """The default file the choice is written to, before `-<split>.json`."""
+    fallback: str = "model"
+    """The report field that names a candidate whose report has no `named_by` field."""
 
+
+_PROMPT_GUARDRAILS: tuple[Score, ...] = (
+    "fact_recall",
+    "faithfulness",
+    "coverage_gaps",
+    "contradicted_claims",
+    "structure",
+)
+"""The guardrails of both prompt rules (ADR 0017): the Arm rule's, and structure."""
 
 RULES: dict[RuleName, Rule] = {
     "arms": Rule(
@@ -386,10 +428,30 @@ RULES: dict[RuleName, Rule] = {
         run=_run_settings,
         choice_file="settings-choice",
     ),
+    "prompts": Rule(
+        ahead_on_any=("stated_facts",),
+        behind_on_none=_PROMPT_GUARDRAILS,
+        named_by="name",
+        fallback="prompt_version",
+        run=None,
+        choice_file="prompt-choice",
+    ),
+    "prompt-fix": Rule(
+        ahead_on_any=("figures",),
+        behind_on_none=(*_PROMPT_GUARDRAILS, "stated_facts"),
+        named_by="name",
+        fallback="prompt_version",
+        run=None,
+        choice_file="prompt-fix-choice",
+    ),
 }
 """The only place the rules differ. Under the Arm and settings rules Fact Recall is
 ahead by the fact-level test (`stated_facts`, ADR 0015) and the per-case sign test on it
-is a guardrail; the generator rule decides Fact Recall per case, as ADR 0011 states."""
+is a guardrail; the generator rule decides Fact Recall per case, as ADR 0011 states.
+The prompt rules (ADR 0017) have no command of their own: `compare` applies them to a
+candidate's report written by `make eval-generation NAME=...`. `prompts` is the Arm
+rule with structure followed added to the guardrails; `prompt-fix` is ahead when fewer
+cases fail the figure check (`figures`), and adds facts stated to the guardrails."""
 
 _UNRECORDED_CUTOFF = 0.5
 """The fact cut-off of a generation report saved before it recorded one
@@ -429,6 +491,14 @@ class Candidate:
     """Each case's must-state Required Facts, in the case's order; None when the case
     has none or its Fact Recall judgment failed, so it is left out of the fact-level
     test as it is of the per-case one."""
+    structure: Mapping[str, bool | None] = field(default_factory=dict)
+    """Whether each case's answer follows the structure (assumption 8, the structure
+    check); None for a report that does not record it."""
+    figures: Mapping[str, bool | None] = field(default_factory=dict)
+    """Whether each case's answer passes the figure check; None when unrecorded."""
+    prompt_version: str | None = None
+    code_version: str | None = None
+    """The prompt and code versions the report records, which a choice file records."""
 
     @classmethod
     def from_report(cls, report: Mapping[str, Any], rule: RuleName = "arms") -> Candidate:
@@ -436,7 +506,8 @@ class Candidate:
         names candidates: by its Arm or by its model."""
         cases = report["cases"]
         costs = [c.get("cost_usd") for c in cases]
-        name = report.get(RULES[rule].named_by) or report["model"]
+        spec = RULES[rule]
+        name = report.get(spec.named_by) or report.get(spec.fallback) or report["model"]
         return cls(
             name=name,
             fact_recall={c["case_id"]: c.get("fact_recall") for c in cases},
@@ -454,7 +525,19 @@ class Candidate:
                 c["case_id"]: _must_state_facts(c, report.get("fact_cutoff", _UNRECORDED_CUTOFF))
                 for c in cases
             },
+            structure={c["case_id"]: _passed(c, "structure", "problems") for c in cases},
+            figures={c["case_id"]: _passed(c, "figures", "unmatched") for c in cases},
+            prompt_version=report.get("prompt_version"),
+            code_version=report.get("code_version"),
         )
+
+
+def _passed(case: Mapping[str, Any], check: str, failures: str) -> bool | None:
+    """Whether a report's case passes a check in code that records what failed it (the
+    structure check's problems, the figure check's unmatched figures), or None when the
+    case records no such check."""
+    record = case.get(check)
+    return None if record is None else not record[failures]
 
 
 def _must_state_facts(case: Mapping[str, Any], cutoff: float) -> tuple[FactOutcome, ...] | None:
@@ -578,6 +661,25 @@ class FactComparison:
 
 
 @dataclass(frozen=True)
+class FigureComparison:
+    """The figure check, case by case: how many of the cases both sides recorded each
+    side's answer fails. `prompt-fix`'s ahead metric (ADR 0017)."""
+
+    paired: int
+    """The cases both sides recorded a figure check for."""
+    challenger_failed: int
+    shipped_failed: int
+    fixed: int
+    """Paired cases the shipped choice failed and the challenger passed."""
+    broken: int
+    """Paired cases the challenger failed and the shipped choice passed."""
+    verdict: Verdict
+    """`ahead` when fewer paired cases fail for the challenger, `behind` when more, else
+    `indistinguishable`: a count, as the prompt log's rule for a correctness fix is, not a
+    test."""
+
+
+@dataclass(frozen=True)
 class Comparison:
     """A challenger against the shipped choice, case by case."""
 
@@ -591,6 +693,10 @@ class Comparison:
     coverage_gaps: ScoreComparison
     contradicted_claims: ScoreComparison
     """Paired per case on "has no Contradicted Claim"."""
+    structure: ScoreComparison
+    """Structure followed, paired per case: a guardrail of the prompt rules only."""
+    figures: FigureComparison
+    """The figure check's failures: `prompt-fix`'s ahead metric."""
     qualifies: bool
     """Whether the challenger qualifies under the rule it was compared by, on its scores
     alone: unconstrained by the one-call rule."""
@@ -617,7 +723,7 @@ class Choice:
     """Why the choice is inconclusive; None when it is not."""
 
 
-_SCORES = ("fact_recall", "faithfulness", "coverage_gaps", "contradicted_claims")
+_SCORES = ("fact_recall", "faithfulness", "coverage_gaps", "contradicted_claims", "structure")
 """The scores compared case by case with the sign test."""
 
 
@@ -687,6 +793,29 @@ def _compare_facts(
     )
 
 
+def _compare_figures(
+    challenger: Mapping[str, bool | None], shipped: Mapping[str, bool | None]
+) -> FigureComparison:
+    both = sorted(
+        c for c in challenger.keys() & shipped.keys() if None not in (challenger[c], shipped[c])
+    )
+    mine = sum(not challenger[c] for c in both)
+    theirs = sum(not shipped[c] for c in both)
+    verdict: Verdict = "indistinguishable"
+    if mine < theirs:
+        verdict = "ahead"
+    elif mine > theirs:
+        verdict = "behind"
+    return FigureComparison(
+        paired=len(both),
+        challenger_failed=mine,
+        shipped_failed=theirs,
+        fixed=sum(bool(challenger[c]) and not shipped[c] for c in both),
+        broken=sum(not challenger[c] and bool(shipped[c]) for c in both),
+        verdict=verdict,
+    )
+
+
 def _evidence_status(challenger: bool | None, shipped: bool | None) -> str:
     if challenger is None or shipped is None:
         return "unrecorded"
@@ -702,6 +831,7 @@ def compare(challenger: Candidate, shipped: Candidate, rule: RuleName = "arms") 
         f: _compare_score(getattr(challenger, f), getattr(shipped, f)) for f in _SCORES
     }
     scores["stated_facts"] = _compare_facts(challenger.facts, shipped.facts)
+    scores["figures"] = _compare_figures(challenger.figures, shipped.figures)
     spec = RULES[rule]
     return Comparison(
         cases=len(set(challenger.fact_recall) & set(shipped.fact_recall)),
@@ -718,6 +848,8 @@ _LABELS: dict[Score, str] = {
     "faithfulness": "Faithfulness",
     "coverage_gaps": "Coverage Gaps",
     "contradicted_claims": "No Contradicted Claim",
+    "structure": "Structure followed",
+    "figures": "Figures exact",
 }
 
 
@@ -820,11 +952,13 @@ def main(argv: list[str] | None = None, *, out: TextIO | None = None) -> int:
                 parser.error("name each setting to compare: --setting CHUNKS:BUDGET")
             options = {"settings": args.setting}
         shipped_path, control = _round_runs(args.split, out)
-        challengers, screen = RULES[rule].run(args.split, args.reuse, out, **options)
+        run = RULES[rule].run
+        assert run is not None  # every command's rule runs its challengers
+        challengers, screen = run(args.split, args.reuse, out, **options)
         paths = [shipped_path, *challengers]
         target = args.json or _EVAL_DIR / f"{RULES[rule].choice_file}-{args.split}.json"
     data = [json.loads(Path(p).read_text(encoding="utf-8")) for p in paths]
-    candidates = [Candidate.from_report(d, rule) for d in data]
+    candidates = _distinct([Candidate.from_report(d, rule) for d in data], paths)
     control_candidate = (
         Candidate.from_report(json.loads(control.read_text(encoding="utf-8")), rule)
         if control
@@ -846,12 +980,44 @@ def main(argv: list[str] | None = None, *, out: TextIO | None = None) -> int:
             "reports": [str(p) for p in paths],
             "control_report": str(control) if control else None,
             "capped": capped,
+            "versions": _versions(candidates, control_candidate),
         }
         if screen is not None:
             record["screen"] = screen
         target.write_text(json.dumps(record | asdict(choice), indent=2) + "\n", encoding="utf-8")
         print(f"\nWritten to {target.resolve()}", file=out)
     return 0
+
+
+def _distinct(candidates: list[Candidate], paths: Sequence[Path]) -> list[Candidate]:
+    """The candidates, each challenger named apart from the shipped choice and from the
+    others: one whose name another already has (reports of one prompt version, under a
+    prompt rule) takes its report's file name beside it, `v7 (generation-dev-x)`."""
+    from dataclasses import replace
+
+    seen = {candidates[0].name}
+    named = [candidates[0]]
+    for candidate, path in zip(candidates[1:], paths[1:], strict=True):
+        if candidate.name in seen:
+            candidate = replace(candidate, name=f"{candidate.name} ({Path(path).stem})")
+        seen.add(candidate.name)
+        named.append(candidate)
+    return named
+
+
+def _versions(
+    candidates: Sequence[Candidate], control: Candidate | None
+) -> dict[str, dict[str, str | None]]:
+    """The prompt and code versions each side's report records, named as `capped` names
+    the runs: what a choice file records of both sides (ADR 0017)."""
+    runs = [(f"{candidates[0].name} (shipped run)", candidates[0])]
+    if control is not None:
+        runs.append((f"{candidates[0].name} (Control Run)", control))
+    runs += [(c.name, c) for c in candidates[1:]]
+    return {
+        name: {"prompt_version": c.prompt_version, "code_version": c.code_version}
+        for name, c in runs
+    }
 
 
 def _capped(report: Mapping[str, Any]) -> list[str]:
@@ -884,6 +1050,13 @@ def _print_scores(c: Comparison, out: TextIO) -> None:
         )
         if score == "fact_recall":
             _print_facts(c.stated_facts, out)
+    f = c.figures
+    print(
+        f"  {_LABELS['figures']}: {f.verdict} ({f.challenger_failed} of {f.paired} cases "
+        f"failing the figure check against {f.shipped_failed}; {f.fixed} fixed, "
+        f"{f.broken} broken)",
+        file=out,
+    )
 
 
 def _print_facts(f: FactComparison, out: TextIO) -> None:

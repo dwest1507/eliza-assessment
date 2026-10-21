@@ -31,11 +31,15 @@ prints it.
 scores and writes them, with every answer, as JSON under `data/derived/eval/`:
 
     python -m edgar_eval.generation [--split dev|holdout|all] [--model MODEL] [--arm ARM]
-        [--index PATH] [--context-budget TOKENS] [--json PATH]
+        [--index PATH] [--context-budget TOKENS] [--name NAME] [--json PATH]
 
 `--index` chooses the index, and so the chunk size, and `--context-budget` the tokens of
 Sources per Answer Call (ADR 0010); the report records both, and names the setting
-(`chunks-600-budget-32000`) for the selection rule.
+(`chunks-600-budget-32000`) for the selection rule. `--name` names a candidate, a prompt
+version or a retrieval change (`v16`, `legal-route`), which the report records (`name`,
+None without it) and the prompt rules compare it by (ADR 0017); `make eval-generation
+NAME=...` passes it and writes the report as `generation-<split>-<NAME>.json`, so a
+candidate never overwrites the round's shipped run.
 
 `--brief-suite` answers the Brief Suite instead of a Golden Set split, each case
 `--runs` times (5 by default), and gives each case a pass/fail verdict
@@ -692,6 +696,10 @@ def main(
     )
     parser.add_argument("--log", type=Path, default=DEFAULT_ANSWER_LOG, help="Answer Call log")
     parser.add_argument("--json", type=Path, help="also write the report as JSON here")
+    parser.add_argument(
+        "--name",
+        help="a candidate's name (v16, legal-route), recorded in the report (ADR 0017)",
+    )
     args = parser.parse_args(argv)
 
     if arms is None:
@@ -764,7 +772,7 @@ def main(
     if args.json:
         args.json.parent.mkdir(parents=True, exist_ok=True)
         data = {"split": args.split} | current_round(args.golden_set) | report.to_dict()
-        data |= one_call
+        data |= one_call | {"name": args.name}
         args.json.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
         print(f"\nWritten to {args.json.resolve()}", file=out)
     return 1 if report.errors else 0
