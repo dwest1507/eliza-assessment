@@ -202,7 +202,6 @@ holdout misses, the follow-up case) or stated in every answer (coverage, guidanc
 - **Alerts on new Filings.** The index already finds text that is new between periods; run it as each Filing lands and send the new risk factors and MD&A changes for the Companies a deal team follows.
 - **Earnings-call transcripts for guidance.** Guidance is published in earnings releases and calls, not in 10-Ks and 10-Qs, so outlook questions could quote it instead of stating the gap.
 - **Passage-level citations.** A citation names a Section of a Filing today; pointing it at the passage that states the claim makes every check one click.
-- **Financial Facts for every Company.** Exact figures are extracted only for the 13 Tracked Companies; the 41 Snapshot Companies' are read from the text. Extend the extraction, checked against the SEC reference as before.
 - **Private-company data rooms.** The same pipeline over a target's CIM, management accounts and contracts, with the same citations and gaps. A local model can take the Answer Call when the documents cannot leave the firm.
 
 Every one keeps the rule the Client confirmed: one generative LLM call per question.

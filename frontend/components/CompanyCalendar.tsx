@@ -1,8 +1,7 @@
 import type { CalendarPeriod, CalendarRevenue, CompanyCalendar as Calendar } from '@/lib/evalExport'
 
-/** What a Snapshot Company's calendar says in place of its revenue column. */
-export const SNAPSHOT_REVENUE_NOTE =
-  'Revenue figures are extracted for companies with two or more years of filings.'
+/** What a calendar says in place of its revenue column when no Filing yielded one. */
+export const NO_REVENUE_NOTE = 'No revenue figure could be read from this company’s filings.'
 
 /** A revenue figure in millions of US dollars, e.g. `$57,006M`. */
 export function revenueText(value: number): string {
@@ -38,7 +37,7 @@ function bands(periods: CalendarPeriod[]): [string, CalendarPeriod[]][] {
 /**
  * A Company Calendar: one row per fiscal quarter from the Company's first Filing in the
  * Corpus to its latest, newest first, each beside its calendar months, its Filing (or
- * "not in the filings", in grey) and, for a Tracked Company, its revenue, with each
+ * "not in the filings", in grey) and its revenue where its Filing yields one, with each
  * fiscal year's row in bold beside its fourth quarter. Rows are banded by fiscal year, so
  * a fiscal year's quarters sit together, their calendar months beside them. A hover on
  * a figure names its Filing and the label it prints; a derived fourth quarter is marked
@@ -52,7 +51,7 @@ export default function CompanyCalendar({
   /** False where the Company is already named above, as on a "What's covered" card. */
   showName?: boolean
 }) {
-  const tracked = calendar.coverage === 'tracked'
+  const withRevenue = calendar.periods.some((period) => period.revenue !== null)
   return (
     <div className="flex flex-col gap-3">
       <div>
@@ -67,7 +66,7 @@ export default function CompanyCalendar({
         {calendar.fiscalYearEnd && (
           <p className="mt-0.5 text-[13px] text-muted">Fiscal year ends {calendar.fiscalYearEnd}</p>
         )}
-        {!tracked && <p className="mt-2 text-[13px] text-muted">{SNAPSHOT_REVENUE_NOTE}</p>}
+        {!withRevenue && <p className="mt-2 text-[13px] text-muted">{NO_REVENUE_NOTE}</p>}
       </div>
       <div className="overflow-x-auto">
         <table
@@ -85,7 +84,7 @@ export default function CompanyCalendar({
               <th scope="col" className="py-1 pr-3 font-medium">
                 Filing
               </th>
-              {tracked && (
+              {withRevenue && (
                 <th scope="col" className="py-1 text-right font-medium">
                   Revenue
                 </th>
@@ -101,14 +100,14 @@ export default function CompanyCalendar({
               <tr>
                 <th
                   scope="rowgroup"
-                  colSpan={tracked ? 4 : 3}
+                  colSpan={withRevenue ? 4 : 3}
                   className="px-2 pt-2 pb-0.5 text-left font-mono text-[12px] font-normal tracking-widest text-muted"
                 >
                   {year}
                 </th>
               </tr>
               {periods.map((period) => (
-                <PeriodRow key={period.fiscalPeriod} period={period} tracked={tracked} />
+                <PeriodRow key={period.fiscalPeriod} period={period} withRevenue={withRevenue} />
               ))}
             </tbody>
           ))}
@@ -118,7 +117,7 @@ export default function CompanyCalendar({
   )
 }
 
-function PeriodRow({ period, tracked }: { period: CalendarPeriod; tracked: boolean }) {
+function PeriodRow({ period, withRevenue }: { period: CalendarPeriod; withRevenue: boolean }) {
   const filed = period.filing !== null
   const year = period.kind === 'year'
   return (
@@ -138,7 +137,7 @@ function PeriodRow({ period, tracked }: { period: CalendarPeriod; tracked: boole
           <span className="italic">not in the filings</span>
         )}
       </td>
-      {tracked && (
+      {withRevenue && (
         <td className="py-1 pr-2 text-right font-mono whitespace-nowrap">
           {period.revenue ? (
             <>

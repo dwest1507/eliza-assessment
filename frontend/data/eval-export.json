@@ -47,7 +47,7 @@
           "meanSources": 11.216666666666667,
           "facts": 983,
           "factsReached": 844,
-          "meanSourceTokens": 28156.3
+          "meanSourceTokens": 28159.666666666668
         },
         "byType": [
           {
@@ -69,7 +69,7 @@
             "meanSources": 24.428571428571427,
             "facts": 159,
             "factsReached": 104,
-            "meanSourceTokens": 32199.714285714286
+            "meanSourceTokens": 32210.214285714286
           },
           {
             "questionType": "missing_company",
@@ -111,7 +111,7 @@
             "meanSources": 1.3333333333333333,
             "facts": 61,
             "factsReached": 57,
-            "meanSourceTokens": 18845.166666666668
+            "meanSourceTokens": 18849.0
           },
           {
             "questionType": "overview",
@@ -153,7 +153,7 @@
             "meanSources": 8.833333333333334,
             "facts": 340,
             "factsReached": 297,
-            "meanSourceTokens": 28154.277777777777
+            "meanSourceTokens": 28156.055555555555
           },
           {
             "questionType": "sector",
@@ -225,7 +225,7 @@
           "meanSources": 10.233333333333333,
           "facts": 983,
           "factsReached": 807,
-          "meanSourceTokens": 28675.0
+          "meanSourceTokens": 28678.366666666665
         },
         "byType": [
           {
@@ -247,7 +247,7 @@
             "meanSources": 21.214285714285715,
             "facts": 159,
             "factsReached": 82,
-            "meanSourceTokens": 32264.35714285714
+            "meanSourceTokens": 32274.85714285714
           },
           {
             "questionType": "missing_company",
@@ -289,7 +289,7 @@
             "meanSources": 1.3333333333333333,
             "facts": 61,
             "factsReached": 54,
-            "meanSourceTokens": 21945.0
+            "meanSourceTokens": 21948.833333333332
           },
           {
             "questionType": "overview",
@@ -331,7 +331,7 @@
             "meanSources": 7.722222222222222,
             "facts": 340,
             "factsReached": 307,
-            "meanSourceTokens": 28113.833333333332
+            "meanSourceTokens": 28115.61111111111
           },
           {
             "questionType": "sector",
@@ -405,7 +405,7 @@
           "meanSources": 10.766666666666667,
           "facts": 983,
           "factsReached": 866,
-          "meanSourceTokens": 28689.133333333335
+          "meanSourceTokens": 28692.5
         },
         "byType": [
           {
@@ -427,7 +427,7 @@
             "meanSources": 22.571428571428573,
             "facts": 159,
             "factsReached": 110,
-            "meanSourceTokens": 32234.85714285714
+            "meanSourceTokens": 32245.35714285714
           },
           {
             "questionType": "missing_company",
@@ -469,7 +469,7 @@
             "meanSources": 1.3333333333333333,
             "facts": 61,
             "factsReached": 57,
-            "meanSourceTokens": 21983.166666666668
+            "meanSourceTokens": 21987.0
           },
           {
             "questionType": "overview",
@@ -511,7 +511,7 @@
             "meanSources": 8.277777777777779,
             "facts": 340,
             "factsReached": 317,
-            "meanSourceTokens": 28142.88888888889
+            "meanSourceTokens": 28144.666666666668
           },
           {
             "questionType": "sector",
@@ -584,7 +584,7 @@
           "meanSources": 11.116666666666667,
           "facts": 983,
           "factsReached": 828,
-          "meanSourceTokens": 28114.133333333335
+          "meanSourceTokens": 28117.5
         },
         "byType": [
           {
@@ -606,7 +606,7 @@
             "meanSources": 24.428571428571427,
             "facts": 159,
             "factsReached": 104,
-            "meanSourceTokens": 32199.714285714286
+            "meanSourceTokens": 32210.214285714286
           },
           {
             "questionType": "missing_company",
@@ -648,7 +648,7 @@
             "meanSources": 1.3333333333333333,
             "facts": 61,
             "factsReached": 57,
-            "meanSourceTokens": 18845.166666666668
+            "meanSourceTokens": 18849.0
           },
           {
             "questionType": "overview",
@@ -690,7 +690,7 @@
             "meanSources": 8.777777777777779,
             "facts": 340,
             "factsReached": 297,
-            "meanSourceTokens": 28131.666666666668
+            "meanSourceTokens": 28133.444444444445
           },
           {
             "questionType": "sector",
@@ -763,7 +763,7 @@
           "meanSources": 10.583333333333334,
           "facts": 983,
           "factsReached": 781,
-          "meanSourceTokens": 28683.833333333332
+          "meanSourceTokens": 28687.2
         },
         "byType": [
           {
@@ -785,7 +785,7 @@
             "meanSources": 22.928571428571427,
             "facts": 159,
             "factsReached": 72,
-            "meanSourceTokens": 32284.214285714286
+            "meanSourceTokens": 32294.714285714286
           },
           {
             "questionType": "missing_company",
@@ -827,7 +827,7 @@
             "meanSources": 1.3333333333333333,
             "facts": 61,
             "factsReached": 55,
-            "meanSourceTokens": 22008.833333333332
+            "meanSourceTokens": 22012.666666666668
           },
           {
             "questionType": "overview",
@@ -869,7 +869,7 @@
             "meanSources": 7.722222222222222,
             "facts": 340,
             "factsReached": 291,
-            "meanSourceTokens": 28151.61111111111
+            "meanSourceTokens": 28153.38888888889
           },
           {
             "questionType": "sector",
@@ -942,7 +942,7 @@
           "meanSources": 10.6,
           "facts": 983,
           "factsReached": 852,
-          "meanSourceTokens": 28685.166666666668
+          "meanSourceTokens": 28688.533333333333
         },
         "byType": [
           {
@@ -964,7 +964,7 @@
             "meanSources": 23.0,
             "facts": 159,
             "factsReached": 107,
-            "meanSourceTokens": 32222.285714285714
+            "meanSourceTokens": 32232.785714285714
           },
           {
             "questionType": "missing_company",
@@ -1006,7 +1006,7 @@
             "meanSources": 1.3333333333333333,
             "facts": 61,
             "factsReached": 57,
-            "meanSourceTokens": 21955.833333333332
+            "meanSourceTokens": 21959.666666666668
           },
           {
             "questionType": "overview",
@@ -1048,7 +1048,7 @@
             "meanSources": 7.722222222222222,
             "facts": 340,
             "factsReached": 303,
-            "meanSourceTokens": 28141.277777777777
+            "meanSourceTokens": 28143.055555555555
           },
           {
             "questionType": "sector",
@@ -2107,7 +2107,12 @@
             "formType": "10-K",
             "reportPeriod": "2024-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 56334000000,
+            "filingId": "ABBV_10-K_2024-12-31",
+            "label": "Net revenues",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2024",
@@ -2143,7 +2148,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-11-28"
           },
-          "revenue": null
+          "revenue": {
+            "value": 23769000000,
+            "filingId": "ADBE_10-K_2025-11-28",
+            "label": "Total revenue",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -2179,7 +2189,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-12-27"
           },
-          "revenue": null
+          "revenue": {
+            "value": 34639000000,
+            "filingId": "AMD_10-K_2025-12-27",
+            "label": "Net revenue",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -2569,7 +2584,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 72229000000,
+            "filingId": "AXP_10-K_2025-12-31",
+            "label": "Total revenues net of interest expense",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -2605,7 +2625,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 89463000000,
+            "filingId": "BA_10-K_2025-12-31",
+            "label": "Total revenues",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -2642,7 +2667,12 @@
             "formType": "10-Q",
             "reportPeriod": "2025-09-30"
           },
-          "revenue": null
+          "revenue": {
+            "value": 28088000000,
+            "filingId": "BAC_10-Q_2025-09-30",
+            "label": "Total revenue, net of interest expense",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q2 FY2025",
@@ -2654,7 +2684,12 @@
             "formType": "10-Q",
             "reportPeriod": "2025-06-30"
           },
-          "revenue": null
+          "revenue": {
+            "value": 26463000000,
+            "filingId": "BAC_10-Q_2025-06-30",
+            "label": "Total revenue, net of interest expense",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q1 FY2025",
@@ -2666,7 +2701,12 @@
             "formType": "10-Q",
             "reportPeriod": "2025-03-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 27366000000,
+            "filingId": "BAC_10-Q_2025-03-31",
+            "label": "Total revenue, net of interest expense",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "FY2024",
@@ -2678,7 +2718,12 @@
             "formType": "10-K",
             "reportPeriod": "2024-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 101887000000,
+            "filingId": "BAC_10-K_2024-12-31",
+            "label": "Total revenue, net of interest expense",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2024",
@@ -2714,7 +2759,12 @@
             "formType": "10-K",
             "reportPeriod": "2023-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 17859000000,
+            "filingId": "BLK_10-K_2023-12-31",
+            "label": "Total revenue",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2023",
@@ -2751,7 +2801,12 @@
             "formType": "10-K",
             "reportPeriod": "2024-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 371433000000,
+            "filingId": "BRK_10-K_2024-12-31",
+            "label": "Total revenues",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2024",
@@ -2787,7 +2842,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 67589000000,
+            "filingId": "CAT_10-K_2025-12-31",
+            "label": "Total sales and revenues",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -2823,7 +2883,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 123707000000,
+            "filingId": "CMCSA_10-K_2025-12-31",
+            "label": "Revenue",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -2860,7 +2925,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-08-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 275235000000,
+            "filingId": "COST_10-K_2025-08-31",
+            "label": "Total revenue",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -2896,7 +2966,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-01-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 37895000000,
+            "filingId": "CRM_10-K_2025-01-31",
+            "label": "Total revenues",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -2933,7 +3008,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-07-26"
           },
-          "revenue": null
+          "revenue": {
+            "value": 56654000000,
+            "filingId": "CSCO_10-K_2025-07-26",
+            "label": "Total revenue",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -2969,7 +3049,12 @@
             "formType": "10-K",
             "reportPeriod": "2024-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 202792000000,
+            "filingId": "CVX_10-K_2024-12-31",
+            "label": "Total Revenues and Other Income",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2024",
@@ -3413,7 +3498,12 @@
             "formType": "10-K",
             "reportPeriod": "2014-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 42725000000,
+            "filingId": "GE_10-K_2014-12-31",
+            "label": "Total revenues",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2014",
@@ -3764,7 +3854,12 @@
             "formType": "10-K",
             "reportPeriod": "2024-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 53512000000,
+            "filingId": "GS_10-K_2024-12-31",
+            "label": "Total net revenues",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2024",
@@ -3872,7 +3967,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-12-27"
           },
-          "revenue": null
+          "revenue": {
+            "value": 52853000000,
+            "filingId": "INTC_10-K_2025-12-27",
+            "label": "Net revenue",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -4292,7 +4392,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 182447000000,
+            "filingId": "JPM_10-K_2025-12-31",
+            "label": "Total net revenue",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -4304,7 +4409,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 45798000000,
+            "filingId": "JPM_10-K_2025-12-31",
+            "label": null,
+            "derived": "FY2025 less Q1\u2013Q3 FY2025"
+          }
         },
         {
           "fiscalPeriod": "Q3 FY2025",
@@ -4316,7 +4426,12 @@
             "formType": "10-Q",
             "reportPeriod": "2025-09-30"
           },
-          "revenue": null
+          "revenue": {
+            "value": 46427000000,
+            "filingId": "JPM_10-Q_2025-09-30",
+            "label": "Total net revenue",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q2 FY2025",
@@ -4328,7 +4443,12 @@
             "formType": "10-Q",
             "reportPeriod": "2025-06-30"
           },
-          "revenue": null
+          "revenue": {
+            "value": 44912000000,
+            "filingId": "JPM_10-Q_2025-06-30",
+            "label": "Total net revenue",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q1 FY2025",
@@ -4340,7 +4460,12 @@
             "formType": "10-Q",
             "reportPeriod": "2025-03-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 45310000000,
+            "filingId": "JPM_10-Q_2025-03-31",
+            "label": "Total net revenue",
+            "derived": null
+          }
         }
       ]
     },
@@ -4685,7 +4810,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 65179000000,
+            "filingId": "LLY_10-K_2025-12-31",
+            "label": "Revenue",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -4722,7 +4852,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 75048000000,
+            "filingId": "LMT_10-K_2025-12-31",
+            "label": "Total sales",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -4758,7 +4893,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 32791000000,
+            "filingId": "MA_10-K_2025-12-31",
+            "label": "Net Revenue",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -4796,7 +4936,12 @@
             "formType": "10-K",
             "reportPeriod": "2024-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 25920000000,
+            "filingId": "MCD_10-K_2024-12-31",
+            "label": "Total revenues",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2024",
@@ -4876,7 +5021,12 @@
             "formType": "10-Q",
             "reportPeriod": "2023-03-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 5897800000,
+            "filingId": "MCD_10-Q_2023-03-31",
+            "label": "Total revenues",
+            "derived": null
+          }
         }
       ]
     },
@@ -5084,7 +5234,12 @@
             "formType": "10-K",
             "reportPeriod": "2024-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 64168000000,
+            "filingId": "MRK_10-K_2024-12-31",
+            "label": "Sales",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2024",
@@ -5118,7 +5273,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 70645000000,
+            "filingId": "MS_10-K_2025-12-31",
+            "label": "Net revenues",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -5501,7 +5661,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 45183036000,
+            "filingId": "NFLX_10-K_2025-12-31",
+            "label": "Revenues",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -5537,7 +5702,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-05-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 46309000000,
+            "filingId": "NKE_10-K_2025-05-31",
+            "label": "Revenues",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -5920,7 +6090,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-05-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 57399000000,
+            "filingId": "ORCL_10-K_2025-05-31",
+            "label": "Total revenues",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -5957,7 +6132,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-12-27"
           },
-          "revenue": null
+          "revenue": {
+            "value": 93925000000,
+            "filingId": "PEP_10-K_2025-12-27",
+            "label": "Net Revenue",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -6077,7 +6257,12 @@
             "formType": "10-Q",
             "reportPeriod": "2023-03-25"
           },
-          "revenue": null
+          "revenue": {
+            "value": 17846000000,
+            "filingId": "PEP_10-Q_2023-03-25",
+            "label": "Net Revenue",
+            "derived": null
+          }
         }
       ]
     },
@@ -6420,7 +6605,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-06-30"
           },
-          "revenue": null
+          "revenue": {
+            "value": 84284000000,
+            "filingId": "PG_10-K_2025-06-30",
+            "label": "NET SALES",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -6457,7 +6647,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 88603000000,
+            "filingId": "RTX_10-K_2025-12-31",
+            "label": "Total net sales",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -6493,7 +6688,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-09-28"
           },
-          "revenue": null
+          "revenue": {
+            "value": 37184400000,
+            "filingId": "SBUX_10-K_2025-09-28",
+            "label": "Total net revenues",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -6602,7 +6802,12 @@
             "formType": "10-K",
             "reportPeriod": "2024-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 42879000000,
+            "filingId": "TMO_10-K_2024-12-31",
+            "label": "Total revenues",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2024",
@@ -7308,7 +7513,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-12-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 88661000000,
+            "filingId": "UPS_10-K_2025-12-31",
+            "label": "Revenue",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -7344,7 +7554,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-09-30"
           },
-          "revenue": null
+          "revenue": {
+            "value": 40000000000,
+            "filingId": "V_10-K_2025-09-30",
+            "label": "Net revenue",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",
@@ -7417,7 +7632,12 @@
             "formType": "10-K",
             "reportPeriod": "2025-01-31"
           },
-          "revenue": null
+          "revenue": {
+            "value": 680985000000,
+            "filingId": "WMT_10-K_2025-01-31",
+            "label": "Total revenues",
+            "derived": null
+          }
         },
         {
           "fiscalPeriod": "Q4 FY2025",

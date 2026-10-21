@@ -2330,18 +2330,18 @@ v15's two pairs are in [the v15 round's table](#the-v15-base-round-and-its-gener
 
 Spec #136's last step before the final all-model round (#154): everything that can change an answer is declared frozen, and the frozen product is rehearsed in the browser.
 
-**What is frozen.** Every answer-path task of spec #136 (#137 to #151, #156) and spec #132 (#157 to #165) has every acceptance criterion ticked and its commits on `feat/final-updates`; `make test` (1,123 backend tests passed and 2 skipped, with the index built; 190 front-end tests) and `make lint` pass on the frozen code. The freeze covers:
+**What is frozen.** Every answer-path task of spec #136 (#137 to #151, #156) and spec #132 (#157 to #165) has every acceptance criterion ticked and its commits on `feat/final-updates`; `make test` (1,130 backend tests, with the index and every Company's SEC company facts built; 192 front-end tests) and `make lint` pass on the frozen code. The freeze covers, as refrozen after the developer's notes on the rehearsal ([below](#the-snapshot-companies-financial-facts-and-the-second-rehearsal)):
 
 | What | Frozen as |
 |---|---|
-| The core, answer and API packages (`backend/src/`) | **code version `12e6c826ae78eab9`** (`edgar_eval.generation.code_version`, the digest every report records) |
+| The core, answer and API packages (`backend/src/`) | **code version `d3399a87683a17a4`** (`edgar_eval.generation.code_version`, the digest every report records; `12e6c826ae78eab9` at the first rehearsal) |
 | The Answer Call's prompt | `PROMPT_VERSION` v19 ([v19](#v19-the-combination-that-freezes-165-2026-10-21)) |
-| The index settings | 600-token chunks, the 32k context budget, index version 6, `fts5` |
+| The index settings | 600-token chunks, the 32k context budget, index version 7 (every Company's Financial Facts), `fts5` |
 | The answer model's settings | `ANSWER_MODEL` (`gpt-6-luna` unless set), reasoning effort low, a 32,000-token cap |
 | The reference data | `data/reference/sectors.csv` (SHA-256 `f78b9e7c48ef484c`…), `data/reference/missing_companies.csv` (`57c0094e1ba17226`…) |
 | The Golden Set and the Brief Suite | `data/eval/golden_set_v2.json` (`27bc0d5b8b9f491c`…), `data/eval/brief_suite.json` (`0dea56c9b7c854f1`…) |
 
-The one change the freeze made is a docstring: `MAX_EARLIER_MESSAGE_CHARS` in `edgar_api/app.py` said an earlier answer runs to 300–600 words, and since v17's range it runs to 300–1,000 (the 20,000-character limit already covered that). It was left for the freeze so as not to move v19's dev runs out of their round, and it is why the frozen code version differs from theirs (`b233653cc01e182f`): no answer changes, but a run on the frozen code starts a new round, so the final round's runs record `12e6c826ae78eab9` and v19's dev runs stand as v19's measurement. Any later change that moves the code version or one of these digests unfreezes the answer path, and the rehearsal is run again before the final round.
+The one change the freeze made is a docstring: `MAX_EARLIER_MESSAGE_CHARS` in `edgar_api/app.py` said an earlier answer runs to 300–600 words, and since v17's range it runs to 300–1,000 (the 20,000-character limit already covered that). It was left for the freeze so as not to move v19's dev runs out of their round, and it is why the frozen code version differs from theirs (`b233653cc01e182f`): no answer changes, but a run on the frozen code starts a new round, so the final round's runs record the frozen code version and v19's dev runs stand as v19's measurement. Any later change that moves the code version or one of these digests unfreezes the answer path, and the rehearsal is run again before the final round.
 
 **The rehearsal.** `make dev` (`API_PORT=8153 WEB_PORT=3153`, an index rebuilt from the Corpus on the frozen code), `gpt-6-luna` at low, in Chrome at 1,600 × 1,000 pixels, driven through its DevTools protocol by a script that types each question, waits for the complete answer, expands it and reads what the answer, its Sources, its Coverage notes and the Calendar show, then clicks the answer's first citation. It ran twice; the first pass read each answer before "Show full analysis" had opened, so its answers are taken from the second, and its timings are shown because one of them was over a ceiling. Each question is a new conversation, except the follow-up.
 
@@ -2378,9 +2378,42 @@ The one change the freeze made is a docstring: `MAX_EARLIER_MESSAGE_CHARS` in `e
 - **"Known limits" no longer names the human check;** its figures stay in [The human check](#the-human-check).
 - **The scoreboard's screen table is folded into the retrieval table** as a "Paid run" column.
 
-JPMorgan's revenue, also raised, is extracted correctly but held back with every Snapshot Company's, from the Calendar and the answers alike; whether to extend Financial Facts to them is the developer's decision, and would unfreeze the answer path.
+#### The Snapshot Companies' Financial Facts and the second rehearsal
 
-**Sign-off.** The developer signs the rehearsal off on #153 before the final round starts. **Spend:** 18 Answer Calls, $0.06; no Jev call.
+The developer also asked why JPMorgan's calendar showed no revenue. Its Filings hold it (Total net revenue $182,447 million for FY2025, and each 2025 quarter), but Financial Facts were extracted for Tracked Companies only, since [ADR 0001](adr/0001-sqlite-financial-facts-store.md) kept the Snapshot Companies out until measured. On the developer's decision (2026-10-21) they were measured, two extraction errors fixed, and added, which unfroze the answer path:
+
+- **Measured:** `make sec-facts` now caches every Company's SEC company facts, and a test checks every revenue and net income the Corpus yields against the figure its Filing reports to the SEC for that period: `RevenuesNetOfInterestExpense` for banks, and net income attributable to the Company where reported. Of the 49 Snapshot Filings, 43 yield both; Deere's, Home Depot's, IBM's, AT&T's, Target's and Verizon's yield neither and still fall back to text.
+- **Fixed:** American Express's revenue was read from the Parent Company's condensed statement ($158 million), since its income statement's headings sit 17 rows above "Total revenues net of interest expense", beyond the header search's 15; it now searches up to 25 rows within an unbroken table ($72,229 million). Morgan Stanley's net income included noncontrolling interests ($17,025 million); "Net income applicable to Morgan Stanley" ($16,861 million) now counts as attributable, though "applicable to common shareholders" never does. No other figure of the 959 the Corpus yields moved, and all 480 revenue and net income figures now match the SEC reference.
+- **Added:** the index holds every Company's Financial Facts (index version 7), the Answer Call gets a Snapshot Company's table when the question names a metric, the figure check accepts its figures, and the Company Calendar shows its revenue. A trend over a Snapshot Company's few Filings is still a Coverage Gap.
+- **Retrieval, on every Arm:** unchanged. Evidence Reached is the same on every Arm (`fts5` 844 of 983), with the same facts gained and lost against `fts5`, and the screen still sends `hybrid-local` alone on; only the mean Source tokens rise, by 3 a case, since the Facts Sources sit outside the context budget.
+
+**The three dev cases it reaches, run twice** (`gpt-6-luna` at low, prompt v19, against v19's two runs; `generation-dev-snapshot-facts.json` and `-run2.json`). Only three dev cases name a metric for a Snapshot Company, and none in the holdout or the Brief Suite:
+
+| Case | must-state facts stated, v19 / now | "trend unavailable" stated, v19 / now | Contradicted Claims, v19 / now | Faithfulness, v19 / now |
+|---|---|---|---|---|
+| `trend-jpm-revenue-snapshot` | 1 of 2, 1 of 2 / 1 of 2, 1 of 2 | yes, yes / yes, yes | 1, 1 / 0, 1 | 0.80, 0.73 / 0.58, – |
+| `gap-cat-sales-snapshot` | 2 of 2, 2 of 2 / 2 of 2, 2 of 2 | **no**, yes / yes, yes | 0, 0 / 0, 0 | –, 0.92 / 1.00, 1.00 |
+| `outlook-nflx-growth` | 3 of 4, 3 of 4 / 3 of 4, 3 of 4 | (no such gap) | 0, 0 / 0, 0 | 1.00, 0.92 / 1.00, 1.00 |
+
+- **No fact lost or gained:** the must-state facts are year-on-year percentages, which one year of Filings cannot supply.
+- **The Coverage Gap is kept:** "trend unavailable" is stated in all four answers, where v19 missed it once.
+- **JPMorgan's answer cites the table now:** v19's Contradicted Claim in both runs ("the excerpt does not state the full-year revenue figure") is gone. One run has a new one, "the Q1 FY2025 10-Q gives business-level revenue commentary rather than a total-net-revenue change".
+- **One run's Faithfulness fell:** five of its claims cite S2, Q2's Facts Source, for the 10-Q's own text (the 11% decline, the Visa gain). The Facts Sources are numbered first, so the text Sources' tags moved. The other run cites correctly. A dash is a Jev judgment that failed, as in earlier rounds.
+- **Figures and structure:** every figure exact; 232 to 375 words.
+
+Read with the two-run caveat: three cases, a direction rather than a rate. The final round (#154) measures every dev case on this code.
+
+**The second rehearsal**, on code version `d3399a87683a17a4`, the same nine questions through `make dev`:
+- **What changed, as asked:** the Calendar opened on the Calendar tab after the first question, before its text, and followed each answer. Its tables are banded by fiscal year, and JPMorgan's shows FY2025 $182,447 million and a derived Q4 of $45,798 million, Caterpillar's $67,589 million and AbbVie's $56,334 million.
+- **Speed:** first text after 1.3 to 3.6 s and the full answer within 16.5 s, by the Answer Call log; none at the cap; no console error.
+- **Still open, as before:**
+  - "How is JP Morgan doing?" still says the excerpts give no revenue or net income figures: it names no metric, so the Overview route reads text only and fetches no table.
+  - Deere's "approximately $600" keeps its Filing's wording.
+  - The tariffs question still adds no Calendar tab.
+
+  The Wells Fargo answer's odd sentence did not recur.
+
+**Sign-off.** The developer signs the rehearsal off on #153 before the final round starts. **Spend:** the first rehearsal's 18 Answer Calls, $0.06; the three cases twice, $0.03 with Jev; the second rehearsal's 9 Answer Calls, $0.03.
 
 ### Order and cost
 

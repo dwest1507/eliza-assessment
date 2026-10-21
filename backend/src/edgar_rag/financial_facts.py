@@ -141,12 +141,14 @@ _REVENUE_LABEL = re.compile(
 )
 # The net income row itself: "Net income", "Net earnings/(loss)", "Consolidated net
 # income", "Net income including noncontrolling interests", Caterpillar's "Profit", or
-# net income attributable to the Company ("... attributable to ExxonMobil"), never to
-# noncontrolling interests ("non-controlling", "the noncontrolling interest", "minority
-# interests") and never per share ("... attributable to P&G (Diluted)").
+# net income attributable (or, as Morgan Stanley words it, applicable) to the Company
+# ("... attributable to ExxonMobil"), never to noncontrolling interests ("non-controlling",
+# "the noncontrolling interest", "minority interests"), never applicable to common
+# shareholders (after preferred dividends) and never per share ("... attributable to P&G
+# (Diluted)").
 _NET_INCOME_ROW = re.compile(
     r"(?:consolidated\s+)?net\s+(?:\(loss\)\s+)?(?:income|earnings)(?:\s*/?\s*\(loss\))?"
-    r"(?:\s+(?P<attributable>attributable\s+to\s+"
+    r"(?:\s+(?P<attributable>(?:attributable|applicable(?!\s+to\s+common\b))\s+to\s+"
     r"(?!(?:the\s+)?(?:non-?controlling|minority))(?!.*\b(?:per|basic|diluted)\b).+)"
     r"|\s+(?:including|before\s+allocation\s+to)\s+noncontrolling\s+interests)?"
     r"|profit"
@@ -196,8 +198,11 @@ _SCALE = re.compile(
 # How much text above the header row to search for the table title and its scale.
 _CONTEXT_CHARS = 400
 # How far above the revenue row its header row may be, and how far below it the net
-# income row of an income statement.
+# income row of an income statement. Further up, to `_LONG_TABLE_ROWS`, only within an
+# unbroken table: a bank's statement lists its interest income and expense before "Total
+# revenues net of interest expense", 17 rows below its headings at American Express.
 _HEADER_SEARCH_ROWS = 15
+_LONG_TABLE_ROWS = 25
 _STATEMENT_ROWS = 40
 
 _YEAR = re.compile(r"(?<!\d)((?:19|20)\d{2})(?!\d)")
@@ -775,10 +780,15 @@ def _years(row: _Row) -> list[int]:
 def _header_row(rows: list[_Row], i: int, width: int) -> int | None:
     """The nearest header row above row `i` whose years head its `width` figures.
 
-    One extra figure is allowed for a note-reference or change column.
+    One extra figure is allowed for a note-reference or change column. Beyond
+    `_HEADER_SEARCH_ROWS` rows, it is searched for only while the table is unbroken.
     """
-    for j in range(i - 1, max(-1, i - 1 - _HEADER_SEARCH_ROWS), -1):
+    unbroken = True
+    for j in range(i - 1, max(-1, i - 1 - _LONG_TABLE_ROWS), -1):
         row = rows[j]
+        unbroken = unbroken and bool(row.cells)
+        if i - j > _HEADER_SEARCH_ROWS and not unbroken:
+            return None
         if not row.cells or _is_data(row):
             continue
         if len(_years(row)) in (width, width - 1) and _years(row):

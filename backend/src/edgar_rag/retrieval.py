@@ -8,7 +8,7 @@ Two entry points:
   chunk appears in, with the text of it that is new since the previous Filing of the
   same Form Type, an FTS5 table over the chunk text with the `porter` tokenizer, and the
   `companies`, `filings` and `sections` tables the Query Scope and retrieval plan read,
-  and the `financial_facts` table: the Tracked Companies' Financial Facts as the
+  and the `financial_facts` table: every Company's Financial Facts as the
   Financial Facts seam reads them from each Filing (ADR 0001; never SEC XBRL data). The
   `filing_chunks` view joins the chunks back into one row per chunk per Filing, and the
   `settings` table records the chunk size the index was built with (`CHUNK_TOKENS`
@@ -224,12 +224,13 @@ Sections are all stubs or missing is searched whole."""
 
 _CANDIDATES_PER_COMPANY = 200
 
-INDEX_VERSION = 6
+INDEX_VERSION = 7
 """Bumped whenever the index's tables change, so an older index is rebuilt, not misread.
 Version 2 adds the `filings` and `sections` tables; version 3 stores each Company's
 repeated chunks once, listing their Filings in `chunk_filings`; version 4 adds the
 `financial_facts` table of ADR 0001; version 5 adds the `settings` table; version 6 adds
-each Company's curated Company Group (`companies.company_group`)."""
+each Company's curated Company Group (`companies.company_group`); version 7 stores the
+Snapshot Companies' Financial Facts too (#153)."""
 
 _SCHEMA = """
 CREATE TABLE companies (

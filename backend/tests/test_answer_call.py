@@ -415,7 +415,7 @@ def test_ask_prints_the_financial_facts_and_what_falls_back_to_text(index, tmp_p
 
     ask.main(
         [
-            "Compare the revenue of NVIDIA and JPMorgan over the last year.",
+            "Compare the revenue of NVIDIA and Target over the last year.",
             "--index",
             str(index),
         ],
@@ -428,5 +428,5 @@ def test_ask_prints_the_financial_facts_and_what_falls_back_to_text(index, tmp_p
     facts = printed.split("\nFinancial Facts", 1)[1].split("\nSources", 1)[0]
     assert "NVDA Revenue Q3 FY2026 (3 months ended 2025-10-26): $57,006 million" in facts
     assert "derived" in facts
-    assert "JPMorgan Chase & Co (JPM) is a Snapshot Company" in facts
+    assert "No revenue Financial Facts were extracted from Target" in facts
     assert "Metrics: revenue" in printed

@@ -2,7 +2,8 @@
 
 The SEC's company-facts API publishes every XBRL fact a Company has filed. The EDA
 compares the Financial Facts extracted from the Corpus with it to measure extraction
-accuracy, and the Golden Set's tests check version 2's figure facts against it. It is an
+accuracy, the extractor's tests check every extracted revenue and net income against it,
+and the Golden Set's tests check version 2's figure facts against it. It is an
 evaluation reference and nothing more: no answer is ever built from it, and nothing
 outside the EDA and those tests reads it.
 
@@ -111,10 +112,10 @@ def load_company_facts(cik: str, cache_dir: str | Path = DEFAULT_CACHE_DIR) -> d
 
 
 def main() -> int:
-    """Fetch company-facts for every Tracked Company in the Corpus."""
+    """Fetch company-facts for every Company in the Corpus."""
     from edgar_rag.corpus import load_corpus
 
-    ciks = {f.cik for f in load_corpus() if f.coverage == "tracked"}
+    ciks = {f.cik for f in load_corpus()}
     try:
         paths = fetch_company_facts(ciks)
     except UserAgentMissing as error:

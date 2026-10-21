@@ -99,10 +99,11 @@ def test_the_future_state_follows_the_clients_answers(slides):
         "earnings-call transcripts",
         "alert",
         "passage-level citations",
-        "financial facts for every company",
     ):
         assert item in lowered, f"the future state leaves out {item!r}"
     assert "multi-step" not in lowered
+    # Built in #153, so no longer a future step.
+    assert "financial facts for every company" not in lowered
 
 
 _NOTES = re.compile(r"<!--.*?-->", re.S)

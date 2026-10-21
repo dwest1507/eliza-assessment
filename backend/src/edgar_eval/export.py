@@ -221,10 +221,9 @@ def company_calendars(filings: Iterable[Filing]) -> list[dict[str, Any]]:
 
     Each period carries its calendar months ("Aug–Oct 2025") and the calendar year it ends
     in, the Filing that reports it (a fourth quarter's is the 10-K that ends it), or None
-    where the Corpus has none, and, for a Tracked Company, its revenue Financial Fact. A
+    where the Corpus has none, and its revenue Financial Fact, when its Filing yields one. A
     fourth quarter's revenue is derived as the 10-K's year less its three 10-Q quarters,
-    when all three are in the Corpus, and marked as derived. A Snapshot Company has no
-    revenue (ADR 0001: its Financial Facts are not extracted)."""
+    when all three are in the Corpus, and marked as derived."""
     by_ticker: dict[str, list[Filing]] = {}
     for filing in filings:
         by_ticker.setdefault(filing.ticker, []).append(filing)
@@ -234,7 +233,6 @@ def company_calendars(filings: Iterable[Filing]) -> list[dict[str, Any]]:
 def _calendar(filings: list[Filing]) -> dict[str, Any]:
     first = filings[0]
     end_month = first.fiscal_year_end_month
-    tracked = first.coverage == "tracked"
     # Each Filing by its fiscal quarter, counted as year * 4 + quarter - 1 (a 10-K's is
     # its fiscal year's fourth quarter).
     by_quarter: dict[int, Filing] = {}
@@ -244,7 +242,7 @@ def _calendar(filings: list[Filing]) -> dict[str, Any]:
             by_quarter[int(m.group(2)) * 4 + int(m.group(1) or 4) - 1] = filing
     revenue = {
         f.filing_id: fact
-        for f in (filings if tracked else ())
+        for f in filings
         for fact in extract_financial_facts(f)
         if fact.metric == "revenue" and fact.segment is None
     }

@@ -598,15 +598,14 @@ def _all_fact_values() -> dict[str, tuple[int, ...]]:
 
     values: dict[str, list[int]] = {}
     for filing in load_corpus():
-        if filing.coverage == "tracked":
-            for fact in extract_financial_facts(filing):
-                values.setdefault(fact.filing_id, []).append(fact.value)
+        for fact in extract_financial_facts(filing):
+            values.setdefault(fact.filing_id, []).append(fact.value)
     return {filing_id: tuple(v) for filing_id, v in values.items()}
 
 
 def corpus_fact_values(filing_id: str) -> tuple[int, ...]:
-    """The values of every Financial Fact the Corpus yields for the Filing. Financial
-    Facts are extracted for Tracked Companies only (ADR 0001)."""
+    """The values of every Financial Fact the Corpus yields for the Filing, a Snapshot
+    Company's included (#153)."""
     return _all_fact_values().get(filing_id, ())
 
 

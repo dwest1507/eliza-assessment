@@ -777,10 +777,16 @@ def test_tracked_companies_have_revenue_for_every_filed_quarter_and_year(calenda
     assert _period(calendars["AAPL"], "Q4 FY2023")["revenue"]["derived"]
 
 
-def test_snapshot_companies_have_no_revenue(calendars):
-    for ticker in ("JPM", "TGT"):
-        assert calendars[ticker]["coverage"] == "snapshot"
-        assert all(p["revenue"] is None for p in calendars[ticker]["periods"])
+def test_snapshot_companies_have_the_revenue_their_filings_yield(calendars):
+    jpm = calendars["JPM"]
+    assert jpm["coverage"] == "snapshot"
+    assert _period(jpm, "FY2025")["revenue"]["value"] == 182_447_000_000
+    assert _period(jpm, "Q1 FY2025")["revenue"]["value"] == 45_310_000_000
+    q4 = _period(jpm, "Q4 FY2025")["revenue"]
+    assert (q4["value"], bool(q4["derived"])) == (45_798_000_000, True)
+    # Target's one 10-K yields no revenue figure.
+    assert calendars["TGT"]["coverage"] == "snapshot"
+    assert all(p["revenue"] is None for p in calendars["TGT"]["periods"])
 
 
 def test_a_quarter_with_no_filing_is_listed_without_one_and_its_year_is_not_split(

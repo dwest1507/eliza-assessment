@@ -1531,25 +1531,49 @@ describe('The Calendar tab', () => {
     ])
   })
 
-  it('greys the periods with no Filing, and explains a Snapshot Company has no revenue', async () => {
+  it("greys the periods with no Filing, and shows a Snapshot Company's revenue where its filings give it", async () => {
     const user = userEvent.setup()
     render(<Workspace calendars={CALENDARS} />)
     await twoAnswers(user)
     await user.click(screen.getByRole('button', { name: 'MCD' }))
 
-    const panel = screen.getByRole('tabpanel', { name: 'Calendar' })
-    expect(panel).toHaveTextContent(
-      'Revenue figures are extracted for companies with two or more years of filings.'
-    )
     const table = calendarTable('MCD')
-    expect(within(table).queryByRole('columnheader', { name: 'Revenue' })).not.toBeInTheDocument()
+    expect(within(table).getByRole('columnheader', { name: 'Revenue' })).toBeInTheDocument()
+    expect(screen.getByRole('tabpanel', { name: 'Calendar' })).not.toHaveTextContent(
+      /couldn’t be read/
+    )
     const filed = row(table, 'FY2024')
     expect(filed).toHaveTextContent('10-K')
+    expect(within(filed).getByText('$25,920M')).toHaveAttribute(
+      'title',
+      'MCD_10-K_2024-12-31 · Total revenues'
+    )
     expect(filed).not.toHaveClass('text-muted')
     const gap = row(table, 'Q3 FY2024')
     expect(gap).toHaveTextContent('Jul–Sep 2024')
     expect(gap).toHaveTextContent('not in the filings')
     expect(gap).toHaveClass('text-muted')
+  })
+
+  it('says so when no revenue figure could be read from a company’s filings', async () => {
+    fetchMock.mockImplementationOnce(async () =>
+      uiMessageStream(['Target faces **tariffs** [S1].'], {
+        ...QUERY_SCOPE,
+        companies: [{ ticker: 'TGT', name: 'Target Corp', coverage: 'snapshot' }],
+      })
+    )
+    const user = userEvent.setup()
+    render(<Workspace calendars={CALENDARS} />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByText('tariffs')
+    await screen.findByRole('tabpanel', { name: 'Calendar' })
+
+    expect(screen.getByRole('tabpanel', { name: 'Calendar' })).toHaveTextContent(
+      'No revenue figure could be read from this company’s filings.'
+    )
+    expect(
+      within(calendarTable('TGT')).queryByRole('columnheader', { name: 'Revenue' })
+    ).not.toBeInTheDocument()
   })
 })
 

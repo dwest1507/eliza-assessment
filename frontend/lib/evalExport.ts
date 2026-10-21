@@ -228,8 +228,8 @@ export interface CalendarPeriod {
   /** The Filing that reports it (a fourth quarter's is the 10-K ending it), or null when
    * the Corpus has none. */
   filing: { filingId: string; formType: string; reportPeriod: string } | null
-  /** Null for a Snapshot Company, a period with no Filing, or a fourth quarter whose
-   * year's three 10-Qs are not all in the Corpus. */
+  /** Null for a period with no Filing, a Filing that yields no revenue figure, or a
+   * fourth quarter whose year's three 10-Qs are not all in the Corpus. */
   revenue: CalendarRevenue | null
 }
 

@@ -57,11 +57,10 @@ def segments_index(tmp_path_factory):
 # --- The store -------------------------------------------------------------------------
 
 
-def test_the_index_holds_the_tracked_companies_financial_facts_as_extracted(index, indexed_filings):
+def test_the_index_holds_every_companys_financial_facts_as_extracted(index, indexed_filings):
     expected = {
         (fact.filing_id, fact.metric, fact.segment, fact.value, fact.label)
         for filing in indexed_filings
-        if filing.coverage == "tracked"
         for fact in extract_financial_facts(filing)
     }
 
@@ -73,8 +72,11 @@ def test_the_index_holds_the_tracked_companies_financial_facts_as_extracted(inde
     assert ("NVDA_10-K_2025-01-26", "revenue", None, 130_497_000_000, "Revenue") in stored
 
 
-def test_snapshot_companies_have_no_financial_facts_in_the_store(index):
-    assert "JPM" not in {r["ticker"] for r in _store(index)}
+def test_snapshot_companies_financial_facts_are_in_the_store(index):
+    stored = {(r["filing_id"], r["metric"], r["value"]) for r in _store(index)}
+
+    assert ("JPM_10-K_2025-12-31", "revenue", 182_447_000_000) in stored
+    assert ("JPM_10-Q_2025-09-30", "net_income", 14_393_000_000) in stored
 
 
 def test_sec_xbrl_data_is_never_loaded_into_the_store():
@@ -308,12 +310,29 @@ def test_a_fourth_quarter_is_not_derived_across_a_segment_reorganisation(segment
 # --- Falling back to text --------------------------------------------------------------
 
 
-def test_a_snapshot_company_falls_back_to_the_filing_text_and_the_answer_says_so(index):
+def test_a_snapshot_companys_figures_come_from_the_table_and_its_trend_gap_stays(index):
     context = _ask(index, "How has JPMorgan's revenue changed over the last two years?")
+
+    rows = {(r.fiscal_period, r.value, r.derived is not None) for r in context.financial_facts}
+    assert rows == {
+        ("Q1 FY2025", 45_310_000_000, False),
+        ("Q2 FY2025", 44_912_000_000, False),
+        ("Q3 FY2025", 46_427_000_000, False),
+        ("FY2025", 182_447_000_000, False),
+        # The 10-K's year less its three 10-Q quarters.
+        ("Q4 FY2025", 45_798_000_000, True),
+    }
+    assert context.fact_notes == ()
+    # A year of quarters is still no trend over two years.
+    assert [g.companies for g in context.coverage_gaps if g.kind == "snapshot_trend"] == [("JPM",)]
+
+
+def test_a_company_whose_filings_yield_no_figure_falls_back_to_the_filing_text(index):
+    context = _ask(index, "What was Target's revenue in its latest filing?")
 
     assert context.financial_facts == ()
     (note,) = context.fact_notes
-    assert (note.kind, note.ticker, note.metric) == ("text_fallback", "JPM", "revenue")
+    assert (note.kind, note.ticker, note.metric) == ("text_fallback", "TGT", "revenue")
     facts = _facts_section(context)
     assert note.text in facts
     assert "read from the Filing text" in note.text
@@ -330,10 +349,10 @@ def test_a_company_whose_segments_were_not_extracted_falls_back_to_text(index):
 
 
 def test_only_the_companies_the_store_can_answer_get_rows(index):
-    context = _ask(index, "Compare the revenue of NVIDIA and JPMorgan over the last year.")
+    context = _ask(index, "Compare the revenue of NVIDIA and Target over the last year.")
 
     assert {r.ticker for r in context.financial_facts} == {"NVDA"}
-    assert {n.ticker for n in context.fact_notes} == {"JPM"}
+    assert {n.ticker for n in context.fact_notes} == {"TGT"}
 
 
 def test_a_facts_sources_text_holds_the_figures_derived_from_it(index):

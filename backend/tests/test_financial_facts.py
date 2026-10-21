@@ -2,16 +2,21 @@
 
 Most use small flattened-table excerpts, written the way tables appear in a cleaned
 Filing body, inside a real Filing whose body is replaced by the excerpt. A few check
-real Corpus Filings against values read by hand from the Filing text.
+real Corpus Filings against values read by hand from the Filing text, and one checks
+every Filing's revenue and net income against the SEC company-facts reference (skipped
+without its cache).
 """
 
+import re
 from dataclasses import replace
 from datetime import date
 
 import pytest
 
-from edgar_rag.corpus import DEFAULT_CORPUS_DIR, load_filing
+from edgar_rag.corpus import DEFAULT_CORPUS_DIR, load_corpus, load_filing
 from edgar_rag.financial_facts import extract_financial_facts
+from edgar_rag.sec_reference import DEFAULT_CACHE_DIR as SEC_CACHE_DIR
+from edgar_rag.sec_reference import load_company_facts
 
 
 @pytest.fixture(scope="module")
@@ -806,6 +811,13 @@ def test_revenue_and_net_income_of_a_real_filing_whose_statement_rows_start_with
         # Caterpillar's "Total sales and revenues" and "Profit" from Statement 1, not
         # the Power & Energy segment's "Total Sales" in MD&A.
         ("CAT_10K_2026-02-13_full.txt", 67_589_000_000, 8_884_000_000),
+        # American Express's Consolidated Statements of Income, whose column headings sit
+        # 17 rows above its "Total revenues net of interest expense", not the Parent
+        # Company's condensed statement in Note 24 ($158 million).
+        ("AXP_10K_2026-02-06_full.txt", 72_229_000_000, 10_833_000_000),
+        # Morgan Stanley's "Net income applicable to Morgan Stanley", not the "Net income"
+        # above it, which includes noncontrolling interests.
+        ("MS_10K_2026-02-19_full.txt", 70_645_000_000, 16_861_000_000),
     ],
 )
 def test_revenue_and_net_income_of_real_snapshot_company_filings(name, revenue, net_income):
@@ -1035,3 +1047,123 @@ def test_no_segment_revenue_when_the_reconciliation_below_does_not_reach_revenue
     )
 
     assert _segments(quarterly, excerpt) == {}
+
+
+# Every Filing's revenue and net income against the SEC company-facts reference.
+
+SEC_REVENUE = (
+    "Revenues",
+    "RevenueFromContractWithCustomerExcludingAssessedTax",
+    "RevenueFromContractWithCustomerIncludingAssessedTax",
+    "SalesRevenueNet",
+    # Banks' revenue: JPMorgan's "Total net revenue", American Express's "Total revenues
+    # net of interest expense".
+    "RevenuesNetOfInterestExpense",
+)
+
+
+def _sec_values(company_facts, concept, accn, report_period, period_months):
+    """The USD values the Filing (by its accession number) reports for `concept` over the
+    period ending on its Report Period, `period_months` long (within 20 days)."""
+    units = company_facts["facts"].get("us-gaap", {}).get(concept, {}).get("units", {})
+    return [
+        v["val"]
+        for unit, reported in units.items()
+        if unit.startswith("USD")
+        for v in reported
+        if v.get("accn") == accn
+        and v.get("end") == report_period.isoformat()
+        and "start" in v
+        and abs(
+            (date.fromisoformat(v["end"]) - date.fromisoformat(v["start"])).days
+            - period_months * 365.25 / 12
+        )
+        <= 20
+    ]
+
+
+def _sec_problems(filings, company_facts):
+    """Each extracted revenue or net income that its Filing does not report to the SEC.
+
+    Revenue may be any of `SEC_REVENUE`. Net income must be `NetIncomeLoss`, net income
+    attributable to the Company, where the Filing reports it; else `ProfitLoss` or net
+    income available to common stockholders (Caterpillar's "Profit", Thermo Fisher's
+    attributable net income, whose Filings report no `NetIncomeLoss`).
+    """
+    problems = []
+    for filing in filings:
+        accn = "-".join(re.search(r"/(\d{10})(\d{2})(\d{6})/", filing.source_url).groups())
+        reference = company_facts(filing.cik)
+        for fact in extract_financial_facts(filing):
+            if fact.segment is not None or fact.metric not in ("revenue", "net_income"):
+                continue
+
+            period = (accn, fact.report_period, fact.period_months)
+            if fact.metric == "revenue":
+                expected = [v for c in SEC_REVENUE for v in _sec_values(reference, c, *period)]
+            else:
+                expected = _sec_values(reference, "NetIncomeLoss", *period) or [
+                    *_sec_values(reference, "ProfitLoss", *period),
+                    *_sec_values(
+                        reference, "NetIncomeLossAvailableToCommonStockholdersBasic", *period
+                    ),
+                ]
+            if fact.value not in expected:
+                problems.append(
+                    f"{fact.filing_id} {fact.metric} {fact.value:,} ({fact.label!r}): "
+                    f"the SEC reference has {sorted(set(expected)) or 'none'}"
+                )
+    return problems
+
+
+def test_every_extracted_revenue_and_net_income_is_the_one_its_filing_reports_to_the_sec():
+    if not (SEC_CACHE_DIR / "index.json").exists():
+        pytest.skip("no SEC company-facts cache: run `make sec-facts`")
+    filings = load_corpus()
+    if not all((SEC_CACHE_DIR / f"CIK{f.cik}.json").exists() for f in filings):
+        pytest.skip("the SEC company-facts cache predates every Company: run `make sec-facts`")
+
+    assert _sec_problems(filings, load_company_facts) == []
+
+
+def test_a_figure_from_the_wrong_table_fails_the_sec_check():
+    # Morgan Stanley's "Net income", including noncontrolling interests, beside the
+    # $16,861 million applicable to Morgan Stanley that it reports as NetIncomeLoss.
+    ms = load_filing(DEFAULT_CORPUS_DIR / "MS_10K_2026-02-19_full.txt")
+    accn = "-".join(re.search(r"/(\d{10})(\d{2})(\d{6})/", ms.source_url).groups())
+
+    def reported(net_income):
+        return {
+            "facts": {
+                "us-gaap": {
+                    "NetIncomeLoss": {
+                        "units": {
+                            "USD": [
+                                {
+                                    "accn": accn,
+                                    "start": "2025-01-01",
+                                    "end": ms.report_period.isoformat(),
+                                    "val": net_income,
+                                }
+                            ]
+                        }
+                    },
+                    "Revenues": {
+                        "units": {
+                            "USD": [
+                                {
+                                    "accn": accn,
+                                    "start": "2025-01-01",
+                                    "end": ms.report_period.isoformat(),
+                                    "val": 70_645_000_000,
+                                }
+                            ]
+                        }
+                    },
+                }
+            }
+        }
+
+    assert _sec_problems([ms], lambda cik: reported(16_861_000_000)) == []
+    [problem] = _sec_problems([ms], lambda cik: reported(17_025_000_000))
+    assert problem.startswith("MS_10-K_2025-12-31 net_income 16,861,000,000")

@@ -76,7 +76,7 @@ format: frontend-deps ## Auto-fix lint issues and format the backend and front-e
 eda: $(SEC_FACTS_INDEX) ## Execute the EDA notebook from its script source and write the paired .ipynb
 	$(UV) env JUPYTER_PREFER_ENV_PATH=1 jupytext --to ipynb --set-kernel python3 --execute notebooks/eda.py
 
-sec-facts: ## Fetch SEC XBRL company-facts for Tracked Companies (evaluation only; needs SEC_USER_AGENT)
+sec-facts: ## Fetch SEC XBRL company-facts for every Company in the Corpus (evaluation only; needs SEC_USER_AGENT)
 	@if [ -z "$$SEC_USER_AGENT" ]; then \
 		echo 'error: SEC_USER_AGENT is not set. The SEC requires every request to carry a' >&2; \
 		echo 'User-Agent naming you and a contact email. Copy backend/.env.example to' >&2; \
