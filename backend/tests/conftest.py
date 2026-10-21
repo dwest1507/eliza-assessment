@@ -7,6 +7,14 @@ import pytest
 from edgar_rag.corpus import load_corpus
 from edgar_rag.retrieval import build_index
 
+
+@pytest.fixture(autouse=True)
+def _default_answer_model(monkeypatch):
+    """Every test starts on the default answer model, whatever `ANSWER_MODEL` a developer's
+    shell or `backend/.env` (which the Makefile exports) sets; a test sets it itself."""
+    monkeypatch.delenv("ANSWER_MODEL", raising=False)
+
+
 # The brief's first example names Apple, Tesla and JPMorgan (a Snapshot Company).
 # Target is a Company whose name is also an everyday word. NVIDIA's fiscal year ends in
 # January, and its 10-Qs state risk text rather than pointing back to the 10-K.

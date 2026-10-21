@@ -2,7 +2,8 @@
 
 Prints the Query Scope, the Financial Facts table, the numbered Sources and the
 Coverage Gaps, then streams the answer from the Answer Call, then one line with the
-model, prompt version, token usage and latency.
+model, prompt version, token usage and latency. The model is the one `ANSWER_MODEL` names
+(`edgar_answer.generators`), `gpt-6-luna` by default.
 
     python -m edgar_answer.ask "What are the primary risk factors facing Apple?"
 """
@@ -35,9 +36,12 @@ def main(
     context = prepare_answer_context([Message("user", args.question)], args.index)
     _print_context(context, out)
     if model is None:
-        from edgar_answer.openai_model import OpenAIAnswerModel
+        from edgar_answer.generators import UnknownAnswerModel, answer_model
 
-        model = OpenAIAnswerModel()
+        try:
+            model = answer_model()
+        except UnknownAnswerModel as error:
+            parser.error(str(error))
 
     print("\nAnswer\n", file=out)
     call = AnswerCall(context, model, log_path=log_path)
@@ -52,6 +56,8 @@ def main(
         f"{record.latency_s:.1f} s]",
         file=out,
     )
+    if record.stop_reason == "token_cap":
+        print("Warning: the answer stopped at the token cap and is cut off.", file=out)
     return 0
 
 

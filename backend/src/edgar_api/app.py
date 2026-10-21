@@ -28,6 +28,12 @@ part), and the prompt's history names those Filings in place of the tags. Nothin
 one request is kept for the next. The answer model is built once, on the first question,
 so `/api/health` works without a provider key.
 
+The answer model is the generator `ANSWER_MODEL` names (`edgar_answer.generators`), of
+either provider, `gpt-6-luna` by default. A model not in the generator table stops the
+app as it is created, with an error naming the table's models. An answer that stops at
+the token cap (stop reason `token_cap`) is cut off: it is still streamed and logged, and
+the API logs a warning naming the model and the tokens used.
+
 A request is answered with 400 and a `detail` saying why when it has no messages, more
 than `MAX_MESSAGES` (the question and the `HISTORY_TURNS` messages before it, all the
 prompt uses), an earlier message longer than `MAX_EARLIER_MESSAGE_CHARS`, or a latest
@@ -36,8 +42,8 @@ front-end's chat proxy sends only the last `MAX_MESSAGES`, so a long conversatio
 working there.
 
 Run it with `make api`. Configuration comes from the environment: `CORS_ALLOWED_ORIGINS`
-(comma-separated; none by default) and the answer model's own variables (`OPENAI_API_KEY`,
-`OPENAI_MODEL`).
+(comma-separated; none by default), `ANSWER_MODEL` and the key its provider needs
+(`OPENAI_API_KEY` or `ANTHROPIC_API_KEY`).
 """
 
 from __future__ import annotations
@@ -80,8 +86,8 @@ MAX_MESSAGE_CHARS = 4_000
 """The longest latest message answered. A business question is a sentence or two."""
 
 MAX_EARLIER_MESSAGE_CHARS = 20_000
-"""The longest earlier message accepted. An earlier answer is capped at 2,500 completion
-tokens, about 10,000 characters; this leaves it room and still bounds the request."""
+"""The longest earlier message accepted. An earlier answer runs to 300–600 words, about
+4,000 characters; this leaves it several times that room and still bounds the request."""
 
 MAX_MESSAGES = HISTORY_TURNS + 1
 """The most messages a conversation may send: the question and the earlier messages the
@@ -157,8 +163,11 @@ def create_app(
     log_path: str | Path | None = DEFAULT_ANSWER_LOG,
 ) -> FastAPI:
     """The API app. `model` (or else `model_factory`, called once, on the first question)
-    is the answer model; the default is OpenAI's. `allowed_origins` defaults to the
-    `CORS_ALLOWED_ORIGINS` environment variable."""
+    is the answer model; the default is the generator `ANSWER_MODEL` names, refused here
+    with `UnknownAnswerModel` when it is not in the generator table. `allowed_origins`
+    defaults to the `CORS_ALLOWED_ORIGINS` environment variable."""
+    if model is None and model_factory is None:
+        model_factory = _configured_model_factory()
     get_model = _model_getter(model, model_factory)
     if allowed_origins is None:
         allowed_origins = _origins_from_env()
@@ -235,7 +244,8 @@ def _ui_message_stream(
     yield _event({"type": "start-step"})
     text_id = f"text-{uuid4().hex}"
     yield _event({"type": "text-start", "id": text_id})
-    answer = iter(AnswerCall(context, model, log_path=log_path))
+    call = AnswerCall(context, model, log_path=log_path)
+    answer = iter(call)
     try:
         for text in answer:
             if text:
@@ -250,7 +260,23 @@ def _ui_message_stream(
         yield _event({"type": "finish"})
     finally:
         answer.close()  # logs the call, as incomplete if the browser went away
+        _warn_on_cap(call)
     yield "data: [DONE]\n\n"
+
+
+def _warn_on_cap(call: AnswerCall) -> None:
+    """Log a warning when the answer stopped at the token cap, so a cut-off answer is
+    never silent."""
+    record = call.record
+    if record is not None and record.stop_reason == "token_cap":
+        logger.warning(
+            "the answer stopped at the token cap and is cut off: model %s, prompt %s, "
+            "%s output tokens (%s reasoning)",
+            record.model,
+            record.prompt_version,
+            record.output_tokens,
+            record.reasoning_tokens,
+        )
 
 
 def _event(part: dict[str, Any]) -> str:
@@ -334,8 +360,7 @@ def _model_getter(
 ) -> Callable[[], AnswerModel]:
     if model is not None:
         return lambda: model
-    if factory is None:
-        factory = _openai_model
+    assert factory is not None
     built: list[AnswerModel] = []
     lock = threading.Lock()
 
@@ -348,7 +373,10 @@ def _model_getter(
     return get
 
 
-def _openai_model() -> AnswerModel:
-    from edgar_answer.openai_model import OpenAIAnswerModel
+def _configured_model_factory() -> Callable[[], AnswerModel]:
+    """The factory of the answer model `ANSWER_MODEL` names, checked against the
+    generator table now, so a misnamed model stops the app before it serves."""
+    from edgar_answer.generators import answer_model, require
 
-    return OpenAIAnswerModel()
+    model = require().model
+    return lambda: answer_model(model)

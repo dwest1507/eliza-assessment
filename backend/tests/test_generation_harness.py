@@ -393,10 +393,12 @@ def test_an_answer_cut_off_at_the_token_cap_fails_with_no_fact_recall(index):
     assert (report.overall.truncated, report.overall.fact_recall) == (1, 0.0)
     data = report.to_dict()["cases"][0]
     assert (data["truncated"], data["passed"], data["fact_recall"]) == (True, False, 0.0)
+    assert report.to_dict()["capped"] == ["cut-off"]  # the report lists every capped answer
     # The same answer, finished, passes with its Fact Recall.
     [done] = finished.cases
     assert (done.truncated, done.passed, done.fact_recall) == (False, True, 1.0)
     assert finished.overall.truncated == 0
+    assert finished.to_dict()["capped"] == []
 
 
 def test_a_cut_off_answer_whose_fact_judgment_failed_scores_0_and_is_paired(index):
@@ -909,7 +911,7 @@ def test_the_command_line_prints_scores_with_cost_and_latency_and_writes_json(in
     printed = out.getvalue()
     assert "gpt-6-luna" in printed and JEV_MODEL in printed
     assert "$/answer" in printed and "latency s" in printed
-    assert "Truncated at the token cap: none" in printed
+    assert "Capped (stopped at the token cap, scored as truncated): none" in printed
     data = json.loads(path.read_text())
     assert data["split"] == "dev"
     [case] = data["cases"]

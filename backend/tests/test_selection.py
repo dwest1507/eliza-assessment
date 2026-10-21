@@ -703,6 +703,35 @@ def test_the_compare_command_takes_a_control_run_and_says_why_it_is_inconclusive
     assert saved["comparisons"]["dense"]["qualifies"]
 
 
+def test_the_compare_command_prints_every_capped_answer_of_every_run(tmp_path, capsys):
+    from edgar_eval.selection import main
+
+    shipped = _fact_report("gpt-6-luna", [[True]] * 3, key="model")
+    control = _fact_report("gpt-6-luna", [[True]] * 3, key="model", truncated=(2,))
+    haiku = _fact_report("claude-haiku-5-5", [[True]] * 3, key="model", truncated=(0, 1))
+    paths = []
+    for name, report in (("shipped", shipped), ("control", control), ("haiku", haiku)):
+        paths.append(tmp_path / f"{name}.json")
+        paths[-1].write_text(json.dumps(report))
+    out = tmp_path / "generator-choice-dev.json"
+
+    main(
+        ["compare", str(paths[0]), str(paths[2]), "--control", str(paths[1])]
+        + ["--rule", "generators", "--json", str(out)]
+    )
+
+    printed = capsys.readouterr().out
+    capped = printed.split("Answers capped (stopped at the token cap, scored as truncated):")[1]
+    assert "  gpt-6-luna (shipped run): none\n" in capped
+    assert "  gpt-6-luna (Control Run): c2\n" in capped
+    assert "  claude-haiku-5-5: c0, c1\n" in capped
+    assert json.loads(out.read_text())["capped"] == {
+        "gpt-6-luna (shipped run)": [],
+        "gpt-6-luna (Control Run)": ["c2"],
+        "claude-haiku-5-5": ["c0", "c1"],
+    }
+
+
 # --- One shipped run and one Control Run per round (ADR 0011) ------------------------------
 # A round is the same code, prompt and Golden Set version on one split. The Arm, settings
 # and generator commands of a round share its shipped run and Control Run, reusing them

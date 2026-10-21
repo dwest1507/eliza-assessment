@@ -28,6 +28,15 @@ class FakeModel:
         yield Usage(1200, 300, 100, stop_reason="complete", raw_stop_reason="stop")
 
 
+class CappedModel(FakeModel):
+    """Stops at the token cap, as a provider reports it."""
+
+    def stream(self, messages):
+        self.received = messages
+        yield from self.parts
+        yield Usage(1200, 32000, 31000, stop_reason="token_cap", raw_stop_reason="length")
+
+
 @pytest.fixture
 def context(index):
     return prepare_answer_context([Message("user", QUESTION)], index)
@@ -130,8 +139,7 @@ class FakeOpenAIClient:
         )
 
 
-def test_openai_model_defaults_to_gpt_6_luna_with_low_reasoning_and_a_token_cap(monkeypatch):
-    monkeypatch.delenv("OPENAI_MODEL", raising=False)
+def test_openai_model_defaults_to_gpt_6_luna_with_medium_reasoning_and_a_32k_cap():
     client = FakeOpenAIClient()
     model = OpenAIAnswerModel(client=client)
 
@@ -142,8 +150,8 @@ def test_openai_model_defaults_to_gpt_6_luna_with_low_reasoning_and_a_token_cap(
     assert client.request == {
         "model": "gpt-6-luna",
         "messages": [{"role": "system", "content": "rules"}, {"role": "user", "content": "q"}],
-        "reasoning_effort": "low",
-        "max_completion_tokens": 2500,
+        "reasoning_effort": "medium",
+        "max_completion_tokens": 32000,
         "stream": True,
         "stream_options": {"include_usage": True},
     }
@@ -161,19 +169,12 @@ def test_openai_model_reports_why_the_model_stopped(finish_reason, stop_reason):
     assert (usage.stop_reason, usage.raw_stop_reason) == (stop_reason, finish_reason)
 
 
-def test_openai_model_is_overridden_by_the_environment(monkeypatch):
-    monkeypatch.setenv("OPENAI_MODEL", "gpt-6.1-sol")
+def test_openai_model_answers_with_the_model_it_is_built_with():
     client = FakeOpenAIClient()
 
-    list(OpenAIAnswerModel(client=client).stream([PromptMessage("user", "q")]))
+    list(OpenAIAnswerModel("gpt-6.1-sol", client=client).stream([PromptMessage("user", "q")]))
 
     assert client.request["model"] == "gpt-6.1-sol"
-
-
-def test_an_empty_model_variable_keeps_the_default(monkeypatch):
-    monkeypatch.setenv("OPENAI_MODEL", "")
-
-    assert OpenAIAnswerModel(client=FakeOpenAIClient()).model == "gpt-6-luna"
 
 
 # --- The Anthropic implementation -------------------------------------------------------
@@ -218,7 +219,7 @@ class FakeAnthropicClient:
         return Stream()
 
 
-def test_anthropic_model_streams_with_the_same_effort_and_token_cap_as_openai():
+def test_anthropic_model_streams_with_the_same_medium_effort_and_32k_cap_as_openai():
     from edgar_answer.anthropic_model import AnthropicAnswerModel
 
     client = FakeAnthropicClient()
@@ -233,8 +234,8 @@ def test_anthropic_model_streams_with_the_same_effort_and_token_cap_as_openai():
         "system": "rules",
         "messages": [{"role": "user", "content": "q"}],
         "thinking": {"type": "adaptive"},
-        "output_config": {"effort": "low"},
-        "max_tokens": 2500,
+        "output_config": {"effort": "medium"},
+        "max_tokens": 32000,
     }
 
 
@@ -295,6 +296,34 @@ def test_ask_prints_the_query_scope_the_sources_and_the_streamed_answer(index, t
     assert "TSLA " in sources and "JPM " in sources
     assert "Apple faces supply chain risk [S1]." in answer
     assert "fake-model · prompt v15 · 1200 input / 300 output tokens" in answer
+    assert "token cap" not in printed
+
+
+def test_ask_warns_when_the_answer_stopped_at_the_token_cap(index, tmp_path):
+    out = io.StringIO()
+
+    ask.main(
+        [QUESTION, "--index", str(index)],
+        model=CappedModel(),
+        out=out,
+        log_path=tmp_path / "calls.jsonl",
+    )
+
+    assert (
+        out.getvalue()
+        .rstrip()
+        .endswith("Warning: the answer stopped at the token cap and is cut off.")
+    )
+
+
+def test_ask_refuses_an_answer_model_not_in_the_generator_table(index, monkeypatch, capsys):
+    monkeypatch.setenv("ANSWER_MODEL", "gemini-9")
+
+    with pytest.raises(SystemExit) as stopped:
+        ask.main([QUESTION, "--index", str(index)], out=io.StringIO())
+
+    assert stopped.value.code != 0
+    assert "'gemini-9' (ANSWER_MODEL) is not in the generator table" in capsys.readouterr().err
 
 
 def test_ask_prints_a_named_period_and_the_change_route(index, tmp_path):

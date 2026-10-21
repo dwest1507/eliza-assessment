@@ -30,8 +30,8 @@ ENV_FILE := $(BACKEND)/.env
 export $(shell sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' $(ENV_FILE) 2>/dev/null)
 
 # The API key variables a generator's provider needs, read from the table of compared
-# generators (edgar_eval.generators.GENERATORS): `$(GENERATOR_KEYS) MODEL...` for the
-# models named (none for the default generator), `$(GENERATOR_KEYS) --comparison` for the
+# generators (edgar_answer.generators.GENERATORS): `$(GENERATOR_KEYS) MODEL...` for the
+# models named (none for ANSWER_MODEL, else the default generator), `$(GENERATOR_KEYS) --comparison` for the
 # default comparison's, `$(GENERATOR_KEYS) --all` for every one.
 GENERATOR_KEYS = $(UV) python -m edgar_eval.generators keys
 
@@ -99,16 +99,13 @@ embeddings: $(INDEX) ## Embed every chunk with OpenAI for the dense and hybrid A
 local-embeddings: $(INDEX) ## Embed every chunk locally for the dense-local and hybrid-local Arms (evaluation only; no API call, no cost; downloads the pinned model once and takes about 30 minutes)
 	$(UV) python -m edgar_eval.embeddings --local
 
-ask: $(INDEX) ## Answer a question from the command line: make ask Q="..." (needs OPENAI_API_KEY)
+ask: $(INDEX) ## Answer a question from the command line: make ask Q="..." (with ANSWER_MODEL, needs its provider's key)
 	@if [ -z "$$Q" ]; then echo 'usage: make ask Q="your question"' >&2; exit 1; fi
-	@if [ -z "$$OPENAI_API_KEY" ]; then \
-		echo 'error: OPENAI_API_KEY is not set. Copy backend/.env.example to backend/.env' >&2; \
-		echo 'and fill it in.' >&2; \
-		exit 1; \
-	fi
+	@keys=$$($(GENERATOR_KEYS)) || exit 1; \
+	$(call require_keys,$$keys)
 	$(UV) python -m edgar_answer.ask "$$Q"
 
-api: $(INDEX) ## Run the chat API on http://localhost:8000, or API_PORT (answers need OPENAI_API_KEY)
+api: $(INDEX) ## Run the chat API on http://localhost:8000, or API_PORT (answers with ANSWER_MODEL, which needs its provider's key)
 	$(UV) uvicorn edgar_api.app:create_app --factory --host 127.0.0.1 --port $(API_PORT)
 
 eval-retrieval: $(EVAL_INDEX) $(if $(filter dense hybrid,$(or $(ARMS),dense)),$(EMBEDDINGS)) $(if $(filter dense-local hybrid-local,$(or $(ARMS),dense-local)),$(LOCAL_EMBEDDINGS)) ## Score retrieval Arms on the Golden Set (version 2 unless GOLDEN_SET= names a file): make eval-retrieval [SPLIT=dev|holdout|all] [ARMS="fts5 ..."] [CHUNK_TOKENS=...] [CONTEXT_BUDGET=...] [GOLDEN_SET=data/eval/golden_set.json]

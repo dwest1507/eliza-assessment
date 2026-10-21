@@ -9,7 +9,6 @@ from pathlib import Path
 
 import pytest
 
-from edgar_eval import generators
 from edgar_eval.generators import (
     ANTHROPIC,
     COMPARISON,
@@ -29,6 +28,7 @@ def test_the_table_lists_each_compared_generator_once_the_shipped_default_first(
         "claude-sonnet-5-5",
         "claude-opus-5-5",
         "claude-haiku-5-5",
+        "gpt-5.6-terra",
     ]
     assert [g.provider.key_env_var for g in GENERATORS] == [
         "OPENAI_API_KEY",
@@ -36,7 +36,25 @@ def test_the_table_lists_each_compared_generator_once_the_shipped_default_first(
         "ANTHROPIC_API_KEY",
         "ANTHROPIC_API_KEY",
         "ANTHROPIC_API_KEY",
+        "OPENAI_API_KEY",
     ]
+
+
+def test_terra_is_an_openai_generator_at_its_list_price(monkeypatch):
+    from edgar_answer.openai_model import OpenAIAnswerModel
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test")
+
+    # gpt-5.6-terra: $2.00 per million input tokens, $12.00 per million output tokens.
+    assert answer_cost("gpt-5.6-terra", 1_000_000, 100_000) == pytest.approx(3.2)
+    terra = answer_model("gpt-5.6-terra")
+    assert isinstance(terra, OpenAIAnswerModel) and terra.model == "gpt-5.6-terra"
+
+
+def test_the_harnesses_read_the_table_the_product_reads():
+    from edgar_answer import generators as product
+
+    assert GENERATORS is product.GENERATORS
 
 
 def test_answer_cost_prices_input_and_output_tokens_per_million():
@@ -69,7 +87,7 @@ def test_the_version_1_generators_keep_their_prices():
     # The version 1 reports were priced from these rows; adding a generator changes none.
     prices = {g.model: (g.price.input, g.price.output) for g in GENERATORS}
 
-    assert {m: prices[m] for m in prices if m != "claude-haiku-5-5"} == {
+    assert {m: prices[m] for m in prices if m not in {"claude-haiku-5-5", "gpt-5.6-terra"}} == {
         "gpt-6-luna": (0.10, 0.50),
         "gpt-6.1-sol": (2.00, 10.00),
         "claude-sonnet-5-5": (2.00, 10.00),
@@ -88,7 +106,7 @@ def test_a_generator_is_built_by_its_providers_implementation(monkeypatch):
 
     monkeypatch.setenv("OPENAI_API_KEY", "test")
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
-    monkeypatch.delenv("OPENAI_MODEL", raising=False)
+    monkeypatch.delenv("ANSWER_MODEL", raising=False)
 
     claude = answer_model("claude-opus-5-5")
     gpt = answer_model("gpt-6.1-sol")
@@ -101,11 +119,12 @@ def test_a_generator_is_built_by_its_providers_implementation(monkeypatch):
 
 
 def test_the_provider_comes_from_the_table_not_the_model_name(monkeypatch):
+    from edgar_answer import generators as table
     from edgar_answer.anthropic_model import AnthropicAnswerModel
 
     monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
     added = Generator("gpt-lookalike", ANTHROPIC, Price(input=1.0, output=2.0))
-    monkeypatch.setattr(generators, "GENERATORS", (*GENERATORS, added))
+    monkeypatch.setattr(table, "GENERATORS", (*GENERATORS, added))
 
     model = answer_model("gpt-lookalike")
 
@@ -115,15 +134,26 @@ def test_the_provider_comes_from_the_table_not_the_model_name(monkeypatch):
         answer_model("claude-unlisted")
 
 
-def test_the_default_generator_follows_openai_model(monkeypatch):
-    monkeypatch.setenv("OPENAI_API_KEY", "test")
-    monkeypatch.setenv("OPENAI_MODEL", "gpt-6.1-sol")
+def test_the_default_generator_follows_answer_model(monkeypatch):
+    from edgar_answer.anthropic_model import AnthropicAnswerModel
 
-    assert answer_model(None).model == "gpt-6.1-sol"
+    monkeypatch.setenv("ANTHROPIC_API_KEY", "test")
+    monkeypatch.setenv("ANSWER_MODEL", "claude-opus-5-5")
+
+    model = answer_model(None)
+
+    assert isinstance(model, AnthropicAnswerModel) and model.model == "claude-opus-5-5"
+
+
+def test_the_keys_command_names_the_key_of_the_answer_model(monkeypatch, capsys):
+    monkeypatch.setenv("ANSWER_MODEL", "claude-sonnet-5-5")
+
+    assert main(["keys"]) == 0
+    assert capsys.readouterr().out.split() == ["ANTHROPIC_API_KEY"]
 
 
 def test_the_keys_command_names_the_api_keys_a_run_needs(monkeypatch, capsys):
-    monkeypatch.delenv("OPENAI_MODEL", raising=False)
+    monkeypatch.delenv("ANSWER_MODEL", raising=False)
 
     assert main(["keys", "claude-sonnet-5-5"]) == 0
     assert capsys.readouterr().out.split() == ["ANTHROPIC_API_KEY"]

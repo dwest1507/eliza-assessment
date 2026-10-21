@@ -484,3 +484,102 @@ def test_the_answer_model_is_built_only_when_a_question_arrives(index, log_path,
     chat(client, user(QUESTION))
     chat(client, user(QUESTION))
     assert len(built) == 1
+
+
+# --- The answer model -------------------------------------------------------------------
+
+
+class ProviderFake(FakeModel):
+    """Stands in for a provider's implementation: built with a model id, as the generator
+    table builds it, and records which provider built it."""
+
+    provider = ""
+
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+
+
+@pytest.fixture
+def providers(monkeypatch):
+    """Replaces both providers' implementations with fakes; returns those built."""
+    import edgar_answer.anthropic_model
+    import edgar_answer.openai_model
+
+    built = []
+    for module, name, provider in (
+        (edgar_answer.openai_model, "OpenAIAnswerModel", "OpenAI"),
+        (edgar_answer.anthropic_model, "AnthropicAnswerModel", "Anthropic"),
+    ):
+
+        def build(model, provider=provider):
+            fake = ProviderFake(model)
+            fake.provider = provider
+            built.append(fake)
+            return fake
+
+        monkeypatch.setattr(module, name, build)
+    return built
+
+
+@pytest.mark.parametrize(
+    ("answer_model", "provider"),
+    [("gpt-6.1-sol", "OpenAI"), ("claude-haiku-5-5", "Anthropic"), (None, "OpenAI")],
+)
+def test_answer_model_selects_a_model_of_either_provider(
+    index, log_path, monkeypatch, providers, answer_model, provider
+):
+    if answer_model is None:
+        monkeypatch.delenv("ANSWER_MODEL", raising=False)
+    else:
+        monkeypatch.setenv("ANSWER_MODEL", answer_model)
+    client = TestClient(create_app(index=index, log_path=log_path))
+
+    parts = events(chat(client, user(QUESTION)))
+
+    expected = answer_model or "gpt-6-luna"
+    [model] = providers
+    assert (model.model, model.provider) == (expected, provider)
+    assert part_of(parts, "finish")
+    [logged] = log_path.read_text().splitlines()
+    assert json.loads(logged)["model"] == expected
+
+
+def test_an_answer_model_not_in_the_generator_table_is_refused(index, log_path, monkeypatch):
+    from edgar_answer.generators import UnknownAnswerModel
+
+    monkeypatch.setenv("ANSWER_MODEL", "gemini-9")
+
+    with pytest.raises(UnknownAnswerModel) as refused:
+        create_app(index=index, log_path=log_path)
+
+    message = str(refused.value)
+    assert "'gemini-9' (ANSWER_MODEL) is not in the generator table" in message
+    assert "gpt-6-luna" in message and "claude-haiku-5-5" in message
+
+
+class CappedModel(FakeModel):
+    def stream(self, messages):
+        self.received.append(messages)
+        yield from self.parts
+        yield Usage(1200, 32000, 31000, stop_reason="token_cap", raw_stop_reason="length")
+
+
+def test_an_answer_stopped_at_the_token_cap_is_streamed_and_logs_a_warning(index, log_path, caplog):
+    client = TestClient(create_app(index=index, model=CappedModel(), log_path=log_path))
+
+    with caplog.at_level("WARNING", logger="edgar_api.app"):
+        parts = events(chat(client, user(QUESTION)))
+
+    assert part_of(parts, "finish")
+    [warning] = [r for r in caplog.records if r.levelname == "WARNING"]
+    assert "token cap" in warning.getMessage()
+    assert "fake-model" in warning.getMessage() and "32000 output tokens" in warning.getMessage()
+    assert json.loads(log_path.read_text())["stop_reason"] == "token_cap"
+
+
+def test_a_complete_answer_logs_no_warning(client, caplog):
+    with caplog.at_level("WARNING", logger="edgar_api.app"):
+        chat(client, user(QUESTION))
+
+    assert [r for r in caplog.records if r.levelname == "WARNING"] == []

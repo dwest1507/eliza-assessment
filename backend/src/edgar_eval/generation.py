@@ -24,7 +24,8 @@ Call to the generator under test. The answer is then scored three ways:
 
 An answer the model stopped at the Answer Call's token cap (its stop reason is
 `token_cap`) is truncated: it fails, its Fact Recall is 0, its Faithfulness is still
-judged on what it wrote, and the run counts it.
+judged on what it wrote, and the run counts it, lists it in the report (`capped`) and
+prints it.
 
 `make eval-generation` runs it on the dev split with the default generator, prints the
 scores and writes them, with every answer, as JSON under `data/derived/eval/`:
@@ -360,9 +361,14 @@ class GenerationReport:
         """The chunk size and context budget, as the selection rule names a setting."""
         return f"chunks-{self.chunk_tokens or 'unknown'}-budget-{self.context_budget}"
 
+    @property
+    def capped(self) -> list[str]:
+        """The cases whose answer stopped at the token cap, each scored as truncated."""
+        return [r.case_id for r in self.cases if r.truncated]
+
     def to_dict(self) -> dict:
         """The report as plain JSON-ready data, with each case's derived scores."""
-        data = asdict(self) | {"settings": self.settings}
+        data = asdict(self) | {"settings": self.settings, "capped": self.capped}
         for case, result in zip(data["cases"], self.cases, strict=True):
             case["fact_recall"] = result.fact_recall
             case["detail_recall"] = result.detail_recall
@@ -642,7 +648,7 @@ def main(
     )
     parser.add_argument("--split", choices=("dev", "holdout", "all"), default="dev")
     parser.add_argument(
-        "--model", help="a model in GENERATORS (default: OPENAI_MODEL, else the shipped one)"
+        "--model", help="a model in GENERATORS (default: ANSWER_MODEL, else the shipped one)"
     )
     parser.add_argument("--arm", help="the retrieval Arm (default: the Shipped Arm)")
     parser.add_argument("--case", action="append", metavar="ID", help="only these cases")
@@ -811,7 +817,7 @@ def _print_report(report: GenerationReport, split: str, out: TextIO) -> None:
                 file=out,
             )
     for label, failing in (
-        ("Truncated at the token cap", [r.case_id for r in report.cases if r.truncated]),
+        ("Capped (stopped at the token cap, scored as truncated)", report.capped),
         ("Citations invalid", [r.case_id for r in report.cases if not r.citations.passed]),
         ("Figures not exact", [r.case_id for r in report.cases if not r.figures.passed]),
         (

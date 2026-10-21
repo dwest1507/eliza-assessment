@@ -98,7 +98,8 @@ reused by round, with or without it. All three call the
 generators and Jev, so they cost money. `compare` applies a rule to generation reports
 already written, the first being the shipped choice, with `--control` the Control Run's
 (without one, as for version 1's reports, it says the noise is not shown). All print the
-comparison and write it, with the choice, to `--json` (by default
+comparison and every answer of each run that stopped at the token cap (`capped`), and
+write them, with the choice, to `--json` (by default
 `data/derived/eval/<arm|generator|settings>-choice-<split>.json`).
 """
 
@@ -831,18 +832,39 @@ def main(argv: list[str] | None = None, *, out: TextIO | None = None) -> int:
     )
     choice = choose(candidates[0], candidates[1:], rule, control=control_candidate)
     _print(choice, out)
+    capped = {f"{candidates[0].name} (shipped run)": _capped(data[0])}
+    if control:
+        capped[f"{candidates[0].name} (Control Run)"] = _capped(
+            json.loads(control.read_text(encoding="utf-8"))
+        )
+    capped |= {c.name: _capped(d) for c, d in zip(candidates[1:], data[1:], strict=True)}
+    _print_capped(capped, out)
     if target:
         target.parent.mkdir(parents=True, exist_ok=True)
         record = {
             "split": data[0].get("split"),
             "reports": [str(p) for p in paths],
             "control_report": str(control) if control else None,
+            "capped": capped,
         }
         if screen is not None:
             record["screen"] = screen
         target.write_text(json.dumps(record | asdict(choice), indent=2) + "\n", encoding="utf-8")
         print(f"\nWritten to {target.resolve()}", file=out)
     return 0
+
+
+def _capped(report: Mapping[str, Any]) -> list[str]:
+    """The cases of a generation report whose answer stopped at the token cap."""
+    return [c["case_id"] for c in report["cases"] if c.get("truncated")]
+
+
+def _print_capped(capped: Mapping[str, Sequence[str]], out: TextIO) -> None:
+    """Every answer that stopped at the token cap, run by run: each is scored as
+    truncated, so none is silent."""
+    print("\nAnswers capped (stopped at the token cap, scored as truncated):", file=out)
+    for name, cases in capped.items():
+        print(f"  {name}: {', '.join(cases) or 'none'}", file=out)
 
 
 def _print_scores(c: Comparison, out: TextIO) -> None:
