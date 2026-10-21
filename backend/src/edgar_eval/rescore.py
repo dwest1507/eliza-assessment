@@ -85,7 +85,9 @@ from edgar_rag.retrieval import (
 
 __all__ = [
     "DEFAULT_EVAL_DIR",
+    "index_for",
     "main",
+    "named_report",
     "rescore_brief_suite",
     "rescore_figures",
     "rescore_gap_claims",
@@ -332,7 +334,7 @@ def saved_reports(eval_dir: Path = DEFAULT_EVAL_DIR) -> list[Path]:
     ]
 
 
-def _named(name: str, eval_dir: Path) -> Path | None:
+def named_report(name: str, eval_dir: Path) -> Path | None:
     """A report named on the command line: a path as given, from the repository root, or
     a name in `eval_dir`."""
     for path in (Path(name), REPO_ROOT / name, eval_dir / name):
@@ -394,7 +396,7 @@ def main(
     if args.all:
         paths = saved_reports(args.dir)
     elif args.reports:
-        found = {name: _named(name, args.dir) for name in args.reports}
+        found = {name: named_report(name, args.dir) for name in args.reports}
         missing = [name for name, path in found.items() if path is None]
         if missing:
             parser.error(f"no such report: {', '.join(missing)}")
@@ -437,7 +439,7 @@ def main(
         rescored = rescore_figures(
             report,
             own_cases,
-            _index_for(args.index, report.get("chunk_tokens")),
+            index_for(args.index, report.get("chunk_tokens")),
             fact_values=fact_values or corpus_fact_values,
             prepare=saved_arm.prepare or prepare_answer_context,
         )
@@ -455,7 +457,7 @@ def main(
     return 0
 
 
-def _index_for(index: Path, chunk_tokens: int | None) -> Path:
+def index_for(index: Path, chunk_tokens: int | None) -> Path:
     """The index a saved report's Answer Contexts are rebuilt from: `index`, or, for a
     report answered from chunks of another size, the index of that size beside it
     (`edgar_rag-chunks450.sqlite`, as `make eval-generation CHUNK_TOKENS=450` builds it)

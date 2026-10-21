@@ -1429,6 +1429,36 @@ def test_joining_passages_leaves_chunk_selection_and_the_budget_unchanged(index)
     assert short.text.endswith(mdna[78]["text"][-200:])
 
 
+def test_a_source_records_where_its_best_ranked_chunk_stands_in_its_text(index):
+    """The Generation Miss report asks whether a quote falls in it (`edgar_eval.misses`)."""
+    mdna = _mdna(index)
+
+    # Ranked best, the chunk after a skipped ordinal stands after the marker.
+    skipped = _retrieve(index, [mdna[80], mdna[76], mdna[77]])
+    start, end = skipped.best_chunk
+    assert skipped.text[start:end] == mdna[80]["text"]
+    assert skipped.text[:start].endswith(GAP)
+
+    # Ranked best, a chunk whose opening repeats the one before it stands for the text
+    # it adds; the first chunk in body order stands whole.
+    a, b = mdna[76], mdna[77]
+    joined = _retrieve(index, [b, a])
+    start, end = joined.best_chunk
+    assert (start, end) == (len(a["text"]), len(joined.text))
+    assert b["text"].endswith(joined.text[start:end])
+    assert _retrieve(index, [a, b]).best_chunk == (0, len(a["text"]))
+
+
+def test_a_facts_source_has_no_best_ranked_chunk(index):
+    context = prepare_answer_context(
+        [Message("user", "What was Apple's revenue in FY2025?")], index
+    )
+
+    facts = [s for s in context.sources if s.kind == "facts"]
+    assert facts and all(s.best_chunk is None for s in facts)
+    assert all(s.best_chunk is not None for s in context.sources if s.kind == "text")
+
+
 # --- Deduplication -----------------------------------------------------------------------
 
 _WORD = re.compile(r"[a-z0-9]+")

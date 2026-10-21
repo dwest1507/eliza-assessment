@@ -392,6 +392,9 @@ class Source:
     kind: Literal["text", "facts"] = "text"
     facts: tuple[FactRow, ...] = ()
     """A Facts Source's rows, as the Filing reports them."""
+    best_chunk: tuple[int, int] | None = None
+    """Where in `text` its best-ranked chunk stands, the chunk its number comes from:
+    the start and end of the chunk's text there. None for a Facts Source."""
 
     @property
     def tag(self) -> str:
@@ -1318,6 +1321,7 @@ def _group(rows: Sequence[_Row], first_number: int) -> list[Source]:
     for number, group in enumerate(groups.values(), start=first_number):
         first = group[0]
         in_order = sorted(group, key=lambda r: r["ordinal"])
+        text, spans = _passage(in_order)
         sources.append(
             Source(
                 number=number,
@@ -1329,32 +1333,38 @@ def _group(rows: Sequence[_Row], first_number: int) -> list[Source]:
                 fiscal_period=first["fiscal_period"],
                 section=first["section"],
                 item=first["item"] if len({r["item"] for r in group}) == 1 else None,
-                text=_passage_text(in_order),
+                text=text,
+                best_chunk=spans[in_order.index(first)],
             )
         )
     return sources
 
 
-def _passage_text(rows: Sequence[_Row]) -> str:
-    """The text of one Source's chunks, in body order. Chunks next to each other in the
-    Filing read as one passage: the opening a prose chunk's successor repeats from it is
-    shown once (`opening_overlap`), and the two join with nothing between them, or with a
-    line break after a table or before one. `GAP` stands only where chunks were skipped:
-    between chunks whose ordinals are not consecutive, and beside a chunk cut down to its
-    new paragraphs, which leaves text out. The budget is unchanged: each chunk was
-    counted whole when it was chosen."""
+def _passage(rows: Sequence[_Row]) -> tuple[str, list[tuple[int, int]]]:
+    """The text of one Source's chunks, in body order, and where each chunk's text
+    stands in it. Chunks next to each other in the Filing read as one passage: the
+    opening a prose chunk's successor repeats from it is shown once (`opening_overlap`),
+    and the two join with nothing between them, or with a line break after a table or
+    before one. `GAP` stands only where chunks were skipped: between chunks whose
+    ordinals are not consecutive, and beside a chunk cut down to its new paragraphs,
+    which leaves text out. The budget is unchanged: each chunk was counted whole when it
+    was chosen. A chunk whose opening was shown once stands for the text it adds."""
     text = ""
+    spans: list[tuple[int, int]] = []
     for before, row in zip([None, *rows], rows, strict=False):
+        own = row["text"]
         if before is None:
-            text = row["text"]
+            joint = ""
         elif _excerpt(before) or _excerpt(row) or row["ordinal"] != before["ordinal"] + 1:
-            text += GAP + row["text"]
+            joint = GAP
         elif before["kind"] == "prose" and (k := opening_overlap(before["text"], row["text"])):
-            text += row["text"][k:]
+            joint, own = "", own[k:]
         else:
-            prose = before["kind"] == row["kind"] == "prose"
-            text += (" " if prose else "\n") + row["text"]
-    return text
+            joint = " " if before["kind"] == row["kind"] == "prose" else "\n"
+        text += joint
+        spans.append((len(text), len(text) + len(own)))
+        text += own
+    return text, spans
 
 
 def _excerpt(row: _Row) -> bool:

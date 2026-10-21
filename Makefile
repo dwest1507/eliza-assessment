@@ -46,7 +46,7 @@ for key in $(1); do \
 	done
 endef
 
-.PHONY: help install test lint format eda sec-facts index embeddings local-embeddings ask api eval-retrieval eval-generation eval-brief eval-rescore eval-arms eval-generators eval-settings eval-export judge-study-sample judge-study-judge judge-study-score human-check-sample human-check-score deck dev frontend-deps \
+.PHONY: help install test lint format eda sec-facts index embeddings local-embeddings ask api eval-retrieval eval-generation eval-brief eval-rescore eval-misses eval-arms eval-generators eval-settings eval-export judge-study-sample judge-study-judge judge-study-score human-check-sample human-check-score deck dev frontend-deps \
 	ci-cd backend-lint backend-test eval-gate eval-floors frontend-quality frontend-test frontend-build security-audit lighthouse
 
 help: ## List targets
@@ -136,6 +136,12 @@ eval-brief: $(EVAL_INDEX) $(if $(filter dense hybrid,$(ARM)),$(EMBEDDINGS)) $(if
 # and REPORTS=all means every saved generation and Brief Suite report.
 eval-rescore: $(INDEX) ## Re-score saved reports from their stored answers, in place, with no Answer Call and no Jev call. By default it re-scores the current round's shipped run, Control Run and Brief Suite; REPORTS="..." names other reports, and REPORTS=all re-scores every saved one
 	$(UV) python -m edgar_eval.rescore --split $(SPLIT) $(if $(filter all,$(REPORTS)),--all,$(REPORTS))
+
+# REPORTS picks the reports eval-misses reads: unset, the round's shipped run
+# (generation-<split>.json); paths, or names in data/derived/eval/. With several, such as
+# the shipped run and the Control Run, their summaries are also printed pooled.
+eval-misses: $(INDEX) ## List the Generation Misses of a saved generation or Brief Suite report (must-state facts reached but not stated), with each one's Source, offset, crowding and citation, and write them beside it as misses-<report>.json; free, no Answer Call and no Jev call: make eval-misses [REPORTS="..."] [SPLIT=...]
+	$(UV) python -m edgar_eval.misses --split $(SPLIT) $(REPORTS)
 
 # The comparison commands share a round's shipped run (generation-<split>.json) and Control
 # Run (generation-control-<split>.json), reusing them while the code, prompt and Golden Set

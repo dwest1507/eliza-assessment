@@ -1819,6 +1819,36 @@ Part of spec #132, a measurement fix made before prompt v18 ("quote figures, nev
 
 `make eval-rescore` (free) re-scored the current round's report, #156's shipped run on prompt v15 (`generation-dev.json`; the round has no Control Run or Brief Suite yet): **Figures exact is unchanged at 0.95** (59 of 62 cases), and no case's figure check changes. Its answers quote the derived rows citing the 10-K's Facts Source, which the check already read. The three failures are each a figure the answer computed: ExxonMobil's FY2025 net income decline ($4,836 million, `trend-xom-net-income-2025`), the combined share of revenue of NVIDIA's three largest direct customers (34%, `sector-semiconductors-customer-concentration`) and Alphabet's capital expenditure growth (74.1%, `gap-msft-goog-capex-periods-differ`). No other score moves, so the export, the deck and the comparisons stand as recorded.
 
+### The Generation Miss report (#158, 2026-10-21)
+
+Part of spec #132. A **Generation Miss** is a must-state Required Fact whose evidence reached the Answer Context but which the answer did not state: Jev's probability is under the fact cut-off the report was scored at, or the answer stopped at the token cap. In a Brief Suite report it is a must-state fact reached in every run but stated in fewer runs than the pass threshold (4 of 5). `make eval-misses` (`edgar_eval.misses`) lists them for any saved generation or Brief Suite report, free, with no Answer Call and no Jev call, so #132's diagnosis can be repeated on any round:
+
+```sh
+make eval-misses                                                   # the round's shipped run
+make eval-misses REPORTS="generation-dev.json generation-control-dev.json"   # each, then pooled
+make eval-misses REPORTS=brief-suite.json
+```
+
+- **Each case's Answer Context is prepared again,** as the offline re-score does: through the report's Arm, at its context budget, from an index of its chunk size (a report of another chunk size is refused whole). A case whose Sources no longer match the report, another number of Sources or Evidence Reached other than the report recorded, is refused and listed, never read, so a miss is never put down to the wrong Source. A report from a round whose retrieval has since changed is read on the code it records (its `code_version`), with the index rebuilt there.
+- **For every must-state fact reached, stated or missed,** it records the case, the fact, its Company and Section and Jev's probability; the Source holding the evidence quote (one of the fact's own Filing and Section first, else the first in number order), its tokens and its rank among the Company's text Sources; the quote's offset, in characters and as a share of the Source, and whether it overlaps the Source's best-ranked chunk (`Source.best_chunk`, which retrieval now records: where in the Source's text the chunk its number comes from stands); how many of the case's must-state facts the Source holds and how many were stated; whether the answer cites the Source (in a Brief Suite report, in how many runs); the number of Companies in scope (the Answer Context's coverage); and the answer's word count.
+- **The summaries** give the miss rate (misses over must-state facts reached) by Companies in scope, by whether the holding Source is cited, by the quarter of the Source the quote starts in and by the best-ranked chunk, the misses by Section, and the mean Source tokens, offset, crowding, uncited share and words of the misses beside the stated facts. They are printed and written beside the report as `misses-<report>.json`, a name no harness reads as a report of answers. Given several reports, it also prints their summaries pooled.
+- **The hand reading** of each miss (generalised, omitted, stated but scored under the cut-off, headline dropped) stays an agent's, recorded here, not code.
+
+**Reproduced on #126's reports.** Run on #126's shipped run (`generation-dev.json` of [A new round on the new retrieval](#a-new-round-on-the-new-retrieval-126-2026-10-18), code version `f767b0ca96c041ad`, prompt v7), read in a worktree of that round's commit (`7985813`) with this module and the best-ranked chunk's place added and the index rebuilt there (the joined passages, the Overview route and the document-order fill changed the Sources since), no case is refused, and it finds the diagnosis #132's spec rests on:
+
+| | shipped run | Control Run | both, pooled | #132's spec |
+|---|---|---|---|---|
+| Generation Misses (of must-state facts reached) | **60** of 270 | 62 of 270 | 122 of 540 | 60 (shipped run) |
+| by Section | Risk Factors **44**, MD&A **7**, Legal Proceedings **6**, Unsectioned 2, Market Risk 1 | Risk Factors 46, MD&A 7, Legal Proceedings 6, Market Risk 2, Unsectioned 1 | | Risk Factors 44, MD&A 7, Legal Proceedings 6 |
+| miss rate, 1 / 2 / 3 / 4 / 5+ Companies | 0.14 / 0.23 / 0.39 / 0.38 / 0.18 | 0.17 / 0.24 / 0.30 / 0.25 / 0.26 | **0.15 / 0.24 / 0.35 / 0.31 / 0.22** | 0.15 / 0.24 / 0.35 / 0.31 / 0.22 |
+| missed when the holding Source is uncited | 5 of 7 | 5 of 7 | **10 of 14** | 10 of 15 |
+| miss rate when it is cited | 0.21 | 0.22 | 0.21 | 21% |
+| outside the best-ranked chunk, missed / stated | 62% / 62% | 61% / 62% | 61% / 62% | 60% each |
+
+- **The counts by Section are the shipped run's,** and the miss rates by Companies, the uncited facts and the best-ranked chunk shares are the shipped run and the Control Run pooled, as the spec's diagnosis read them; pooled, the command gives them exactly.
+- **One difference: 10 of 14 uncited, not 10 of 15.** In the Control Run's `risk-nvda-amd-competition`, NVIDIA's fact that competitors' products may be cheaper or better (stated, p = 0.97) has its quote in two Sources: S1, NVIDIA's FY2023 10-K Risk Factors, uncited, and S2, its FY2025 10-K Risk Factors, the fact's own Filing, cited. The spec's diagnosis took the first Source in number order and counted the fact as uncited; the report takes the fact's own Filing and Section first, so the answer cites the Source the fact was labelled from, and counts it as cited.
+- **The Brief Suite report** of that round (`brief-suite.json`) gives 21 Generation Misses of the 80 must-state facts reached in all 5 runs, the 21 generation misses #126 counted. The spec's table counts 73 run-misses there, each run that left a reached fact out, a unit the report does not use.
+
 ### Order and cost
 
 1. The Brief Suite and the label format.
