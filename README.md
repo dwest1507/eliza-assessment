@@ -4,21 +4,34 @@ A question-answering system for a private equity Client. It answers natural-lang
 
 This repo is a take-home assessment for a Forward Deployed Engineer (AI Engineering) role. The brief is in [`docs/AI-RAG Assessment.md`](docs/AI-RAG%20Assessment.md). Domain terms used throughout (Filing, Corpus, Company, Tracked Company, Report Period, Financial Fact, Answer Call...) are defined in [`CONTEXT.md`](CONTEXT.md).
 
+## Scope and the ~4-hour timebox
+
+The brief sets a timebox of about four hours. By commit [`6737dc9`](https://github.com/dwest1507/eliza-assessment/commit/6737dc9) (PR [#42](https://github.com/dwest1507/eliza-assessment/pull/42)), roughly that time, version 1 of everything existed:
+
+- the full pipeline, from the Corpus through retrieval and Financial Facts to one Answer Call, with prompt v7;
+- the research workspace and its "How it works" page;
+- evaluation version 1: the Golden Set, both harnesses, the Arm, generator and chunk-size comparisons, and one holdout run;
+- the slide deck, as a draft.
+
+Everything after it was a deliberate choice: evaluation version 2 (a larger Golden Set, stricter decision rules, a judge study), the retrieval improvements it pointed to, and the demo work (Coverage notes, one Sources panel, the Company Calendar, a client-facing "How it works").
+
+The work was built with coding agents under a written spec, issue by issue, following [Matt Pocock's skills](https://github.com/mattpocock/skills).
+
 ## Status
 
-The work runs in phases. The exploratory data analysis (EDA) phase is complete. The retrieval phase has its tracer bullet: a question asked from the command line, over the chat API or in the research workspace is answered end to end, from the index through one Answer Call, and the retrieval and generation harnesses measure it on the Golden Set. Coverage Gaps are computed by code and stated in the prompt, the stream and the workspace. Figure questions get exact, cited Financial Facts. The workspace is a chat: a follow-up inherits the parts of the Query Scope it does not name from earlier questions, and the conversation survives a page refresh. The retrieval Arm (FTS5) and the generator (`gpt-6-luna`) were chosen by fixed rules on the Golden Set's dev split, and the final configuration was scored once on its holdout split.
+Every deliverable of the brief is done. The retrieval Arm (FTS5) and the generator (`gpt-6-luna`) were chosen by fixed rules on the Golden Set's dev split and checked on its holdout split ([`docs/evaluation.md`](docs/evaluation.md#at-a-glance)).
 
 | Deliverable (from the brief) | Status | Where |
 |---|---|---|
-| README with setup and run instructions | Done | This file |
-| Indexing and retrieval code | Partly done: Corpus loading, cleaning, Section splitting, Financial Facts extraction, chunking, the FTS5 index, Company recognition, Sector phrases resolved through the Sector table, time windows, Section hints, the metric (revenue, net income, segment names), risk routing, outlook routing to the latest MD&A, deduplication of repeated text, "how has it changed" routing, retrieval into numbered Sources budgeted per Company (each Source's chunks joined into continuous passages where they are adjacent in the Filing, their overlap shown once and a marker only where text was skipped), the Financial Facts store queried into a cited table with derived fourth quarters and year-on-year changes, Coverage Gaps (Snapshot trends, Companies missing from the Corpus, the stale GE Capital Filing, missing guidance, periods that differ) and follow-up questions that inherit their Query Scope by rules ([ADR 0003](docs/adr/0003-follow-ups-inherit-query-scope-by-rules.md)) are built and tested. | [`backend/src/edgar_rag/`](backend/src/edgar_rag/) |
-| Log of prompt iterations | Done: v1 to v14, each with what changed, why (the failing dev cases or metric) and its dev scores before and after; v8 to v14 were tried and discarded | [`docs/prompt-iterations.md`](docs/prompt-iterations.md) |
-| Final prompt template | Done: v7, after the prompt iterations, scored with all four generators and on the holdout split | [The Answer Call's prompt](#the-answer-calls-prompt), [`docs/prompt-iterations.md`](docs/prompt-iterations.md#the-final-template-v7), [`backend/src/edgar_rag/_prompt.py`](backend/src/edgar_rag/_prompt.py) |
-| Front-end | Started: the research workspace streams answers, opens each `[Sn]` citation's passage (or, for a Financial Facts Source, its table of figures) in the Sources tab of one right-hand side panel, which an always-visible toolbar (a rail on the right edge, buttons above the question box on a narrow screen) opens and closes (every retrieved Source numbered S1…SN, cited and uncited styled apart; each headed by a readable line, its Filing details a click away, its passage tables shown as tables, a "passage skipped" break only where retrieval skipped text, and glued sentences spaced), and whose Calendar tab shows a Company Calendar for each Company the conversation asked about (fiscal quarters and years beside their calendar months, Filings and revenue, banded by calendar year), shows each answer's short direct answer first with its full analysis a click away, and, once the answer is complete, its Coverage Gaps as Coverage notes below it, one "Sources" disclosure (its Query Scope chips and the Sections it was searched in, its cited Sources, then a collapsed "Also retrieved (N)"), and up to three follow-up questions built from templates, and offers the six starter prompts above a line saying how many Companies are covered. The conversation is kept for the browser session, and a "New conversation" control clears it. A "How it works" page opens with a plain overview (how an answer is made, a searchable "What's covered" whose company cards show each Company's Company Calendar and fill in a question about it in the workspace, the shipped run's headline numbers in plain words and the known limits), then, under "Technical details", shows the architecture, the evaluation scoreboard on Golden Set version 2 (from `make eval-export`: the shipped run beside its Control Run, the Arms' screen, the Arm and settings comparisons and the generator comparison), the Brief Suite's verdicts, the holdout run beside dev and the Corpus coverage grid. | [`frontend/`](frontend/), [Running the full stack](#running-the-full-stack) |
-| Example request, ready to execute | Done: `make ask` answers a question from the command line, and `backend/scripts/chat.sh` calls the chat API with `curl` | [Asking a question](#asking-a-question), [The chat API](#the-chat-api) |
-| Notes on how quality was evaluated | Done: Financial Facts extraction is measured against SEC XBRL data, the Golden Set of 30 labelled questions is written and checked against the Corpus, the retrieval harness scores the FTS5 Arm on it (hit@10 0.88 on dev), three challenger Arms (dense, hybrid, cross-encoder re-ranking) were measured in both harnesses and none beat FTS5 ([ADR 0008](docs/adr/0008-fts5-stays-the-shipped-arm.md)), the generation harness scores the answers in code and with the Jev judge, four generators (`gpt-6-luna`, `gpt-6.1-sol`, Claude Sonnet 5.5, Claude Opus 5.5) were compared on dev and none beat `gpt-6-luna` at 20 to 65 times its cost ([ADR 0009](docs/adr/0009-gpt-6-luna-stays-the-generator.md)), 16 chunk sizes and context budgets were scored on dev and none beat 600-token chunks and a 32k budget ([ADR 0010](docs/adr/0010-chunk-size-and-context-budget.md)), and the final configuration was run once on the holdout split (Fact Recall 0.67, Faithfulness 0.95, Coverage Gaps stated 1.00, every citation valid and hit@10 0.90, at $0.0030 per answer). Golden Set version 2 (60 dev and 20 holdout cases) confirmed every choice on dev under one-sided thresholds with a Control Run, and its holdout, scored once on that setup, is in line with dev (Fact Recall 0.74, Faithfulness 0.95, hit@10 0.89, at $0.0028 per answer). | [`docs/evaluation.md`](docs/evaluation.md), [`docs/findings.md`](docs/findings.md) (findings 21–24), notebook analysis 7, [`docs/golden-set.md`](docs/golden-set.md) |
-| Presentation: value case and future state | Drafted, awaiting the developer's review: eight slides (the Client's problem, the value case, the demo hand-off, the holdout numbers, how the choices were made, risks and limits, the future state), each linking the documents its numbers come from; a test checks every figure on a slide is in one of them | [`docs/deck.md`](docs/deck.md), [The slide deck](#the-slide-deck) |
-| Documented assumptions and decisions | Done for the EDA | [`docs/findings.md`](docs/findings.md), [`docs/assumptions.md`](docs/assumptions.md), [`docs/adr/`](docs/adr/) |
+| README with setup and run instructions | Done: setup, the `make` commands and how to run each part | [Setup](#setup) |
+| Indexing and retrieval code | Done: the index, the Query Scope rules, cited Sources, Financial Facts and Coverage Gaps | [`backend/src/edgar_rag/`](backend/src/edgar_rag/), [Design](#design) |
+| Log of prompt iterations | Done: v1 to v15, each with what changed and why | [`docs/prompt-iterations.md`](docs/prompt-iterations.md) |
+| Final prompt template | Done: v15 | [The Answer Call's prompt](#the-answer-calls-prompt), [`_prompt.py`](backend/src/edgar_rag/_prompt.py) |
+| Front-end | Done: the research workspace, with cited Sources, the Company Calendar and "How it works" | [`frontend/`](frontend/), [Running the full stack](#running-the-full-stack) |
+| Example request, ready to execute | Done: `make ask` and the `curl` script `backend/scripts/chat.sh` | [Asking a question](#asking-a-question), [The chat API](#the-chat-api) |
+| Notes on how quality was evaluated | Done: retrieval and answers scored on a labelled Golden Set, with the results at a glance | [`docs/evaluation.md`](docs/evaluation.md), [`docs/golden-set.md`](docs/golden-set.md) |
+| Presentation: value case and future state | Done: a short deck in plain language, every figure checked by a test | [`docs/deck.md`](docs/deck.md), [The slide deck](#the-slide-deck) |
+| Documented assumptions and decisions | Done: the assumptions, the EDA findings and the ADRs | [`docs/assumptions.md`](docs/assumptions.md), [`docs/findings.md`](docs/findings.md), [`docs/adr/`](docs/adr/) |
 
 ## What the EDA found
 
@@ -33,7 +46,7 @@ The full write-up, each entry as Finding → Implication → Design decision, is
 
 ## Design
 
-The planned flow for one question, following the [recommendations for the retrieval phase](docs/findings.md#recommendations-for-the-retrieval-phase):
+The flow for one question, following the [recommendations for the retrieval phase](docs/findings.md#recommendations-for-the-retrieval-phase):
 
 ```
 question
@@ -54,7 +67,7 @@ question
 
 The index is built once from the Corpus. Every chunk carries its Filing ID, Company, Sector, Form Type, Report Period, Fiscal Period, Section and Item, so the answer can cite exactly where each claim comes from and say plainly when the data can't support a question.
 
-Key decisions so far:
+Key decisions:
 
 - **One API call per question, strictly: the Answer Call.** Local models inside retrieval (a local embedding model, a cross-encoder re-ranker) are allowed because they make no request; a hosted embedding call is not (the stricter reading, accepted on 2026-10-17). Query parsing is rule-based, which rules out text-to-SQL.
 - **Answers come only from the Corpus.** The curated Sector table is the only outside data that can affect an answer, and it is disclosed. SEC XBRL data is used only to measure extraction accuracy, never to answer.
