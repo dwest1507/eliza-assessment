@@ -94,9 +94,12 @@ QUESTION_TYPES = (
     "outlook",
     "missing_company",
     "stale_filing",
+    "overview",
 )
 """`risk` covers risk comparisons across Companies and single-Company risk questions,
-including the Legal Proceedings and Market Risk Sections."""
+including the Legal Proceedings and Market Risk Sections. `overview` is a broad question
+naming Companies and no topic ("Compare Coke and Pepsi"), which the Overview route
+answers from each one's latest Business, MD&A and Risk Factors."""
 
 COVERAGE_GAP_KINDS = (
     "snapshot_trend",

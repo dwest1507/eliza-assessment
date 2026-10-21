@@ -49,6 +49,21 @@ def sector_index(tmp_path_factory):
     return build_index(filings, tmp_path_factory.mktemp("sector_index") / "edgar_rag.sqlite")
 
 
+# The Companies of "Compare Coke and Pepsi", an Overview route question: Coca-Cola, whose
+# latest MD&A is in a 10-Q after its latest 10-K, and PepsiCo, whose latest Filing is its
+# 10-K. Only Filings from mid-2024 on, which hold both latest 10-Ks.
+OVERVIEW_TICKERS = {"KO", "PEP"}
+
+
+@pytest.fixture(scope="session")
+def overview_index(tmp_path_factory):
+    since = date(2024, 6, 30)
+    filings = [
+        f for f in load_corpus() if f.ticker in OVERVIEW_TICKERS and f.report_period >= since
+    ]
+    return build_index(filings, tmp_path_factory.mktemp("overview_index") / "edgar_rag.sqlite")
+
+
 # The Coverage Gap Companies the shared index leaves out: General Electric, whose only
 # Filing is GE Capital's FY2014 10-K (a stale Filing of a different legal entity), and
 # Bank of America, a Snapshot Company that a missing peer (Wells Fargo) is compared with.

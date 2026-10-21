@@ -45,7 +45,19 @@ Retrieval applies the Query Scope's Companies and time window as hard filters be
 Company whose ranked chunks run out before its share is spent passes the rest to the
 Companies still retrieving, shared evenly among them, and a chunk too large for what is
 left of a Company's share is skipped for the next one rather than ending its retrieval.
-Risk pointers count against a Company's share first.
+Risk pointers count against a Company's share first. When every Company's ranked chunks
+have run out with budget left, it is filled from the planned Sections' chunks the ranking
+left out, in document order (each Section's opening chunks first, the most recent Filing
+first), shared evenly as before: one Company's outlook ("Tesla's outlook for 2026") reads
+its whole MD&A when it fits. A plan whose ranked chunks fill the budget is unchanged, and
+a Filing searched whole is never filled, since it opens with its cover page.
+
+A question naming Companies and no topic ("Compare Coke and Pepsi", "How is JP Morgan
+doing?"), no Section hint, no change and no time phrase but "latest", takes the Overview
+route: each Company's latest Business, MD&A and Risk Factors (each from the latest Filing
+holding it with text), filled in document order with no ranking. A question naming no
+Company that asks for no change and names no time phrase reads the latest Filings, as a
+risk question does.
 
 A Section hint is a preference: each Filing in the window is searched in the hinted
 Sections, or whole when every one of them is missing or a stub (finding 14). A hint may plan several
@@ -132,6 +144,7 @@ from edgar_rag._facts import FactNote, FactRow
 from edgar_rag._prompt import HISTORY_MAX_TOKENS, HISTORY_TURNS, PROMPT_VERSION, render
 from edgar_rag._query_scope import (
     LATEST,
+    OVERVIEW_SECTIONS,
     RISK_FACTORS,
     MissingCompany,
     ScopeCompany,
@@ -302,13 +315,15 @@ class QueryScope:
     """The Sector phrases the question uses, each with the Sector table rows and the
     Companies it resolved to, so the answer and the front-end can name them."""
     time_window: TimeWindow
-    """The window each Company's Filings are filtered to. A risk, cybersecurity or
-    dependence or outlook question that names no time phrase and no Fiscal Period a Filing
-    covers gets the latest window."""
+    """The window each Company's Filings are filtered to. A risk, cybersecurity,
+    dependence, outlook or Overview question, and a question naming no Company that asks
+    for no change, gets the latest window when it names no time phrase and no Fiscal
+    Period a Filing covers."""
     sections: tuple[str, ...]
     """The Sections the question's hints plan, preferred over the rest of each Filing
     (a cybersecurity question plans Cybersecurity, Risk Factors and MD&A, a legal
-    proceedings question Legal Proceedings and Financial Statements)."""
+    proceedings question Legal Proceedings and Financial Statements). On the Overview
+    route, a question naming no topic, they are Business, MD&A and Risk Factors."""
     filings: tuple[ScopeFiling, ...]
     """The named Companies' Filings inside the window, by Company and then oldest
     first. A question naming no Company searches every Company's window."""
@@ -554,21 +569,28 @@ def prepare_answer_context(
         )
         who = inherited.companies_from
         companies, sector_phrases, missing = who.companies, who.sector_phrases, who.missing
-        sections = inherited.sections_from.sections
+        # A question naming Companies and no topic ("Compare Coke and Pepsi") takes the
+        # Overview route: each Company's latest Business, MD&A and Risk Factors.
+        overview = inherited.overview
+        sections = OVERVIEW_SECTIONS if overview else inherited.sections_from.sections
         periods = inherited.period_from.periods
-        # A risk, cybersecurity, dependence or outlook question that names no time phrase
-        # and no Fiscal Period a Filing covers reads the latest Filings. A future year
+        # The question as retrieval reads it: its own words, plus the words of the
+        # message whose topic it inherits ("And what about Microsoft?").
+        focus = "\n".join(n.text for n in inherited.asked)
+        # A risk, cybersecurity, dependence, outlook or Overview question, and a question
+        # naming no Company that asks for no change, reads the latest Filings when it
+        # names no time phrase and no Fiscal Period a Filing covers. A future year
         # ("Tesla's outlook for 2026") covers none.
         latest_route = (
-            reads_latest_filings(inherited.sections_from.text) or inherited.sections_from.outlook
+            reads_latest_filings(inherited.sections_from.text)
+            or inherited.sections_from.outlook
+            or overview
+            or not (companies or is_change_question(focus))
         )
         covered = set(periods) - set(future_periods(periods, companies or known))
         window = inherited.period_from.window or (
             LATEST if latest_route and not covered else TimeWindow("all")
         )
-        # The question as retrieval reads it: its own words, plus the words of the
-        # message whose topic it inherits ("And what about Microsoft?").
-        focus = "\n".join(n.text for n in inherited.asked)
         everything = _filings(db, [c.ticker for c in companies] or None)
         left_out = stale_filings_left_out(
             "\n".join(dict.fromkeys([who.text, question])),
@@ -610,14 +632,20 @@ def prepare_answer_context(
         # topic may be held to Companies of some Sectors (`_topics`).
         added = {c.ticker: added_terms(focus, c.sector) for c in companies}
         added[None] = added_terms(focus, None)
+        search = (
+            _Search(focus, None)  # ranked by position alone
+            if overview
+            else _Search(focus, terms, ranker, every_word if every_word != terms else None, added)
+        )
         text_sources, searched = _sources(
             db,
             scope,
             filings,
-            _Search(focus, terms, ranker, every_word if every_word != terms else None, added),
+            search,
             context_budget,
             explicit=bool(left_out),
             first_number=len(fact_sources) + 1,
+            overview=overview,
         )
         sources = fact_sources + text_sources
         scope = replace(scope, searched=searched)
@@ -874,12 +902,18 @@ def _sources(
     context_budget: int,
     explicit: bool = False,
     first_number: int = 1,
+    overview: bool = False,
 ) -> tuple[tuple[Source, ...], tuple[SearchedPlace, ...]]:
     """The numbered Sources for the Query Scope, and the places searched for them.
     `filings` holds the Filings retrieval may use; with `explicit`, some were left out
     (a stale Filing), so retrieval is held to the Filings listed even when the scope
     would otherwise search anywhere. A question that names only Companies missing from
-    the Corpus gets no Sources and searches nowhere."""
+    the Corpus gets no Sources and searches nowhere. On the Overview route each Company
+    is searched in the latest Filing holding each planned Section, and only filled.
+
+    When every Company's ranked chunks run out before the budget does, what is left is
+    filled from the planned Sections' unmatched chunks in document order (`_fill`), so a
+    plan whose matches fill the budget is unchanged."""
     tickers: list[str | None] = [c.ticker for c in scope.companies]
     if not tickers:
         if scope.missing_companies:
@@ -900,18 +934,28 @@ def _sources(
         plan = _plan(db, scope, windowed)
         if explicit and plan.places is None:
             plan = _Plan(places=[(f.filing_id, None) for f in windowed], pointers=[])
+        if overview:
+            plan = _latest_of_each_section(plan, windowed)
         owner = {f.filing_id: f.ticker for f in windowed}
         places = plan.places if plan.places is not None else [(f.filing_id, None) for f in windowed]
         searched += [SearchedPlace(owner[f], f, section) for f, section in places]
+        candidates = _candidates(
+            scope, _ranked(db, ticker, search.for_company(ticker), plan.places)
+        )
         retrievals.append(
             _Retrieval(
-                candidates=_without_near_duplicates(
-                    _candidates(db, scope, ticker, search.for_company(ticker), plan)
-                ),
+                candidates=_without_near_duplicates(candidates),
                 pointers=_pointer_rows(db, plan.pointers),
+                fill=lambda plan=plan, candidates=candidates: _fill(db, scope, plan, candidates),
             )
         )
-    _spend(retrievals, context_budget)
+    _spend(retrievals, [context_budget // len(retrievals)] * len(retrievals))
+    left = context_budget - sum(r.spent for r in retrievals)
+    if left > 0 and all(r.ran_out for r in retrievals):
+        for retrieval in retrievals:
+            retrieval.candidates += retrieval.fill()
+        each, rest = divmod(left, len(retrievals))
+        _spend(retrievals, [r.spent + each + (n < rest) for n, r in enumerate(retrievals)])
     sources: list[Source] = []
     for retrieval in retrievals:
         sources += _group(
@@ -930,6 +974,9 @@ class _Retrieval:
     taken: set[int] = field(default_factory=set)
     """The positions in `candidates` of the chunks taken."""
     spent: int = 0
+    fill: Callable[[], list[_Row]] = list
+    """The planned Sections' unmatched chunks in document order, to add when every
+    Company's ranked chunks have run out with budget left."""
 
     def __post_init__(self) -> None:
         # Risk pointers count against the budget first.
@@ -945,22 +992,27 @@ class _Retrieval:
                 self.taken.add(i)
         return len(self.taken) == len(self.candidates)
 
+    @property
+    def ran_out(self) -> bool:
+        """Whether every candidate is taken."""
+        return len(self.taken) == len(self.candidates)
+
     def chosen(self) -> list[_Row]:
         """The candidates taken, best first."""
         return [row for i, row in enumerate(self.candidates) if i in self.taken]
 
 
-def _spend(retrievals: Sequence[_Retrieval], context_budget: int) -> None:
-    """Spend the context budget on the Companies' candidates.
+def _spend(retrievals: Sequence[_Retrieval], shares: list[int]) -> None:
+    """Spend the context budget on the Companies' candidates, each Company starting with
+    its share (an even share of the budget, risk pointers counted against it first).
 
-    Each Company starts with an even share. A Company whose candidates run out before
-    its share is spent gives the unspent tokens to the Companies still retrieving,
-    shared evenly among them (any remainder to the first named), and they take more,
-    until no Company runs out with tokens to spare or none is left retrieving.
+    A Company whose candidates run out before its share is spent gives the unspent
+    tokens to the Companies still retrieving, shared evenly among them (any remainder to
+    the first named), and they take more, until no Company runs out with tokens to spare
+    or none is left retrieving.
     """
     if not retrievals:
         return
-    shares = [context_budget // len(retrievals)] * len(retrievals)
     retrieving = list(range(len(retrievals)))
     while retrieving:
         unspent, still = 0, []
@@ -975,6 +1027,60 @@ def _spend(retrievals: Sequence[_Retrieval], context_budget: int) -> None:
         each, rest = divmod(unspent, len(retrieving))
         for n, i in enumerate(retrieving):
             shares[i] += each + (n < rest)
+
+
+def _latest_of_each_section(plan: _Plan, filings: Sequence[ScopeFiling]) -> _Plan:
+    """The Overview route's plan: for each Company and planned Section, only the latest
+    Filing holding it with text. A Filing searched whole is dropped, since the route
+    reads Sections in document order, and a whole Filing opens with its cover page."""
+    filing = {f.filing_id: f for f in filings}
+    latest: dict[tuple[str, str], tuple[str, str | None]] = {}
+    for place in plan.places or []:
+        filing_id, section = place
+        if section is None:
+            continue
+        key = (filing[filing_id].ticker, section)
+        if key not in latest or (
+            filing[filing_id].report_period > filing[latest[key][0]].report_period
+        ):
+            latest[key] = place
+    kept = set(latest.values())
+    return replace(plan, places=[p for p in plan.places or [] if p in kept])
+
+
+def _fill(
+    db: sqlite3.Connection, scope: QueryScope, plan: _Plan, ranked: Sequence[_Candidate]
+) -> list[_Row]:
+    """The planned Sections' chunks the ranking left out, in document order, without
+    near-duplicates of each other or of the ranked chunks.
+
+    Document order is each Section's opening chunks first: every planned Section's first
+    chunk, then every Section's second, and so on, the most recent Filing first and then
+    the Sections in the order the plan names them. In one Section of one Filing it is
+    plain document order. A Filing searched whole, or anywhere, is not filled: it opens
+    with its cover page.
+    """
+    places = [(f, s) for f, s in plan.places or [] if s is not None]
+    if not places:
+        return []
+    order = {section: n for n, section in enumerate(scope.sections)}
+    ranked_ids = {c.row["id"] for c in ranked}
+    keys: dict[int, tuple[int, int, int]] = {}
+    for filing_id, section in places:
+        rows = db.execute(
+            "SELECT id, report_period FROM filing_chunks "
+            "WHERE filing_id = ? AND section = ? AND kind != 'risk_pointer' ORDER BY ordinal",
+            (filing_id, section),
+        ).fetchall()
+        for position, row in enumerate(rows):
+            recency = -int(row["report_period"].replace("-", ""))
+            key = (position, recency, order.get(section, len(order)))
+            if row["id"] not in ranked_ids:
+                keys[row["id"]] = min(keys.get(row["id"], key), key)
+    ids = sorted(keys, key=lambda i: (keys[i], i))[:_CANDIDATES_PER_COMPANY]
+    filled = _candidates(scope, _listings(db, ids, plan.places))
+    kept = _without_near_duplicates([*ranked, *filled])
+    return [row for row in kept if row["id"] in keys]
 
 
 def _pointer_rows(db: sqlite3.Connection, pointers: list[tuple[str, str]]) -> list[sqlite3.Row]:
@@ -1000,21 +1106,14 @@ def _ranked(
     pointers ("no material changes since the 10-K") are cited by the risk route but
     never ranked (finding 16). The ranking is `bm25()`'s, or the search's ranker's."""
     if search.terms is None or places == []:
-        return []
+        return []  # nothing to rank: the Overview route, or a question with no terms
     company_filter = "AND c.ticker = :ticker" if ticker else ""
-    place_filter = listing_filter = ""
+    place_filter = ""
     if places is not None:
-        db.execute("CREATE TEMP TABLE IF NOT EXISTS places (filing_id TEXT, section TEXT)")
-        db.execute("DELETE FROM temp.places")
-        db.executemany("INSERT INTO temp.places VALUES (?, ?)", places)
-        in_place = """EXISTS (
-            SELECT 1 FROM temp.places p
-            WHERE p.filing_id = f.filing_id AND (p.section IS NULL OR p.section = f.section)
-        )"""
+        _set_places(db, places)
         place_filter = (
-            f"AND EXISTS (SELECT 1 FROM chunk_filings f WHERE f.chunk_id = c.id AND {in_place})"
+            f"AND EXISTS (SELECT 1 FROM chunk_filings f WHERE f.chunk_id = c.id AND {_IN_PLACE})"
         )
-        listing_filter = f"AND {in_place}"
     params = {"ticker": ticker, "limit": _CANDIDATES_PER_COMPANY}
 
     def matching(terms: str) -> list[int]:
@@ -1054,11 +1153,35 @@ def _ranked(
         allowed = set(eligible)
         ranked = search.ranker(RankRequest(search.question, ticker, eligible, tuple(ranking)))
         ranking = [i for i in dict.fromkeys(ranked) if i in allowed][:_CANDIDATES_PER_COMPANY]
+    return _listings(db, ranking, places)
+
+
+_IN_PLACE = """EXISTS (
+    SELECT 1 FROM temp.places p
+    WHERE p.filing_id = f.filing_id AND (p.section IS NULL OR p.section = f.section)
+)"""
+"""Whether the listing `f` is in one of the planned places (`_set_places`)."""
+
+
+def _set_places(db: sqlite3.Connection, places: list[tuple[str, str | None]]) -> None:
+    """Write the planned places to the connection's `temp.places` table."""
+    db.execute("CREATE TEMP TABLE IF NOT EXISTS places (filing_id TEXT, section TEXT)")
+    db.execute("DELETE FROM temp.places")
+    db.executemany("INSERT INTO temp.places VALUES (?, ?)", places)
+
+
+def _listings(
+    db: sqlite3.Connection, ids: Sequence[int], places: list[tuple[str, str | None]] | None
+) -> list[sqlite3.Row]:
+    """Each chunk's listing in every planned Filing it appears in (anywhere, for `None`
+    places), in the order of `ids` and then most recent first."""
+    listing_filter = ""
+    if places is not None:
+        _set_places(db, places)
+        listing_filter = f"AND {_IN_PLACE}"
     db.execute("CREATE TEMP TABLE IF NOT EXISTS ranking (id INTEGER, position INTEGER)")
     db.execute("DELETE FROM temp.ranking")
-    db.executemany(
-        "INSERT INTO temp.ranking VALUES (?, ?)", ((i, n) for n, i in enumerate(ranking))
-    )
+    db.executemany("INSERT INTO temp.ranking VALUES (?, ?)", ((i, n) for n, i in enumerate(ids)))
     return db.execute(
         f"""
         SELECT f.*
@@ -1086,19 +1209,14 @@ class _Candidate:
     """Higher is preferred: from a period the question names, then more recent."""
 
 
-def _candidates(
-    db: sqlite3.Connection,
-    scope: QueryScope,
-    ticker: str | None,
-    search: _Search,
-    plan: _Plan,
-) -> list[_Candidate]:
-    """The ranked chunks, each cited from one Filing: on the change route the Filing it
-    holds new paragraphs in, otherwise a Filing of a period the question names, else the
-    most recent. On the change route the chunks holding new paragraphs rank first, cut
-    down to those paragraphs."""
-    listings: dict[int, list[sqlite3.Row]] = {}
-    for row in _ranked(db, ticker, search, plan.places):
+def _candidates(scope: QueryScope, rows: Sequence[_Row]) -> list[_Candidate]:
+    """The ranked chunks (`rows`, one per planned Filing a chunk appears in, best chunk
+    first), each cited from one Filing: on the change route the Filing it holds new
+    paragraphs in, otherwise a Filing of a period the question names, else the most
+    recent. On the change route the chunks holding new paragraphs rank first, cut down
+    to those paragraphs."""
+    listings: dict[int, list[_Row]] = {}
+    for row in rows:
         listings.setdefault(row["id"], []).append(row)
     candidates = []
     for rows in listings.values():

@@ -32,6 +32,12 @@ Rule-based, with no LLM (ADR 0003). It recognises:
   "forecast", "going forward", "next year", or "for" a year later than the latest Fiscal
   Period of the Companies named, set an MD&A hint. Guidance itself stays a Coverage Gap
   (`_coverage`): the route changes where retrieval looks, not what the answer may claim.
+- The Overview route (`InheritedScope.overview`): a question naming Companies and no
+  topic word ("Compare Coke and Pepsi", "How is JP Morgan doing?"), once stopwords,
+  Company names and generic words are set aside, with no Section hint, no change and no
+  time phrase but "latest", plans each Company's latest Business, MD&A and Risk Factors
+  (`OVERVIEW_SECTIONS`). A follow-up with no topic of its own takes it only when no
+  earlier message it inherits a topic from named one.
 - Named periods: "FY2024", "fiscal 2024", "Q2 FY2025", or a bare year ("in 2023"), read
   as Fiscal Periods. A named period decides which copy of a repeated passage is cited.
 - Change questions: "how has it changed", "how did that change", "what is new", "how
@@ -493,6 +499,10 @@ def _cut(m: re.Match[str]) -> list[tuple[int, int]]:
 
 RISK_FACTORS = "Risk Factors"
 
+OVERVIEW_SECTIONS = ("Business", "MD&A", RISK_FACTORS)
+"""The Sections the Overview route plans: a question naming Companies and no topic is
+answered from each one's latest Business, MD&A and Risk Factors."""
+
 # Asking what Companies do about their risks: the answer is in Business (risk management,
 # compliance, strategy) and the MD&A, not only in Risk Factors.
 _RESPONSE = re.compile(
@@ -843,6 +853,19 @@ class InheritedScope:
         if self.topic_from is self.latest:
             return (self.latest,)
         return (self.topic_from, self.latest)
+
+    @property
+    def overview(self) -> bool:
+        """Whether the question takes the Overview route: no message retrieval reads
+        names a topic word (once generic words are set aside, as Company names and
+        stopwords already are), no Section hint applies, it asks for no change, and it
+        names no time phrase but "latest" and no Fiscal Period ("Compare Coke and Pepsi",
+        "How is JP Morgan doing?")."""
+        if any(_names_topic(w for w in n.words if w not in _GENERIC) for n in self.asked):
+            return False
+        if self.sections_from.sections or any(is_change_question(n.text) for n in self.asked):
+            return False
+        return not self.period_from.periods and self.period_from.window in (None, LATEST)
 
     def metrics(self, segment_names: Iterable[str]) -> tuple[tuple[str, ...], tuple[str, ...]]:
         """The metrics and segments of the most recent message naming a metric (see

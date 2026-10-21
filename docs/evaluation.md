@@ -2,7 +2,7 @@
 
 ## At a glance
 
-- **What was measured.** Whether the passages that state the answer reach the one Answer Call (the [retrieval harness](#retrieval-harness), no LLM), and whether the answers are right (the [generation harness](#generation-harness)): the share of the facts a good answer must state that it states (Fact Recall), the share of cited claims their cited passage supports (Faithfulness, both judged by a pinned Jev), and, in code, valid citations, exact figures and gaps acknowledged. On [Golden Set](golden-set.md) version 2: 80 labelled questions, 60 dev for every choice and 20 holdout kept for the final check.
+- **What was measured.** Whether the passages that state the answer reach the one Answer Call (the [retrieval harness](#retrieval-harness), no LLM), and whether the answers are right (the [generation harness](#generation-harness)): the share of the facts a good answer must state that it states (Fact Recall), the share of cited claims their cited passage supports (Faithfulness, both judged by a pinned Jev), and, in code, valid citations, exact figures and gaps acknowledged. On [Golden Set](golden-set.md) version 2: 82 labelled questions, 62 dev for every choice and 20 holdout kept for the final check.
 - **The headline numbers**, the shipped setup (`fts5`, `gpt-6-luna`, prompt v7) on the 20 holdout cases ([The holdout on the new retrieval](#the-holdout-on-the-new-retrieval-130-2026-10-18)):
   - Fact Recall 0.78 and Faithfulness 0.94 (0.72 and 0.95 on the 60 dev cases);
   - citations valid 0.95, figures exact 0.90, Coverage Gaps stated 1.00;
@@ -11,7 +11,7 @@
 - **The main limits.**
   - Small samples: on 20 cases one case moves a share by 0.05, so the numbers are directional, not exact rates.
   - No human labels: Claude drafted the Golden Set's facts and labelled the judge study, so Jev is checked against Claude, not a person ([The judge study's results](#the-judge-studys-results)). A blind 30-item [human check](#the-human-check) is drawn and waits for the developer's labels.
-  - Prompt v15 ([ADR 0016](adr/0016-coverage-gaps-shown-by-the-product.md)) is not scored yet: these numbers are prompt v7's until the final round, and Coverage Gaps stated is measured differently from v15.
+  - Prompt v15 ([ADR 0016](adr/0016-coverage-gaps-shown-by-the-product.md)) and the [Overview route and document-order fill](#the-overview-route-the-document-order-fill-and-latest-for-open-questions-145-2026-10-20) are not scored on answers yet: these numbers are prompt v7's until the final round, and Coverage Gaps stated is measured differently from v15.
   - A computed figure fails the figure check by design, and a follow-up that changes topic without naming a Company inherits the earlier one ([ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md)).
 
 The rest of these notes is the full history: each harness's method, then every run in the order it was made.
@@ -1687,6 +1687,43 @@ Part of spec #136. A Source's chunks used to be joined with the gap marker `[…
 - **The ranking metrics are unchanged** (hit@k, recall@k and MRR are measured on the ranked chunks, which the join leaves alone), so the Floors do not move and are not re-recorded: `make eval-gate` passes at hit@10 0.965, recall@10 0.879 and MRR 0.771.
 - **The Answer Call reads about 3% less text** for the same chunks: the overlap shown once takes Source text from 27,431 to 26,589 tokens per Answer Context. The budget still counts each chunk whole, so the freed tokens go unused rather than buying more chunks.
 - **The comparisons stand as recorded.** The Arm and settings comparisons ([#127](#the-arm-comparison-on-the-new-retrieval-127-2026-10-18), [#129](#the-settings-comparison-on-the-new-retrieval-129-2026-10-18)) were decided on #126's retrieval reports and are not rerun. `retrieval-dev.json` was run again on all six Arms and exported with `make eval-export`, so the "How it works" page shows these numbers.
+
+### The Overview route, the document-order fill and "latest" for open questions (#145, 2026-10-20)
+
+Part of spec #136, delivering #133. Three kinds of broad question got thin or stale evidence:
+
+- **The Overview route.** A question naming Companies and no topic word, once stopwords, Company names and generic words are set aside ("Compare Coke and Pepsi", "How is JP Morgan doing?"), had no search terms, so it got no text Sources and the answer said it had no evidence. Now, when it also names no Section hint, no change and no time phrase but "latest", it plans each Company's latest Business, MD&A and Risk Factors: for each Section, the latest Filing holding it with text (Coca-Cola's latest MD&A is in its Q3 FY2025 10-Q, its latest Business and Risk Factors in its FY2024 10-K). Nothing is ranked: each Section is read from its opening chunks, within the Company's share of the budget, every Arm alike. JPMorgan's Item 7 only points to the annual report's financial review, which the Corpus holds after Item 15, in Other, so the plan keeps its Business and Risk Factors (the stub rule) and its financial results stay out of reach. A follow-up with no topic of its own inherits one as before, and takes the route only when no earlier message named one.
+- **The document-order fill (#133).** When every Company's ranked chunks have run out with budget left (after #124's passing), the rest is filled from the planned Sections' chunks the ranking left out, in document order: every planned Section's first chunk, then every Section's second, the most recent Filing first, without near-duplicates of each other or of the ranked chunks, shared evenly across the Companies as before. A plan whose ranked chunks fill the budget is unchanged, and a Filing searched whole is never filled, since it opens with its cover page. The Overview route is this fill with nothing ranked. "Tesla's outlook for 2026" now reads its 10-K's whole MD&A (14,405 tokens of Sources, where `fts5` matched 2,631).
+- **"Latest" for open questions.** A question naming no Company that asks for no change and names no time phrase or covered Fiscal Period reads each Company's latest Filings, as a risk question does, instead of every Filing back to 2022. Change questions and named periods keep their windows ([assumption 6](assumptions.md#6-latest-and-the-last-two-years-are-measured-from-each-companys-latest-filing)). No dev case is such a question, so this changes no number below.
+
+Golden Set version 2 gains two dev cases, added after the split was frozen and so `dev` by its rule, labelled against the Corpus like every case, in a new question type, `overview` ([The frozen split](golden-set.md#the-frozen-split)): `overview-ko-pep-compare` and `overview-jpm-doing`. The frozen holdout list is untouched, and the holdout is not scored again.
+
+`make eval-retrieval` on dev, before (#137's code) and after (free), the shipped `fts5` Arm, on the 60 cases both runs share:
+
+| Question type | all facts before | after | must-state before | after | Source tokens before | after |
+|---|---|---|---|---|---|---|
+| risk | 294 of 340 | 297 | 96 of 110 | 96 | 25,907 | 28,154 |
+| sector | 290 of 313 | 292 | 105 of 111 | 106 | 29,997 | 30,305 |
+| figure_trend | 104 of 159 | 104 | 34 of 55 | 34 | 32,200 | 32,200 |
+| outlook | 49 of 61 | 57 | 18 of 21 | 21 | 13,122 | 18,845 |
+| missing_company | 39 of 39 | 39 | 10 of 10 | 10 | 21,042 | 22,391 |
+| stale_filing | 22 of 27 | 25 | 8 of 9 | 9 | 18,314 | 18,939 |
+| **all** | **798 of 939 (85.0%)** | **814 (86.7%)** | **271 of 316 (85.8%)** | **276 (87.3%)** | **26,589** | **28,070** |
+
+With the two new cases, 62 in all (59 scored): `overview` reaches 12 of 17 facts and 5 of 7 must-state facts at 29,738 Source tokens, where before the route it would have reached none, and `fts5` reaches 826 of 956 facts and 281 of 323 must-state facts.
+
+| | hit@10 | recall@10 | MRR | Sources | Source tokens | must-state planning misses | must-state ranking misses |
+|---|---|---|---|---|---|---|---|
+| before (#137), 57 scored | 0.965 | 0.879 | 0.771 | 11.5 | 26,589 | 3 | 42 |
+| after, 57 scored | 0.965 | 0.879 | 0.771 | 11.5 | 28,070 | 3 | 37 |
+| after, with the new cases, 59 scored | 0.966 | 0.877 | 0.779 | 11.3 | 28,126 | 5 | 37 |
+
+- **16 facts gained and none lost, 5 of them must-state, so the step is kept.** 15 of the 60 cases change, every one through the fill: the outlooks (`outlook-tsla-2026` 6 → 12 of 12 facts, Robotaxi's business potential among them; `outlook-nflx-growth` gains its two MD&A must-state facts, continued content investment and the WBD closing), `stale-gecc-main-risks` (13 → 16 of 16), `followup-pharma-to-oil-majors` (ExxonMobil's must-state Low Carbon Solutions business and a detail), and a detail each in `followup-tsla-risk-change`, `risk-wmt-tgt-legal-proceedings` and `risk-ba-commercial-production`. The ranking metrics don't move, since the fill only adds chunks after the ranked ones. #122's open question, the one-Company outlook that left most of the budget unused, is closed: the outlook cases' Sources rise from 13,122 to 18,845 tokens.
+- **No Arm loses a fact.** `rerank` gains the same 16 (788 → 804). The embedding Arms rank every chunk inside the plan, so they never run out and are unchanged: `dense` 775, `hybrid` 836, `dense-local` 754, `hybrid-local` 821. With the new cases every Arm reaches the same 12 overview facts, since the route ranks nothing: `fts5` 826, `hybrid` 848, `hybrid-local` 833, `rerank` 816, `dense` 787 and `dense-local` 766 of 956. The screen still keeps `hybrid-local`, now indistinguishable from `fts5` (32 gained, 25 lost, p behind = 0.855; it was ahead at p = 0.004), and drops `rerank` (5 / 15, p behind = 0.021) and `dense-local`.
+- **The two new cases.** `overview-ko-pep-compare` reaches 9 of 10 facts, all 4 must-state (what each Company is, how Coca-Cola reaches consumers, PepsiCo's six segments); its one miss, Coca-Cola's unit case volume, is deep in a 10-Q MD&A that opens with accounting policies. `overview-jpm-doing` reaches 3 of 7, 1 of 3 must-state: its 2025 net income and revenue are in the financial review in Other, which the plan doesn't search, so they are the 2 new planning misses. They are labelled as a good answer would need them, not as the route reaches them.
+- **More text is not always more facts.** `risk-aapl-legal-proceedings` goes from 4,557 to 25,493 Source tokens with no fact gained, and `risk-wmt-tgt-legal-proceedings` from 22,337 to 30,725 for one detail. Whether the extra passages crowd the answers, as #120's and #129's did, needs a generation run (#132); none is run here.
+- **The Floors are re-recorded** (`make eval-floors`, ADR 0014) since the scored cases rise from 57 to 59; their values don't move (hit@10 0.96, recall@10 0.87, MRR 0.77).
+- **The comparisons stand as recorded.** The Arm and settings comparisons were decided on #126's retrieval and are not rerun. `retrieval-dev.json` was run again on all six Arms with the new cases (free: the route ranks nothing, so the hosted Arms needed no new question embedding) and exported with `make eval-export`, so the "How it works" page shows these numbers.
 
 ### Order and cost
 

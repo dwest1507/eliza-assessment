@@ -3,8 +3,8 @@
   "split": "dev",
   "goldenSet": {
     "version": 2,
-    "cases": 80,
-    "splitCases": 60
+    "cases": 82,
+    "splitCases": 62
   },
   "thresholds": {
     "aheadP": 0.1,
@@ -18,7 +18,7 @@
       10,
       20
     ],
-    "scoredCases": 57,
+    "scoredCases": 59,
     "unscored": [
       "stale-ge-recent-performance",
       "missing-citigroup",
@@ -30,24 +30,24 @@
         "shipped": true,
         "shippable": true,
         "overall": {
-          "cases": 57,
+          "cases": 59,
           "hitAt": {
-            "5": 0.9298245614035088,
-            "10": 0.9649122807017544,
-            "20": 0.9824561403508771
+            "5": 0.9322033898305084,
+            "10": 0.9661016949152542,
+            "20": 0.9830508474576272
           },
           "recallAt": {
-            "5": 0.8075605680868838,
-            "10": 0.8786549707602339,
-            "20": 0.9154970760233918
+            "5": 0.8056093623890234,
+            "10": 0.8771186440677966,
+            "20": 0.9127118644067796
           },
-          "hitAll": 0.9824561403508771,
-          "recallAll": 0.9447368421052632,
-          "mrr": 0.7709899749373433,
-          "meanSources": 11.456140350877194,
-          "facts": 939,
-          "factsReached": 798,
-          "meanSourceTokens": 26588.754385964912
+          "hitAll": 0.9830508474576272,
+          "recallAll": 0.9409604519774011,
+          "mrr": 0.7787530266343825,
+          "meanSources": 11.254237288135593,
+          "facts": 956,
+          "factsReached": 826,
+          "meanSourceTokens": 28126.118644067796
         },
         "byType": [
           {
@@ -90,7 +90,7 @@
             "meanSources": 2.6666666666666665,
             "facts": 39,
             "factsReached": 39,
-            "meanSourceTokens": 21041.666666666668
+            "meanSourceTokens": 22390.666666666668
           },
           {
             "questionType": "outlook",
@@ -110,8 +110,29 @@
             "mrr": 0.8888888888888888,
             "meanSources": 1.3333333333333333,
             "facts": 61,
-            "factsReached": 49,
-            "meanSourceTokens": 13121.5
+            "factsReached": 57,
+            "meanSourceTokens": 18845.166666666668
+          },
+          {
+            "questionType": "overview",
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.75,
+              "10": 0.8333333333333333,
+              "20": 0.8333333333333333
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.8333333333333333,
+            "mrr": 1.0,
+            "meanSources": 5.5,
+            "facts": 17,
+            "factsReached": 12,
+            "meanSourceTokens": 29737.5
           },
           {
             "questionType": "risk",
@@ -131,8 +152,8 @@
             "mrr": 0.8101851851851852,
             "meanSources": 8.833333333333334,
             "facts": 340,
-            "factsReached": 294,
-            "meanSourceTokens": 25906.833333333332
+            "factsReached": 297,
+            "meanSourceTokens": 28154.277777777777
           },
           {
             "questionType": "sector",
@@ -152,8 +173,8 @@
             "mrr": 0.8452380952380952,
             "meanSources": 9.071428571428571,
             "facts": 313,
-            "factsReached": 290,
-            "meanSourceTokens": 29996.928571428572
+            "factsReached": 292,
+            "meanSourceTokens": 30305.14285714286
           },
           {
             "questionType": "stale_filing",
@@ -173,8 +194,8 @@
             "mrr": 1.0,
             "meanSources": 4.5,
             "facts": 27,
-            "factsReached": 22,
-            "meanSourceTokens": 18314.5
+            "factsReached": 25,
+            "meanSourceTokens": 18939.0
           }
         ],
         "missed": [
@@ -187,24 +208,24 @@
         "shipped": false,
         "shippable": false,
         "overall": {
-          "cases": 57,
+          "cases": 59,
           "hitAt": {
-            "5": 0.8771929824561403,
-            "10": 0.9298245614035088,
-            "20": 0.9649122807017544
+            "5": 0.8813559322033898,
+            "10": 0.9322033898305084,
+            "20": 0.9661016949152542
           },
           "recallAt": {
-            "5": 0.7496658312447786,
-            "10": 0.8362573099415205,
-            "20": 0.902046783625731
+            "5": 0.7496771589991928,
+            "10": 0.8361581920903955,
+            "20": 0.8997175141242938
           },
-          "hitAll": 0.9824561403508771,
-          "recallAll": 0.9330409356725146,
-          "mrr": 0.7699580948806956,
-          "meanSources": 10.421052631578947,
-          "facts": 939,
-          "factsReached": 775,
-          "meanSourceTokens": 28605.052631578947
+          "hitAll": 0.9830508474576272,
+          "recallAll": 0.9296610169491526,
+          "mrr": 0.7777561255627059,
+          "meanSources": 10.254237288135593,
+          "facts": 956,
+          "factsReached": 787,
+          "meanSourceTokens": 28643.4406779661
         },
         "byType": [
           {
@@ -269,6 +290,27 @@
             "facts": 61,
             "factsReached": 54,
             "meanSourceTokens": 21945.0
+          },
+          {
+            "questionType": "overview",
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.75,
+              "10": 0.8333333333333333,
+              "20": 0.8333333333333333
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.8333333333333333,
+            "mrr": 1.0,
+            "meanSources": 5.5,
+            "facts": 17,
+            "factsReached": 12,
+            "meanSourceTokens": 29737.5
           },
           {
             "questionType": "risk",
@@ -346,24 +388,24 @@
         "shipped": false,
         "shippable": false,
         "overall": {
-          "cases": 57,
+          "cases": 59,
           "hitAt": {
-            "5": 0.8947368421052632,
-            "10": 0.9473684210526315,
-            "20": 0.9649122807017544
+            "5": 0.8983050847457628,
+            "10": 0.9491525423728814,
+            "20": 0.9661016949152542
           },
           "recallAt": {
-            "5": 0.8052213868003342,
-            "10": 0.8771929824561403,
-            "20": 0.9096491228070176
+            "5": 0.8033494753833736,
+            "10": 0.8757062146892655,
+            "20": 0.9070621468926553
           },
-          "hitAll": 0.9824561403508771,
-          "recallAll": 0.9330409356725146,
-          "mrr": 0.7876882863724969,
-          "meanSources": 10.982456140350877,
-          "facts": 939,
-          "factsReached": 836,
-          "meanSourceTokens": 28618.36842105263
+          "hitAll": 0.9830508474576272,
+          "recallAll": 0.9296610169491526,
+          "mrr": 0.7948852936141071,
+          "meanSources": 10.796610169491526,
+          "facts": 956,
+          "factsReached": 848,
+          "meanSourceTokens": 28656.305084745763
         },
         "byType": [
           {
@@ -428,6 +470,27 @@
             "facts": 61,
             "factsReached": 57,
             "meanSourceTokens": 21983.166666666668
+          },
+          {
+            "questionType": "overview",
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.75,
+              "10": 0.8333333333333333,
+              "20": 0.8333333333333333
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.8333333333333333,
+            "mrr": 1.0,
+            "meanSources": 5.5,
+            "facts": 17,
+            "factsReached": 12,
+            "meanSourceTokens": 29737.5
           },
           {
             "questionType": "risk",
@@ -504,24 +567,24 @@
         "shipped": false,
         "shippable": true,
         "overall": {
-          "cases": 57,
+          "cases": 59,
           "hitAt": {
-            "5": 0.9298245614035088,
-            "10": 0.9473684210526315,
-            "20": 0.9824561403508771
+            "5": 0.9322033898305084,
+            "10": 0.9491525423728814,
+            "20": 0.9830508474576272
           },
           "recallAt": {
-            "5": 0.7815371762740184,
-            "10": 0.8728070175438597,
-            "20": 0.9111111111111111
+            "5": 0.7804681194511703,
+            "10": 0.8714689265536723,
+            "20": 0.9084745762711864
           },
-          "hitAll": 0.9824561403508771,
-          "recallAll": 0.9447368421052632,
-          "mrr": 0.8015809726336043,
-          "meanSources": 11.350877192982455,
-          "facts": 939,
-          "factsReached": 788,
-          "meanSourceTokens": 26549.035087719298
+          "hitAll": 0.9830508474576272,
+          "recallAll": 0.9409604519774011,
+          "mrr": 0.8083070413578889,
+          "meanSources": 11.152542372881356,
+          "facts": 956,
+          "factsReached": 816,
+          "meanSourceTokens": 28087.745762711864
         },
         "byType": [
           {
@@ -564,7 +627,7 @@
             "meanSources": 2.6666666666666665,
             "facts": 39,
             "factsReached": 39,
-            "meanSourceTokens": 21041.666666666668
+            "meanSourceTokens": 22390.666666666668
           },
           {
             "questionType": "outlook",
@@ -584,8 +647,29 @@
             "mrr": 0.8888888888888888,
             "meanSources": 1.3333333333333333,
             "facts": 61,
-            "factsReached": 49,
-            "meanSourceTokens": 13121.5
+            "factsReached": 57,
+            "meanSourceTokens": 18845.166666666668
+          },
+          {
+            "questionType": "overview",
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.75,
+              "10": 0.8333333333333333,
+              "20": 0.8333333333333333
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.8333333333333333,
+            "mrr": 1.0,
+            "meanSources": 5.5,
+            "facts": 17,
+            "factsReached": 12,
+            "meanSourceTokens": 29737.5
           },
           {
             "questionType": "risk",
@@ -605,8 +689,8 @@
             "mrr": 0.8333333333333334,
             "meanSources": 8.777777777777779,
             "facts": 340,
-            "factsReached": 294,
-            "meanSourceTokens": 25884.222222222223
+            "factsReached": 297,
+            "meanSourceTokens": 28131.666666666668
           },
           {
             "questionType": "sector",
@@ -626,8 +710,8 @@
             "mrr": 0.880952380952381,
             "meanSources": 8.714285714285714,
             "facts": 313,
-            "factsReached": 280,
-            "meanSourceTokens": 29864.285714285714
+            "factsReached": 282,
+            "meanSourceTokens": 30172.5
           },
           {
             "questionType": "stale_filing",
@@ -647,8 +731,8 @@
             "mrr": 1.0,
             "meanSources": 4.5,
             "facts": 27,
-            "factsReached": 22,
-            "meanSourceTokens": 18314.5
+            "factsReached": 25,
+            "meanSourceTokens": 18939.0
           }
         ],
         "missed": [
@@ -662,24 +746,24 @@
         "shipped": false,
         "shippable": true,
         "overall": {
-          "cases": 57,
+          "cases": 59,
           "hitAt": {
-            "5": 0.8947368421052632,
-            "10": 0.9473684210526315,
-            "20": 0.9824561403508771
+            "5": 0.8983050847457628,
+            "10": 0.9491525423728814,
+            "20": 0.9830508474576272
           },
           "recallAt": {
-            "5": 0.7493734335839599,
-            "10": 0.852046783625731,
-            "20": 0.9052631578947369
+            "5": 0.7493946731234867,
+            "10": 0.8514124293785311,
+            "20": 0.9028248587570621
           },
-          "hitAll": 0.9824561403508771,
-          "recallAll": 0.9345029239766082,
-          "mrr": 0.7636904761904761,
-          "meanSources": 10.789473684210526,
-          "facts": 939,
-          "factsReached": 754,
-          "meanSourceTokens": 28619.122807017542
+          "hitAll": 0.9830508474576272,
+          "recallAll": 0.9310734463276835,
+          "mrr": 0.7717009685230024,
+          "meanSources": 10.610169491525424,
+          "facts": 956,
+          "factsReached": 766,
+          "meanSourceTokens": 28657.033898305086
         },
         "byType": [
           {
@@ -744,6 +828,27 @@
             "facts": 61,
             "factsReached": 55,
             "meanSourceTokens": 22008.833333333332
+          },
+          {
+            "questionType": "overview",
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.75,
+              "10": 0.8333333333333333,
+              "20": 0.8333333333333333
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.8333333333333333,
+            "mrr": 1.0,
+            "meanSources": 5.5,
+            "facts": 17,
+            "factsReached": 12,
+            "meanSourceTokens": 29737.5
           },
           {
             "questionType": "risk",
@@ -820,24 +925,24 @@
         "shipped": false,
         "shippable": true,
         "overall": {
-          "cases": 57,
+          "cases": 59,
           "hitAt": {
-            "5": 0.9122807017543859,
-            "10": 0.9649122807017544,
-            "20": 0.9824561403508771
+            "5": 0.9152542372881356,
+            "10": 0.9661016949152542,
+            "20": 0.9830508474576272
           },
           "recallAt": {
-            "5": 0.7663324979114453,
-            "10": 0.881578947368421,
-            "20": 0.9111111111111111
+            "5": 0.7657788539144472,
+            "10": 0.8799435028248587,
+            "20": 0.9084745762711864
           },
-          "hitAll": 0.9824561403508771,
-          "recallAll": 0.9403508771929825,
-          "mrr": 0.7931495405179616,
-          "meanSources": 10.807017543859649,
-          "facts": 939,
-          "factsReached": 821,
-          "meanSourceTokens": 28615.947368421053
+          "hitAll": 0.9830508474576272,
+          "recallAll": 0.9367231638418079,
+          "mrr": 0.8001614205004035,
+          "meanSources": 10.627118644067796,
+          "facts": 956,
+          "factsReached": 833,
+          "meanSourceTokens": 28653.966101694914
         },
         "byType": [
           {
@@ -902,6 +1007,27 @@
             "facts": 61,
             "factsReached": 57,
             "meanSourceTokens": 21955.833333333332
+          },
+          {
+            "questionType": "overview",
+            "cases": 2,
+            "hitAt": {
+              "5": 1.0,
+              "10": 1.0,
+              "20": 1.0
+            },
+            "recallAt": {
+              "5": 0.75,
+              "10": 0.8333333333333333,
+              "20": 0.8333333333333333
+            },
+            "hitAll": 1.0,
+            "recallAll": 0.8333333333333333,
+            "mrr": 1.0,
+            "meanSources": 5.5,
+            "facts": 17,
+            "factsReached": 12,
+            "meanSourceTokens": 29737.5
           },
           {
             "questionType": "risk",
@@ -978,31 +1104,31 @@
         "arm": "dense",
         "shippedArm": "fts5",
         "metric": "evidence reached",
-        "facts": 939,
-        "challengerOnly": 60,
-        "shippedOnly": 83,
-        "pValue": 0.06543081048244809,
-        "pAhead": 0.9778135327438957,
-        "pBehind": 0.032715405241224044,
+        "facts": 956,
+        "challengerOnly": 45,
+        "shippedOnly": 84,
+        "pValue": 0.000755890272456333,
+        "pAhead": 0.9998064224330225,
+        "pBehind": 0.0003779451362281665,
         "verdict": "behind"
       },
       {
         "arm": "hybrid",
         "shippedArm": "fts5",
         "metric": "evidence reached",
-        "facts": 939,
-        "challengerOnly": 55,
-        "shippedOnly": 17,
-        "pValue": 8.14003082672391e-06,
-        "pAhead": 4.070015413361955e-06,
-        "pBehind": 0.9999988013400952,
+        "facts": 956,
+        "challengerOnly": 40,
+        "shippedOnly": 18,
+        "pValue": 0.005354859650800292,
+        "pAhead": 0.002677429825400146,
+        "pBehind": 0.9988837241900286,
         "verdict": "ahead"
       },
       {
         "arm": "rerank",
         "shippedArm": "fts5",
         "metric": "evidence reached",
-        "facts": 939,
+        "facts": 956,
         "challengerOnly": 5,
         "shippedOnly": 15,
         "pValue": 0.04138946533203125,
@@ -1014,25 +1140,25 @@
         "arm": "dense-local",
         "shippedArm": "fts5",
         "metric": "evidence reached",
-        "facts": 939,
-        "challengerOnly": 54,
-        "shippedOnly": 98,
-        "pValue": 0.00044853172550527446,
-        "pAhead": 0.9998812865399102,
-        "pBehind": 0.00022426586275263723,
+        "facts": 956,
+        "challengerOnly": 39,
+        "shippedOnly": 99,
+        "pValue": 3.3742641422521276e-07,
+        "pAhead": 0.9999999355759169,
+        "pBehind": 1.6871320711260638e-07,
         "verdict": "behind"
       },
       {
         "arm": "hybrid-local",
         "shippedArm": "fts5",
         "metric": "evidence reached",
-        "facts": 939,
-        "challengerOnly": 47,
-        "shippedOnly": 24,
-        "pValue": 0.008554538502693427,
-        "pAhead": 0.004277269251346714,
-        "pBehind": 0.9979674419376807,
-        "verdict": "ahead"
+        "facts": 956,
+        "challengerOnly": 32,
+        "shippedOnly": 25,
+        "pValue": 0.42704285650325524,
+        "pAhead": 0.21352142825162762,
+        "pBehind": 0.8553781264454897,
+        "verdict": "indistinguishable"
       }
     ],
     "screen": {
@@ -1044,30 +1170,30 @@
       "candidates": [
         {
           "name": "dense",
-          "facts": 939,
-          "factsReached": 775,
-          "gained": 60,
-          "lost": 83,
-          "pBehind": 0.032715405241224044,
+          "facts": 956,
+          "factsReached": 787,
+          "gained": 45,
+          "lost": 84,
+          "pBehind": 0.0003779451362281665,
           "kept": false,
           "shippable": false,
-          "reason": "dropped: makes an API call at query time, so it can't ship (behind on Evidence Reached, p behind = 0.033; available if the one-call limit is lifted)"
+          "reason": "dropped: makes an API call at query time, so it can't ship (behind on Evidence Reached, p behind = 0.000; available if the one-call limit is lifted)"
         },
         {
           "name": "hybrid",
-          "facts": 939,
-          "factsReached": 836,
-          "gained": 55,
-          "lost": 17,
-          "pBehind": 0.9999988013400952,
+          "facts": 956,
+          "factsReached": 848,
+          "gained": 40,
+          "lost": 18,
+          "pBehind": 0.9988837241900286,
           "kept": false,
           "shippable": false,
-          "reason": "dropped: makes an API call at query time, so it can't ship (ahead on Evidence Reached, p behind = 1.000; available if the one-call limit is lifted)"
+          "reason": "dropped: makes an API call at query time, so it can't ship (ahead on Evidence Reached, p behind = 0.999; available if the one-call limit is lifted)"
         },
         {
           "name": "rerank",
-          "facts": 939,
-          "factsReached": 788,
+          "facts": 956,
+          "factsReached": 816,
           "gained": 5,
           "lost": 15,
           "pBehind": 0.020694732666015625,
@@ -1077,25 +1203,25 @@
         },
         {
           "name": "dense-local",
-          "facts": 939,
-          "factsReached": 754,
-          "gained": 54,
-          "lost": 98,
-          "pBehind": 0.00022426586275263723,
+          "facts": 956,
+          "factsReached": 766,
+          "gained": 39,
+          "lost": 99,
+          "pBehind": 1.6871320711260638e-07,
           "kept": false,
           "shippable": true,
           "reason": "dropped: behind on Evidence Reached (p behind = 0.000 < 0.20)"
         },
         {
           "name": "hybrid-local",
-          "facts": 939,
-          "factsReached": 821,
-          "gained": 47,
-          "lost": 24,
-          "pBehind": 0.9979674419376807,
+          "facts": 956,
+          "factsReached": 833,
+          "gained": 32,
+          "lost": 25,
+          "pBehind": 0.8553781264454897,
           "kept": true,
           "shippable": true,
-          "reason": "kept: not behind (p behind = 0.998), 1 of 1 not behind on Evidence Reached"
+          "reason": "kept: not behind (p behind = 0.855), 1 of 1 not behind on Evidence Reached"
         }
       ]
     }

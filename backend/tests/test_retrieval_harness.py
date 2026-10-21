@@ -657,7 +657,7 @@ def test_version_2_is_the_default_and_version_1_runs_by_naming_its_file(index, t
 
     report = json.loads(default.read_text())
     assert report["golden_set_version"] == 2
-    assert len(report["case_ids"] + report["unscored"]) == 60
+    assert len(report["case_ids"] + report["unscored"]) == len(load_golden_set().split("dev"))
     report = json.loads(version_1.read_text())
     assert report["golden_set_version"] == 1
     assert len(report["case_ids"] + report["unscored"]) == len(

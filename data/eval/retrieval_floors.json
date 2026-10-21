@@ -2,7 +2,7 @@
   "split": "dev",
   "arm": "fts5",
   "golden_set_version": 2,
-  "cases": 57,
+  "cases": 59,
   "chunk_tokens": 600,
   "context_budget": 32000,
   "floors": {

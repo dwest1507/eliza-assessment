@@ -374,14 +374,6 @@ def test_fts5_syntax_in_a_question_is_searched_as_words(index):
     assert context.sources
 
 
-def test_a_question_with_no_search_terms_gets_no_sources(index):
-    context = _ask(index, "What about Apple?")
-
-    assert [c.ticker for c in context.query_scope.companies] == ["AAPL"]
-    assert context.sources == ()
-    assert "No Sources were found" in context.messages[1].content
-
-
 def test_earlier_turns_are_rendered_as_context_without_their_source_tags(index):
     conversation = [
         Message("user", BRIEF_QUESTION),
@@ -946,6 +938,207 @@ def test_an_outlook_question_still_states_that_guidance_is_not_in_the_filings(in
     assert [(g.kind, g.companies) for g in context.coverage_gaps] == [("no_guidance", ("TSLA",))]
 
 
+# --- The Overview route and the document-order fill -----------------------------------
+
+OVERVIEW = ("Business", "MD&A", "Risk Factors")
+
+
+def _text_places(context, ticker):
+    return {
+        (s.filing_id, s.section) for s in context.sources if s.kind == "text" and s.ticker == ticker
+    }
+
+
+def _opening_chunk(index, filing_id, section):
+    rows = [
+        c
+        for c in _chunks(index, filing_id=filing_id, section=section)
+        if c["kind"] != "risk_pointer"
+    ]
+    return min(rows, key=lambda c: c["ordinal"])
+
+
+def _source_tokens(context):
+    return sum(count_tokens(s.text) for s in context.sources)
+
+
+def test_a_question_with_no_topic_reads_each_companys_latest_business_mdna_and_risk_factors(
+    overview_index,
+):
+    context = _ask(overview_index, "Compare Coke and Pepsi")
+
+    scope = context.query_scope
+    assert [c.ticker for c in scope.companies] == ["KO", "PEP"]
+    assert scope.sections == OVERVIEW
+    assert scope.time_window.label == "latest"
+    # Coca-Cola's latest Business and Risk Factors are in its FY2024 10-K; its latest MD&A
+    # is in its Q3 FY2025 10-Q, whose Risk Factors only point back to the 10-K.
+    planned = [
+        ("KO", "KO_10-K_2024-12-31", "Business"),
+        ("KO", "KO_10-K_2024-12-31", "Risk Factors"),
+        ("KO", "KO_10-Q_2025-09-26", "MD&A"),
+        ("PEP", "PEP_10-K_2025-12-27", "Business"),
+        ("PEP", "PEP_10-K_2025-12-27", "MD&A"),
+        ("PEP", "PEP_10-K_2025-12-27", "Risk Factors"),
+    ]
+    assert _searched(context) == planned
+    for _, filing_id, section in planned:
+        (source,) = [s for s in context.sources if (s.filing_id, s.section) == (filing_id, section)]
+        # Opening chunks first: each Section's Source starts where the Section does.
+        assert source.text.startswith(_opening_chunk(overview_index, filing_id, section)["text"])
+    assert {s.section for s in context.sources if s.ticker == "KO"} == set(OVERVIEW)
+    assert {s.section for s in context.sources if s.ticker == "PEP"} == set(OVERVIEW)
+    assert CONTEXT_BUDGET_TOKENS * 0.8 <= _source_tokens(context) <= CONTEXT_BUDGET_TOKENS
+
+
+def test_a_broad_question_about_jpmorgan_reads_its_latest_10k(index):
+    context = _ask(index, "How is JP Morgan doing?")
+
+    assert [c.ticker for c in context.query_scope.companies] == ["JPM"]
+    assert context.query_scope.sections == OVERVIEW
+    # JPMorgan's Item 7 is a pointer to the annual report's financial review (a stub),
+    # so its latest 10-K is read in Business and Risk Factors.
+    assert _searched(context) == [
+        ("JPM", "JPM_10-K_2025-12-31", "Business"),
+        ("JPM", "JPM_10-K_2025-12-31", "Risk Factors"),
+    ]
+    assert _text_places(context, "JPM") == {
+        ("JPM_10-K_2025-12-31", "Business"),
+        ("JPM_10-K_2025-12-31", "Risk Factors"),
+    }
+    for source in context.sources:
+        assert source.text.startswith(
+            _opening_chunk(index, source.filing_id, source.section)["text"]
+        )
+    assert CONTEXT_BUDGET_TOKENS * 0.8 <= _source_tokens(context) <= CONTEXT_BUDGET_TOKENS
+
+
+def test_a_question_naming_only_a_company_takes_the_overview_route(index):
+    context = _ask(index, "What about Apple?")
+
+    assert context.query_scope.sections == OVERVIEW
+    # The Q1 FY2026 10-Q's Risk Factors only point back to the 10-K: cited as they stand.
+    assert _text_places(context, "AAPL") == {
+        ("AAPL_10-K_2025-09-27", "Business"),
+        ("AAPL_10-K_2025-09-27", "Risk Factors"),
+        ("AAPL_10-Q_2025-12-27", "MD&A"),
+        ("AAPL_10-Q_2025-12-27", "Risk Factors"),
+    }
+    assert "No Sources were found" not in context.messages[1].content
+
+
+def test_a_follow_up_switching_company_after_an_overview_takes_it_too(index):
+    conversation = [
+        Message("user", "How is JP Morgan doing?"),
+        Message("assistant", "JPMorgan is the largest US bank [S1]."),
+        Message("user", "And what about Tesla?"),
+    ]
+
+    context = prepare_answer_context(conversation, index)
+
+    assert [c.ticker for c in context.query_scope.companies] == ["TSLA"]
+    assert context.query_scope.sections == OVERVIEW
+    assert {s.section for s in context.sources} == set(OVERVIEW)
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "What does Apple say about tariffs?",
+        "How has Apple changed?",
+        "How was Apple doing over the last two years?",
+        "How was Apple doing in fiscal 2024?",
+        "What are Apple's main risks?",
+    ],
+)
+def test_a_topic_a_change_a_time_phrase_or_a_hint_keeps_its_own_route(index, question):
+    assert _ask(index, question).query_scope.sections != OVERVIEW
+
+
+TESLA_OUTLOOK_2026 = "What is Tesla's outlook for 2026?"
+
+
+def test_a_plan_whose_matches_fall_short_fills_its_budget_in_document_order(index):
+    mdna = _mdna(index)
+    first, fourth = sorted(mdna)[:3], mdna[sorted(mdna)[3]]
+    matched = mdna[max(mdna)]
+    budget = matched["tokens"] + sum(mdna[o]["tokens"] for o in first)
+
+    source = _retrieve(index, [matched], context_budget=budget)
+
+    # The one matched chunk, the MD&A's last, leaves the budget unspent: the MD&A's
+    # opening chunks fill it, and the fourth no longer fits.
+    assert source.text.startswith(mdna[first[0]]["text"])
+    assert source.text.endswith(GAP + matched["text"])
+    assert source.text.count(GAP) == 1
+    middle = len(fourth["text"]) // 2
+    assert fourth["text"][middle : middle + 100] not in source.text
+
+
+def test_a_one_company_outlook_reads_the_whole_mdna_when_it_fits(index):
+    context = _ask(index, TESLA_OUTLOOK_2026)
+
+    (source,) = [s for s in context.sources if s.kind == "text"]
+    assert (source.filing_id, source.section) == (TESLA_10K, "MD&A")
+    # The MD&A (about 15,500 tokens) fits in the budget, so every chunk of it is read.
+    assert GAP not in source.text
+    assert all(c["text"][-100:] in source.text for c in _mdna(index).values())
+
+
+def test_a_plan_whose_matches_fill_the_budget_is_not_filled(index):
+    mdna = _mdna(index)
+    ranked = [mdna[o] for o in sorted(mdna, reverse=True)]
+    # The best five fill the budget but for one token: the sixth does not fit, so the
+    # plan's matches have not run out and nothing is added.
+    budget = sum(c["tokens"] for c in ranked[:5]) + 1
+
+    source = _retrieve(index, ranked, context_budget=budget)
+
+    assert source.text.startswith(ranked[4]["text"])
+    assert ranked[5]["text"][:100] not in source.text
+    assert mdna[sorted(mdna)[0]]["text"] not in source.text
+
+
+# --- Open questions ------------------------------------------------------------------------
+
+
+def _latest_filings(indexed_filings):
+    by_ticker = {}
+    for f in sorted(indexed_filings, key=lambda f: f.report_period):
+        by_ticker.setdefault(f.ticker, []).append(f)
+    latest = set()
+    for own in by_ticker.values():
+        annual = [i for i, f in enumerate(own) if f.form_type == "10-K"]
+        latest |= {f.filing_id for f in own[annual[-1] :]}
+    return latest
+
+
+def test_a_question_naming_no_company_and_no_time_phrase_reads_the_latest_filings(
+    index, indexed_filings
+):
+    context = _ask(index, "Which companies discuss Gigafactory production?")
+
+    assert context.query_scope.time_window.label == "latest"
+    assert {p.filing_id for p in context.query_scope.searched} == _latest_filings(indexed_filings)
+    assert any(s.ticker == "TSLA" for s in context.sources)
+    assert {s.filing_id for s in context.sources} <= _latest_filings(indexed_filings)
+
+
+@pytest.mark.parametrize(
+    ("question", "label"),
+    [
+        ("How has Gigafactory production changed?", "all Filings"),
+        (
+            "Which companies discussed Gigafactory production over the last two years?",
+            "last 2 years",
+        ),
+        ("Which companies discussed Gigafactory production in fiscal 2023?", "all Filings"),
+    ],
+)
+def test_an_open_change_question_or_named_period_keeps_its_window(index, question, label):
+    assert _ask(index, question).query_scope.time_window.label == label
+
+
 # --- The places searched -----------------------------------------------------------------
 
 
@@ -989,7 +1182,7 @@ def test_a_question_naming_no_company_records_every_filing_searched_whole(index,
     context = _ask(index, "Which companies discuss artificial intelligence?")
 
     assert {(p.filing_id, p.section) for p in context.query_scope.searched} == {
-        (f.filing_id, None) for f in indexed_filings
+        (f, None) for f in _latest_filings(indexed_filings)
     }
 
 
@@ -1127,8 +1320,11 @@ def _mdna(index):
 
 
 def _retrieve(index, rows, **kwargs):
-    """The Source citing Tesla's MD&A when retrieval ranks exactly these chunks."""
+    """The Source citing Tesla's MD&A when retrieval ranks exactly these chunks, within a
+    budget they fill unless another is given (a budget they leave unspent is filled from
+    the rest of the MD&A)."""
     ids = [r["id"] for r in rows]
+    kwargs.setdefault("context_budget", sum(r["tokens"] for r in rows))
     context = prepare_answer_context(
         [Message("user", TESLA_OUTLOOK)],
         index,
