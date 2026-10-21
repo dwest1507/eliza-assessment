@@ -4,7 +4,7 @@ One fixed template with a version constant. Every change to it bumps `PROMPT_VER
 and gets an entry in `docs/prompt-iterations.md`, with what changed, why, and its dev
 scores before and after.
 
-v15 renders, in this order: the system rules, the Coverage Gaps (which the product shows
+v16 renders, in this order: the system rules, the Coverage Gaps (which the product shows
 below the answer as Coverage notes, and the answer acknowledges only where one leaves
 part of the question unanswered, ADR 0016), the Companies each Sector phrase or curated
 Company Group resolved to (when the question uses one), each Company's coverage (its
@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     from edgar_rag._query_scope import ScopeFiling
     from edgar_rag.retrieval import Message, QueryScope, Source
 
-PROMPT_VERSION = "v15"
+PROMPT_VERSION = "v16"
 
 HISTORY_TURNS = 10
 HISTORY_MAX_TOKENS = 6_000
@@ -80,10 +80,16 @@ filing's period, and the difference is shown below your answer. Never fill a gap
 general knowledge: say nothing more about a company the filings do not include, never \
 use a filing listed as left out, and never present MD&A commentary as the company's \
 guidance.
-8. Be specific. For each point, give the particulars the Sources state: the laws and \
-programs, products, people, places, dates, amounts and percentages they name, in their \
-words. Never reduce them to broad categories ("regulatory risk", "pricing pressure") \
-that would fit any company.
+8. State each point in full. For each point, give first the Company's own claim as its \
+Source states it, including its own assessment of how material the matter is, or of its \
+outlook; then the particulars the Source names: the laws and programs, products, people, \
+places, courts, counts, dates, amounts and percentages, and its words of scale ("a \
+substantial number", "large numbers", "very few"), in its words. When a Source says \
+something has happened, is happening, or has happened in the past and may again, say \
+that it has; never reduce it to "could" or "may". Attribute each claim to the one \
+Company whose Source states it, and never pool Companies in one claim. Give each text \
+Source at least one cited point. Never replace the particulars with a category that \
+would fit any company ("regulatory risk", "pricing pressure").
 
 Structure the answer for a PE analyst, in Markdown:
 - Open with the direct answer: two or three sentences of prose that answer the question \

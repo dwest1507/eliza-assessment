@@ -330,7 +330,7 @@ def test_a_source_carries_its_citation_metadata_and_passage(index):
 def test_the_prompt_renders_rules_sources_and_question(index):
     context = _ask(index, BRIEF_QUESTION)
 
-    assert context.prompt_version == PROMPT_VERSION == "v15"
+    assert context.prompt_version == PROMPT_VERSION == "v16"
     system, user = context.messages
     assert system.role == "system"
     assert "[S3]" in system.content and "general knowledge" in system.content
@@ -2254,6 +2254,40 @@ def test_the_prompt_asks_for_a_comparison_table_whenever_companies_are_compared(
         "comparison table first"
     ) in rules
     assert "then each Company's detail under its own heading" in rules
+
+
+def test_the_prompt_asks_for_each_point_in_full(index):
+    """Prompt v16 (#161): rule 8 asks for the Company's own claim, then the particulars
+    its Source names, in the Source's tense, attributed to one Company, with every text
+    Source cited at least once; the ban on broad categories no longer bans the claim."""
+    context = _ask(index, BRIEF_QUESTION)
+    rules = " ".join(context.messages[0].content.split())
+
+    assert PROMPT_VERSION == "v16"
+    assert "8. State each point in full." in rules
+    # The Company's own claim first, its own assessment included.
+    assert "first the Company's own claim as its Source states it" in rules
+    assert "including its own assessment of how material the matter is, or of its outlook" in (
+        rules
+    )
+    # Then the particulars, courts, counts and words of scale among them.
+    assert (
+        "then the particulars the Source names: the laws and programs, products, people, "
+        "places, courts, counts, dates, amounts and percentages"
+    ) in rules
+    assert '"a substantial number", "large numbers", "very few"' in rules
+    # The tense, stated outright.
+    assert (
+        "When a Source says something has happened, is happening, or has happened in the "
+        'past and may again, say that it has; never reduce it to "could" or "may".'
+    ) in rules
+    # One Company per claim, and every text Source drawn on.
+    assert "Attribute each claim to the one Company whose Source states it" in rules
+    assert "never pool Companies in one claim" in rules
+    assert "Give each text Source at least one cited point." in rules
+    # The ban on broad categories, kept without banning the Company's headline.
+    assert "Never replace the particulars with a category that would fit any company" in rules
+    assert "Never reduce them to broad categories" not in rules
 
 
 def test_coverage_gaps_are_worded_the_same_way_every_time(index, gap_index):
