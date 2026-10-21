@@ -37,7 +37,7 @@ Label from each item alone. Until every item here is labelled, don't open the ju
 >
 > **Coverage:** No Coverage Gaps are listed. The filings cover FY2024 and FY2025, but do not provide revenue after FY2025.
 
-LABEL F-c8534842a1 (stated / not stated):
+LABEL F-c8534842a1 (stated / not stated): stated
 
 ### 2. F-e63281185b
 
@@ -65,7 +65,7 @@ LABEL F-c8534842a1 (stated / not stated):
 >
 > Coverage Gaps: **None.** The filings do not provide a separate, updated cybersecurity risk-factor discussion in the FY2025 quarterly reports; they state that there were no material changes to the FY2024 10-K risk factors. [S2][S3][S4]
 
-LABEL F-e63281185b (stated / not stated):
+LABEL F-e63281185b (stated / not stated): stated
 
 ### 3. F-302cfcc50e
 
@@ -99,7 +99,7 @@ LABEL F-e63281185b (stated / not stated):
 >
 > **Not in the Corpus: Bristol Myers Squibb is not in the Filings provided, so this answer does not cover it.** Merck coverage is limited to one FY2024 10-K snapshot; the supplied excerpt does not establish subsequent regulatory developments or quantify the aggregate financial impact of these risks. [S1]
 
-LABEL F-302cfcc50e (stated / not stated):
+LABEL F-302cfcc50e (stated / not stated): stated
 
 ### 4. F-7754d69f34
 
@@ -135,7 +135,7 @@ LABEL F-302cfcc50e (stated / not stated):
 >
 > Coverage gap: **Periods differ**: the Companies’ latest Filings here cover different periods (Apple: 10-K FY2025, year to 2025-09-27; Tesla: 10-K FY2025, year to 2025-12-31; JPMorgan Chase: 10-K FY2025, year to 2025-12-31), so the comparison is not of the same period. The sources describe risk factors, not their likelihood, relative financial magnitude or a common quantitative ranking.
 
-LABEL F-7754d69f34 (stated / not stated):
+LABEL F-7754d69f34 (stated / not stated): not stated
 
 ### 5. F-95c6681623
 
@@ -181,7 +181,7 @@ LABEL F-7754d69f34 (stated / not stated):
 > - Gap: Bristol Myers Squibb is not in the Filings provided, so this answer does not cover it.
 > - Merck is a snapshot company, with only the FY2024 10-K (report period 2024-12-31) in scope, so no trend over time can be shown. Only the Risk Factors section was provided. The Sources do not quantify the financial effect of any of these regulatory risks.
 
-LABEL F-95c6681623 (stated / not stated):
+LABEL F-95c6681623 (stated / not stated): stated
 
 ### 6. F-8d172c8341
 
@@ -237,7 +237,7 @@ LABEL F-95c6681623 (stated / not stated):
 > ## Coverage
 > There are no listed Coverage Gaps. The Sources are excerpts, so an absence from FY2025 may reflect truncation rather than removal. The Q3 FY2025 10-Q excerpt does not list its changes [S5]. The Sources do not quantify how any risk affected financial results.
 
-LABEL F-8d172c8341 (stated / not stated):
+LABEL F-8d172c8341 (stated / not stated): stated
 
 ### 7. F-05f33ff6d6
 
@@ -281,7 +281,7 @@ LABEL F-8d172c8341 (stated / not stated):
 > - Sources used: the FY2024 10-K, the latest annual report in scope (report period 2024-12-31), plus the Q1, Q2 and Q3 FY2025 10-Qs (report periods 2025-03-31, 2025-06-30 and 2025-09-30), which only state that the risk factors are unchanged.
 > - The Sources do not give the Change Healthcare incident's financial cost, the number of people affected, or details of the cybersecurity governance disclosure (Item 1C). The excerpts do not include those items.
 
-LABEL F-05f33ff6d6 (stated / not stated):
+LABEL F-05f33ff6d6 (stated / not stated): not stated
 
 ### 8. F-1ff8dbc37d
 
@@ -307,7 +307,7 @@ LABEL F-05f33ff6d6 (stated / not stated):
 >
 > Coverage gap: periods differ—the Companies’ latest Filings here cover different periods (Apple: 10-K FY2025, year to 2025-09-27; Tesla: 10-K FY2025, year to 2025-12-31; JPMorgan Chase: 10-K FY2025, year to 2025-12-31). The sources do not provide a common quantitative measure of regulatory exposure, or enough information to compare expected regulatory costs, penalties or outcomes across the three companies. [S1] [S2] [S3] [S4]
 
-LABEL F-1ff8dbc37d (stated / not stated):
+LABEL F-1ff8dbc37d (stated / not stated): stated
 
 ### 9. F-3673bc8ee1
 
@@ -339,7 +339,7 @@ LABEL F-1ff8dbc37d (stated / not stated):
 >
 > **Coverage:** Periods differ: Apple’s latest filing here is its 10-K FY2025, year ended September 27, 2025; Tesla’s and JPMorgan Chase’s are 10-K FY2025 filings, each for the year ended December 31, 2025. [S1][S3][S4] The Sources do not quantify comparable regulatory exposure or establish a definitive measured ranking; Apple’s Q1 FY2026 10-Q provides no material risk-factor changes. [S2]
 
-LABEL F-3673bc8ee1 (stated / not stated):
+LABEL F-3673bc8ee1 (stated / not stated): stated
 
 ### 10. F-b419393ab0
 
@@ -376,7 +376,7 @@ LABEL F-3673bc8ee1 (stated / not stated):
 >   - They contain no filings from any other company, so they cannot show which other companies may have taken such charges.
 > - **What would help:** export-control charges would more likely appear in income statement notes or MD&A, for example as inventory write-downs or purchase-commitment charges. Filings from the companies of interest would be needed to answer the question.
 
-LABEL F-b419393ab0 (stated / not stated):
+LABEL F-b419393ab0 (stated / not stated): not stated
 
 ### 11. F-b1a6b40da1
 
@@ -398,7 +398,7 @@ LABEL F-b419393ab0 (stated / not stated):
 >
 > Coverage Gaps: None. The Sources still do not identify companies that took charges for the reason in the question; they provide no such charge information for Apple and include no other company. [S1][S2]
 
-LABEL F-b1a6b40da1 (stated / not stated):
+LABEL F-b1a6b40da1 (stated / not stated): not stated
 
 ### 12. F-4dc8219c33
 
@@ -456,7 +456,7 @@ LABEL F-b1a6b40da1 (stated / not stated):
 > - **Anti-corruption laws:** The Foreign Corrupt Practices Act and the UK Bribery Act [S8].
 > - **Response:** AbbVie
 
-LABEL F-4dc8219c33 (stated / not stated):
+LABEL F-4dc8219c33 (stated / not stated): not stated
 
 ### 13. F-078be9810b
 
@@ -490,7 +490,7 @@ LABEL F-4dc8219c33 (stated / not stated):
 >
 > Coverage gaps: **None.** The filings provide annual and quarterly net income figures and the commentary cited above; they do not, in the excerpts provided, give a complete quantified reconciliation of the annual net-income declines.
 
-LABEL F-078be9810b (stated / not stated):
+LABEL F-078be9810b (stated / not stated): not stated
 
 ### 14. F-59a4087f2b
 
@@ -516,7 +516,7 @@ LABEL F-078be9810b (stated / not stated):
 >
 > **Coverage Gap:** “Not in the Corpus: Bristol Myers Squibb is not in the Filings provided, so this answer does not cover it.” Merck is covered by one FY2024 10-K, so these sources cannot establish regulatory-risk developments across multiple filing periods; they also cannot describe Bristol Myers Squibb’s risks. [S1]
 
-LABEL F-59a4087f2b (stated / not stated):
+LABEL F-59a4087f2b (stated / not stated): stated
 
 ### 15. F-fbf1325c1a
 
@@ -548,7 +548,7 @@ LABEL F-59a4087f2b (stated / not stated):
 >
 > The stated coverage gap is: “Stale Filing: the only General Electric Filing is GE Capital's 10-K for FY2014 (Report Period 2014-12-31); it does not describe General Electric today, so it is cited here only as GE Capital's report for FY2014.” The cited filing is a 10-K for FY2014, report period December 31, 2014; it does not establish GE Capital’s current balance-sheet strategy or current progress against the target. [S1]
 
-LABEL F-fbf1325c1a (stated / not stated):
+LABEL F-fbf1325c1a (stated / not stated): stated
 
 ## Claim items
 
@@ -622,7 +622,7 @@ LABEL F-fbf1325c1a (stated / not stated):
 > […]
 > The Company also believes the price of its stock should reflect expectations that its cash dividend will continue at current levels or grow, and that its current share repurchase program will be fully consummated. Future dividends are subject to declaration by the Company’s Board of Directors (“Board”), and the Company’s share repurchase program does not obligate it to acquire any specific number of shares. If the Company fails to meet expectations related to future growth, profitability, dividends, share repurchases or other market expectations, the price of the Company’s stock may decline significantly, which could have a material adverse impact on investor confidence and employee retention.
 
-LABEL C-604d084016 (supported / unsupported / contradicted):
+LABEL C-604d084016 (supported / unsupported / contradicted): supported
 
 ### 2. C-d0546f83fa
 
@@ -648,7 +648,7 @@ LABEL C-604d084016 (supported / unsupported / contradicted):
 > […]
 > policy in which we irrevocably pledged that we will not initiate a lawsuit against any party for infringing our patents through activity relating to electric vehicles or related equipment for so long as such party is acting in good faith. We made this pledge in order to encourage the advancement of a common, rapidly-evolving platform for electric vehicles, thereby benefiting ourselves, other companies making electric vehicles and the world.Human Capital Resources Tesla’s ability to attract, develop and retain a talented workforce is a competitive advantage. As of December 31, 2025, our employee headcount worldwide was 134,785.We emphasize stock ownership opportunities, with 92% of employees included in total rewards packages, alongside industry-leading benefits like free counseling, paid parental leave, and comprehensive healthcare options available from day one. Hiring, evaluation, and promotion decisions are based on skills and performance, with over 29,000 employees globally advancing their careers in 2025, and 69% of managers promoted internally. Tesla fosters a culture of recognition and growth, enabling employees to contribute meaningfully from day one. Programs such as internships, military fellowships, and development pathways—like the Manufacturing Development Program and Engineering Development Program—provide skill-building and career progression. These initiatives, including Apprenticeships and START training, combine academic and hands-on learning to prepare technicians and leaders, while educational assistance programs support approximately 7,000 learners in fields like engineering and AI. Across Tesla Shanghai and APAC region, robust programming, including internships, trainee and apprenticeship programs created pathways for employees to develop. In partnership with educational partners, interns, apprentices and trainees are able to obtain skills necessary to grow their careers at Tesla. In Berlin and EMEA, educational programs, such as FlexLearn and Dual Study program provided employees the opportunity to pursue education goals. FlexLearn allows employees to further develop with tailored training that aligns with our factories. The Dual Study program combines theoretical knowledge with practical experience with graduates receiving industry related degrees. Overall, Tesla programs supported employees to develop practical training, provided mentorship, and structured transitions to fill roles in manufacturing, service, R&D, and energy sectors across the region.
 
-LABEL C-d0546f83fa (supported / unsupported / contradicted):
+LABEL C-d0546f83fa (supported / unsupported / contradicted): supported
 
 ### 3. C-51b8ef3112
 
@@ -1407,7 +1407,7 @@ LABEL C-d0546f83fa (supported / unsupported / contradicted):
 > Amount of additional collateral to be posted upon downgrade(a) | $ | 43 |  | $ | 1,038 |  |  | $ | 119 |  | $ | 1,205 |  |
 > Amount required to settle contracts with termination triggers upon downgrade(b) | 82 |  | 815 |  |  | 78 |  | 458 |  |
 
-LABEL C-51b8ef3112 (supported / unsupported / contradicted):
+LABEL C-51b8ef3112 (supported / unsupported / contradicted): unsupported
 
 ### 4. C-5587b30c6d
 

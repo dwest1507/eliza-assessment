@@ -1,6 +1,6 @@
 """The human check (spec #136): a blind 30-item sheet drawn from the judge study's
 items, which the developer labels by hand, and its score against Claude's labels and
-Jev's verdicts."""
+Jev's verdicts, of each kind whose items are all labelled."""
 
 import io
 import json
@@ -297,18 +297,37 @@ def test_the_score_reports_agreement_with_claude_and_with_jev_against_hand_compu
     assert report.fact_cutoff == 0.6
 
 
-def test_the_score_refuses_while_an_item_is_unlabelled():
+def test_a_kind_with_an_unlabelled_item_is_left_out_and_the_other_kind_is_scored():
+    from edgar_eval.human_check import LeftOut, score_human_check
+
+    # The developer labelled every fact item and three of the four claim items.
+    human = {i: h for i, h, _, _ in ROWS} | {"C-0000000006": None}
+    claude = {i: c for i, _, c, _ in ROWS}
+    jev = _jev({i: j for i, _, _, j in ROWS})
+    report = score_human_check(list(human), human, claude, jev)
+
+    assert (report.items, report.facts, report.claims) == (4, 4, 0)
+    assert report.left_out == (LeftOut(kind="claim", items=4, labelled=3),)
+    assert (report.claude.facts.agree, report.claude.facts.items) == (3, 4)
+    assert (report.claude.claims.items, report.claude.claims.share) == (0, None)
+    assert report.claude.claims.kappa is None
+    assert (report.claude.agree, report.claude.items) == (3, 4)
+    # C8's failed Jev judgment is a claim item, left out with its kind.
+    assert (report.jev.agree, report.jev.items, report.jev.failed) == (3, 4, 0)
+
+
+def test_the_score_refuses_while_no_kind_is_fully_labelled():
     from edgar_eval.human_check import score_human_check
     from edgar_eval.judge_study import Unlabelled
 
-    human = {i: h for i, h, _, _ in ROWS} | {"F-0000000002": None}
+    human = {i: h for i, h, _, _ in ROWS} | {"F-0000000002": None, "C-0000000006": None}
     claude = {i: c for i, _, c, _ in ROWS}
     jev = _jev({i: j for i, _, _, j in ROWS})
-    with pytest.raises(Unlabelled, match="1 item"):
+    with pytest.raises(Unlabelled, match="no kind"):
         score_human_check(list(human), human, claude, jev)
 
 
-def test_the_score_command_refuses_unlabelled_items_then_scores_and_writes_json(tmp_path):
+def test_the_score_command_scores_each_fully_labelled_kind_and_writes_json(tmp_path):
     from edgar_eval.human_check import main
 
     study, claude = _study()
@@ -341,12 +360,23 @@ def test_the_score_command_refuses_unlabelled_items_then_scores_and_writes_json(
     assert "unlabelled" in err.getvalue()
     assert not (tmp_path / "score.json").exists()
 
+    # Every fact item labelled, no claim item: the facts are scored, the claims left out.
+    _label(sheet, {i: claude[i] for i in drawn if i.startswith("F-")})
+    out = io.StringIO()
+    assert main(argv, out=out, err=io.StringIO()) == 0
+    saved = json.loads((tmp_path / "score.json").read_text())
+    assert (saved["items"], saved["facts"], saved["claims"]) == (15, 15, 0)
+    assert saved["left_out"] == [{"kind": "claim", "items": 15, "labelled": 0}]
+    assert saved["claude"]["agree"] == saved["claude"]["items"] == 15
+    assert "Claim items not scored: 0 of 15 labelled" in out.getvalue()
+
     # The developer labels every item as Claude did: full agreement with Claude.
     _label(sheet, {i: claude[i] for i in drawn})
     out = io.StringIO()
     assert main(argv, out=out, err=io.StringIO()) == 0
     saved = json.loads((tmp_path / "score.json").read_text())
     assert saved["claude"]["agree"] == saved["claude"]["items"] == 30
+    assert saved["left_out"] == []
     assert saved["claude"]["facts"]["kappa"] == pytest.approx(1.0)
     assert saved["jev"]["items"] == 30
     printed = out.getvalue()

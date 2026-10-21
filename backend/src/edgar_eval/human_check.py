@@ -16,9 +16,12 @@ The human check is a small blind sample of the same items for the developer to l
 - `score` reads the developer's labels, Claude's labels from the study's sheet and Jev's
   first run from the study's verdicts (`verdicts.json`, the study's measure), and reports
   the developer's agreement with each: per kind, the count, the share and Cohen's kappa,
-  and over all the items the count and share. A fact's Jev verdict is taken at
-  `FACT_CUTOFF`, from its stored probability. An item whose Jev judgment failed is left
-  out of Jev's agreement and counted. It refuses while any item is unlabelled.
+  and over all the items scored the count and share. A kind is scored only when every
+  one of its items is labelled, so that the labelled items can't be a chosen subset; a
+  kind with an item unlabelled is left out, recorded with how many of its items are
+  labelled. A fact's Jev verdict is taken at `FACT_CUTOFF`, from its stored probability.
+  An item whose Jev judgment failed is left out of Jev's agreement and counted. It
+  refuses while no kind is fully labelled.
 
 Neither command calls a provider: the draw reads the study's committed files, and the
 score its stored verdicts.
@@ -70,6 +73,7 @@ __all__ = [
     "Agreement",
     "HumanCheckScore",
     "KindAgreement",
+    "LeftOut",
     "draw_human_check",
     "main",
     "print_score",
@@ -199,13 +203,24 @@ class Agreement:
 
 
 @dataclass(frozen=True)
+class LeftOut:
+    """A kind not scored, since some of its items are unlabelled."""
+
+    kind: str
+    items: int
+    labelled: int
+
+
+@dataclass(frozen=True)
 class HumanCheckScore:
     items: int
+    """Items scored: those of every fully labelled kind."""
     facts: int
     claims: int
     fact_cutoff: float
     claude: Agreement
     jev: Agreement
+    left_out: tuple[LeftOut, ...] = ()
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -218,8 +233,9 @@ def score_human_check(
     jev: JudgeRun,
 ) -> HumanCheckScore:
     """Score the developer's labels (`human`) of the human check's items (`ids`) against
-    Claude's labels and Jev's verdicts (its first run). Raises `Unlabelled` while any
-    item is unlabelled, and ValueError on an item Claude did not label or Jev did not
+    Claude's labels and Jev's verdicts (its first run), for each kind whose items are all
+    labelled; a kind with an item unlabelled is left out. Raises `Unlabelled` while no
+    kind is fully labelled, and ValueError on an item Claude did not label or Jev did not
     judge."""
     missing = [i for i in ids if i not in claude or claude[i] is None or i not in jev.verdicts]
     if missing:
@@ -227,21 +243,33 @@ def score_human_check(
             f"{len(missing)} item(s) not labelled by the judge study's sheet or not judged in "
             f"its verdicts: {', '.join(missing[:5])}"
         )
-    unlabelled = [i for i in ids if not human.get(i)]
-    if unlabelled:
-        raise Unlabelled(f"{len(unlabelled)} item(s) unlabelled: label every item before scoring")
+    scored, left_out = [], []
+    for kind, prefix in (("fact", "F-"), ("claim", "C-")):
+        of_kind = [i for i in ids if i.startswith(prefix)]
+        labelled = sum(bool(human.get(i)) for i in of_kind)
+        if labelled == len(of_kind):
+            scored += of_kind
+        else:
+            left_out.append(LeftOut(kind, len(of_kind), labelled))
+    if not scored:
+        unlabelled = sum(lo.items - lo.labelled for lo in left_out)
+        raise Unlabelled(
+            f"{unlabelled} item(s) unlabelled and no kind fully labelled: label every item "
+            "of a kind before scoring"
+        )
 
     def jev_verdict(item_id: str) -> str | None:
         return jev.verdicts[item_id].at(FACT_CUTOFF)
 
-    facts = sum(i.startswith("F-") for i in ids)
+    facts = sum(i.startswith("F-") for i in scored)
     return HumanCheckScore(
-        items=len(ids),
+        items=len(scored),
         facts=facts,
-        claims=len(ids) - facts,
+        claims=len(scored) - facts,
         fact_cutoff=FACT_CUTOFF,
-        claude=_agreement(f"{LABELLER} labels", ids, human, claude.get),
-        jev=_agreement(f"{jev.judge} run {jev.run}", ids, human, jev_verdict),
+        claude=_agreement(f"{LABELLER} labels", scored, human, claude.get),
+        jev=_agreement(f"{jev.judge} run {jev.run}", scored, human, jev_verdict),
+        left_out=tuple(left_out),
     )
 
 
@@ -278,17 +306,27 @@ def _num(value: float | None) -> str:
 
 def print_score(report: HumanCheckScore, out: TextIO) -> None:
     print(
-        f"Human check: {report.items} items labelled by hand ({report.facts} fact, "
+        f"Human check: {report.items} items scored ({report.facts} fact, "
         f"{report.claims} claim); Jev's facts at the cut-off {report.fact_cutoff}.",
         file=out,
     )
+    left_out = {lo.kind for lo in report.left_out}
     for name, a in (("Claude's labels", report.claude), ("Jev's verdicts", report.jev)):
         failed = f"; {a.failed} failed judgment(s) left out" if a.failed else ""
+        kinds = [
+            f"{kind}s {k.agree} of {k.items} ({_pct(k.share)}, kappa {_num(k.kappa)})"
+            for kind, k in (("fact", a.facts), ("claim", a.claims))
+            if kind not in left_out
+        ]
         print(
             f"Against {name} ({a.reference}): {a.agree} of {a.items} agree ({_pct(a.share)}); "
-            f"facts {a.facts.agree} of {a.facts.items} ({_pct(a.facts.share)}, kappa "
-            f"{_num(a.facts.kappa)}); claims {a.claims.agree} of {a.claims.items} "
-            f"({_pct(a.claims.share)}, kappa {_num(a.claims.kappa)}){failed}.",
+            f"{'; '.join(kinds)}{failed}.",
+            file=out,
+        )
+    for lo in report.left_out:
+        print(
+            f"{lo.kind.capitalize()} items not scored: {lo.labelled} of {lo.items} labelled, "
+            "and a kind is scored only when every item is labelled.",
             file=out,
         )
 

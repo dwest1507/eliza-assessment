@@ -181,7 +181,7 @@ judge-study-score: ## Score the stored verdicts against the sheet's labels (no p
 human-check-sample: ## Draw the human check's 30 items (15 fact, 15 claim) from the judge study's sample and write its blind sheet to data/eval/judge_study/human_check.md (no provider call) [SEED=...]
 	$(UV) python -m edgar_eval.human_check sample $(if $(SEED),--seed $(SEED))
 
-human-check-score: ## Score the human check's labels against Claude's labels and Jev's verdicts (no provider call); refuses while items are unlabelled
+human-check-score: ## Score the human check's labels against Claude's labels and Jev's verdicts, for each kind whose items are all labelled (no provider call); refuses while no kind is fully labelled
 	$(UV) python -m edgar_eval.human_check score
 
 # The slide deck is Markdown for Marp (docs/deck.md); npx fetches the pinned Marp CLI.
