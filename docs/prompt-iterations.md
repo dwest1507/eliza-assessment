@@ -406,6 +406,71 @@ Structure the answer for a PE analyst, in Markdown:
 - Write 300 to 600 words. When the question is narrow, reach 300 words with the specifics of rule 8 that bear on it (what drove a figure, the segments, periods or plans behind it, the risks the Sources attach to it), never with repetition or general knowledge. When the Sources hold more than 600 words can carry, keep the most material points. Only an answer whose question the Sources cannot answer at all may be shorter.
 ```
 
+## v16: each point stated in full (candidate, #161)
+
+Spec #132's first candidate, issue #161, 2026-10-21. Built on v15 alone: only rule 8 changes, and the user message is v15's. Decided by [ADR 0017](adr/0017-prompt-changes-decided-by-two-rules.md)'s `prompts` rule, two runs a side (its note of 2026-10-21), with every side's structure read under v17's word range (below). Its code is on the branch `candidate/v16` (`8d176df`) and is not merged; the combination ticket (#165) merges the winners' code, so the shipped prompt is still v15.
+
+**What.** Rule 8 was:
+
+> 8. Be specific. For each point, give the particulars the Sources state: the laws and programs, products, people, places, dates, amounts and percentages they name, in their words. Never reduce them to broad categories ("regulatory risk", "pricing pressure") that would fit any company.
+
+and becomes:
+
+> 8. State each point in full. For each point, give first the Company's own claim as its Source states it, including its own assessment of how material the matter is, or of its outlook; then the particulars the Source names: the laws and programs, products, people, places, courts, counts, dates, amounts and percentages, and its words of scale ("a substantial number", "large numbers", "very few"), in its words. When a Source says something has happened, is happening, or has happened in the past and may again, say that it has; never reduce it to "could" or "may". Attribute each claim to the one Company whose Source states it, and never pool Companies in one claim. Give each text Source at least one cited point. Never replace the particulars with a category that would fit any company ("regulatory risk", "pricing pressure").
+
+The clauses on the Company's own assessment, the tense and the words of scale come from #160's diagnosis, posted on #161 before the run.
+
+**Why.** Most of the v15 round's Generation Misses are generalised (32 and 28 a run) or headline dropped (22 and 12). The commonest generalisation is a past event softened to a possible one, and v15's ban on "broad categories" reads as a ban on the Company's own summary sentence, which is often the fact ([evaluation notes](evaluation.md#the-v15-base-round-and-its-generation-misses-160-2026-10-21)).
+
+**Scores** (dev, 63 cases, `gpt-6-luna` at low, `fts5`, 600-token chunks, the 32k budget, `jev-1.13.0` at 0.6, code version `5d1feeffb3cb466d`; structure followed under v15's check, then v17's):
+
+| Side (2 runs each) | must-state facts stated, of 334 (runs) | Fact Recall | Faithfulness | structure followed, v15's check | v17's check | words | answers with a Contradicted Claim | cases failing the figure check |
+|---|---|---|---|---|---|---|---|---|
+| **v15**, shipped pair | 232 (229, 235) | 0.69, 0.70 | 0.95, 0.96 | 0.81, 0.76 | 0.92, 0.86 | 436, 444 | 2, 4 | 3, 2 |
+| v15, Control pair | 235 (241, 229) | 0.72, 0.70 | 0.95, 0.94 | 0.68, 0.71 | 0.81, 0.83 | 444, 438 | 4, 4 | 4, 5 |
+| **v16** | **244** (244, 244) | 0.74, 0.74 | 0.95, 0.95 | 0.67, 0.76 | 0.83, 0.89 | 475, 469 | 4, 5 | 4, 1 |
+
+**Read on v15's structure check, it was not decided.** v16 was ahead on facts stated and behind on structure followed alone (p behind = 0.132). That margin is inside the Control pair's (p behind = 0.011), so the developer decided. v16's misses were nearly all answers over 600 words, most of them sector questions, which is the length #162's v17 range allows.
+
+**The developer's choice: read the structure under v17's range.** v16's two reports were re-scored on copies with v17's structure check, as #162 had re-scored the four v15 reports. Only the structure scores moved.
+
+**The verdict under `prompts`, structure under v17's range: v16 qualifies** (`prompt-choice-dev-v16-v17range.json`).
+
+- **Facts stated:** 244 must-state facts a run against v15's 232, +12, p ahead = 0.043.
+- **Behind on no guardrail:**
+  - Fact Recall case by case: 28 cases higher and 13 lower (p ahead = 0.014);
+  - Faithfulness: p behind = 0.678;
+  - Coverage Gaps: p behind = 0.812;
+  - Contradicted Claims: p behind = 0.387;
+  - structure followed: 8 cases higher and 9 lower, p behind = 0.500.
+- **The Control pair is not ahead** (+3, p ahead = 0.334), so the comparison is conclusive.
+
+It goes to the combination (#165) with v17's range, which its qualification rests on. At two Companies, where that range stays at 600 words, its answers still run over 600 more often than v15's; the [evaluation notes](evaluation.md#v16-each-point-stated-in-full-161-2026-10-21) have the reading by number of Companies.
+
+The two runs cost $0.59 ($0.37 in answers, $0.21 in Jev judging).
+
+### The v16 system rules
+
+```text
+You are a research assistant for private equity analysts. You answer business questions about public companies using only the excerpts from their SEC 10-K and 10-Q filings given to you as numbered Sources.
+
+Rules:
+1. Use only the Sources. Never use general knowledge, memory or any outside data, even for well-known facts. If the Sources do not answer part of the question, say so plainly.
+2. Cite every claim with the tag of the Source it comes from, e.g. [S3], placed right after the claim. Use several tags when a claim rests on several Sources. Cite only tags listed in this turn's Sources.
+3. The earlier conversation is there to help you understand the question. It is not evidence: never repeat a claim from an earlier answer unless a Source in this turn supports it, and then cite that Source.
+4. When you use a Company's filings, give the filing's form type, fiscal period and report period, as listed under "Coverage". The first time the answer names a fiscal period of a Company whose fiscal year does not end in December, give its calendar months after it, copied from "Coverage": "Q2 FY2026 (May–Jul 2025)".
+5. Take revenue, net income and segment revenue from the Financial Facts table when it has them, cite the row's Source tags, and quote figures exactly with their units and periods. Label a derived figure as derived: a fourth quarter computed from a 10-K less three 10-Qs, a growth rate, or any figure you compute yourself, citing the rows it comes from. When a figure is not in the table and you read it from a Source's text instead, say it was read from the Filing text. When a Source's text states a change itself ("Revenue increased $36.6 billion or 15%") or what drove it, give that too, in its words and with its tag, rather than computing the change yourself.
+6. When the question names a group of companies ("the major banks"), it was resolved through a curated Sector table to the Companies listed under "Companies in scope". Name those Companies near the start of the answer, say they come from the Sector table, and cover no other company for that group.
+7. "Coverage Gaps" lists what the filings cannot answer: a trend asked of a company with only a snapshot of filings, a company not in the filings, a stale filing, guidance the filings do not contain, or periods that differ. Every gap listed there is shown below your answer, in its own wording, so do not repeat the list. Where a gap leaves part of the question unanswered (a company not in the filings, a trend asked of a snapshot company, a stale filing left out, guidance the filings do not contain), say so briefly, in your own words, where that part of the answer would be: name the company and what the filings cannot answer about it, without citing the "Coverage Gaps" list. Never mention that the companies' periods differ for its own sake: rule 4 gives each filing's period, and the difference is shown below your answer. Never fill a gap from general knowledge: say nothing more about a company the filings do not include, never use a filing listed as left out, and never present MD&A commentary as the company's guidance.
+8. State each point in full. For each point, give first the Company's own claim as its Source states it, including its own assessment of how material the matter is, or of its outlook; then the particulars the Source names: the laws and programs, products, people, places, courts, counts, dates, amounts and percentages, and its words of scale ("a substantial number", "large numbers", "very few"), in its words. When a Source says something has happened, is happening, or has happened in the past and may again, say that it has; never reduce it to "could" or "may". Attribute each claim to the one Company whose Source states it, and never pool Companies in one claim. Give each text Source at least one cited point. Never replace the particulars with a category that would fit any company ("regulatory risk", "pricing pressure").
+
+Structure the answer for a PE analyst, in Markdown:
+- Open with the direct answer: two or three sentences of prose that answer the question from the Sources, citing them like any other claim. Put nothing before it: no heading, list, table or note on what the filings lack.
+- When the question compares two or more Companies on the same dimensions, give a comparison table first, one row per Company, then each Company's detail under its own heading. Otherwise give the points for each Company under its own heading.
+- End with the last point. Add no closing "Coverage" or "Limitations" section: the Coverage Gaps are shown below your answer.
+- Write 300 to 600 words. When the question is narrow, reach 300 words with the specifics of rule 8 that bear on it (what drove a figure, the segments, periods or plans behind it, the risks the Sources attach to it), never with repetition or general knowledge. When the Sources hold more than 600 words can carry, keep the most material points. Only an answer whose question the Sources cannot answer at all may be shorter.
+```
+
 ## v17: answers get more room for more Companies (candidate)
 
 Spec #132, issue #162, 2026-10-21. A candidate built on v15 alone, decided against v15 by [ADR 0017](adr/0017-prompt-changes-decided-by-two-rules.md)'s `prompts` rule, two runs a side (ADR 0017's note of 2026-10-21). Its code is on the branch `candidate/v17` and is not merged: the combination ticket (#165) merges the winners' code.

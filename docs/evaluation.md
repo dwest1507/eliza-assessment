@@ -1953,6 +1953,87 @@ The second pair's reports are `generation-dev-run2.json` and `generation-control
 
 The reports, `generation-dev.json` and `generation-control-dev.json`, are the round's first pair, which the export shows; `misses-generation-dev.json`, `misses-generation-control-dev.json` and `prompt-choice-dev-control.json` are beside them. #156's single v15 run is kept as `data/derived/eval-issue156/generation-dev.json`.
 
+### v16: each point stated in full (#161, 2026-10-21)
+
+Spec #132's first candidate, built on v15 alone: only rule 8 changes, and the user message is v15's. v15's rule 8 asked for "the particulars the Sources state" and banned broad categories. v16's asks, for each point:
+
+- **first, the Company's own claim** as its Source states it, its own assessment of how material the matter is, or of its outlook, included;
+- **then the particulars the Source names,** in its words: courts, counts and words of scale ("a substantial number", "very few") are added to v15's list;
+- **the Source's tense:** what has happened, or has happened and may again, is never reduced to "could" or "may";
+- **one Company a claim,** never pooled, and **each text Source** given at least one cited point.
+
+The ban is kept as "never replace the particulars with a category that would fit any company". The full text is in the [prompt log](prompt-iterations.md#v16-each-point-stated-in-full-candidate-161). The clauses on materiality, tense and words of scale come from #160's diagnosis, posted on #161 before the run. v16 targets the generalised and headline-dropped Generation Misses ([the v15 round](#the-v15-base-round-and-its-generation-misses-160-2026-10-21)). Its code is on the branch `candidate/v16` (`8d176df`), not merged; #165 merges the winners'. Decided by ADR 0017's `prompts` rule, two runs a side, against [the v15 base round](#two-runs-a-side-the-control-runs-are-not-ahead).
+
+```sh
+make eval-generation NAME=v16 && make eval-generation NAME=v16-run2       # on candidate/v16
+# on a scratch checkout of candidate/v17 (7bb2c03), on copies of v16's two reports, free:
+make eval-rescore REPORTS="generation-dev-v16.json generation-dev-v16-run2.json"
+E=../data/derived/eval    # v16's re-scored copies, beside #162's re-scored copies of the four v15 reports
+python -m edgar_eval.selection compare $E/generation-dev.json+$E/generation-dev-run2.json \
+    $E/generation-dev-v16.json+$E/generation-dev-v16-run2.json \
+    --control $E/generation-control-dev.json+$E/generation-control-dev-run2.json \
+    --rule prompts --json $E/prompt-choice-dev-v16-v17range.json            # free
+```
+
+**The candidate's runs** (63 cases, `gpt-6-luna` at low, `fts5`, 600-token chunks, the 32k budget, `jev-1.13.0` at 0.6, code version `5d1feeffb3cb466d`):
+
+| Run | citations valid | figures exact | gaps stated | structure followed, v15's check | v17's check | words | Fact Recall | detail recall | Faithfulness | answers with a Contradicted Claim | must-state facts stated | $ per answer |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| v16 | 0.95 | 0.94 | 0.87 | 0.67 | 0.83 | 475 | 0.74 | 0.46 | 0.95 | 4 | 244 of 334 | 0.0030 |
+| v16 run 2 | 0.94 | 0.98 | 0.87 | 0.76 | 0.89 | 469 | 0.74 | 0.46 | 0.95 | 5 | 244 of 334 | 0.0030 |
+
+v15's two pairs are in [the v15 round's table](#the-v15-base-round-and-its-generation-misses-160-2026-10-21), and their structure under v17's check in [v17's section](#v17-answers-get-more-room-for-more-companies-162-2026-10-21) (0.92 and 0.86 for the shipped pair, 0.81 and 0.83 for the Control pair). No answer reaches the cap. The runs went beside other tickets' paid runs, so their latencies (6.9 s an answer, 2.2 and 2.5 s to the first text) are not read, and nothing is decided on them. Jev's own token limit failed one judgment in the first run.
+
+**First reading, on v15's structure check: not decided.** v16 was ahead on facts stated and behind on structure followed alone (7 cases higher, 13 lower, p behind = 0.132). That margin is inside the Control pair's on the same guardrail (3 higher, 13 lower, p behind = 0.011), so under the round's ruling the developer decided (#161's comment of 2026-10-21). v16's structure misses were not noise like the Control pair's, though:
+
+- they were nearly all answers over 600 words: 18 and 12 a run, against 9 and 9 for the shipped pair;
+- 12 and 11 of them were sector questions, about five to seven Companies;
+- the Control pair's misses were spread between over 600 and under 300 words.
+
+**Why the structure is read under v17's range.** v16 asks for more of each point, so its answers run longer where there are more Companies to cover. That is exactly the length #162's v17 range allows: 300 to 600 words for one or two Companies, 750 for three, 900 for four, 1,000 for five or more. v17 qualified on its own (below), so the developer chose to read v16's structure under v17's range, and to read every side the same way so the comparison is like for like.
+
+- **The re-score:** v16's two reports were re-scored with `make eval-rescore` on copies, on a scratch checkout of `candidate/v17`, free. #162 had already re-scored copies of the round's four v15 reports the same way.
+- **Only structure moved:** a field-by-field diff of each original and its re-scored copy shows the structure problems and the structure-followed scores changed, and nothing else. Figures exact, Coverage Gap claims, Contradicted Claims, uncited claims and Faithfulness are as recorded.
+- **v16's structure followed** rose from 0.67 and 0.76 to 0.83 and 0.89.
+- **What it implies:** v16's qualification rests on v17's range, so v16 ships only with it. If #165's combination drops v17, v16's structure falls back to v15's check and v16 is blocked as before; the developer decides.
+
+**The verdict under v17's range: v16 qualifies under `prompts`** (`prompt-choice-dev-v16-v17range.json`).
+
+| Must-state facts stated (of 334) | run 1 | run 2 | mean a run |
+|---|---|---|---|
+| v15 shipped pair | 229 | 235 | 232 |
+| v15 Control pair | 241 | 229 | 235 |
+| **v16** | **244** | **244** | **244** |
+
+- **Facts stated:** 244 a run against v15's 232, **+12, p ahead = 0.043**: ahead. Of the 289 facts whose evidence was reached, it states 225 against 215.
+- **Behind on no guardrail:**
+  - Fact Recall case by case: 28 cases higher, 13 lower, p behind = 0.994 (p ahead = 0.014);
+  - Faithfulness: 22 higher, 20 lower, p behind = 0.678;
+  - Coverage Gaps: 3 higher, 2 lower, p behind = 0.812;
+  - Contradicted Claims: 5 higher, 7 lower, p behind = 0.387;
+  - structure followed: 8 higher, 9 lower, p behind = 0.500.
+- **The Control pair is not ahead** (+3, p ahead = 0.334), so the comparison is conclusive. Under v17's check it is still behind on structure followed (4 higher, 11 lower, p behind = 0.059) and on Faithfulness (0.140) by noise alone; v16 is behind on neither.
+- **Figures, not a `prompts` guardrail:** 2.5 cases a run fail the figure check, as in the shipped pair (1.5 fixed, 1.5 broken).
+
+So v16 goes into the combination (#165), with v17's range.
+
+**Facts stated by the number of Companies with text Sources** (a mean a run, structure under v17's check; `v16-by-companies.json`, by #162's script):
+
+| Companies | cases | must-state facts | v15 shipped pair | v15 Control pair | v16 | words, v15 shipped / v16 | structure followed, v15 shipped / v16 |
+|---|---|---|---|---|---|---|---|
+| 1 | 30 | 109 | 84.5 | 84.5 | **87.5** | 381 / 397 | 0.85 / 0.90 |
+| 2 | 16 | 104 | 64 | 67 | 64 | 491 / 540 | 0.94 / **0.72** |
+| 3 | 5 | 37 | 25 | 23 | 25 | 533 / 572 | 0.90 / 0.90 |
+| 4 | 2 | 16 | 8.5 | 10.5 | **13.5** | 632 / 692 | 0.75 / 0.50 |
+| 5 or more | 7 | 68 | 50 | 50 | **54** | 632 / 701 | 0.93 / 1.00 |
+| all (3 refusals have none) | 63 | 334 | 232 | 235 | **244** | 436–444 / 469–475 | |
+
+- **Where the gain is:** +3 at one Company and +9 at four or more, where rule 8's "one Company a claim" and "each text Source a cited point" bear most. There is none at two or three Companies.
+- **Where the structure still misses:** at two Companies, where v17's range stays at 600 words, v16's answers average 540 words, and all 9 of their structure misses over the two runs are over 600 words: `sector-banks-risks` and `followup-pharma-to-oil-majors` in both runs, and `risk-aapl-nvda-supply-chain`, `risk-amd-csco-supply-chain`, `risk-wmt-tgt-legal-proceedings`, `sector-banks-capital-liquidity` and `sector-energy-operational-risks` in one. In all, v16 runs over its range in 7 and 3 answers, against 2 and 1 in the shipped pair. At three or more Companies its answers stay within their range, and miss the structure only by a four-sentence opening (`sector-aerospace-government`, `sector-software-cybersecurity`).
+- **For #165:** v16 was answered under v15's length line, not v17's length block. So in the combination, v17's block may hold v16's two-Company answers to 600 words, or v16 may push them over. The combination's confirmation run reads it again.
+
+**Spend:** $0.59 for the two runs ($0.37 in answers, $0.21 in Jev judging). The structure re-score and the comparison were free. The reports, `generation-dev-v16.json`, `generation-dev-v16-run2.json` and `prompt-choice-dev-v16.json` (the first reading), are kept in `data/derived/eval-issue161/`. Beside them are their re-scored copies in `rescored-v17range/`, `prompt-choice-dev-v16-v17range.json` (the verdict) and `v16-by-companies.json`; #160's and #162's reports are unchanged. The export shows no candidate report, so it is unchanged.
+
 ### v17: answers get more room for more Companies (#162, 2026-10-21)
 
 Spec #132's second candidate, built on v15 alone: the answer's word range scales to the number of Companies with text Sources, 300 to 600 words for one or two, the ceiling rising 150 for each further Company, to at most 1,000 (the [prompt log](prompt-iterations.md#v17-answers-get-more-room-for-more-companies-candidate) has the full text). One function in the core package gives the range to the prompt's length block and to the structure check. Its code is on the branch `candidate/v17`, not merged; #165 merges the winners'. Decided by ADR 0017's `prompts` rule, two runs a side, against [the v15 base round](#two-runs-a-side-the-control-runs-are-not-ahead).
