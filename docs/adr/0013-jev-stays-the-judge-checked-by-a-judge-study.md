@@ -93,3 +93,7 @@ Most claims kept from Jev were ones it had called supported (206 supported, 96 u
 The counts are from copies of the saved reports. The reports in `data/derived/eval/` change only when `make eval-rescore` is run on them, and #92's re-baseline replaces them anyway.
 
 **Later (2026-10-18, issue #112).** The re-score moved to `edgar_eval.rescore`, and `make eval-rescore` now re-scores only the current round's reports by default: the shipped run, the Control Run and the Brief Suite. #73's comparison reports in the table above are re-scored only when named (`REPORTS="..."`), or with `REPORTS=all`, so a plain run leaves them as recorded. The counts above are unchanged.
+
+## Note (2026-10-20): the human check
+
+Issues #144, #152 and #155. The developer labelled 15 of the judge study's fact items blind (`make human-check-score`): 12 agree with Claude's labels (80%, kappa 0.59) and 13 with Jev's first run at the cut-off 0.6 (87%, kappa 0.74). Where they differ, the judges are mostly the stricter side. Only 3 of the 15 claim items were labelled, so none are scored, and the claim labels behind Faithfulness and Contradicted Claims are still Claude's alone. Nothing here changes: Jev stays and the cut-off stays 0.6. The numbers are in [`docs/evaluation.md`](../evaluation.md#the-human-check).

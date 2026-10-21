@@ -346,12 +346,24 @@ describe('the "How it works" overview', () => {
     render(<HowItWorks data={EXPORT} />)
 
     const limits = within(section('Known limits')).getAllByRole('listitem')
-    expect(limits).toHaveLength(4)
+    expect(limits).toHaveLength(5)
     const text = limits.map((li) => li.textContent).join(' ')
     expect(text).toMatch(/only from the filings/i)
     expect(text).toMatch(/guidance/i)
     expect(text).toMatch(/only a few filings/i)
     expect(text).toMatch(/one AI call/i)
+  })
+
+  it('says a person checked 15 of the grading labels, and what is still AI alone', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const [grading] = within(section('Known limits'))
+      .getAllByRole('listitem')
+      .filter((li) => /a person checked/i.test(li.textContent ?? ''))
+    expect(grading).toHaveTextContent('15')
+    expect(grading).toHaveTextContent('80%')
+    expect(grading).toHaveTextContent('87%')
+    expect(grading).toHaveTextContent(/still checked by AI alone/i)
   })
 
   it('keeps domain terms out of the overview’s text', () => {

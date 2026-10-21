@@ -182,10 +182,10 @@ followed by 0.79 of dev answers against v7's 0.80, so v7 stayed.
 - **Follow-ups that change topic without naming a Company** inherit the earlier Companies. The Query Scope chips, at the top of each answer's "Sources", show it; the Golden Set measures it.
 - **Computed figures.** The model sometimes computes a growth rate rather than quoting the Filing; it labels it as derived.
 - **Thin coverage.** Trends only for 13 Companies; Financial Facts only revenue, net income and segment revenue; guidance mostly sits outside the Filings.
-- **No human in the loop.** Claude drafted the evaluation's labels and labelled the judge study, with no human review. Accepted for a demo; production would use hand-labelled data.
+- **A small human check.** Claude drafted the evaluation's labels and labelled the judge study. The developer checked 15 fact labels blind: agreement 80% with Claude's labels and 87% with Jev's verdicts. The claim labels (Faithfulness, Contradicted Claims) are still Claude's alone. Accepted for a demo; production would use more hand-labelled data.
 - **Our own inputs and a hosted model.** The Sector table and the list of missing Companies are curated and disclosed, not yet confirmed by the Client. The Answer Call goes to a hosted API, behind one interface a local model can replace.
 
-> Sources: [the holdout run](evaluation.md#the-holdout-run), [the version 2 holdout run](evaluation.md#the-version-2-holdout-run), [the holdout on the new retrieval](evaluation.md#the-holdout-on-the-new-retrieval-130-2026-10-18), [ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md), [assumptions 4, 5, 9 and 10](assumptions.md), [EDA findings](findings.md), [ADR 0013](adr/0013-jev-stays-the-judge-checked-by-a-judge-study.md)
+> Sources: [the holdout run](evaluation.md#the-holdout-run), [the version 2 holdout run](evaluation.md#the-version-2-holdout-run), [the holdout on the new retrieval](evaluation.md#the-holdout-on-the-new-retrieval-130-2026-10-18), [ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md), [assumptions 4, 5, 9 and 10](assumptions.md), [EDA findings](findings.md), [ADR 0013](adr/0013-jev-stays-the-judge-checked-by-a-judge-study.md), [the human check](evaluation.md#the-human-check)
 
 <!--
 Lead with the limits before the panel finds them. Each one is either measured (the

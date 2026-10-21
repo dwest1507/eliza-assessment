@@ -140,6 +140,19 @@ def test_the_choices_slide_keeps_its_statistics_in_the_speaker_notes(slides):
     assert re.search(r"\bp\s*=", _notes(choices)), "the statistics belong in the notes"
 
 
+def test_the_risks_slide_reports_the_human_check(slides):
+    """The developer's blind labels of 15 fact items (#152) replace "no human in the loop":
+    the slide states both agreements, links the section, and says the claim labels are
+    still Claude's alone."""
+    [risks] = [s for s in slides if "risks" in s.splitlines()[0].lower()]
+    body = _body(risks)
+    assert "evaluation.md#the-human-check" in body
+    assert "no human in the loop" not in body.lower()
+    for figure in ("15 fact labels", "80%", "87%"):
+        assert figure in body, f"the risks slide leaves out {figure!r}"
+    assert re.search(r"claim labels[^.]*Claude's alone", body)
+
+
 def test_no_slide_mentions_the_brief_suite(slides):
     assert not [n for n, s in enumerate(slides, start=1) if "brief suite" in s.lower()]
 
