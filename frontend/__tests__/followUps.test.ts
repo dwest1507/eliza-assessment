@@ -141,6 +141,82 @@ describe('followUps', () => {
     ])
   })
 
+  it("drops a template matching the kind and Companies of the question's Query Scope", () => {
+    const asked = scope({ companies: [APPLE, TESLA, JPMORGAN], sections: ['Risk Factors'] })
+    const question =
+      'What are the primary risk factors facing Apple, Tesla, and JPMorgan, and how do they compare?'
+    expect(followUps(asked, question)).toEqual([
+      'How does revenue compare across Apple, Tesla and JPMorgan Chase in their latest filings?',
+      'How do Apple, Tesla and JPMorgan Chase describe their outlook in their latest filings?',
+    ])
+    const revenue = scope({ companies: [TESLA, APPLE], metric: 'revenue' })
+    expect(followUps(revenue, 'Compare revenue at Tesla and Apple')).toEqual([
+      'How do the main risk factors of Tesla and Apple compare?',
+      'How do Tesla and Apple describe their outlook in their latest filings?',
+    ])
+    const outlook = scope({ companies: [APPLE], sections: ['MD&A'] })
+    expect(followUps(outlook, "What is Apple's guidance?")).toEqual([
+      "What are Apple's main risk factors?",
+      "How has Apple's revenue changed over the last two years?",
+    ])
+  })
+
+  it("drops a group's risks when the question asked the same group's risks", () => {
+    const energy = {
+      phrase: 'energy sector',
+      column: 'sector' as const,
+      values: ['Energy'],
+      tickers: ['XOM', 'CVX'],
+    }
+    const companies = [
+      { ticker: 'XOM', name: 'Exxon Mobil Corporation', coverage: 'tracked' },
+      { ticker: 'CVX', name: 'Chevron Corporation', coverage: 'tracked' },
+    ]
+    const asked = scope({ companies, sectorPhrases: [energy], sections: ['Risk Factors'] })
+    expect(followUps(asked, 'What risks does the energy sector flag?')).toEqual([])
+  })
+
+  it("drops a template matching any earlier question's Query Scope", () => {
+    const earlier = [
+      {
+        question: "What are Apple's risks?",
+        scope: scope({ companies: [APPLE], sections: ['Risk Factors'] }),
+      },
+      { question: 'and its revenue?', scope: scope({ companies: [APPLE], metric: 'revenue' }) },
+      { question: 'The request failed', scope: null },
+    ]
+    expect(followUps(scope({ companies: [APPLE] }), 'Summarize Apple', earlier)).toEqual([
+      "What does Apple's latest filing say about its outlook?",
+    ])
+  })
+
+  it('drops a suggestion equal to an earlier question', () => {
+    const earlier = [{ question: "What are Apple's main risk factors?", scope: null }]
+    expect(followUps(scope({ companies: [APPLE] }), 'q', earlier)[0]).toBe(
+      "How has Apple's revenue changed over the last two years?"
+    )
+  })
+
+  it('still suggests templates for other kinds or other Companies, up to three', () => {
+    const earlier = [
+      { question: 'q1', scope: scope({ companies: [APPLE], sections: ['Risk Factors'] }) },
+      {
+        question: 'q2',
+        scope: scope({ companies: [APPLE, MICROSOFT], sections: ['Risk Factors'] }),
+      },
+    ]
+    expect(followUps(scope({ companies: [APPLE, TESLA] }), 'q3', earlier)).toEqual([
+      'How do the main risk factors of Apple and Tesla compare?',
+      'How does revenue compare between Apple and Tesla in their latest filings?',
+      'How do Apple and Tesla describe their outlook in their latest filings?',
+    ])
+    expect(followUps(scope({ companies: [TESLA] }), 'q3', earlier)).toEqual([
+      "What are Tesla's main risk factors?",
+      "How has Tesla's revenue changed over the last two years?",
+      "What does Tesla's latest filing say about its outlook?",
+    ])
+  })
+
   it('suggests nothing when the question names no Company or group', () => {
     expect(followUps(scope({}), 'What are the main risks?')).toEqual([])
   })

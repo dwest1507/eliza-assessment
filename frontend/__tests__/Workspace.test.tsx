@@ -1250,9 +1250,9 @@ describe('Follow-up suggestions', () => {
     expect(screen.queryByRole('list', { name: 'Suggested follow-ups' })).not.toBeInTheDocument()
 
     release()
+    // The question compared Apple's and Tesla's risks, so that comparison isn't suggested.
     const list = await screen.findByRole('list', { name: 'Suggested follow-ups' })
     expect(suggestionsOf(list)).toEqual([
-      'How do the main risk factors of Apple and Tesla compare?',
       'How does revenue compare between Apple and Tesla in their latest filings?',
       'How do Apple and Tesla describe their outlook in their latest filings?',
     ])
@@ -1278,6 +1278,7 @@ describe('Follow-up suggestions', () => {
     const second = {
       ...QUERY_SCOPE,
       companies: [{ ticker: 'AAPL', name: 'Apple Inc', coverage: 'tracked' }],
+      sections: [],
     }
     const held = heldUiMessageStream((part) => part.type === 'text-delta', ANSWER, second)
     fetchMock
@@ -1288,7 +1289,7 @@ describe('Follow-up suggestions', () => {
     await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
 
     const first = await screen.findByRole('list', { name: 'Suggested follow-ups' })
-    const suggestion = 'How do the main risk factors of Apple and Tesla compare?'
+    const suggestion = 'How does revenue compare between Apple and Tesla in their latest filings?'
     await user.click(within(first).getByRole('button', { name: suggestion }))
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
@@ -1314,6 +1315,26 @@ describe('Follow-up suggestions', () => {
     expect(answers[1].compareDocumentPosition(lists[0]) & Node.DOCUMENT_POSITION_FOLLOWING).toBe(
       Node.DOCUMENT_POSITION_FOLLOWING
     )
+  })
+
+  it("skips what an earlier question asked, by its answer's Query Scope", async () => {
+    const apple = [{ ticker: 'AAPL', name: 'Apple Inc', coverage: 'tracked' }]
+    const revenue = { ...QUERY_SCOPE, companies: apple, sections: [], metric: 'revenue' }
+    fetchMock
+      .mockImplementationOnce(async () =>
+        answerStream('msg-0', ANSWER, { ...QUERY_SCOPE, companies: apple })
+      )
+      .mockImplementationOnce(async () => answerStream('msg-1', ANSWER, revenue))
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.type(screen.getByRole('textbox', { name: 'Question' }), "Apple's risks?{Enter}")
+    await screen.findByRole('list', { name: 'Suggested follow-ups' })
+    await user.type(screen.getByRole('textbox', { name: 'Question' }), 'And its revenue?{Enter}')
+
+    await waitFor(() => expect(screen.getAllByRole('article', { name: 'Answer' })).toHaveLength(2))
+    const list = await screen.findByRole('list', { name: 'Suggested follow-ups' })
+    // Apple's risks were asked first, its revenue just now: only its outlook is left.
+    expect(suggestionsOf(list)).toEqual(["What does Apple's latest filing say about its outlook?"])
   })
 
   it('shows no suggestions once a later question fails', async () => {

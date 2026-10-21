@@ -200,12 +200,21 @@ export default function Workspace({
   const writing = status === 'streaming' && last?.role === 'assistant' && !messageText(last)
   const turns = groupTurns(messages)
   // Follow-ups suggested under the latest answer once it is complete, built from its
-  // Query Scope by fixed templates, so no model is asked.
+  // Query Scope by fixed templates, so no model is asked, and skipping what any earlier
+  // question already asked.
   const lastScope = last?.role === 'assistant' ? messageDataPart(last, 'query-scope') : null
   const lastQuestion = messages.findLast((m) => m.role === 'user')
+  const earlier = turns.slice(0, -1).map((turn) => ({
+    question: turn[0].role === 'user' ? messageText(turn[0]) : '',
+    scope:
+      turn
+        .filter((m) => m.role === 'assistant')
+        .map((m) => messageDataPart(m, 'query-scope'))
+        .find((scope) => scope !== null) ?? null,
+  }))
   const suggestions =
     status === 'ready' && lastScope
-      ? followUps(lastScope, lastQuestion ? messageText(lastQuestion) : '')
+      ? followUps(lastScope, lastQuestion ? messageText(lastQuestion) : '', earlier)
       : []
 
   const renderMessage = (message: ResearchMessage) =>
