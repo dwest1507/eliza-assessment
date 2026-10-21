@@ -2166,6 +2166,75 @@ Seven of eight prior-year changes are stated against one of eight in each v15 pa
 
 The reports are `generation-dev-v18.json`, `generation-dev-v18-run2.json` and `prompt-fix-choice-dev-v18.json`, kept in `data/derived/eval-issue163/`. The export is unchanged: it shows the round's shipped run, not a candidate's.
 
+### The legal proceedings route (#164, 2026-10-21)
+
+Spec #132's fourth candidate, a retrieval change on prompt v15. In v7's `risk-wmt-tgt-legal-proceedings`, Walmart's Financial Statements came first and took half the budget, and its Item 3 case list was folded into that Source's narrative. Two versions were built, each on its own branch and not merged, and decided by ADR 0017's `prompts` rule, two runs a side, against [the v15 base round](#two-runs-a-side-the-control-runs-are-not-ahead):
+
+- **The primary, `candidate/legal-route`:** for a legal proceedings question, each Company's Legal Proceedings chunks are ranked into its share before its Financial Statements', and its Legal Proceedings Source comes first.
+- **The fallback, `candidate/legal-route-no-fs`, on top of it:** the Financial Statements are searched only in a Filing whose Item 3 is a stub (Tesla, Amazon, NVIDIA's 10-Qs), where the contingencies note is what Item 3 points to. A Filing whose Item 3 states its cases is searched there alone. A Filing whose two Sections are both stubs (JPMorgan, NVIDIA's 10-K) is still searched whole, as before.
+
+```sh
+make eval-retrieval ARMS=fts5                          # the free screen, on each branch
+make eval-generation NAME=legal-route && make eval-generation NAME=legal-route-run2
+make eval-generation NAME=legal-route-no-fs && make eval-generation NAME=legal-route-no-fs-run2
+E=../data/derived/eval
+python -m edgar_eval.selection compare $E/generation-dev.json+$E/generation-dev-run2.json \
+    $E/generation-dev-legal-route-no-fs.json+$E/generation-dev-legal-route-no-fs-run2.json \
+    --control $E/generation-control-dev.json+$E/generation-control-dev-run2.json \
+    --rule prompts --json $E/prompt-choice-dev-legal-route-no-fs.json   # free; likewise for legal-route
+```
+
+**The free screen kept both.**
+
+- The primary reaches 844 of 983 dev facts, the same as v15, with none gained or lost. MRR rises from 0.782 to 0.799, so its branch re-records the MRR Floor at 0.79.
+- The fallback reaches 848: it gains 4 facts, two of them must-state (Meta's FTC and copyright cases), and loses none. Only the three legal proceedings cases' Answer Contexts change.
+
+**The runs** (63 cases, `gpt-6-luna` at low, `fts5`, 600-token chunks, the 32k budget, `jev-1.13.0` at 0.6):
+
+| Run | code version | citations valid | figures exact | gaps stated | structure followed | words | Fact Recall | detail recall | Faithfulness | answers with a Contradicted Claim | must-state facts stated | $ per answer |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| legal-route | `a2173ff661374e0d` | 0.94 | 0.90 | 1.00 | 0.76 | 441 | 0.73 | 0.48 | 0.95 | 6 | 241 of 334 | 0.0029 |
+| legal-route run 2 | `a2173ff661374e0d` | 0.89 | 0.92 | 0.80 | 0.79 | 429 | 0.68 | 0.43 | 0.91 | 7 | 223 of 334 | 0.0029 |
+| legal-route-no-fs | `de205e68101184d0` | 0.97 | 0.98 | 0.93 | 0.75 | 438 | 0.73 | 0.49 | 0.96 | 7 | 242 of 334 | 0.0028 |
+| legal-route-no-fs run 2 | `de205e68101184d0` | 0.94 | 0.90 | 0.87 | 0.86 | 435 | 0.68 | 0.45 | 0.95 | 2 | 229 of 334 | 0.0028 |
+
+The v15 pairs are in [the v15 round's table](#the-v15-base-round-and-its-generation-misses-160-2026-10-21). No answer reached the cap. Other implementers' paid runs ran at the same time, so latency is not read, and nothing here is decided on it.
+
+**The verdict: neither qualifies, so v15's legal proceedings route stays and #165 merges no code from this ticket.**
+
+- **The primary:** 232 must-state facts a run against v15's 232, **+0, p ahead = 0.529**, and behind on Contradicted Claims (4 cases higher, 9 lower, p behind = 0.133).
+- **The fallback:** 235.5 against 232, **+3.5, p ahead = 0.304**, not ahead. It is behind on no guardrail:
+  - Fact Recall case by case: 18 higher, 18 lower (p behind = 0.566);
+  - Faithfulness: 21 higher, 16 lower (0.838);
+  - Coverage Gaps: 2 higher, 0 lower (1.000);
+  - Contradicted Claims: 4 higher, 7 lower (0.274);
+  - structure followed: 8 higher, 5 lower (0.867).
+- **The fallback's first run alone looked ahead** (242 against 232, p ahead = 0.116); its second stated 229. Read two runs a side, the gain shrinks to what the Control pair moves by alone (+3, p ahead = 0.334).
+- Neither is blocked only by a guardrail, so the Control pair's noise on structure and Faithfulness decides nothing here.
+- **Figures, not a `prompts` guardrail:** the fallback fails the figure check in 3.5 cases a run against 2.5 (0.5 fixed, 1.5 broken), none of them a legal proceedings case, so none from an Answer Context it changes. The primary fails it in 5.5, including `risk-wmt-tgt-legal-proceedings` in both runs, on figures from Walmart's Item 3 not matched as written ($0.7 billion, 93.4 million).
+
+**Case by case,** must-state facts stated in each run:
+
+| Case | v15 shipped pair | v15 Control pair | legal-route | legal-route-no-fs |
+|---|---|---|---|---|
+| `risk-wmt-tgt-legal-proceedings` (7: Walmart 4, Target 3; all reached on every side) | 2, 5 | 3, 2 | 5, 2 | 5, 6 |
+| `risk-meta-amzn-legal-proceedings` (8; 3 reached, 5 for the fallback) | 2, 2 | 2, 2 | 2, 2 | **5, 4** (Meta 4 and 3 of 4) |
+| `risk-aapl-legal-proceedings` (4) | 3, 4 | 3, 4 | 4, 4 | 4, 4 |
+| Amazon's stub Item 3 (4 must-state facts, in its Financial Statements; 1 reached on every side) | 1, 1 | 1, 1 | 1, 1 | 1, 1 |
+
+- **The fallback's gain is where it changes the Answer Context.** On the three legal proceedings cases it states 14 must-state facts a run against v15's 9 and the Control pair's 8. On the other 57 cases with facts to state (3 are refusals), whose Answer Contexts are the same as v15's, it states 1.5 fewer, by noise alone. A gain on three cases is too small for the whole split to show.
+- **Walmart:** putting Walmart's Item 3 first ([S1]) does not, alone, change what gets stated. The primary's runs scatter across v15's range (5 and 2); the fallback's, with no Financial Statements beside Item 3, state 5 and 6.
+- **Meta:** Meta's FTC and copyright facts sit in Legal Proceedings chunks that match none of the question's terms. Under the primary they never rank, and the Financial Statements fill the rest of Meta's share. The fallback gives Meta's whole share to its Legal Proceedings, so the facts reach the prompt and are stated.
+- **Amazon's stub Item 3** points to its Financial Statements' contingencies note, which both versions still search. Three of its four must-state facts never reach the prompt on any side.
+
+**Spend:** $1.12 for the four runs ($0.56 for each version's pair: $0.36 in answers and $0.20 in Jev judging). The reports are kept in `data/derived/eval-issue164/`:
+
+- the generation reports: `generation-dev-legal-route.json`, `generation-dev-legal-route-run2.json`, `generation-dev-legal-route-no-fs.json` and `generation-dev-legal-route-no-fs-run2.json`;
+- the choice files: `prompt-choice-dev-legal-route.json` and `prompt-choice-dev-legal-route-no-fs.json`;
+- the screens: `retrieval-dev-legal-route.json` and `retrieval-dev-legal-route-no-fs.json`.
+
+The export shows no candidate report, so it is unchanged.
+
 ### Order and cost
 
 1. The Brief Suite and the label format.
