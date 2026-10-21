@@ -2326,6 +2326,53 @@ v15's two pairs are in [the v15 round's table](#the-v15-base-round-and-its-gener
 
 **Spend:** $0.59 for the two runs ($0.37 in answers, $0.22 in Jev judging); the comparisons were free. Spec #132's paid runs came to about $4.59 of its $10 cap. The reports are kept in `data/derived/eval-issue165/`: `generation-dev-v19.json`, `generation-dev-v19-run2.json`, `prompt-choice-dev-v19.json`, `prompt-fix-choice-dev-v19.json` and `v19-by-companies.json`, with the console output and the Answer Call log.
 
+### The freeze and the dress rehearsal (#153, 2026-10-21)
+
+Spec #136's last step before the final all-model round (#154): everything that can change an answer is declared frozen, and the frozen product is rehearsed in the browser.
+
+**What is frozen.** Every answer-path task of spec #136 (#137 to #151, #156) and spec #132 (#157 to #165) has every acceptance criterion ticked and its commits on `feat/final-updates`; `make test` (1,123 backend tests passed and 2 skipped, with the index built; 190 front-end tests) and `make lint` pass on the frozen code. The freeze covers:
+
+| What | Frozen as |
+|---|---|
+| The core, answer and API packages (`backend/src/`) | **code version `12e6c826ae78eab9`** (`edgar_eval.generation.code_version`, the digest every report records) |
+| The Answer Call's prompt | `PROMPT_VERSION` v19 ([v19](#v19-the-combination-that-freezes-165-2026-10-21)) |
+| The index settings | 600-token chunks, the 32k context budget, index version 6, `fts5` |
+| The answer model's settings | `ANSWER_MODEL` (`gpt-6-luna` unless set), reasoning effort low, a 32,000-token cap |
+| The reference data | `data/reference/sectors.csv` (SHA-256 `f78b9e7c48ef484c`…), `data/reference/missing_companies.csv` (`57c0094e1ba17226`…) |
+| The Golden Set and the Brief Suite | `data/eval/golden_set_v2.json` (`27bc0d5b8b9f491c`…), `data/eval/brief_suite.json` (`0dea56c9b7c854f1`…) |
+
+The one change the freeze made is a docstring: `MAX_EARLIER_MESSAGE_CHARS` in `edgar_api/app.py` said an earlier answer runs to 300–600 words, and since v17's range it runs to 300–1,000 (the 20,000-character limit already covered that). It was left for the freeze so as not to move v19's dev runs out of their round, and it is why the frozen code version differs from theirs (`b233653cc01e182f`): no answer changes, but a run on the frozen code starts a new round, so the final round's runs record `12e6c826ae78eab9` and v19's dev runs stand as v19's measurement. Any later change that moves the code version or one of these digests unfreezes the answer path, and the rehearsal is run again before the final round.
+
+**The rehearsal.** `make dev` (`API_PORT=8153 WEB_PORT=3153`, an index rebuilt from the Corpus on the frozen code), `gpt-6-luna` at low, in Chrome at 1,600 × 1,000 pixels, driven through its DevTools protocol by a script that types each question, waits for the complete answer, expands it and reads what the answer, its Sources, its Coverage notes and the Calendar show, then clicks the answer's first citation. It ran twice; the first pass read each answer before "Show full analysis" had opened, so its answers are taken from the second, and its timings are shown because one of them was over a ceiling. Each question is a new conversation, except the follow-up.
+
+| Question | Query Scope | Sources cited (retrieved) | Coverage notes | Calendar tabs | first text / full answer, s (pass 2; pass 1) |
+|---|---|---|---|---|---|
+| The brief's risk factors of Apple, Tesla and JPMorgan | AAPL, TSLA, JPM; latest; Risk Factors | 4 (4) | periods differ | AAPL, JPM, TSLA | 1.8 / 9.7; 2.9 / 11.7 |
+| The brief's NVIDIA revenue and outlook | NVDA; last 2 years; MD&A, revenue | 11 (19) | no company guidance | NVDA | 2.7 / 8.2; 1.5 / 8.0 |
+| The brief's pharmaceutical regulatory risks | "pharmaceutical companies" → JNJ, LLY, MRK, PFE, ABBV; latest | 18 (19) | periods differ | ABBV, JNJ, LLY, MRK, PFE | 2.7 / 17.7; 4.8 / **52.0** |
+| "Compare Coke and Pepsi" | KO, PEP; latest; Business, MD&A, Risk Factors | 9 (9) | periods differ | KO, PEP | 3.3 / 9.7; 2.5 / 15.2 |
+| "How is JP Morgan doing?" | JPM; latest; Business, MD&A, Risk Factors | 2 (2) | none | JPM | 3.3 / 9.0; 3.1 / 8.3 |
+| "What are the main AI risks for big tech companies?" | "big tech companies" → AAPL, AMZN, GOOG, META, MSFT, NVDA, TSLA; latest; Risk Factors | 8 (9) | periods differ | AAPL, AMZN, GOOG, META, MSFT, NVDA, TSLA | 2.5 / 14.1; 3.2 / 13.9 |
+| "Which companies are most exposed to tariffs?" | no Company; latest; 72 Filings | 39 (42) | none | none | 8.5 / 25.2; 6.6 / 16.4 |
+| "And what about Caterpillar?" (its follow-up) | CAT; the tariffs topic inherited | 2 (8) | none | CAT | 1.1 / 6.0; 1.6 / 5.9 |
+| "Compare JPMorgan and Wells Fargo" | JPM; Wells Fargo missing; latest | 2 (2) | not covered: Wells Fargo | JPM | 1.7 / 7.9; 1.2 / 5.0 |
+
+**What behaves as specified,** in every question:
+- **The answers:** each opens with its direct answer. Each comparison (the brief's first and third questions, Coke and Pepsi, big tech, tariffs, JPMorgan and Wells Fargo) has a comparison table. A fiscal period that does not end in December comes with its calendar months ("FY2025 (Oct 2024–Sep 2025)"). Big tech and the pharmaceutical companies are said to come from the Sector table's curated Companies. The Caterpillar follow-up answers about tariffs, and the Wells Fargo answer says the Filings do not cover it.
+- **Coverage notes:** below each complete answer, never above it; "periods differ" only as a note.
+- **Sources:** one "Sources (N)" section, its Query Scope chips on top, "Also retrieved (N)" collapsed beneath the cited ones. The Sources tab numbers every retrieved Source S1…SN, with calendar months in each label. A citation opens Sources at that Source whatever the panel's state.
+- **Calendar:** the panel opened on the Calendar after the first answer naming a Company. Once closed, it stayed closed for the session, with a dot on the Calendar icon whenever an answer added Companies. Its ticker tabs are alphabetical, and its tables are banded by calendar year, with revenue for Tracked Companies, derived fourth quarters marked, and the Snapshot line for JPM, CAT and the pharmaceutical Companies.
+- **Elsewhere:** follow-up suggestions repeat no question asked; no browser console error; every answer complete, none at the cap.
+
+**Findings.** None is a defect of the frozen code, so nothing was fixed and rehearsed again:
+- **A slow answer, once:** in pass 1 the pharmaceutical answer took 52.0 s in full (first text 4.8 s, 1,650 output tokens), over the demo's 30-second ceiling; in pass 2 the same question took 17.7 s. Read as the provider's variance; no other answer was over either ceiling.
+- **A figure without its unit:** the tariffs answer gives Deere's direct tariff impact as "approximately $600", as Deere's 10-K states it (its amounts are in millions). v19's rule 5 quotes figures as the Filing gives them, so the answer is faithful, but a reader may misread it.
+- **JPMorgan's overview has no results:** "How is JP Morgan doing?" opens by saying the excerpts give no revenue, earnings or trend figures. Its 10-K's Item 7 is a 99-token stub pointing to the annual report, which the Corpus holds under Other, so the Overview route plans its Business and Risk Factors only. This is the known limit [above](#the-overview-route-the-document-order-fill-and-latest-for-open-questions-145-2026-10-20).
+- **No Calendar for an open question:** the tariffs question names no Company, so the Calendar adds none, although the answer covers about fifteen. As specified: the Calendar follows the Query Scope.
+- **One odd sentence:** the Wells Fargo answer says the Sector table "resolves the comparison to JPMorgan Chase & Co. and Wells Fargo"; Wells Fargo comes from the list of missing Companies, not the Sector table. The rest of the answer, and its Coverage note, say rightly that it is not covered.
+
+**Sign-off.** The developer signs the rehearsal off on #153 before the final round starts. **Spend:** 18 Answer Calls, $0.06; no Jev call.
+
 ### Order and cost
 
 1. The Brief Suite and the label format.

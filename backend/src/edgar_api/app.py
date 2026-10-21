@@ -87,8 +87,9 @@ MAX_MESSAGE_CHARS = 4_000
 """The longest latest message answered. A business question is a sentence or two."""
 
 MAX_EARLIER_MESSAGE_CHARS = 20_000
-"""The longest earlier message accepted. An earlier answer runs to 300–600 words, about
-4,000 characters; this leaves it several times that room and still bounds the request."""
+"""The longest earlier message accepted. An earlier answer runs to 300–1,000 words, by the
+number of Companies it covers, about 7,000 characters at most; this leaves it more than
+twice that room and still bounds the request."""
 
 MAX_MESSAGES = HISTORY_TURNS + 1
 """The most messages a conversation may send: the question and the earlier messages the
