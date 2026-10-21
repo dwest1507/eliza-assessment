@@ -11,7 +11,16 @@ from statistics import fmean
 
 import pytest
 
-from edgar_eval.selection import AHEAD_P, RULES, Candidate, FactOutcome, choose, sign_test
+from edgar_eval.selection import (
+    AHEAD_P,
+    RULES,
+    Candidate,
+    EvidenceGroup,
+    FactOutcome,
+    choose,
+    compare,
+    sign_test,
+)
 
 
 def test_the_sign_test_counts_cases_where_one_side_scored_higher():
@@ -1479,3 +1488,231 @@ def test_the_compare_command_tells_apart_challengers_named_alike(tmp_path, capsy
         "v7 (generation-dev-chunks600-budget48000)",
     }
     assert saved["shipped"] == "v7"
+
+
+# --- Several runs a side (ADR 0017's note of 2026-10-21) -----------------------------------
+# A side of a comparison may be answered by several runs of one setup: the round's shipped
+# run and its second run, the Control Run and its second run, a candidate and its second
+# run. Each case's score is then the mean over the side's runs that scored it, and the
+# rules, thresholds and tests are unchanged.
+
+
+def test_one_run_a_side_reads_as_it_did():
+    report = _prompt_report("v15", [[True, False]] * 3, unstructured=(1,), unfigured=(2,))
+
+    assert Candidate.from_reports([report], "prompts") == Candidate.from_report(report, "prompts")
+
+
+def test_two_identical_runs_a_side_give_the_one_run_comparison():
+    shipped = _prompt_report("v15", [[False, False]] * 10 + [[True, False]] * 10)
+    challenger = _prompt_report("v16", [[True, True]] * 6 + [[True, False]] * 14)
+    single = compare(
+        Candidate.from_report(challenger, "prompts"),
+        Candidate.from_report(shipped, "prompts"),
+        "prompts",
+    )
+
+    for runs in (2, 3):
+        paired = compare(
+            Candidate.from_reports([challenger] * runs, "prompts"),
+            Candidate.from_reports([shipped] * runs, "prompts"),
+            "prompts",
+        )
+        assert paired.stated_facts == single.stated_facts
+        assert paired.fact_recall == single.fact_recall
+        assert paired.figures == single.figures
+
+
+def test_a_fact_stated_in_one_of_two_runs_counts_half():
+    # The shipped side states each case's fact in its first run only; the candidate in
+    # both of its runs, in 12 of 20 cases: 12 against 6 facts a run, +6.
+    first = _prompt_report("v15", [[True]] * 12 + [[False]] * 8)
+    second = _prompt_report("v15", [[False]] * 20)
+    candidate = _prompt_report("v16", [[True]] * 12 + [[False]] * 8)
+
+    shipped = Candidate.from_reports([first, second], "prompts")
+    challenger = Candidate.from_reports([candidate, candidate], "prompts")
+    facts = compare(challenger, shipped, "prompts").stated_facts
+
+    assert shipped.runs == 2 and shipped.facts["c0"] == (FactOutcome(stated=0.5, reached=True),)
+    assert (facts.facts, facts.challenger_stated, facts.shipped_stated) == (20, 12, 6)
+    assert facts.total_difference == 6
+    assert facts.by_evidence["both"] == EvidenceGroup(
+        facts=20, challenger_stated=12, shipped_stated=6
+    )
+
+
+def test_a_mean_count_that_is_not_whole_is_kept_exactly():
+    first = _prompt_report("v15", [[True]] * 3 + [[False]] * 17)
+    second = _prompt_report("v15", [[False]] * 20)
+    shipped = Candidate.from_reports([first, second], "prompts")
+    challenger = Candidate.from_report(_prompt_report("v16", [[False]] * 20), "prompts")
+
+    facts = compare(challenger, shipped, "prompts").stated_facts
+
+    assert (facts.challenger_stated, facts.shipped_stated, facts.total_difference) == (0, 1.5, -1.5)
+
+
+def test_each_score_is_the_mean_of_the_runs_that_scored_the_case():
+    first = _prompt_report("v15", [[True, True]] * 2, unstructured=(0,), unfigured=(0,))
+    second = _prompt_report("v15", [[True, False]] * 2, unfigured=(0, 1))
+    second["cases"][1]["fact_recall"] = None  # its judgment failed in this run
+
+    side = Candidate.from_reports([first, second], "prompts")
+
+    assert side.fact_recall == {"c0": 0.75, "c1": 1.0}
+    assert side.structure == {"c0": 0.5, "c1": 1.0}
+    assert side.figures == {"c0": 0.0, "c1": 0.5}
+
+
+def test_figure_failures_are_counted_as_each_sides_mean():
+    shipped = Candidate.from_reports(
+        [
+            _prompt_report("v15", [[True]] * 20, unfigured=(0, 1, 2)),
+            _prompt_report("v15", [[True]] * 20, unfigured=(0,)),
+        ],
+        "prompt-fix",
+    )
+    challenger = Candidate.from_reports(
+        [
+            _prompt_report("v18", [[True]] * 20, unfigured=(3,)),
+            _prompt_report("v18", [[True]] * 20),
+        ],
+        "prompt-fix",
+    )
+
+    figures = compare(challenger, shipped, "prompt-fix").figures
+
+    assert (figures.challenger_failed, figures.shipped_failed) == (0.5, 2)
+    assert (figures.fixed, figures.broken) == (2, 0.5)
+    assert figures.verdict == "ahead"
+
+
+def test_a_control_run_ahead_in_one_run_but_not_on_the_mean_leaves_the_choice_conclusive():
+    # One Control Run states 6 more facts than the shipped run, the other 6 fewer: on the
+    # mean of two runs a side the Control Run is level with the shipped run.
+    shipped = _prompt_report("v15", [[True]] * 6 + [[False]] * 14)
+    controls = [
+        _prompt_report("v15", [[True]] * 12 + [[False]] * 8),
+        _prompt_report("v15", [[False]] * 20),
+    ]
+    candidate = _prompt_report("v16", [[True]] * 14 + [[False]] * 6)
+    one = choose(
+        Candidate.from_report(shipped, "prompts"),
+        [Candidate.from_report(candidate, "prompts")],
+        "prompts",
+        control=Candidate.from_report(controls[0], "prompts"),
+    )
+
+    two = choose(
+        Candidate.from_reports([shipped, shipped], "prompts"),
+        [Candidate.from_reports([candidate, candidate], "prompts")],
+        "prompts",
+        control=Candidate.from_reports(controls, "prompts"),
+    )
+
+    assert one.inconclusive
+    assert not two.inconclusive and two.chosen == "v16"
+    assert two.control.stated_facts.total_difference == 0
+    assert (two.runs, two.control_runs) == ({"v15": 2, "v16": 2}, 2)
+
+
+@pytest.mark.parametrize(
+    "field", ["prompt_version", "model", "arm", "settings", "golden_set_version", "split"]
+)
+def test_the_runs_of_one_side_must_be_of_one_setup(field):
+    setup = {
+        "prompt_version": "v15",
+        "model": "gpt-6-luna",
+        "arm": "fts5",
+        "settings": "chunks-600-budget-32000",
+        "golden_set_version": 2,
+        "split": "dev",
+    }
+    first = _prompt_report(None, [[True]] * 2, **setup)
+    second = _prompt_report(None, [[True]] * 2, **setup | {field: "other"})
+
+    with pytest.raises(ValueError, match=field):
+        Candidate.from_reports([first, second], "prompts")
+
+
+def test_the_runs_of_one_side_may_be_named_apart():
+    first = _prompt_report("v16", [[True]] * 2, prompt_version="v16")
+    second = _prompt_report("v16-run2", [[False]] * 2, prompt_version="v16")
+
+    assert Candidate.from_reports([first, second], "prompts").name == "v16"
+
+
+def test_the_compare_command_reads_several_runs_a_side_joined_by_plus(tmp_path, capsys):
+    from edgar_eval.selection import main
+
+    versions = {"prompt_version": "v15", "code_version": "aaaa"}
+    reports = {
+        "generation-dev.json": _prompt_report(None, [[True]] * 3 + [[False]] * 17, **versions),
+        "generation-dev-run2.json": _prompt_report(None, [[False]] * 20, **versions),
+        "generation-control-dev.json": _prompt_report(
+            None, [[True]] * 3 + [[False]] * 17, **versions
+        ),
+        "generation-control-dev-run2.json": _prompt_report(None, [[False]] * 20, **versions),
+        "generation-dev-v16.json": _prompt_report(
+            "v16", [[True]] * 6 + [[False]] * 14, prompt_version="v16", code_version="bbbb"
+        ),
+        "generation-dev-v16-run2.json": _prompt_report(
+            "v16-run2", [[True]] * 6 + [[False]] * 14, prompt_version="v16", code_version="cccc"
+        ),
+    }
+    for name, report in reports.items():
+        (tmp_path / name).write_text(json.dumps(report))
+    side = lambda *names: "+".join(str(tmp_path / n) for n in names)  # noqa: E731
+    out = tmp_path / "prompt-choice-dev.json"
+
+    main(
+        [
+            "compare",
+            side("generation-dev.json", "generation-dev-run2.json"),
+            side("generation-dev-v16.json", "generation-dev-v16-run2.json"),
+            "--control",
+            side("generation-control-dev.json", "generation-control-dev-run2.json"),
+            "--rule",
+            "prompts",
+            "--json",
+            str(out),
+        ]
+    )
+
+    printed = capsys.readouterr().out
+    assert "the mean of its runs" in printed
+    assert "Control Run (v15 run again, 2 runs" in printed
+    assert "1.5 of 20 must-state facts stated against 1.5, +0," in printed
+    assert "6 of 20 must-state facts stated against 1.5, +4.5" in printed
+    assert "Chosen: v16" in printed
+    saved = json.loads(out.read_text())
+    assert saved["chosen"] == "v16" and not saved["inconclusive"]
+    assert saved["reports"] == [
+        str(tmp_path / "generation-dev.json"),
+        str(tmp_path / "generation-dev-v16.json"),
+    ]
+    assert (saved["runs"], saved["control_runs"]) == ({"v15": 2, "v16": 2}, 2)
+    assert saved["run_reports"] == {
+        "v15 (shipped run)": [
+            str(tmp_path / "generation-dev.json"),
+            str(tmp_path / "generation-dev-run2.json"),
+        ],
+        "v15 (Control Run)": [
+            str(tmp_path / "generation-control-dev.json"),
+            str(tmp_path / "generation-control-dev-run2.json"),
+        ],
+        "v16": [
+            str(tmp_path / "generation-dev-v16.json"),
+            str(tmp_path / "generation-dev-v16-run2.json"),
+        ],
+    }
+    assert saved["versions"]["v16"] == {"prompt_version": "v16", "code_version": "bbbb+cccc"}
+    assert set(saved["capped"]) == {
+        "v15 (shipped run 1)",
+        "v15 (shipped run 2)",
+        "v15 (Control Run 1)",
+        "v15 (Control Run 2)",
+        "v16 (run 1)",
+        "v16 (run 2)",
+    }

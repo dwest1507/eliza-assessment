@@ -49,3 +49,42 @@ Decided on 2026-10-20 (spec #132) and built on 2026-10-21 (issue #157), before a
 Built in `edgar_eval` (issue #157). `Candidate.from_report` reads each case's structure check and figure check, and the prompt and code versions the report records. `compare` and `choose` apply both rules. The tests in `backend/tests/test_selection.py` run on hand-built reports.
 
 Applied offline to #126's saved reports (prompt v7, `compare --rule prompts`, free): the Control Run is not ahead (226 of 316 must-state facts stated against 227), and `hybrid-local` (234, p ahead = 0.182), 600 / 48k (233, p = 0.195), 450 / 48k (229, p = 0.391) and 800 / 48k (225, p = 0.640) are not ahead fact by fact. Every fact-level verdict and count matches #127's and #129's choice files under ADR 0015, so v7 would have stood under `prompts` too.
+
+## Note (2026-10-21, #160): two runs a side in spec #132's round
+
+**Why.** The round's Control Run came out ahead of its shipped run under `prompts`: 241 of 334 must-state facts stated against 229, +12, p ahead = 0.081. Under the rule above, every `prompts` comparison in the round would have been inconclusive whatever the candidate scored. The developer chose to run a second shipped run and Control Run and to read the round's candidates against two runs a side, as #132's archived notes suggest for small effects.
+
+**The method, for every comparison of spec #132's round** (v16, v17, v18, the legal proceedings route and its fallback, and the combination):
+
+- **Every side is two runs of its setup:**
+  - the shipped side: `generation-dev.json` and `generation-dev-run2.json`;
+  - the Control side: `generation-control-dev.json` and `generation-control-dev-run2.json`;
+  - each candidate: two runs, `make eval-generation NAME=v16` and `NAME=v16-run2`.
+  
+  This replaces "one run per candidate" above for this round. Each extra candidate run costs about $0.29, about $1.45 over five candidates, within the spec's $10 cap.
+- **How a side is read** (`Candidate.from_reports`):
+  - each case's score is the mean over the side's runs that scored it, a pass/fail score as the share of its runs passing;
+  - each must-state fact counts as stated by the share of the side's runs that state it, so facts stated and figure failures are each a mean per run;
+  - the runs of one side must record one setup, or `compare` refuses them. The second run may carry its own `name`; the side takes its first run's.
+- **The tests, thresholds and rules are unchanged:**
+  - the sign test pairs the per-case means;
+  - the fact-level test resamples whole cases of mean differences, scaled to whole numbers, which leaves its p-values as they are;
+  - `prompt-fix` counts the mean figure failures.
+- **The Control Run check compares the Control pair with the shipped pair.**
+- **Why the candidate gets two runs too.** A two-run side halves a side's run-to-run variance. One candidate run against a two-run shipped side would carry half as much variance again as the Control pair against the shipped pair, so the check would understate the noise of the comparison it guards.
+- **The command.** `compare` takes a side's reports joined by `+`:
+
+  ```sh
+  python -m edgar_eval.selection compare generation-dev.json+generation-dev-run2.json \
+      generation-dev-v16.json+generation-dev-v16-run2.json \
+      --control generation-control-dev.json+generation-control-dev-run2.json --rule prompts
+  ```
+
+  The choice file records each side's run count (`runs`, `control_runs`) and reports (`run_reports`). One report a side reads exactly as before, and the `arms`, `settings` and `generators` commands are unchanged.
+
+**The result** (`prompts-choice-dev-control-two-runs.json` and `prompt-fix-choice-dev-control-two-runs.json`, free):
+
+- **The four runs of v15 state 229, 235, 241 and 229 must-state facts:** the shipped run, its second run, the Control Run and its second run.
+- **Under `prompts`, the Control pair is not ahead:** 235 against 232 a run, +3, p ahead = 0.334. The round's `prompts` comparisons are conclusive when read two runs a side.
+- **Under `prompt-fix`, it is not ahead either:** 4.5 cases failing the figure check a run, against 2.5.
+- **Caveat: two guardrails move with noise.** The Control pair is behind the shipped pair on structure followed (3 cases higher, 13 lower, p behind = 0.011) and on Faithfulness (p behind = 0.140). Guardrails are not part of the Control Run check, so the round stands, but the same setup is blocked on both by noise alone. A candidate blocked only on structure or Faithfulness is decided by the rule as it stands, and its ticket records the margin beside the Control pair's.

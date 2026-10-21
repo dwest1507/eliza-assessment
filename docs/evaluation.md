@@ -11,8 +11,8 @@
 - **The main limits.**
   - Small samples: on 20 cases one case moves a share by 0.05, so the numbers are directional, not exact rates.
   - A small human check: Claude drafted the Golden Set's facts and labelled the judge study, so Jev is checked against Claude ([The judge study's results](#the-judge-studys-results)). In a blind [human check](#the-human-check) the developer labelled 15 fact items: agreement 80% with Claude's labels and 87% with Jev's verdicts. The claim labels, which Faithfulness and Contradicted Claims rest on, are still Claude's alone.
-  - These numbers are prompt v7's, at reasoning effort low, until the final round. Prompt v15 ([ADR 0016](adr/0016-coverage-gaps-shown-by-the-product.md)), with every generator at effort low and a 32k cap, on #136's finished answer path, has been run twice on the 63 dev cases as the base round of spec #132: Fact Recall 0.69 and 0.72, Faithfulness 0.95 in both, and the second run states 12 more must-state facts than the first, enough to count as ahead under the rule, so one run a side cannot show a prompt change's effect of that size ([the v15 base round](#the-v15-base-round-and-its-generation-misses-160-2026-10-21)). Coverage Gaps stated is measured differently from v15.
-  - Speed at effort low: in the two runs of the v15 base round the first text comes after 2.4 to 2.5 seconds on average and 5.7 at most, and the full answer after 8.6 to 8.7 seconds on average and 14.2 at most, so every dev answer is within the demo's ceilings (10 seconds to the first text, 30 to the full answer). At effort medium ([#138's run](#luna-at-medium-effort-prompt-v15-138-2026-10-20)) the first text took more than 10 seconds for 21 of 60 answers, so every model answers at low.
+  - These numbers are prompt v7's, at reasoning effort low, until the final round. Prompt v15 ([ADR 0016](adr/0016-coverage-gaps-shown-by-the-product.md)), with every generator at effort low and a 32k cap, on #136's finished answer path, has been run four times on the 63 dev cases as the base round of spec #132: Fact Recall 0.69 to 0.72, Faithfulness 0.94 to 0.96, and 229 to 241 of the 334 must-state facts stated, so one run a side cannot show a prompt change's effect of that size. #132's candidates are read two runs a side, and on that reading the round's Control Runs are not ahead of its shipped runs ([the v15 base round](#the-v15-base-round-and-its-generation-misses-160-2026-10-21)). Coverage Gaps stated is measured differently from v15.
+  - Speed at effort low: in the v15 base round's first two runs, made one after the other, the first text comes after 2.4 to 2.5 seconds on average and 5.7 at most, and the full answer after 8.6 to 8.7 seconds on average and 14.2 at most, so every dev answer is within the demo's ceilings (10 seconds to the first text, 30 to the full answer). At effort medium ([#138's run](#luna-at-medium-effort-prompt-v15-138-2026-10-20)) the first text took more than 10 seconds for 21 of 60 answers, so every model answers at low.
   - A computed figure fails the figure check by design, and a follow-up that changes topic without naming a Company inherits the earlier one ([ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md)).
 
 The rest of these notes is the full history: each harness's method, then every run in the order it was made.
@@ -1851,7 +1851,7 @@ make eval-misses REPORTS=brief-suite.json
 
 ### The v15 base round and its Generation Misses (#160, 2026-10-21)
 
-Part of spec #132: the round every #132 candidate is measured against, and the diagnosis of its misses, repeated on v15 before any candidate runs. The answer path is #136's finished one: the joined passages (#137), Coverage notes (ADR 0016, #139), the Overview route and document-order fill (#145), the "big tech" Company Group (#146) and the calendar months (#147), with #159's figure check. `gpt-6-luna` answered the 63 dev cases twice at reasoning effort low, as the round's shipped run and its Control Run: prompt v15, `fts5`, 600-token chunks, the 32k budget, `jev-1.13.0` at 0.6, code version `0bc99f66e57db4ec`. The two runs cost $0.57 in all ($0.18 in answers and $0.10 in Jev judging each).
+Part of spec #132: the round every #132 candidate is measured against, and the diagnosis of its misses, repeated on v15 before any candidate runs. The answer path is #136's finished one: the joined passages (#137), Coverage notes (ADR 0016, #139), the Overview route and document-order fill (#145), the "big tech" Company Group (#146) and the calendar months (#147), with #159's figure check. `gpt-6-luna` answered the 63 dev cases twice at reasoning effort low, as the round's shipped run and its Control Run: prompt v15, `fts5`, 600-token chunks, the 32k budget, `jev-1.13.0` at 0.6, code version `0bc99f66e57db4ec`. The two runs cost $0.57 in all ($0.18 in answers and $0.10 in Jev judging each). The Control Run came out ahead, so a second pair was run on the same setup and the round is read two runs a side ([below](#two-runs-a-side-the-control-runs-are-not-ahead)).
 
 ```sh
 make eval-generation                                   # the shipped run, generation-dev.json
@@ -1866,16 +1866,53 @@ make eval-misses REPORTS="generation-dev.json generation-control-dev.json"   # f
 |---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
 | **shipped run** | 63 | 0.89 | 0.95 | 0.73 | 0.81 | 436 | **0.69** | 0.44 | **0.95** | 2 | 229 of 334 | 0.0029 | 8.6 | 2.5 |
 | **Control Run** | 63 | 0.97 | 0.94 | 0.80 | 0.68 | 444 | **0.72** | 0.45 | **0.95** | 4 | 241 of 334 | 0.0029 | 8.7 | 2.4 |
+| shipped run 2 | 63 | 0.95 | 0.97 | 0.93 | 0.76 | 444 | **0.70** | 0.48 | **0.96** | 4 | 235 of 334 | 0.0029 | 14.1* | 5.1* |
+| Control Run 2 | 63 | 0.92 | 0.92 | 0.87 | 0.71 | 438 | **0.70** | 0.47 | **0.94** | 4 | 229 of 334 | 0.0029 | 13.7* | 5.0* |
 | #156's run (prompt v15, 62 cases) | 62 | 0.92 | 0.95 | 0.87 | 0.81 | 438 | 0.70 | 0.49 | 0.95 | 7 | | 0.0029 | 8.8 | 2.6 |
 
-Every answer is within the demo's ceilings: the first text after at most 5.7 seconds (5.0 in the Control Run) and the full answer within 13.0 (14.2). No answer reaches the cap; the longest used 1,344 of its 32,000 output tokens. Jev's own token limit failed its judgments on a few claims of `trend-jpm-revenue-snapshot` and `gap-cat-sales-snapshot` in both runs, so Faithfulness leaves those claims out. The figure check fails 3 cases in the shipped run and 4 in the Control Run, each a figure the answer computed: the combined share of NVIDIA's largest customers and Alphabet's capital expenditure growth in both runs, ExxonMobil's net income decline in the shipped run, and Tesla's net income decline and Caterpillar's sales decline from 2023 to 2024 in the Control Run.
+\* The second pair ran side by side, 8 Answer Calls at a time against the first pair's 4, so its latencies are not the product's: one of its answers took 11.3 seconds to its first text. Speed is read from the first pair, which ran one run after the other. Every answer of the first pair is within the demo's ceilings: the first text after at most 5.7 seconds (5.0 in the Control Run) and the full answer within 13.0 (14.2). No answer reaches the cap; the longest used 1,344 of its 32,000 output tokens. Jev's own token limit failed its judgments on a few claims of `trend-jpm-revenue-snapshot` and `gap-cat-sales-snapshot` in both runs, so Faithfulness leaves those claims out. The figure check fails 3 cases in the shipped run and 4 in the Control Run, each a figure the answer computed: the combined share of NVIDIA's largest customers and Alphabet's capital expenditure growth in both runs, ExxonMobil's net income decline in the shipped run, and Tesla's net income decline and Caterpillar's sales decline from 2023 to 2024 in the Control Run.
 
 #### The Control Run is ahead of the shipped run
 
 Under ADR 0017's `prompts` rule (`compare --rule prompts`, free), the Control Run, the same setup answering again, states **241 of the 334 must-state facts against the shipped run's 229, +12, p ahead = 0.081**, under the 0.10 threshold: it comes out **ahead** on the rule's ahead metric. Its evidence was the same (223 against 213 of the 289 facts reached, 18 against 16 of the 45 not reached). It is also **behind on structure followed** (5 cases higher, 13 lower, p behind = 0.048), and indistinguishable on Fact Recall case by case (p ahead = 0.132), Faithfulness, Coverage Gaps and Contradicted Claims. Under `prompt-fix` it is not ahead: it fails the figure check in 4 cases against 3.
 
 - **Two runs of one setup differ by more than the rule's threshold,** on both the ahead metric of `prompts` and its new structure guardrail. ADR 0011's Control Run exists to catch exactly this: under ADR 0017, any `prompts` comparison against this round (v16, v17, the legal route, the combination) would be **inconclusive** whatever the candidate scored, and v15 would stand. A `prompt-fix` comparison (v18) is not made inconclusive by it.
-- **The developer decides before any candidate runs** (#160's acceptance criterion), so no candidate has been run. The choice is recorded in `prompt-choice-dev-control.json` beside the reports.
+- **The developer decides before any candidate runs** (#160's acceptance criterion), so no candidate has been run. The choice is recorded in `prompt-choice-dev-control.json` beside the reports. The developer chose to run a second pair and to read the round two runs a side ([below](#two-runs-a-side-the-control-runs-are-not-ahead)).
+
+#### Two runs a side: the Control Runs are not ahead
+
+A second shipped run and Control Run were run on the same setup, $0.58 in all ($0.37 in answers and $0.21 in Jev judging). Their reports record code version `0aff4175b3cf6c2c` rather than `0bc99f66e57db4ec`, but they ran the first pair's code. The digest is taken from the files on disk when a report is written, and by then `edgar_eval/selection.py` was part-way through the edit for the method below. Both runs had loaded every module before that edit began. The round's comparisons are now read **two runs a side** ([ADR 0017's note of 2026-10-21](adr/0017-prompt-changes-decided-by-two-rules.md#note-2026-10-21-160-two-runs-a-side-in-spec-132s-round)):
+
+- **Each side is two runs:** the shipped runs, the Control Runs, and two runs of each candidate (`NAME=v16`, then `NAME=v16-run2`).
+- **Each score is the mean of a side's runs:** a case's score is the mean over its side's runs, and a fact counts as stated by the share of the runs that state it.
+- **The tests and the rules are unchanged:** `compare` takes a side's reports joined by `+`.
+
+```sh
+E=../data/derived/eval
+python -m edgar_eval.selection compare $E/generation-dev.json+$E/generation-dev-run2.json \
+    --control $E/generation-control-dev.json+$E/generation-control-dev-run2.json \
+    --rule prompts --json $E/prompts-choice-dev-control-two-runs.json      # free; also --rule prompt-fix
+```
+
+| Must-state facts stated (of 334) | run 1 | run 2 | mean a run |
+|---|---|---|---|
+| shipped runs | 229 | 235 | 232 |
+| Control Runs | 241 | 229 | 235 |
+
+- **Facts stated (`prompts`):** the Control pair states 235 a run against the shipped pair's 232, +3, **p ahead = 0.334**, so it is **not ahead**, and the round's `prompts` comparisons are conclusive when read two runs a side.
+  - Taken alone, the second pair is not ahead either: 229 against 235.
+  - Fact Recall case by case is level (18 cases higher, 18 lower).
+- **Figures (`prompt-fix`):** the Control pair is not ahead either, with 4.5 cases failing the figure check a run against 2.5.
+- **Two guardrails still move with noise.** The Control pair is **behind on structure followed** (3 cases higher, 13 lower, p behind = 0.011) and **behind on Faithfulness** (17 higher, 25 lower, p behind = 0.140).
+  - Its runs miss the structure in 20 and 18 cases, against 12 and 15, nearly always by length, under 300 words or over 600.
+  - Guardrails are not part of the Control Run check, so the round stands. But the same setup is blocked on both guardrails by noise alone, so a candidate blocked on structure or Faithfulness alone is recorded with its margin beside the Control pair's.
+- **What it means for #161 to #165:**
+  - each candidate is run twice, about $0.29 more a candidate;
+  - each is decided by `compare` against the shipped pair, with the Control pair as `--control`;
+  - #162's structure re-score covers all four v15 reports.
+- **The Generation Misses** above are the first pair's; the second pair's were not read.
+
+The second pair's reports are `generation-dev-run2.json` and `generation-control-dev-run2.json`, with the two choice files beside them; the export still shows the first pair.
 
 #### The Generation Misses on v15
 
@@ -1914,7 +1951,7 @@ Under ADR 0017's `prompts` rule (`compare --rule prompts`, free), the Control Ru
 
 **The candidates' wording.** The diagnosis keeps the list of candidates and adjusts the wording of v16 and v18, posted on their tickets before either runs (#161, #163): v16 also asks the answer to keep a Company's own assessment of materiality or outlook, the Filing's tense ("has", "has in the past") and its quantity words; v18 also asks that a question about two or more years gets each year's change the Sources state, and that a period total the Source states (nine months, a year) is quoted rather than only its parts. v17 is unchanged; its ticket (#162) notes that on v15 the miss rate jumps at two Companies, which v17's range leaves at 600 words.
 
-The reports, `generation-dev.json` and `generation-control-dev.json`, are the round's, which the export shows; `misses-generation-dev.json`, `misses-generation-control-dev.json` and `prompt-choice-dev-control.json` are beside them. #156's single v15 run is kept as `data/derived/eval-issue156/generation-dev.json`.
+The reports, `generation-dev.json` and `generation-control-dev.json`, are the round's first pair, which the export shows; `misses-generation-dev.json`, `misses-generation-control-dev.json` and `prompt-choice-dev-control.json` are beside them. #156's single v15 run is kept as `data/derived/eval-issue156/generation-dev.json`.
 
 ### Order and cost
 
