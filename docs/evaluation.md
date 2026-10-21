@@ -11,7 +11,8 @@
 - **The main limits.**
   - Small samples: on 20 cases one case moves a share by 0.05, so the numbers are directional, not exact rates.
   - No human labels: Claude drafted the Golden Set's facts and labelled the judge study, so Jev is checked against Claude, not a person ([The judge study's results](#the-judge-studys-results)). A blind 30-item [human check](#the-human-check) is drawn and waits for the developer's labels.
-  - Prompt v15 ([ADR 0016](adr/0016-coverage-gaps-shown-by-the-product.md)) and the [Overview route and document-order fill](#the-overview-route-the-document-order-fill-and-latest-for-open-questions-145-2026-10-20) are not scored on answers yet: these numbers are prompt v7's until the final round, and Coverage Gaps stated is measured differently from v15.
+  - These numbers are prompt v7's, at reasoning effort low, until the final round. Prompt v15 ([ADR 0016](adr/0016-coverage-gaps-shown-by-the-product.md)), with every generator at effort medium, has been run once on dev, before the [Overview route and document-order fill](#the-overview-route-the-document-order-fill-and-latest-for-open-questions-145-2026-10-20), which are not scored on answers yet: Fact Recall 0.70 and Faithfulness 0.93, with no Control Run beside it, so not a comparison, and Coverage Gaps stated is measured differently from v15 ([Luna at medium effort](#luna-at-medium-effort-prompt-v15-138-2026-10-20)).
+  - Speed at effort medium: answers take 14.5 seconds on average and 26.9 at most, within the demo's 30-second ceiling, but the first text comes after 9.0 seconds on average, and after more than the 10-second ceiling for 21 of the 60 dev answers. The developer decides before the freeze.
   - A computed figure fails the figure check by design, and a follow-up that changes topic without naming a Company inherits the earlier one ([ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md)).
 
 The rest of these notes is the full history: each harness's method, then every run in the order it was made.
@@ -1724,6 +1725,33 @@ With the two new cases, 62 in all (59 scored): `overview` reaches 12 of 17 facts
 - **More text is not always more facts.** `risk-aapl-legal-proceedings` goes from 4,557 to 25,493 Source tokens with no fact gained, and `risk-wmt-tgt-legal-proceedings` from 22,337 to 30,725 for one detail. Whether the extra passages crowd the answers, as #120's and #129's did, needs a generation run (#132); none is run here.
 - **The Floors are re-recorded** (`make eval-floors`, ADR 0014) since the scored cases rise from 57 to 59; their values don't move (hit@10 0.96, recall@10 0.87, MRR 0.77).
 - **The comparisons stand as recorded.** The Arm and settings comparisons were decided on #126's retrieval and are not rerun. `retrieval-dev.json` was run again on all six Arms with the new cases (free: the route ranks nothing, so the hosted Arms needed no new question embedding) and exported with `make eval-export`, so the "How it works" page shows these numbers.
+
+### Luna at medium effort, prompt v15 (#138, 2026-10-20)
+
+Part of spec #136. Every generator now answers at reasoning effort medium with a cap of 32,000 output tokens, reasoning included, where every run above answered at effort low with a 2,500-token cap. This is `gpt-6-luna`'s first run at medium, and prompt v15's first score ([ADR 0016](adr/0016-coverage-gaps-shown-by-the-product.md): Coverage notes, with #139's rules and #147's calendar months), on the joined passages of #137, before #145's Overview route and document-order fill (which landed while it ran, so on the 60 dev cases of the time): `fts5`, 600-token chunks, the 32k budget, `jev-1.13.0` at 0.6, code version `9ea7a3d88c7a1f2c`. The code changed, so it starts a new round, whose Control Run has not been run yet. It was run once, with the developer's approval, to measure the latency against the demo's ceiling: the first text within 10 seconds and the full answer within 30.
+
+```sh
+make eval-generation        # $0.19 in answers, $0.09 in Jev judging
+```
+
+| Run | cases | citations valid | figures exact | gaps stated | structure followed | words | Fact Recall | detail recall | Faithfulness | answers with a Contradicted Claim | $ per answer | latency s | first text s |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **Luna at medium, prompt v15** | 60 | 0.93 | 0.92 | 0.80 | 0.85 | 428 | **0.70** | 0.47 | **0.93** | 4 | 0.0031 | 14.5 | 9.0 |
+| #126's shipped run (low, prompt v7) | 60 | 0.95 | 0.90 | 1.00 | 0.70 | 453 | 0.72 | 0.49 | 0.95 | 8 | 0.0028 | 8.7 | 2.5 |
+
+**The latency against the ceiling:**
+
+| | mean | median | 90th percentile | longest | answers over the ceiling |
+|---|---|---|---|---|---|
+| First text (ceiling 10 s) | 9.0 s | 9.3 s | 13.2 s | 17.3 s | 21 of 60 |
+| Full answer (ceiling 30 s) | 14.5 s | 14.6 s | 19.6 s | 26.9 s | none |
+
+- **The full answer is within the ceiling; the first text is not, for a third of the answers.** Every answer finishes within 30 seconds, the longest in 26.9. The first text comes after 9.0 seconds on average, under 10, but 21 of the 60 answers show none for more than 10 seconds: 9 of the 14 figure trends, 5 of 18 risk questions, 5 of 14 sector questions, and one outlook and one stale Filing question; the longest wait is 17.3 seconds (`trend-pfe-jnj-revenue-2024`). At effort low, #126's run showed the first text after 2.5 seconds on average and 5.7 at most. The time goes to reasoning before the answer starts: answers use 1,541 output tokens on average, reasoning included, against 856 at low. The developer decides before the freeze (#153) whether this is acceptable for the demo or Luna answers at a lower effort.
+- **No answer reaches the cap.** The longest used 2,440 of its 32,000 output tokens, and every answer stopped on its own.
+- **The scores are not a comparison.** Fact Recall 0.70 and Faithfulness 0.93 against #126's 0.72 and 0.95 mix four changes (prompt v15, the joined passages, the calendar months and the effort), with no Control Run beside them; the noise between two runs of one setup was as large ([A new round on the new retrieval](#a-new-round-on-the-new-retrieval-126-2026-10-18)). Coverage Gaps stated is measured differently from v15 (only the gaps that leave part of the question unanswered are checked; "periods differ" and the rest are shown as Coverage notes), so 0.80 is not comparable with 1.00: the answers for `trend-jpm-revenue-snapshot`, `missing-bms-with-merck` and `stale-gecc-main-risks` do not say what part of the question they cannot answer.
+- **Structure is followed more often** (0.85 against 0.70): of the nine misses, six are sector questions over 600 words, two are figure trends a few words under 300, and one is the follow-up that changes topic without naming a Company (71 words, ADR 0003's known weakness).
+- **Two Jev judgments failed** (Jev's own token limit, on 3 of the claims of `trend-jpm-revenue-snapshot`), so Faithfulness leaves those claims out.
+
 
 ### Order and cost
 

@@ -54,21 +54,22 @@ answer to question 3 of the email.
 
 # The value case: hours of reading become a checked answer
 
-| | What the analyst gets | Evidence (holdout run) |
+| | What the analyst gets | Evidence |
 |---|---|---|
-| **Analyst hours per question** | A 300–600 word answer, the direct answer first, then per Company | 9.5 s per answer, first text after 3.1 s, $0.0030 per answer |
-| **Stated Coverage Gaps** | Snapshot trends, missing Companies, the stale Filing, missing guidance and differing periods, shown below the answer | Every expected gap stated: 1.00 |
-| **Auditable citations** | Every `[Sn]` opens its Filing, Section, Report Period and passage | Citations valid 1.00, Faithfulness 0.95 |
+| **Analyst hours per question** | A 300–600 word answer, the direct answer first, then per Company | 14.5 s per answer, first text after 9.0 s, $0.0031 per answer (dev) |
+| **Stated Coverage Gaps** | Snapshot trends, missing Companies, the stale Filing, missing guidance and differing periods, shown below the answer | Every expected gap stated: 1.00 (holdout) |
+| **Auditable citations** | Every `[Sn]` opens its Filing, Section, Report Period and passage | Citations valid 1.00, Faithfulness 0.95 (holdout) |
 
 **An illustrative value model** ([assumption 12](assumptions.md#12-an-illustrative-value-model), not confirmed: the inputs are ours, for the Client to replace):
 
-10 analysts × 5 questions a week × 2 hours saved × $150 an hour × 48 weeks = **about $720k a year**, against $8.20 a week of Answer Calls even at the most expensive model's price ($0.14 at the shipped one's).
+10 analysts × 5 questions a week × 2 hours saved × $150 an hour × 48 weeks = **about $720k a year**, against $8.20 a week of Answer Calls even at the most expensive model's price ($0.16 at the shipped one's).
 
-> Sources: [the holdout run](evaluation.md#the-holdout-run), [assumption 12](assumptions.md#12-an-illustrative-value-model)
+> Sources: [Luna at medium effort](evaluation.md#luna-at-medium-effort-prompt-v15-138-2026-10-20), [the holdout run](evaluation.md#the-holdout-run), [assumption 12](assumptions.md#12-an-illustrative-value-model)
 
 <!--
 The table is measured: the answer's speed and cost, and that it is checkable (every citation
-opens the passage) and honest about what is missing. The value model is not: its inputs are
+opens the passage) and honest about what is missing. The speed and cost are the current setup's,
+at reasoning effort medium on the dev split; the citations and gaps are from the holdout run. The value model is not: its inputs are
 assumption 12, chosen by us and not confirmed. Say so, then ask the Client for their own
 numbers: how many analysts, how many questions each asks a week, and how long one takes by
 hand today. Even at a quarter of our hours saved, the value dwarfs the cost of the Answer
