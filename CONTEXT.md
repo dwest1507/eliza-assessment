@@ -25,7 +25,7 @@ One numbered, citable item in an Answer Call's context: the retrieved text of on
 _Avoid_: Reference, document, context item
 
 **Coverage Gap**:
-A part of a question the Corpus cannot answer (a trend asked of a Snapshot Company, a Company not in the Corpus, a stale Filing, guidance the Filings don't contain), stated in the answer with a fixed wording instead of being filled from general knowledge.
+A part of a question the Corpus cannot answer (a trend asked of a Snapshot Company, a Company not in the Corpus, a stale Filing, guidance the Filings don't contain, or Companies whose latest periods differ). Every Coverage Gap is shown with the answer, in a fixed wording, as a Coverage note after it; the answer never fills one from general knowledge, and says in its own words only those that leave part of the question unanswered.
 _Avoid_: Limitation, missing data, caveat
 
 ### Evaluation
@@ -79,6 +79,10 @@ _Avoid_: Issuer, registrant, firm
 **Sector**:
 The industry group a Company belongs to, taken from a curated GICS-style reference table, since Filings do not carry one.
 _Avoid_: Industry (unqualified), vertical
+
+**Company Group**:
+A curated, named set of Companies that no Sector captures (e.g. "big tech"), which a question can name in place of its Companies. Disclosed like the Sector table.
+_Avoid_: Basket, peer set, Sector (for a group that cuts across Sectors)
 
 **Filing**:
 One 10-K or 10-Q document submitted to the SEC by a single company, as one file in the corpus.
