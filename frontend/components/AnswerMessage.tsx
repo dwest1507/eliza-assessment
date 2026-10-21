@@ -26,21 +26,21 @@ interface AnswerMessageProps {
   gaps: CoverageGap[]
   /** Whether the answer has finished: until then nothing shows beneath it. */
   complete: boolean
-  /** The tag open in the Sources panel, if this answer's Sources are shown there. */
+  /** The tag open in the side panel's Sources tab, if this answer's Sources are shown there. */
   openTag: string | null
   onCite: (tag: string) => void
 }
 
 /**
  * One answer: the Coverage Gap callout, then its Markdown, with every `[Sn]` a link that
- * opens the Sources panel at that Source. The Sources arrive before the text, so the
+ * opens the side panel's Sources tab at that Source. The Sources arrive before the text, so the
  * citations work while the answer is still streaming. Only the opening paragraph, the
  * direct answer, shows at first: "Show full analysis" reveals the rest, live while it
  * streams, and the expanded state is this answer's own, never saved, so a restored answer
  * starts collapsed. An answer with one paragraph, or one that does not open with prose,
- * shows whole with no control. Once it is complete, two collapsed
- * disclosures follow: "Sources (N)", the Sources it cites, and "How this was answered",
- * its Query Scope chips and every Source it was given.
+ * shows whole with no control. Once it is complete, one collapsed "Sources" disclosure
+ * follows: its Query Scope chips on top, then the Sources it cites, then the Sources it
+ * was given but does not cite under a collapsed "Also retrieved (N)".
  */
 export default function AnswerMessage({
   text,
@@ -54,6 +54,7 @@ export default function AnswerMessage({
   const [expanded, setExpanded] = useState(false)
   const tags = new Set(sources.map((s) => s.tag))
   const cited = citedSources(text, sources)
+  const uncited = sources.filter((s) => !cited.includes(s))
   const split = splitAnswer(text)
   const shown = split && !expanded ? split.opening : text
 
@@ -143,28 +144,28 @@ export default function AnswerMessage({
           )}
         </div>
       )}
-      {complete && (
+      {complete && (scope || sources.length > 0) && (
         <footer className="flex flex-col gap-1 border-t border-line pt-2">
-          {cited.length > 0 && (
-            <Disclosure summary={`Sources (${cited.length})`}>
-              <SourceChips
-                label="Cited Sources"
-                sources={cited}
-                openTag={openTag}
-                onCite={onCite}
-              />
-            </Disclosure>
-          )}
-          <Disclosure summary="How this was answered">
+          <Disclosure summary={cited.length > 0 ? `Sources (${cited.length})` : 'Sources'}>
             <div className="flex flex-col gap-3">
               {scope && <QueryScopeChips scope={scope} />}
-              {sources.length > 0 && (
+              {cited.length > 0 && (
                 <SourceChips
-                  label="Retrieved Sources"
-                  sources={sources}
+                  label="Cited Sources"
+                  sources={cited}
                   openTag={openTag}
                   onCite={onCite}
                 />
+              )}
+              {uncited.length > 0 && (
+                <Disclosure summary={`Also retrieved (${uncited.length})`}>
+                  <SourceChips
+                    label="Also retrieved"
+                    sources={uncited}
+                    openTag={openTag}
+                    onCite={onCite}
+                  />
+                </Disclosure>
               )}
             </div>
           </Disclosure>
@@ -181,7 +182,7 @@ interface SourceChipsProps {
   onCite: (tag: string) => void
 }
 
-/** Sources as chips, each opening the Sources panel at its Source. */
+/** Sources as chips, each opening the side panel's Sources tab at its Source. */
 function SourceChips({ label, sources, openTag, onCite }: SourceChipsProps) {
   return (
     <ul aria-label={label} className="flex flex-wrap gap-1.5">

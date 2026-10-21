@@ -277,12 +277,12 @@ describe('Workspace', () => {
     await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
     await screen.findByText('trade policy')
 
-    expect(screen.queryByRole('complementary', { name: 'Sources' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('complementary', { name: 'Side panel' })).not.toBeInTheDocument()
 
     const answer = screen.getByRole('article', { name: 'Answer' })
     await user.click(within(answer).getByRole('link', { name: 'Source S2' }))
 
-    const panel = await screen.findByRole('complementary', { name: 'Sources' })
+    const panel = await screen.findByRole('tabpanel', { name: 'Sources' })
     const source = within(panel).getByRole('region', { name: /^S2/ })
     expect(within(source).getByRole('heading', { level: 3 })).toHaveTextContent(
       'S2Tesla 10-K, FY2025 · Risk Factors'
@@ -319,14 +319,14 @@ describe('Workspace', () => {
     await user.click(within(answer).getByRole('link', { name: 'Source S2' }))
     await user.click(within(answer).getByRole('link', { name: 'Source S1' }))
 
-    const panel = screen.getByRole('complementary', { name: 'Sources' })
+    const panel = screen.getByRole('tabpanel', { name: 'Sources' })
     expect(within(panel).getByRole('region', { name: /^S1/ })).toHaveTextContent(
       'A significant majority of the Company’s manufacturing'
     )
     expect(within(panel).queryByRole('region', { name: /^S2/ })).not.toBeInTheDocument()
 
-    await user.click(within(panel).getByRole('button', { name: 'Close Sources' }))
-    expect(screen.queryByRole('complementary', { name: 'Sources' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Close panel' }))
+    expect(screen.queryByRole('complementary', { name: 'Side panel' })).not.toBeInTheDocument()
   })
 
   it('sends only the conversation text back to the API on a follow-up', async () => {
@@ -354,15 +354,12 @@ describe('Workspace', () => {
     expect(await screen.findByText(STARTERS[0].question)).toBeInTheDocument()
     expect(screen.getByText('trade policy')).toBeInTheDocument()
     expect(screen.queryByRole('list', { name: 'Starter prompts' })).not.toBeInTheDocument()
-    // The restored answer is complete, so it shows its disclosures.
+    // The restored answer is complete, so it shows its Sources disclosure.
     const answer = screen.getByRole('article', { name: 'Answer' })
     expect(within(answer).getByRole('button', { name: 'Sources (2)' })).toBeInTheDocument()
-    expect(
-      within(answer).getByRole('button', { name: 'How this was answered' })
-    ).toBeInTheDocument()
     // It keeps its Sources, so its citations still open the panel.
     await user.click(within(answer).getByRole('link', { name: 'Source S2' }))
-    expect(await screen.findByRole('complementary', { name: 'Sources' })).toBeInTheDocument()
+    expect(await screen.findByRole('tabpanel', { name: 'Sources' })).toBeInTheDocument()
 
     // A follow-up after the refresh still carries the earlier turns.
     await user.type(screen.getByRole('textbox', { name: 'Question' }), 'And Microsoft?{Enter}')
@@ -383,7 +380,7 @@ describe('Workspace', () => {
 
     expect(screen.getByRole('list', { name: 'Starter prompts' })).toBeInTheDocument()
     expect(screen.queryByText('trade policy')).not.toBeInTheDocument()
-    expect(screen.queryByRole('complementary', { name: 'Sources' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('complementary', { name: 'Side panel' })).not.toBeInTheDocument()
 
     // The next question starts afresh, with no earlier turns.
     await user.type(screen.getByRole('textbox', { name: 'Question' }), 'And Microsoft?{Enter}')
@@ -412,25 +409,19 @@ describe('Workspace', () => {
     await within(answer).findByRole('link', { name: 'Source S1' })
     expect(within(answer).queryByRole('list', { name: 'Query Scope' })).not.toBeInTheDocument()
     expect(within(answer).queryByRole('button', { name: /^Sources/ })).not.toBeInTheDocument()
-    expect(
-      within(answer).queryByRole('button', { name: 'How this was answered' })
-    ).not.toBeInTheDocument()
     expect(within(answer).queryByRole('button', { name: /^S\d/ })).not.toBeInTheDocument()
 
     await user.click(within(answer).getByRole('link', { name: 'Source S1' }))
-    const panel = await screen.findByRole('complementary', { name: 'Sources' })
+    const panel = await screen.findByRole('tabpanel', { name: 'Sources' })
     expect(within(panel).getByRole('region', { name: /^S1/ })).toHaveTextContent(
       'Apple 10-K, FY2025 · Risk Factors'
     )
 
     release()
     expect(await within(answer).findByRole('button', { name: 'Sources (2)' })).toBeInTheDocument()
-    expect(
-      within(answer).getByRole('button', { name: 'How this was answered' })
-    ).toBeInTheDocument()
   })
 
-  it('lists only the cited Sources, in tag order, under a collapsed "Sources (N)"', async () => {
+  it('holds the Query Scope chips, the cited Sources and a collapsed "Also retrieved (N)" under one "Sources"', async () => {
     fetchMock.mockImplementation(async () =>
       uiMessageStream(
         ['Tesla is exposed to **tariffs** [S2]; Apple to its partners [S1], as Tesla [S2].'],
@@ -444,52 +435,15 @@ describe('Workspace', () => {
     const answer = screen.getByRole('article', { name: 'Answer' })
     const toggle = await within(answer).findByRole('button', { name: 'Sources (2)' })
 
+    // One disclosure, collapsed: "How this was answered" is gone.
+    expect(within(answer).queryByRole('button', { name: /How this was answered/ })).toBeNull()
     expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(within(answer).queryByRole('list', { name: 'Query Scope' })).not.toBeInTheDocument()
     expect(within(answer).queryByRole('list', { name: 'Cited Sources' })).not.toBeInTheDocument()
 
     await user.click(toggle)
     expect(toggle).toHaveAttribute('aria-expanded', 'true')
-    const list = within(answer).getByRole('list', { name: 'Cited Sources' })
-    expect(
-      within(list)
-        .getAllByRole('button')
-        .map((chip) => chip.textContent)
-    ).toEqual(['S1 AAPL 10-K FY2025, Risk Factors', 'S2 TSLA 10-K FY2025, Risk Factors'])
-
-    await user.click(within(list).getByRole('button', { name: /^S2/ }))
-    const panel = await screen.findByRole('complementary', { name: 'Sources' })
-    expect(within(panel).getByRole('region', { name: /^S2/ })).toHaveTextContent(
-      'Tesla 10-K, FY2025 · Risk Factors'
-    )
-  })
-
-  it('shows no "Sources" list when the answer cites none', async () => {
-    fetchMock.mockImplementation(async () =>
-      uiMessageStream(['The Filings do not discuss **this** at all.'])
-    )
-    const user = userEvent.setup()
-    render(<Workspace />)
-    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
-    const answer = screen.getByRole('article', { name: 'Answer' })
-    await within(answer).findByRole('button', { name: 'How this was answered' })
-
-    expect(within(answer).queryByRole('button', { name: /^Sources/ })).not.toBeInTheDocument()
-  })
-
-  it('holds the Query Scope chips and every retrieved Source under "How this was answered"', async () => {
-    fetchMock.mockImplementation(async () =>
-      uiMessageStream(ANSWER, QUERY_SCOPE, [...SOURCES, UNCITED_SOURCE])
-    )
-    const user = userEvent.setup()
-    render(<Workspace />)
-    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
-    const answer = screen.getByRole('article', { name: 'Answer' })
-    const toggle = await within(answer).findByRole('button', { name: 'How this was answered' })
-
-    expect(toggle).toHaveAttribute('aria-expanded', 'false')
-    expect(within(answer).queryByRole('list', { name: 'Query Scope' })).not.toBeInTheDocument()
-
-    await user.click(toggle)
+    // The Query Scope chips come first, then the cited Sources in tag order.
     const chips = within(answer).getByRole('list', { name: 'Query Scope' })
     expect(
       within(chips)
@@ -500,32 +454,88 @@ describe('Workspace', () => {
       'title',
       'Company: Apple Inc (tracked)'
     )
-    const retrieved = within(answer).getByRole('list', { name: 'Retrieved Sources' })
+    const cited = within(answer).getByRole('list', { name: 'Cited Sources' })
+    expect(chips.compareDocumentPosition(cited) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(
+      within(cited)
+        .getAllByRole('button')
+        .map((chip) => chip.textContent)
+    ).toEqual(['S1 AAPL 10-K FY2025, Risk Factors', 'S2 TSLA 10-K FY2025, Risk Factors'])
+
+    // The Sources it was given but does not cite wait under their own collapsed toggle.
+    const also = within(answer).getByRole('button', { name: 'Also retrieved (1)' })
+    expect(also).toHaveAttribute('aria-expanded', 'false')
+    expect(cited.compareDocumentPosition(also) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(within(answer).queryByRole('list', { name: 'Also retrieved' })).not.toBeInTheDocument()
+    await user.click(also)
+    const retrieved = within(answer).getByRole('list', { name: 'Also retrieved' })
     expect(
       within(retrieved)
         .getAllByRole('button')
         .map((chip) => chip.textContent)
-    ).toEqual([
-      'S1 AAPL 10-K FY2025, Risk Factors',
-      'S2 TSLA 10-K FY2025, Risk Factors',
-      'S3 MSFT 10-K FY2025, Risk Factors',
-    ])
+    ).toEqual(['S3 MSFT 10-K FY2025, Risk Factors'])
 
-    // An uncited Source opens too, and joins the cited ones in the panel's switcher.
+    // Each chip opens the Sources tab at its Source, an uncited one too.
+    await user.click(within(cited).getByRole('button', { name: /^S2/ }))
+    const panel = await screen.findByRole('tabpanel', { name: 'Sources' })
+    expect(within(panel).getByRole('region', { name: /^S2/ })).toHaveTextContent(
+      'Tesla 10-K, FY2025 · Risk Factors'
+    )
     await user.click(within(retrieved).getByRole('button', { name: /^S3/ }))
-    const panel = await screen.findByRole('complementary', { name: 'Sources' })
     expect(within(panel).getByRole('region', { name: /^S3/ })).toHaveTextContent(
       'Microsoft 10-K, FY2025 · Risk Factors'
     )
-    const switcher = () =>
-      within(within(panel).getByRole('navigation', { name: "This answer's Sources" }))
-        .getAllByRole('button')
-        .map((tab) => tab.textContent)
-    expect(switcher()).toEqual(['S1', 'S2', 'S3'])
+  })
 
-    // Opening a cited Source leaves the switcher with the cited Sources only.
-    await user.click(within(answer).getByRole('link', { name: 'Source S1' }))
-    expect(switcher()).toEqual(['S1', 'S2'])
+  it('shows the Query Scope and the retrieved Sources when the answer cites none', async () => {
+    fetchMock.mockImplementation(async () =>
+      uiMessageStream(['The Filings do not discuss **this** at all.'])
+    )
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    await user.click(await within(answer).findByRole('button', { name: 'Sources' }))
+
+    expect(within(answer).getByRole('list', { name: 'Query Scope' })).toBeInTheDocument()
+    expect(within(answer).queryByRole('list', { name: 'Cited Sources' })).not.toBeInTheDocument()
+    expect(within(answer).getByRole('button', { name: 'Also retrieved (2)' })).toBeInTheDocument()
+  })
+
+  it('numbers every retrieved Source in the panel, cited and uncited styled apart', async () => {
+    fetchMock.mockImplementation(async () =>
+      uiMessageStream(ANSWER, QUERY_SCOPE, [...SOURCES, UNCITED_SOURCE])
+    )
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    await user.click(await within(answer).findByRole('link', { name: 'Source S1' }))
+
+    const panel = await screen.findByRole('tabpanel', { name: 'Sources' })
+    const strip = within(panel).getByRole('navigation', { name: "This answer's Sources" })
+    const tabs = within(strip).getAllByRole('button')
+    expect(tabs.map((tab) => tab.textContent)).toEqual(['S1', 'S2', 'S3'])
+    expect(strip.querySelector('ul')).toHaveClass('flex-wrap')
+    // Cited tabs in the accent colour, the uncited one muted, each saying which it is.
+    const [s1, s2, s3] = tabs
+    expect(s1).toHaveAttribute('aria-pressed', 'true')
+    expect(s1).toHaveAttribute('title', 'Cited: AAPL 10-K FY2025, Risk Factors')
+    expect(s2).toHaveClass('text-accent-strong')
+    expect(s3).toHaveAttribute('title', 'Retrieved, not cited: MSFT 10-K FY2025, Risk Factors')
+    expect(s3).toHaveClass('text-muted')
+    expect(s3).not.toHaveClass('text-accent-strong')
+
+    // An uncited Source opens with its number, and its header gives the tag and its label.
+    await user.click(s3)
+    expect(s3).toHaveAttribute('aria-pressed', 'true')
+    const source = within(panel).getByRole('region', { name: /^S3/ })
+    const heading = within(source).getByRole('heading', { level: 3 })
+    expect(heading).toHaveTextContent('S3Microsoft 10-K, FY2025 · Risk Factors')
+    expect(heading).toHaveAttribute('title', 'MSFT 10-K FY2025, Risk Factors (Item 1A).')
+    expect(source).toHaveTextContent(
+      'Our global operations subject us to potential trade restrictions.'
+    )
   })
 
   it('shows only the opening paragraph until "Show full analysis" is clicked', async () => {
@@ -565,7 +575,7 @@ describe('Workspace', () => {
 
     await user.click(within(answer).getByRole('link', { name: 'Source S1' }))
 
-    const panel = await screen.findByRole('complementary', { name: 'Sources' })
+    const panel = await screen.findByRole('tabpanel', { name: 'Sources' })
     expect(within(panel).getByRole('region', { name: /^S1/ })).toHaveTextContent(
       'Apple 10-K, FY2025 · Risk Factors'
     )
@@ -599,7 +609,7 @@ describe('Workspace', () => {
     render(<Workspace />)
     await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
     const answer = screen.getByRole('article', { name: 'Answer' })
-    await within(answer).findByRole('button', { name: 'How this was answered' })
+    await within(answer).findByRole('button', { name: /^Sources/ })
 
     expect(within(answer).getByText(/Tesla is exposed to tariffs/)).toBeInTheDocument()
     expect(within(answer).queryByRole('button', { name: /full analysis/ })).not.toBeInTheDocument()
@@ -616,7 +626,7 @@ describe('Workspace', () => {
     render(<Workspace />)
     await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
     const answer = screen.getByRole('article', { name: 'Answer' })
-    await within(answer).findByRole('button', { name: 'How this was answered' })
+    await within(answer).findByRole('button', { name: /^Sources/ })
 
     expect(within(answer).getByText(/Tesla is exposed to tariffs/)).toBeInTheDocument()
     expect(within(answer).queryByRole('button', { name: /full analysis/ })).not.toBeInTheDocument()
@@ -734,7 +744,7 @@ describe('Workspace', () => {
     render(<Workspace />)
     await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
     const answer = screen.getByRole('article', { name: 'Answer' })
-    await user.click(await within(answer).findByRole('button', { name: 'How this was answered' }))
+    await user.click(await within(answer).findByRole('button', { name: /^Sources/ }))
 
     const searched = within(answer).getByRole('list', { name: 'Searched in' })
     expect(
@@ -758,7 +768,7 @@ describe('Workspace', () => {
     render(<Workspace />)
     await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
     const answer = screen.getByRole('article', { name: 'Answer' })
-    await user.click(await within(answer).findByRole('button', { name: 'How this was answered' }))
+    await user.click(await within(answer).findByRole('button', { name: /^Sources/ }))
 
     expect(within(answer).getByRole('list', { name: 'Query Scope' })).toBeInTheDocument()
     expect(within(answer).queryByRole('list', { name: 'Searched in' })).not.toBeInTheDocument()
@@ -786,7 +796,7 @@ describe('Workspace', () => {
       'How has net income changed at the major banks over the last two years?{Enter}'
     )
     const answer = screen.getByRole('article', { name: 'Answer' })
-    await user.click(await within(answer).findByRole('button', { name: 'How this was answered' }))
+    await user.click(await within(answer).findByRole('button', { name: /^Sources/ }))
 
     const chips = within(answer).getByRole('list', { name: 'Query Scope' })
     expect(
@@ -875,7 +885,7 @@ describe('Workspace', () => {
     const answer = screen.getByRole('article', { name: 'Answer' })
     await user.click(within(answer).getByRole('link', { name: 'Source S1' }))
 
-    const panel = await screen.findByRole('complementary', { name: 'Sources' })
+    const panel = await screen.findByRole('tabpanel', { name: 'Sources' })
     const source = within(panel).getByRole('region', { name: /^S1/ })
     expect(within(source).getByRole('heading', { level: 3 })).toHaveTextContent(
       'S1NVIDIA 10-Q, Q3 FY2026 · Financial Facts'
@@ -936,7 +946,7 @@ describe('Workspace', () => {
     const answer = screen.getByRole('article', { name: 'Answer' })
     await user.click(within(answer).getByRole('link', { name: 'Source S1' }))
 
-    const panel = await screen.findByRole('complementary', { name: 'Sources' })
+    const panel = await screen.findByRole('tabpanel', { name: 'Sources' })
     const source = within(panel).getByRole('region', { name: /^S1/ })
     expect(within(source).getByRole('heading', { level: 3 })).toHaveTextContent(
       'S1NVIDIA 10-Q, Q2 FY2025 · MD&A'
@@ -1009,6 +1019,132 @@ describe('Workspace', () => {
       parts: [{ type: 'text', text: starter.question }],
     })
     expect(screen.getAllByText(starter.question)).toHaveLength(1)
+  })
+})
+
+describe('The side panel', () => {
+  /** A second answer, about Microsoft, with its own Sources. */
+  const MSFT_SOURCE = { ...UNCITED_SOURCE, tag: 'S1' }
+  const secondAnswer = () =>
+    uiMessageStream(
+      ['Microsoft faces **trade restrictions** [S1].'],
+      { ...QUERY_SCOPE, companies: [{ ticker: 'MSFT', name: 'Microsoft Corp' }] },
+      [MSFT_SOURCE],
+      [],
+      'msg-2'
+    )
+
+  const rail = () => screen.getByRole('group', { name: 'Panel toolbar' })
+  const railSources = () => within(rail()).getByRole('button', { name: 'Sources' })
+  const sidePanel = () => screen.queryByRole('complementary', { name: 'Side panel' })
+
+  /** Asks the first starter, then a follow-up, so the thread holds two answers. */
+  async function twoAnswers(user: ReturnType<typeof userEvent.setup>) {
+    fetchMock
+      .mockImplementationOnce(async () => uiMessageStream())
+      .mockImplementationOnce(async () => secondAnswer())
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByText('trade policy')
+    await user.type(screen.getByRole('textbox', { name: 'Question' }), 'And Microsoft?{Enter}')
+    await screen.findByText('trade restrictions')
+    return screen.getAllByRole('article', { name: 'Answer' })
+  }
+
+  it('keeps the toolbar visible, its Sources icon opening and closing the panel', async () => {
+    const user = userEvent.setup()
+    render(<Workspace />)
+
+    // Visible from the start, before any answer.
+    expect(railSources()).toHaveAttribute('aria-pressed', 'false')
+    expect(sidePanel()).not.toBeInTheDocument()
+
+    await user.click(railSources())
+    expect(sidePanel()).toBeInTheDocument()
+    expect(railSources()).toHaveAttribute('aria-pressed', 'true')
+    const tab = within(screen.getByRole('tablist', { name: 'Panel tabs' })).getByRole('tab', {
+      name: 'Sources',
+    })
+    expect(tab).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tabpanel', { name: 'Sources' })).toHaveTextContent(/No Sources yet/)
+
+    // Clicking the open tab's icon closes the panel.
+    await user.click(railSources())
+    expect(sidePanel()).not.toBeInTheDocument()
+    expect(railSources()).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it("opens from the toolbar at the latest answer's first Source", async () => {
+    const user = userEvent.setup()
+    render(<Workspace />)
+    const [first] = await twoAnswers(user)
+
+    // A citation in the first answer, then closed.
+    await user.click(within(first).getByRole('link', { name: 'Source S2' }))
+    expect(screen.getByRole('region', { name: /^S2/ })).toHaveTextContent('Tesla')
+    await user.click(screen.getByRole('button', { name: 'Close panel' }))
+    expect(sidePanel()).not.toBeInTheDocument()
+
+    // The toolbar reopens it at the latest answer's S1.
+    await user.click(railSources())
+    const panel = screen.getByRole('tabpanel', { name: 'Sources' })
+    expect(within(panel).getByRole('region', { name: /^S1/ })).toHaveTextContent(
+      'Microsoft 10-K, FY2025 · Risk Factors'
+    )
+    expect(
+      within(within(panel).getByRole('navigation', { name: "This answer's Sources" }))
+        .getAllByRole('button')
+        .map((tab) => tab.textContent)
+    ).toEqual(['S1'])
+  })
+
+  it('opens the Sources tab at a citation, whatever the panel shows', async () => {
+    const user = userEvent.setup()
+    render(<Workspace />)
+    const [first, second] = await twoAnswers(user)
+
+    // Open from the toolbar, on the latest answer: a citation in the first answer moves it.
+    await user.click(railSources())
+    await user.click(within(first).getByRole('link', { name: 'Source S2' }))
+    const panel = screen.getByRole('tabpanel', { name: 'Sources' })
+    expect(within(panel).getByRole('region', { name: /^S2/ })).toHaveTextContent(
+      'Tesla 10-K, FY2025 · Risk Factors'
+    )
+    expect(railSources()).toHaveAttribute('aria-pressed', 'true')
+
+    // Clicking a citation again keeps the panel open, never toggles it closed.
+    await user.click(within(first).getByRole('link', { name: 'Source S2' }))
+    expect(sidePanel()).toBeInTheDocument()
+
+    // Closed, a citation in the other answer opens it there.
+    await user.click(screen.getByRole('button', { name: 'Close panel' }))
+    await user.click(within(second).getByRole('link', { name: 'Source S1' }))
+    expect(
+      within(screen.getByRole('tabpanel', { name: 'Sources' })).getByRole('region', {
+        name: /^S1/,
+      })
+    ).toHaveTextContent('Microsoft 10-K, FY2025 · Risk Factors')
+  })
+
+  it('on a narrow screen, puts the toolbar above the question box and the panel full-screen', async () => {
+    const user = userEvent.setup()
+    render(<Workspace />)
+
+    // jsdom applies no media queries, so the breakpoint classes are what decide it.
+    expect(rail()).toHaveClass('hidden', 'lg:flex')
+    const buttons = screen.getByRole('group', { name: 'Panel buttons' })
+    expect(buttons).toHaveClass('lg:hidden')
+    const input = screen.getByRole('textbox', { name: 'Question' })
+    expect(buttons.compareDocumentPosition(input) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+
+    await user.click(within(buttons).getByRole('button', { name: 'Sources' }))
+    const panel = sidePanel()
+    expect(panel).toHaveClass('fixed', 'inset-0', 'lg:static')
+    expect(within(buttons).getByRole('button', { name: 'Sources' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    )
+    await user.click(screen.getByRole('button', { name: 'Close panel' }))
+    expect(sidePanel()).not.toBeInTheDocument()
   })
 })
 

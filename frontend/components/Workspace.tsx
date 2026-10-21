@@ -6,6 +6,7 @@ import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import AnswerMessage from '@/components/AnswerMessage'
 import FollowUps from '@/components/FollowUps'
+import SidePanel, { PanelToolbar, type PanelTab } from '@/components/SidePanel'
 import SourcesPanel from '@/components/SourcesPanel'
 import {
   answerComplete,
@@ -15,22 +16,23 @@ import {
   messageText,
   rejectionReason,
   type ResearchMessage,
-  type Source,
 } from '@/lib/chat'
 import { loadConversation, saveConversation } from '@/lib/conversation'
 import { WHATS_COVERED_ID, type CoverageSummary } from '@/lib/coverage'
 import { followUps } from '@/lib/followUps'
 import { STARTERS } from '@/lib/starters'
 
-/** Which answer's Sources the panel shows, and which of them is open. */
+/** Which answer's Sources the panel's Sources tab shows, and which of them is open. */
 interface OpenSource {
   messageId: string
-  tag: string
+  tag: string | null
 }
 
 /**
  * The research workspace: a conversation thread, starter prompts on an empty
- * conversation, and a Sources panel that opens on a citation click. The conversation is
+ * conversation, and one right-hand side panel with a toolbar that is always visible. A
+ * citation click opens the panel's Sources tab at that Source; the toolbar's Sources icon
+ * opens it at the latest answer's first Source, or closes it. The conversation is
  * kept in session storage, so it survives a page refresh, and "New conversation" clears
  * it, so an old Query Scope can't leak into a new topic. With a Corpus coverage summary,
  * the empty conversation also says how many Companies are covered. The latest answer,
@@ -45,6 +47,8 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
       transport,
     })
   const [input, setInput] = useState('')
+  // The tab the side panel shows, or null while it is closed.
+  const [panel, setPanel] = useState<PanelTab | null>(null)
   const [open, setOpen] = useState<OpenSource | null>(null)
   const threadRef = useRef<HTMLDivElement>(null)
   const lastQuestionRef = useRef<HTMLDivElement>(null)
@@ -108,6 +112,7 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
     if (busy) stop()
     setMessages([])
     saveConversation([])
+    setPanel(null)
     setOpen(null)
     setInput('')
   }
@@ -119,8 +124,31 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
     setInput('')
   }
 
+  /** Opens the Sources tab at one answer's Source, whatever the panel showed. */
+  function cite(messageId: string, tag: string) {
+    setOpen({ messageId, tag })
+    setPanel('sources')
+  }
+
+  /** A toolbar icon: opens the panel on its tab, or closes it when that tab is showing. */
+  function toggle(tab: PanelTab) {
+    if (panel === tab) {
+      setPanel(null)
+      return
+    }
+    if (tab === 'sources') {
+      const latest = messages.findLast((m) => m.role === 'assistant')
+      setOpen(latest ? { messageId: latest.id, tag: null } : null)
+    }
+    setPanel(tab)
+  }
+
   const openMessage = open ? messages.find((m) => m.id === open.messageId) : undefined
-  const openSources = open && openMessage ? switcherSources(openMessage, open.tag) : []
+  const openSources = openMessage ? messageSources(openMessage) : []
+  const openCited = new Set(
+    openMessage ? citedSources(messageText(openMessage), openSources).map((s) => s.tag) : []
+  )
+  const shownTag = panel === 'sources' && open ? (open.tag ?? openSources[0]?.tag ?? null) : null
   const last = messages.at(-1)
   const writing = status === 'streaming' && last?.role === 'assistant' && !messageText(last)
   const turns = groupTurns(messages)
@@ -148,8 +176,8 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
         scope={messageDataPart(message, 'query-scope')}
         gaps={messageDataPart(message, 'coverage-gaps')?.gaps ?? []}
         complete={answerComplete(message, messages, status)}
-        openTag={open?.messageId === message.id ? open.tag : null}
-        onCite={(tag) => setOpen({ messageId: message.id, tag })}
+        openTag={open?.messageId === message.id ? shownTag : null}
+        onCite={(tag) => cite(message.id, tag)}
       />
     )
 
@@ -258,6 +286,7 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
             onSubmit={handleSubmit}
             className="shrink-0 border-t border-line bg-canvas/80 px-5 py-3 backdrop-blur-xl"
           >
+            <PanelToolbar open={panel} onToggle={toggle} variant="buttons" />
             <div className="mx-auto flex max-w-3xl gap-2">
               <input
                 type="text"
@@ -288,27 +317,20 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
           </form>
         </main>
 
-        {open && openSources.length > 0 && (
-          <SourcesPanel
-            sources={openSources}
-            selected={open.tag}
-            onSelect={(tag) => setOpen({ ...open, tag })}
-            onClose={() => setOpen(null)}
-          />
+        {panel && (
+          <SidePanel tab={panel} onTab={setPanel} onClose={() => setPanel(null)}>
+            <SourcesPanel
+              sources={openSources}
+              cited={openCited}
+              selected={shownTag}
+              onSelect={(tag) => open && setOpen({ ...open, tag })}
+            />
+          </SidePanel>
         )}
+        <PanelToolbar open={panel} onToggle={toggle} variant="rail" />
       </div>
     </div>
   )
-}
-
-/**
- * The Sources the panel's switcher lists for one answer: the Sources it cites, plus the
- * open one when it is not cited, in tag order.
- */
-function switcherSources(message: ResearchMessage, openTag: string): Source[] {
-  const sources = messageSources(message)
-  const cited = citedSources(messageText(message), sources)
-  return sources.filter((s) => s.tag === openTag || cited.includes(s))
 }
 
 /**

@@ -4,12 +4,13 @@ import type { FactRow, Source } from '@/lib/chat'
 import { passageBlocks, sourceHeading } from '@/lib/source'
 
 interface SourcesPanelProps {
-  /** The Sources of one answer. */
+  /** Every Source of one answer, cited or not, in tag order. */
   sources: Source[]
+  /** The tags the answer cites. */
+  cited: ReadonlySet<string>
   /** The tag of the Source shown. */
-  selected: string
+  selected: string | null
   onSelect: (tag: string) => void
-  onClose: () => void
 }
 
 /** How a Source reads in a list: "TSLA 10-K FY2025, Risk Factors". */
@@ -19,18 +20,28 @@ export function shortLabel(source: Source): string {
 }
 
 /**
- * The side panel that shows one Source of an answer: a readable line naming it, its
- * Filing metadata (Filing ID, Form Type, Report Period, Fiscal Period, Section, Item)
- * under a collapsed "Filing details" toggle, and its passage, with the passage's
- * flattened tables shown as tables, or a Facts Source's table of figures.
+ * The side panel's Sources tab for one answer: a strip numbering every Source it was
+ * given, S1…SN, the cited ones in the accent colour and the rest muted, then the Source
+ * shown: a readable line naming it (its label on hover), its Filing metadata (Filing ID,
+ * Form Type, Report Period, Fiscal Period, Section, Item) under a collapsed "Filing
+ * details" toggle, and its passage, with the passage's flattened tables shown as tables,
+ * or a Facts Source's table of figures.
  */
-export default function SourcesPanel({ sources, selected, onSelect, onClose }: SourcesPanelProps) {
+export default function SourcesPanel({ sources, cited, selected, onSelect }: SourcesPanelProps) {
   const source = sources.find((s) => s.tag === selected) ?? sources[0]
   const passageRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     passageRef.current?.scrollTo?.({ top: 0 })
-  }, [source.tag])
+  }, [source?.tag])
+
+  if (!source) {
+    return (
+      <p className="px-4 py-6 text-[13.5px] leading-relaxed text-muted">
+        No Sources yet. Ask a question, and the filing passages its answer draws on show here.
+      </p>
+    )
+  }
 
   const fields: [string, string][] = [
     ['Filing ID', source.filingId],
@@ -43,46 +54,27 @@ export default function SourcesPanel({ sources, selected, onSelect, onClose }: S
   ]
 
   return (
-    <aside
-      aria-label="Sources"
-      className="fixed inset-0 z-20 flex flex-col bg-elevated lg:static lg:z-auto lg:w-[30rem] lg:shrink-0 lg:border-l lg:border-line lg:bg-canvas/70 lg:backdrop-blur-xl"
-    >
-      <div className="flex shrink-0 items-center justify-between border-b border-line px-4 py-3">
-        <h2 className="eyebrow text-ink">Sources</h2>
-        <button
-          type="button"
-          onClick={onClose}
-          aria-label="Close Sources"
-          className="rounded-md p-1 text-muted transition-colors hover:bg-raised hover:text-ink"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            className="h-4 w-4"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden="true"
-          >
-            <path d="M18 6 6 18M6 6l12 12" />
-          </svg>
-        </button>
-      </div>
-
+    <div className="flex min-h-0 flex-1 flex-col">
       <nav aria-label="This answer's Sources" className="shrink-0 border-b border-line px-4 py-2">
         <ul className="flex flex-wrap gap-1">
-          {sources.map((s) => (
-            <li key={s.tag}>
-              <button
-                type="button"
-                onClick={() => onSelect(s.tag)}
-                aria-pressed={s.tag === source.tag}
-                title={shortLabel(s)}
-                className="rounded-md px-2 py-0.5 font-mono text-[12px] text-muted transition-colors hover:bg-raised hover:text-ink aria-pressed:bg-accent aria-pressed:text-on-accent"
-              >
-                {s.tag}
-              </button>
-            </li>
-          ))}
+          {sources.map((s) => {
+            const isCited = cited.has(s.tag)
+            return (
+              <li key={s.tag}>
+                <button
+                  type="button"
+                  onClick={() => onSelect(s.tag)}
+                  aria-pressed={s.tag === source.tag}
+                  title={`${isCited ? 'Cited' : 'Retrieved, not cited'}: ${shortLabel(s)}`}
+                  className={`rounded-md px-2 py-0.5 font-mono text-[12px] transition-colors hover:bg-raised hover:text-ink aria-pressed:bg-accent aria-pressed:text-on-accent ${
+                    isCited ? 'font-medium text-accent-strong' : 'text-muted'
+                  }`}
+                >
+                  {s.tag}
+                </button>
+              </li>
+            )
+          })}
         </ul>
       </nav>
 
@@ -93,7 +85,7 @@ export default function SourcesPanel({ sources, selected, onSelect, onClose }: S
         <div className="shrink-0 px-4 pt-4">
           <h3
             id={`source-heading-${source.tag}`}
-            title={shortLabel(source)}
+            title={source.label}
             className="text-[15px] leading-snug font-semibold text-white"
           >
             <span className="mr-2 font-mono text-[13px] text-accent-strong">{source.tag}</span>
@@ -123,7 +115,7 @@ export default function SourcesPanel({ sources, selected, onSelect, onClose }: S
           )}
         </div>
       </section>
-    </aside>
+    </div>
   )
 }
 

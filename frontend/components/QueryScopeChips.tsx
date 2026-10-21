@@ -75,7 +75,7 @@ function ChipList({ label, chips }: { label: string; chips: Chip[] }) {
 
 /**
  * What the rules resolved from the question, and where retrieval searched for it, shown
- * under its answer's "How this was answered" so it can be disputed.
+ * at the top of its answer's "Sources" disclosure so it can be disputed.
  */
 export default function QueryScopeChips({ scope }: { scope: QueryScope }) {
   const searched = searchedChips(scope.searched ?? [])
