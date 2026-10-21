@@ -203,7 +203,7 @@ export function rejectionReason(error: unknown): string | null {
   }
 }
 
-/** A gap's wording without its leading label, which the callout shows as a heading. */
+/** A gap's wording without its leading label, which the Coverage notes show as a heading. */
 export function gapWording(gap: CoverageGap): string {
   const prefix = `${gap.label}: `
   return gap.text.startsWith(prefix) ? gap.text.slice(prefix.length) : gap.text

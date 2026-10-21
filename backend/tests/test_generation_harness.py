@@ -245,7 +245,8 @@ def test_each_case_is_answered_checked_judged_and_priced(index, tmp_path):
     # Checks in code.
     assert result.citations.unknown_tags == ("S99",)  # not among this turn's Sources
     assert result.figures.passed  # matches the revenue Financial Fact of a cited 10-K
-    assert result.coverage_gaps.stated == ("periods_differ",)
+    # "Periods differ" is shown by the product, not checked in the answer (ADR 0016).
+    assert result.coverage_gaps.stated == ()
     assert result.coverage_gaps.missing == ("no_guidance",)
     # Its structure, against the Companies its Sources come from (Apple and Tesla).
     assert not result.structure.passed
@@ -485,7 +486,7 @@ def test_a_jev_failure_on_one_fact_keeps_the_cases_checks_and_other_judgments(in
     # The code checks are kept.
     assert result.citations.unknown_tags == ("S99",)
     assert result.figures.passed
-    assert result.coverage_gaps.stated == ("periods_differ",)
+    assert result.coverage_gaps is None  # "periods differ" alone is not checked
     assert result.structure.words > 0
     # So are the other judgments: Faithfulness, one claim judged, one citing no Source
     # of the turn and one uncited.
@@ -584,6 +585,32 @@ def test_a_score_with_nothing_to_score_is_none_not_zero(index, tmp_path):
     assert report.overall.coverage_gaps_stated is None
     assert report.overall.fact_recall is None
     assert report.overall.faithfulness == 1.0
+
+
+def test_a_case_whose_only_gap_is_periods_differ_has_no_coverage_gap_score(index, tmp_path):
+    """ADR 0016: the answer is not asked to state "periods differ", so a case expecting
+    only that gap is not scored on Coverage Gaps, rather than passing for free."""
+    from edgar_eval.generation import evaluate
+
+    report = evaluate(
+        [
+            _case(
+                "apple-tesla",
+                "What are the primary risk factors facing Apple and Tesla?",
+                gaps=[("periods_differ", ("AAPL", "TSLA"))],
+            )
+        ],
+        FakeModel("Apple outsources manufacturing [S1]."),
+        FakeJudge(),
+        index,
+        names={"AAPL": ("AAPL", "Apple"), "TSLA": ("TSLA", "Tesla")},
+        fact_values=lambda filing_id: [],
+        log_path=None,
+    )
+
+    [result] = report.cases
+    assert result.coverage_gaps is None
+    assert report.overall.coverage_gaps_stated is None
 
 
 CONTRADICTING_JEV = {"Tesla depends on its CEO.": "contradicted"}

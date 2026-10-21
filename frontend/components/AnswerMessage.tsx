@@ -22,7 +22,7 @@ interface AnswerMessageProps {
   sources: Source[]
   /** What the rules resolved from the question; it arrives before the text. */
   scope: QueryScope | null
-  /** What the Filings cannot answer; it arrives before the text. */
+  /** What the Filings cannot answer; it arrives before the text, shown once complete. */
   gaps: CoverageGap[]
   /** Whether the answer has finished: until then nothing shows beneath it. */
   complete: boolean
@@ -32,15 +32,16 @@ interface AnswerMessageProps {
 }
 
 /**
- * One answer: the Coverage Gap callout, then its Markdown, with every `[Sn]` a link that
- * opens the side panel's Sources tab at that Source. The Sources arrive before the text, so the
+ * One answer: its Markdown, with every `[Sn]` a link that opens the side panel's Sources
+ * tab at that Source. The Sources arrive before the text, so the
  * citations work while the answer is still streaming. Only the opening paragraph, the
  * direct answer, shows at first: "Show full analysis" reveals the rest, live while it
  * streams, and the expanded state is this answer's own, never saved, so a restored answer
  * starts collapsed. An answer with one paragraph, or one that does not open with prose,
- * shows whole with no control. Once it is complete, one collapsed "Sources" disclosure
- * follows: its Query Scope chips on top, then the Sources it cites, then the Sources it
- * was given but does not cite under a collapsed "Also retrieved (N)".
+ * shows whole with no control. Once it is complete, its Coverage Gaps follow as Coverage
+ * notes (ADR 0016), never above it, then one collapsed "Sources" disclosure: its Query
+ * Scope chips on top, then the Sources it cites, then the Sources it was given but does not
+ * cite under a collapsed "Also retrieved (N)".
  */
 export default function AnswerMessage({
   text,
@@ -105,7 +106,6 @@ export default function AnswerMessage({
 
   return (
     <article aria-label="Answer" className="flex flex-col gap-3">
-      {gaps.length > 0 && <CoverageGaps gaps={gaps} />}
       {text && (
         <div className="answer text-[16px] leading-relaxed text-ink">
           <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
@@ -144,6 +144,7 @@ export default function AnswerMessage({
           )}
         </div>
       )}
+      {complete && gaps.length > 0 && <CoverageGaps gaps={gaps} />}
       {complete && (scope || sources.length > 0) && (
         <footer className="flex flex-col gap-1 border-t border-line pt-2">
           <Disclosure summary={cited.length > 0 ? `Sources (${cited.length})` : 'Sources'}>

@@ -4,13 +4,14 @@ One fixed template with a version constant. Every change to it bumps `PROMPT_VER
 and gets an entry in `docs/prompt-iterations.md`, with what changed, why, and its dev
 scores before and after.
 
-v7 renders, in this order: the system rules, the Coverage Gaps the answer must state,
-the Companies each Sector phrase resolved to (when the question uses one), each
-Company's coverage (its class, Filings, Report Periods and Fiscal Periods), the
-Financial Facts table (when the question names a metric), the text Sources grouped by
-Company, the earlier conversation (the last 10 turns under a token cap, with each
-earlier answer's Source tags rewritten as the Filing IDs they cited), and the latest
-question.
+v15 renders, in this order: the system rules, the Coverage Gaps (which the product shows
+below the answer as Coverage notes, and the answer acknowledges only where one leaves
+part of the question unanswered, ADR 0016), the Companies each Sector phrase resolved
+to (when the question uses one), each Company's coverage (its class, Filings, Report
+Periods and Fiscal Periods), the Financial Facts table (when the question names a
+metric), the text Sources grouped by Company, the earlier conversation (the last 10
+turns under a token cap, with each earlier answer's Source tags rewritten as the Filing
+IDs they cited), and the latest question.
 """
 
 from __future__ import annotations
@@ -28,7 +29,7 @@ if TYPE_CHECKING:
     from edgar_rag._query_scope import ScopeFiling
     from edgar_rag.retrieval import Message, QueryScope, Source
 
-PROMPT_VERSION = "v7"
+PROMPT_VERSION = "v15"
 
 HISTORY_TURNS = 10
 HISTORY_MAX_TOKENS = 6_000
@@ -48,8 +49,7 @@ listed in this turn's Sources.
 evidence: never repeat a claim from an earlier answer unless a Source in this turn \
 supports it, and then cite that Source.
 4. When you use a Company's filings, give the filing's form type, fiscal period and \
-report period, as listed under "Coverage", and say so when the Companies you compare \
-report for different periods.
+report period, as listed under "Coverage".
 5. Take revenue, net income and segment revenue from the Financial Facts table when it \
 has them, cite the row's Source tags, and quote figures exactly with their units and \
 periods. Label a derived figure as derived: a fourth quarter computed from a 10-K less \
@@ -64,22 +64,31 @@ those Companies near the start of the answer, say they come from the Sector tabl
 cover no other company for that group.
 7. "Coverage Gaps" lists what the filings cannot answer: a trend asked of a company \
 with only a snapshot of filings, a company not in the filings, a stale filing, guidance \
-the filings do not contain, or periods that differ. State every gap listed there, in \
-the words given, near the start of the answer. Never fill a gap from general \
-knowledge: say nothing about a company the filings do not include, never use a filing \
-listed as left out, and never present MD&A commentary as the company's guidance.
+the filings do not contain, or periods that differ. Every gap listed there is shown \
+below your answer, in its own wording, so do not repeat the list. Where a gap leaves \
+part of the question unanswered (a company not in the filings, a trend asked of a \
+snapshot company, a stale filing left out, guidance the filings do not contain), say so \
+briefly, in your own words, where that part of the answer would be: name the company \
+and what the filings cannot answer about it, without citing the "Coverage Gaps" list. \
+Never mention that the companies' periods differ for its own sake: rule 4 gives each \
+filing's period, and the difference is shown below your answer. Never fill a gap from \
+general knowledge: say nothing more about a company the filings do not include, never \
+use a filing listed as left out, and never present MD&A commentary as the company's \
+guidance.
 8. Be specific. For each point, give the particulars the Sources state: the laws and \
 programs, products, people, places, dates, amounts and percentages they name, in their \
 words. Never reduce them to broad categories ("regulatory risk", "pricing pressure") \
 that would fit any company.
 
 Structure the answer for a PE analyst, in Markdown:
-- Open with the direct answer: two or three sentences of prose, citing their Sources like \
-any other claim. Put nothing before it: no heading, list or table.
-- Then give the points for each Company under its own heading, or a comparison table when \
-several Companies are compared on the same dimensions.
-- Always end with a short "Coverage" note, even when there is no Coverage Gap: repeat the \
-Coverage Gaps (or say there are none) and say what else the Sources could not answer.
+- Open with the direct answer: two or three sentences of prose that answer the question \
+from the Sources, citing them like any other claim. Put nothing before it: no heading, \
+list, table or note on what the filings lack.
+- When the question compares two or more Companies on the same dimensions, give a \
+comparison table first, one row per Company, then each Company's detail under its own \
+heading. Otherwise give the points for each Company under its own heading.
+- End with the last point. Add no closing "Coverage" or "Limitations" section: the \
+Coverage Gaps are shown below your answer.
 - Write 300 to 600 words. When the question is narrow, reach 300 words with the specifics \
 of rule 8 that bear on it (what drove a figure, the segments, periods or plans behind it, \
 the risks the Sources attach to it), never with repetition or general knowledge. When the \

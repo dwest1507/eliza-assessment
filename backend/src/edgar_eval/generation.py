@@ -85,6 +85,7 @@ from edgar_eval.answer_checks import (
     check_coverage_gaps,
     check_figures,
     check_structure,
+    checked_gaps,
     claims,
     split_gap_claims,
 )
@@ -478,7 +479,7 @@ def _run_case(
         cost_usd=answer_cost(record.model, record.input_tokens, record.output_tokens),
         citations=check_citations(answer, passages),
         figures=check_answer_figures(answer, context.sources, fact_values),
-        coverage_gaps=check_coverage_gaps(answer, gaps, names) if gaps else None,
+        coverage_gaps=check_coverage_gaps(answer, gaps, names) if checked_gaps(gaps) else None,
         judgments=judge.judge(answer, [f.fact for f in case.required_facts], judged, evidence),
         structure=check_structure(answer, covered),
         fact_tiers=tuple(f.tier for f in case.required_facts),

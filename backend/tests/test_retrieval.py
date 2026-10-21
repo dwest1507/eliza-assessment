@@ -327,7 +327,7 @@ def test_a_source_carries_its_citation_metadata_and_passage(index):
 def test_the_prompt_renders_rules_sources_and_question(index):
     context = _ask(index, BRIEF_QUESTION)
 
-    assert context.prompt_version == PROMPT_VERSION == "v7"
+    assert context.prompt_version == PROMPT_VERSION == "v15"
     system, user = context.messages
     assert system.role == "system"
     assert "[S3]" in system.content and "general knowledge" in system.content
@@ -1674,6 +1674,41 @@ def test_a_question_with_no_gaps_says_so_in_the_prompt(index):
 
     assert context.coverage_gaps == ()
     assert _section(context.messages[1].content, "Coverage Gaps").strip() == "None."
+
+
+def test_the_prompt_asks_for_a_gap_only_where_it_leaves_part_of_the_question_unanswered(index):
+    """Prompt v15 (ADR 0016): the product shows every Coverage Gap as a Coverage note, so
+    the answer no longer recites the gap wordings near its start or in a closing Coverage
+    note; it says so in its own words where a gap leaves part of the question unanswered,
+    and still never fills one."""
+    context = _ask(index, "Compare the risk factors of JPMorgan and Wells Fargo.")
+    system, user = (m.content for m in context.messages)
+    rules = " ".join(system.split())
+
+    # The gaps still reach the prompt, so the answer knows what it cannot cover.
+    assert "Wells Fargo is not in the Filings provided" in _section(user, "Coverage Gaps")
+    assert "in your own words" in rules
+    assert "leaves part of the question unanswered" in rules
+    assert "Never fill a gap from general knowledge" in rules
+    assert "shown below your answer" in rules
+    assert "Never mention that the companies' periods differ for its own sake" in rules
+    # Nothing asks for the fixed wordings near the start or a closing Coverage note.
+    assert "in the words given" not in rules
+    assert "near the start of the answer. Never fill" not in rules
+    assert 'end with a short "Coverage" note' not in rules
+    assert "repeat the Coverage Gaps" not in rules
+    assert "report for different periods" not in rules
+
+
+def test_the_prompt_asks_for_a_comparison_table_whenever_companies_are_compared(index):
+    context = _ask(index, BRIEF_QUESTION)
+    rules = " ".join(context.messages[0].content.split())
+
+    assert (
+        "When the question compares two or more Companies on the same dimensions, give a "
+        "comparison table first"
+    ) in rules
+    assert "then each Company's detail under its own heading" in rules
 
 
 def test_coverage_gaps_are_worded_the_same_way_every_time(index, gap_index):

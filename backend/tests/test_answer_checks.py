@@ -266,15 +266,6 @@ def gap(kind, *companies):
             gap("no_guidance", "NVDA"),
             "The filings do not include forward revenue guidance from NVIDIA.",
         ),
-        (
-            gap("periods_differ", "AAPL", "JPM"),
-            "Note that the periods differ: Apple's fiscal year ended 27 September 2025, "
-            "JPMorgan's on 31 December 2025.",
-        ),
-        (
-            gap("periods_differ", "AAPL", "JPM"),
-            "These filings cover different fiscal periods.",
-        ),
     ],
 )
 def test_a_coverage_gap_stated_in_the_answer_is_found(label, statement):
@@ -296,7 +287,6 @@ def test_a_coverage_gap_stated_in_the_answer_is_found(label, statement):
         (gap("stale_filing", "GE"), "GE Capital reported net earnings in 2014 [S1]."),
         # Outlook words without saying guidance is missing.
         (gap("no_guidance", "NVDA"), "NVIDIA's outlook depends on data center demand [S1]."),
-        (gap("periods_differ", "AAPL", "JPM"), "Apple and JPMorgan both list risks [S1]."),
     ],
 )
 def test_a_coverage_gap_left_unstated_is_missing(label, answer):
@@ -304,6 +294,72 @@ def test_a_coverage_gap_left_unstated_is_missing(label, answer):
 
     assert not check.passed
     assert check.missing == (label.kind,)
+
+
+@pytest.mark.parametrize(
+    "acknowledgement",
+    [
+        "Wells Fargo isn't in the filings I was given, so this covers JPMorgan alone.",
+        "I don't have Wells Fargo's filings, so I can't compare its risks.",
+        "Wells Fargo is absent from the filings provided.",
+        "Wells Fargo falls outside the filings I can draw on.",
+        "There are no Wells Fargo filings here to compare against.",
+        "Wells Fargo's filings aren't available, so only JPMorgan is covered.",
+    ],
+)
+def test_a_missing_company_acknowledged_in_the_answers_own_words_anywhere_passes(
+    acknowledgement,
+):
+    """ADR 0016: the answer says so in its own words, where it matters, not in the fixed
+    wording near its start or in a closing Coverage note."""
+    answer = (
+        "JPMorgan's risk factors centre on credit and market risk [S1].\n\n"
+        "## JPMorgan Chase (JPM)\n\n"
+        f"JPMorgan names cybersecurity among its operational risks [S2]. {acknowledgement}"
+    )
+
+    check = check_coverage_gaps(answer, [gap("missing_company", "Wells Fargo")], NAMES)
+
+    assert check.passed
+    assert check.stated == ("missing_company",)
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        "Apple and JPMorgan both list risks [S1].",
+        "Note that the periods differ: Apple's fiscal year ended 27 September 2025 [S1].",
+    ],
+)
+def test_periods_differ_is_not_checked(answer):
+    """ADR 0016: "periods differ" is shown by the product as a Coverage note, and the
+    answer is not asked to state it, so it is neither stated nor missing."""
+    check = check_coverage_gaps(
+        answer, [gap("periods_differ", "AAPL", "JPM"), gap("no_guidance", "AAPL")], NAMES
+    )
+
+    assert check.stated == ()
+    assert check.missing == ("no_guidance",)
+
+
+def test_the_checked_gaps_are_those_that_leave_part_of_the_question_unanswered():
+    from edgar_eval.answer_checks import checked_gaps
+
+    expected = [
+        gap("periods_differ", "AAPL", "JPM"),
+        gap("missing_company", "Wells Fargo"),
+        gap("snapshot_trend", "JPM"),
+        gap("stale_filing", "GE"),
+        gap("no_guidance", "NVDA"),
+    ]
+
+    assert [g.kind for g in checked_gaps(expected)] == [
+        "missing_company",
+        "snapshot_trend",
+        "stale_filing",
+        "no_guidance",
+    ]
+    assert checked_gaps([gap("periods_differ", "AAPL", "JPM")]) == []
 
 
 def test_a_gap_about_several_companies_must_be_stated_for_each():
@@ -906,10 +962,12 @@ def test_a_closing_coverage_note_may_be_a_heading_or_a_bold_label(coverage):
         ),
     ],
 )
-def test_an_answer_that_does_not_end_with_a_coverage_note_fails(coverage):
+def test_an_answer_needs_no_closing_coverage_note(coverage):
+    """ADR 0016: the product shows the Coverage Gaps as Coverage notes below the answer,
+    so prompt v15 no longer asks the answer to end with one."""
     check = check_structure(structured(coverage=coverage), COMPANIES)
 
-    assert any("Coverage note" in p for p in check.problems)
+    assert check.passed, check.problems
 
 
 @pytest.mark.parametrize(("repeats", "verdict"), [(4, "under 300"), (110, "over 600")])

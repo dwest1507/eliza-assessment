@@ -480,8 +480,14 @@ _GAP_MARKERS: dict[str, re.Pattern[str]] = {
     ),
     # A named Company is not in the Corpus.
     "missing_company": re.compile(
-        r"\bnot\b[^.;]{0,30}\b(?:in|included|part of|covered|among|available|present|found)"
+        r"(?:\bnot\b|n['’]t\b)[^.;]{0,30}"
+        r"\b(?:in|included|part of|covered|among|available|present|found)"
         r"\b[^.;]{0,20}\b(?:corpus|filings|sources|data|documents|dataset)"
+        r"|\b(?:absent|missing) from\b"
+        r"|\boutside\b[^.;]{0,20}\b(?:corpus|filings|sources|data|documents|dataset)"
+        r"|\b(?:filings|sources|data|documents)\b[^.;]{0,10}"
+        r"(?:\bare not\b|\baren['’]t\b|\bis not\b|\bisn['’]t\b)[^.;]{0,10}"
+        r"\b(?:available|included|provided|here)\b"
         r"|\bno (?:filings?|sources?|data|documents?|10-[KQ]s?)\b"
         r"[^.;]{0,20}\b(?:for|from|on|by|of)\b"
         r"|\b(?:corpus|filings|sources|data|dataset|excerpts)\b[^.;]{0,30}"
@@ -524,6 +530,10 @@ the fixed wordings of EDA notebook section 8.6 and the plain variants a model wr
 _COMPANY_FREE_GAPS = {_PERIODS_DIFFER}
 """Gaps about the comparison as a whole: stated once, not once per Company."""
 
+_UNCHECKED_GAPS = {_PERIODS_DIFFER}
+"""Coverage Gap kinds the answer is not asked to state (ADR 0016): "periods differ" leaves
+no part of the question unanswered, and the product shows it as a Coverage note."""
+
 _SENTENCE_END = re.compile(r"(?<=[.!?])\s+(?=[\[(*\"“A-Z])")
 
 _ABBREVIATION_END = re.compile(
@@ -546,12 +556,23 @@ class CoverageGapCheck:
         return not self.missing
 
 
+def checked_gaps(expected: Sequence[CoverageGapLabel]) -> list[CoverageGapLabel]:
+    """The expected Coverage Gaps the answer is asked to acknowledge, in order: those
+    that leave part of the question unanswered (a Company not in the Corpus, a trend
+    asked of a Snapshot Company, the stale Filing, guidance the Filings don't contain).
+    Not "periods differ", which the product alone shows (ADR 0016)."""
+    return [g for g in expected if g.kind not in _UNCHECKED_GAPS]
+
+
 def check_coverage_gaps(
     answer: str,
     expected: Sequence[CoverageGapLabel],
     names: Mapping[str, Sequence[str]],
 ) -> CoverageGapCheck:
-    """Every expected Coverage Gap is stated in the answer.
+    """Every expected Coverage Gap that leaves part of the question unanswered
+    (`checked_gaps`) is acknowledged in the answer, in any wording, anywhere in it. A
+    "periods differ" gap is neither stated nor missing: the product shows it, and prompt
+    v15 no longer asks the answer to (ADR 0016).
 
     A gap is stated for a Company when a sentence says what the gap's kind says
     (`_GAP_MARKERS`) and either names the Company, or names no Company and sits in a
@@ -568,7 +589,7 @@ def check_coverage_gaps(
     marked = [(unit.text, s) for unit in units(answer) for s in _sentences(unit.text)]
     stated: list[str] = []
     missing: list[str] = []
-    for label in expected:
+    for label in checked_gaps(expected):
         marker = _GAP_MARKERS[label.kind]
         hits = [(unit, s) for unit, s in marked if marker.search(s)]
         if label.kind in _COMPANY_FREE_GAPS:
@@ -745,17 +766,17 @@ class StructureCheck:
 
 def check_structure(answer: str, companies: Mapping[str, Sequence[str]]) -> StructureCheck:
     """The structure of assumption 8: a direct answer of two or three sentences first,
-    then the points per Company under a heading each, or a comparison table, then a
-    closing Coverage note, in 300 to 600 words. `companies` are the Companies the
-    answer's Sources come from, each with the names an answer may call it by. An answer
-    with no Sources is its Coverage Gaps alone, so it need only open with its direct
-    answer."""
+    then the points per Company under a heading each, or a comparison table, in 300 to
+    600 words. `companies` are the Companies the answer's Sources come from, each with
+    the names an answer may call it by. An answer with no Sources is its Coverage Gaps
+    alone, so it need only open with its direct answer. No closing Coverage note is
+    required: from prompt v15 the product shows the Coverage Gaps below the answer
+    (ADR 0016)."""
     words = _words(answer)
     found = [_opening_problem(answer)]
     if companies:
         found += [
             _per_company_problem(answer, companies),
-            _coverage_note_problem(answer),
             f"{words} words, under {MIN_WORDS}" if words < MIN_WORDS else None,
             f"{words} words, over {MAX_WORDS}" if words > MAX_WORDS else None,
         ]
@@ -790,20 +811,6 @@ def _per_company_problem(answer: str, companies: Mapping[str, Sequence[str]]) ->
     ]
     if unheaded:
         return f"no points per Company (no heading for {', '.join(unheaded)}) or comparison table"
-    return None
-
-
-def _coverage_note_problem(answer: str) -> str | None:
-    """Why the answer does not end with a Coverage note: it has none, or a heading of
-    another part follows it."""
-    lines = [line.strip() for line in answer.splitlines() if line.strip()]
-    starts = [
-        n for n, line in enumerate(lines) if _COVERAGE.match(line) or _COVERAGE_IN_LINE.search(line)
-    ]
-    if not starts:
-        return "no closing Coverage note"
-    if any(_HEADING.match(line) for line in lines[starts[-1] + 1 :]):
-        return "the Coverage note is not at the end"
     return None
 
 

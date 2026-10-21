@@ -56,14 +56,23 @@ const ANSWER = [
 ]
 
 /**
- * An answer in the prompt's fixed structure: the direct answer, the per-Company detail
- * and the closing Coverage note, each a paragraph, streamed one paragraph at a time.
+ * An answer in the prompt's structure: the direct answer, then the per-Company detail,
+ * each a paragraph, streamed one paragraph at a time. From prompt v15 it has no closing
+ * Coverage note: the workspace shows the Coverage Gaps below it (ADR 0016).
  */
 const LONG_ANSWER = [
   'Apple and Tesla both face **trade policy** risk [S1].\n\n',
   '**Apple.** Apple depends on outsourcing partners.\n\n',
-  '**Tesla.** Tesla is exposed to tariffs [S2].\n\nCoverage: Wells Fargo is not in the Filings provided.',
+  '**Tesla.** Tesla is exposed to tariffs [S2].\n\nNeither gives a tariff forecast in these filings.',
 ]
+
+/** A Coverage Gap as the chat API streams it: a Company not in the Corpus. */
+const WELLS_FARGO_GAP = {
+  kind: 'missing_company',
+  label: 'Not in the Corpus',
+  companies: ['Wells Fargo'],
+  text: 'Not in the Corpus: Wells Fargo is not in the Filings provided, so this answer does not cover it.',
+}
 
 const QUERY_SCOPE = {
   companies: [
@@ -548,7 +557,7 @@ describe('Workspace', () => {
 
     expect(within(answer).getByText('trade policy')).toBeInTheDocument()
     expect(within(answer).queryByText(/outsourcing partners/)).not.toBeInTheDocument()
-    expect(within(answer).queryByText(/Coverage:/)).not.toBeInTheDocument()
+    expect(within(answer).queryByText(/tariff forecast/)).not.toBeInTheDocument()
     expect(toggle).toHaveAttribute('aria-expanded', 'false')
     expect(within(answer).queryByText(/still being written/)).not.toBeInTheDocument()
 
@@ -556,7 +565,7 @@ describe('Workspace', () => {
     const hide = within(answer).getByRole('button', { name: 'Hide full analysis' })
     expect(hide).toHaveAttribute('aria-expanded', 'true')
     expect(within(answer).getByText(/outsourcing partners/)).toBeInTheDocument()
-    expect(within(answer).getByText(/Coverage:/)).toBeInTheDocument()
+    expect(within(answer).getByText(/tariff forecast/)).toBeInTheDocument()
     expect(within(answer).getByRole('link', { name: 'Source S2' })).toBeInTheDocument()
 
     await user.click(hide)
@@ -581,17 +590,9 @@ describe('Workspace', () => {
     )
   })
 
-  it('shows a Coverage Gap once by default, leaving the closing Coverage note to the full analysis', async () => {
-    const gaps = [
-      {
-        kind: 'missing_company',
-        label: 'Not in the Corpus',
-        companies: ['Wells Fargo'],
-        text: 'Not in the Corpus: Wells Fargo is not in the Filings provided, so this answer does not cover it.',
-      },
-    ]
+  it('shows each Coverage Gap once, as a Coverage note below the answer, collapsed or not', async () => {
     fetchMock.mockImplementation(async () =>
-      uiMessageStream(LONG_ANSWER, QUERY_SCOPE, SOURCES, gaps)
+      uiMessageStream(LONG_ANSWER, QUERY_SCOPE, SOURCES, [WELLS_FARGO_GAP])
     )
     const user = userEvent.setup()
     render(<Workspace />)
@@ -599,9 +600,38 @@ describe('Workspace', () => {
     const answer = screen.getByRole('article', { name: 'Answer' })
     const toggle = await within(answer).findByRole('button', { name: 'Show full analysis' })
 
-    expect(answer.textContent?.match(/Wells Fargo is not in the Filings/gi)).toHaveLength(1)
+    expect(answer.textContent?.match(/Wells Fargo is not in the filings/gi)).toHaveLength(1)
     await user.click(toggle)
-    expect(answer.textContent?.match(/Wells Fargo is not in the Filings/gi)).toHaveLength(2)
+    expect(answer.textContent?.match(/Wells Fargo is not in the filings/gi)).toHaveLength(1)
+    // Below the whole answer, not between its opening and its full analysis.
+    const notes = within(answer).getByRole('note', { name: 'Coverage notes' })
+    const last = within(answer).getByText(/tariff forecast/)
+    expect(last.compareDocumentPosition(notes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('shows the Coverage notes only once the answer is complete, never above it', async () => {
+    const { response, release } = heldUiMessageStream(
+      (part) => part.type === 'text-delta',
+      LONG_ANSWER,
+      QUERY_SCOPE,
+      SOURCES,
+      [WELLS_FARGO_GAP]
+    )
+    fetchMock.mockImplementation(async () => response)
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+
+    const answer = await screen.findByRole('article', { name: 'Answer' })
+    await within(answer).findByText('trade policy')
+    // The gaps arrived before the text, but nothing leads the answer with them.
+    expect(within(answer).queryByRole('note', { name: 'Coverage notes' })).not.toBeInTheDocument()
+    expect(answer.textContent).not.toMatch(/Wells Fargo/)
+
+    release()
+    const notes = await within(answer).findByRole('note', { name: 'Coverage notes' })
+    const opening = within(answer).getByText('trade policy')
+    expect(opening.compareDocumentPosition(notes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('shows the whole answer, with no control, when it has one paragraph', async () => {
@@ -810,14 +840,9 @@ describe('Workspace', () => {
     )
   })
 
-  it('shows each Coverage Gap in a callout beside the answer', async () => {
+  it('shows each Coverage Gap as a Coverage note in its fixed wording, in plain words', async () => {
     const gaps = [
-      {
-        kind: 'missing_company',
-        label: 'Not in the Corpus',
-        companies: ['Wells Fargo'],
-        text: 'Not in the Corpus: Wells Fargo is not in the Filings provided, so this answer does not cover it.',
-      },
+      WELLS_FARGO_GAP,
       {
         kind: 'snapshot_trend',
         label: 'Trend unavailable',
@@ -832,13 +857,11 @@ describe('Workspace', () => {
     await screen.findByText('trade policy')
 
     const answer = screen.getByRole('article', { name: 'Answer' })
-    const callout = within(answer).getByRole('note', { name: 'Coverage Gaps' })
-    // Headed in plain words, keeping the domain term as its accessible name and hover text.
-    const heading = within(callout).getByRole('heading', {
-      name: 'What these filings can’t answer',
-    })
+    const notes = await within(answer).findByRole('note', { name: 'Coverage notes' })
+    // Headed "Coverage notes", keeping the domain term as hover text.
+    const heading = within(notes).getByRole('heading', { name: 'Coverage notes' })
     expect(heading).toHaveAttribute('title', 'Coverage Gaps')
-    const items = within(callout).getAllByRole('listitem')
+    const items = within(notes).getAllByRole('listitem')
     expect(items).toHaveLength(2)
     // Each gap's label in plain words, with the label the answer states on hover.
     expect(within(items[0]).getByText('Not covered')).toHaveAttribute('title', 'Not in the Corpus')
@@ -857,18 +880,19 @@ describe('Workspace', () => {
     )
     expect(within(items[1]).getByTitle('Corpus')).toHaveTextContent('collection')
     expect(within(items[0]).getByTitle('Filings')).toHaveTextContent('filings')
-    // The callout comes before the answer text, so it cannot be missed.
+    // The notes follow the answer text: the answer leads with its finding.
     const text = within(answer).getByText('trade policy')
-    expect(callout.compareDocumentPosition(text) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(text.compareDocumentPosition(notes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
-  it('shows no Coverage Gap callout when the answer has none', async () => {
+  it('shows no Coverage notes when the answer has no Coverage Gap', async () => {
     const user = userEvent.setup()
     render(<Workspace />)
     await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
-    await screen.findByText('trade policy')
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    await within(answer).findByRole('button', { name: 'Sources (2)' })
 
-    expect(screen.queryByRole('note', { name: 'Coverage Gaps' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('note', { name: 'Coverage notes' })).not.toBeInTheDocument()
   })
 
   it('shows a Facts Source in the Sources panel as a table of its rows', async () => {
