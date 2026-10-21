@@ -1071,8 +1071,10 @@ def test_a_plan_whose_matches_fall_short_fills_its_budget_in_document_order(inde
     assert source.text.startswith(mdna[first[0]]["text"])
     assert source.text.endswith(GAP + matched["text"])
     assert source.text.count(GAP) == 1
-    middle = len(fourth["text"]) // 2
-    assert fourth["text"][middle : middle + 100] not in source.text
+    assert _middle(fourth) not in source.text
+    # Filled up to the budget and no further.
+    assert _read(mdna, source.text) == {*first, max(mdna)}
+    assert sum(mdna[o]["tokens"] for o in _read(mdna, source.text)) == budget
 
 
 def test_a_one_company_outlook_reads_the_whole_mdna_when_it_fits(index):
@@ -1083,20 +1085,30 @@ def test_a_one_company_outlook_reads_the_whole_mdna_when_it_fits(index):
     # The MD&A (about 15,500 tokens) fits in the budget, so every chunk of it is read.
     assert GAP not in source.text
     assert all(c["text"][-100:] in source.text for c in _mdna(index).values())
+    assert _source_tokens(context) <= CONTEXT_BUDGET_TOKENS
 
 
 def test_a_plan_whose_matches_fill_the_budget_is_not_filled(index):
     mdna = _mdna(index)
-    ranked = [mdna[o] for o in sorted(mdna, reverse=True)]
-    # The best five fill the budget but for one token: the sixth does not fit, so the
-    # plan's matches have not run out and nothing is added.
-    budget = sum(c["tokens"] for c in ranked[:5]) + 1
+    ranked = [mdna[o] for o in sorted(mdna, reverse=True)][:6]
+    # The best five fill the budget but for one token less than the sixth needs: the sixth
+    # does not fit, so the plan's matches have not run out, and nothing is added, though
+    # the MD&A's shorter unmatched chunks would fit in what is left.
+    budget = sum(c["tokens"] for c in ranked) - 1
+    assert min(c["tokens"] for o, c in mdna.items() if c not in ranked) < ranked[5]["tokens"]
 
-    source = _retrieve(index, ranked, context_budget=budget)
+    context = _retrieve_context(index, ranked, context_budget=budget)
+    source = _mdna_source(context)
 
     assert source.text.startswith(ranked[4]["text"])
     assert ranked[5]["text"][:100] not in source.text
     assert mdna[sorted(mdna)[0]]["text"] not in source.text
+    # Exactly the five ranked chunks, as before the fill: no other MD&A chunk reaches the
+    # Sources or the prompt.
+    chosen = {c["ordinal"] for c in ranked[:5]}
+    assert _read(mdna, source.text) == chosen
+    prompt = "\n".join(m.content for m in context.messages)
+    assert _read(mdna, prompt) == chosen
 
 
 # --- Open questions ------------------------------------------------------------------------
@@ -1319,20 +1331,38 @@ def _mdna(index):
     return {c["ordinal"]: c for c in _chunks(index, filing_id=TESLA_10K, section="MD&A")}
 
 
-def _retrieve(index, rows, **kwargs):
-    """The Source citing Tesla's MD&A when retrieval ranks exactly these chunks, within a
-    budget they fill unless another is given (a budget they leave unspent is filled from
-    the rest of the MD&A)."""
+def _retrieve_context(index, rows, **kwargs):
+    """The Answer Context of Tesla's outlook when retrieval ranks exactly these chunks,
+    within a budget they fill unless another is given (a budget they leave unspent is
+    filled from the rest of the MD&A)."""
     ids = [r["id"] for r in rows]
     kwargs.setdefault("context_budget", sum(r["tokens"] for r in rows))
-    context = prepare_answer_context(
+    return prepare_answer_context(
         [Message("user", TESLA_OUTLOOK)],
         index,
         ranker=lambda request: [i for i in ids if i in request.eligible],
         **kwargs,
     )
+
+
+def _mdna_source(context):
     (source,) = [s for s in context.sources if s.filing_id == TESLA_10K and s.section == "MD&A"]
     return source
+
+
+def _retrieve(index, rows, **kwargs):
+    """The Source citing Tesla's MD&A when retrieval ranks exactly these chunks."""
+    return _mdna_source(_retrieve_context(index, rows, **kwargs))
+
+
+def _middle(chunk):
+    middle = len(chunk["text"]) // 2
+    return chunk["text"][middle : middle + 100]
+
+
+def _read(mdna, text):
+    """The ordinals of the MD&A chunks a text holds."""
+    return {o for o, c in mdna.items() if _middle(c) in text}
 
 
 def test_adjacent_chunks_join_as_one_passage_with_their_overlap_shown_once(index):
