@@ -2011,6 +2011,80 @@ So v17 goes into the combination (#165).
 
 **Spend:** $0.58 for the two runs ($0.37 in answers, $0.21 in Jev judging). The reports, `generation-dev-v17.json`, `generation-dev-v17-run2.json`, `prompt-choice-dev-v17.json` and `v17-by-companies.json`, are kept in `data/derived/eval-issue162/`, with the re-scored copies of the four v15 reports in its `rescored-v15/`; #160's originals are unchanged. The export shows no candidate report, so it is unchanged.
 
+### v18: answers quote figures and never compute them (#163, 2026-10-21)
+
+Spec #132's third candidate, a correctness change decided by [ADR 0017](adr/0017-prompt-changes-decided-by-two-rules.md)'s `prompt-fix` rule. Prompt v18 is v15 with rule 5 rewritten: the table's metrics quoted exactly, every other figure quoted as the Filing text states it, no growth rate, difference, share or sum computed, each year's stated change given (an older Filing's included), a stated period total quoted, and the table's derived rows quoted labelled as derived (the full text is in the [prompt log](prompt-iterations.md#v18-quote-figures-never-compute-them-candidate-163)). Its code is on the branch `candidate/v18`, not merged.
+
+`gpt-6-luna` at low answered the 63 dev cases twice on #160's setup (`fts5`, 600-token chunks, the 32k budget, `jev-1.13.0` at 0.6, code version `8d5ab918496a2b98`), and the round is read two runs a side ([ADR 0017's note](adr/0017-prompt-changes-decided-by-two-rules.md#note-2026-10-21-160-two-runs-a-side-in-spec-132s-round)). The two runs cost **$0.57** ($0.37 in answers, $0.20 in Jev judging).
+
+```sh
+make eval-generation NAME=v18 && make eval-generation NAME=v18-run2
+E=../data/derived/eval
+python -m edgar_eval.selection compare $E/generation-dev.json+$E/generation-dev-run2.json \
+    $E/generation-dev-v18.json+$E/generation-dev-v18-run2.json \
+    --control $E/generation-control-dev.json+$E/generation-control-dev-run2.json \
+    --rule prompt-fix --json $E/prompt-fix-choice-dev-v18.json        # free
+```
+
+| Run | cases | citations valid | figures exact | gaps stated | structure followed | words | Fact Recall | detail recall | Faithfulness | answers with a Contradicted Claim | must-state facts stated | figures checked | $ per answer |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| v15 shipped run | 63 | 0.89 | 0.95 | 0.73 | 0.81 | 436 | 0.69 | 0.44 | 0.95 | 2 | 229 of 334 | 630 | 0.0029 |
+| v15 shipped run 2 | 63 | 0.95 | 0.97 | 0.93 | 0.76 | 444 | 0.70 | 0.48 | 0.96 | 4 | 235 of 334 | 608 | 0.0029 |
+| **v18** | 63 | 0.98 | **1.00** | 1.00 | 0.83 | 447 | **0.70** | 0.48 | **0.95** | 3 | 229 of 334 | 519 | 0.0029 |
+| **v18 run 2** | 63 | 0.94 | **1.00** | 0.93 | 0.78 | 442 | **0.72** | 0.43 | **0.95** | 6 | 237 of 334 | 522 | 0.0029 |
+
+The Control pair is in [the v15 round's table](#the-v15-base-round-and-its-generation-misses-160-2026-10-21) (604 and 596 figures checked). Every answer stopped on its own; none reached the cap.
+
+**The verdict: v18 qualifies under `prompt-fix`, and goes to the combination (#165).**
+
+- **Figures (the rule's ahead metric):** no case fails the figure check in either v18 run, against 2.5 a run in the shipped pair: 2.5 fixed, none broken.
+- **Behind on no guardrail:**
+  - facts stated: 233 a run against 232, +1, p behind = 0.592;
+  - Fact Recall case by case: 21 cases higher, 20 lower, p behind = 0.622;
+  - Faithfulness: 19 higher, 24 lower, p behind = 0.271;
+  - Coverage Gaps: 3 higher, 0 lower, p behind = 1.000;
+  - Contradicted Claims: 5 higher, 6 lower, p behind = 0.500;
+  - structure followed: 8 higher, 6 lower, p behind = 0.788.
+- **The Control pair is not ahead under `prompt-fix`** (4.5 cases failing a run against 2.5), so the comparison is conclusive. No guardrail is under 0.20 (the nearest is Faithfulness, at 0.271), so the Control pair's noise on structure and Faithfulness (p behind = 0.011 and 0.140) decides nothing here.
+
+**ADR 0017's hand check: the cases fixed are the computed figures v18 targets.** Each failure in the shipped pair, read against v18's two answers to the same case:
+
+- `trend-xom-net-income-2025` (run 1: the $4,836 million decline and quarterly declines of $507 million and $2,158 million, each computed). v18 quotes FY2025's $28,844 million and FY2024's $33,680 million and the table's change from a year earlier for the year and each quarter, the fourth quarter labelled derived.
+- `sector-semiconductors-customer-concentration` (run 1: NVIDIA's three largest direct customers summed to 34% and 33%). v18 gives Customers A, B and C at 12%, 11% and 11% and adds no sum, in both runs.
+- `gap-msft-goog-capex-periods-differ` (both runs: Alphabet's capex growth of 74%, computed). v18 quotes the capex amounts the filings state and gives no growth rate.
+- `trend-goog-meta-net-income-two-years` (run 2: Meta's $1,902 million decline, computed). v18 quotes the table's changes from a year earlier instead.
+
+The Control pair's failures (Tesla's $11,203 million / 74.7% decline, Caterpillar's $2.251 billion decline, Disney's segment differences, Google Cloud's 77%) do not recur in either v18 run.
+
+**The prior-year changes rule 5 names are stated far more often.** These are the must-state facts #160's diagnosis found omitted, counted as runs stating them:
+
+| Fact | v15 shipped pair | v15 Control pair | v18 |
+|---|---|---|---|
+| Alphabet's net income up 36% in 2024 (`trend-goog-meta-net-income-two-years`) | 0 of 2 | 0 of 2 | 1 of 2 |
+| Google Cloud revenue up 31% in 2024 (`trend-goog-cloud-two-years`) | 0 of 2 | 0 of 2 | 2 of 2 |
+| Meta's revenue up 22% in 2024 (`trend-meta-revenue-two-years`) | 0 of 2 | 1 of 2 | 2 of 2 |
+| Microsoft's revenue up 16% in fiscal 2024 (`followup-switch-to-msft`) | 1 of 2 | 0 of 2 | 2 of 2 |
+| Coca-Cola's nine-month revenue of $36,119 million (`trend-ko-revenue-two-years`) | 2 of 2 | 1 of 2 | 1 of 2 |
+
+Seven of eight prior-year changes are stated against one of eight in each v15 pair. The stated period total is not helped: Coca-Cola's nine-month total and its 2% increase are each stated in one v18 run.
+
+**What else moved:**
+
+- **Facts stated are level overall but move by question type** (a run, shipped pair against v18):
+  - figure trends gain 3 (43 to 46);
+  - sector questions gain 3.5 (83 to 86.5);
+  - risk questions lose 4.5 (72 to 67.5), mostly `risk-nke-sbux-hd-consumer-demand` and `risk-pg-pep-input-costs` (1.5 each).
+  
+  Rule 5 does not bear on risk questions' facts, and a loss of that size is within the round's noise, but the combination's run should be read for it.
+- **The answers quote fewer figures:** 519 and 522 figures checked against 596 to 630 in the four v15 runs, about 15% fewer, at the same length (442 and 447 words), with no fall in the facts stated.
+- **Contradicted Claims are not fewer** (3 and 6 answers against 2 and 4), but none rests on a figure the answer computed, as the Control Run's Tesla decline did:
+  - Disney's segment changes (+3.1% and +5.9%, `trend-dis-segments-fy2025`) are the table's FY2025 changes from a year earlier, quoted without the derived label;
+  - Meta's revenue change, quoted from the table as +22% for both years;
+  - the rest are drivers or "the filings do not" sentences: Apple's prior-year changes, Disney's Star India, Caterpillar's and Coca-Cola's drivers, Alphabet's other income, Bristol Myers Squibb, Pfizer's insurance.
+- **Latency is not read.** The first run ran beside other implementers' paid runs (28.6 s per answer on average, 8.7 s to the first text) and the second less so (11.1 s and 3.0 s), so neither is the product's speed. The decision does not rest on it.
+
+The reports are `generation-dev-v18.json`, `generation-dev-v18-run2.json` and `prompt-fix-choice-dev-v18.json`, kept in `data/derived/eval-issue163/`. The export is unchanged: it shows the round's shipped run, not a candidate's.
+
 ### Order and cost
 
 1. The Brief Suite and the label format.
