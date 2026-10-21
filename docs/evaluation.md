@@ -11,8 +11,8 @@
 - **The main limits.**
   - Small samples: on 20 cases one case moves a share by 0.05, so the numbers are directional, not exact rates.
   - A small human check: Claude drafted the Golden Set's facts and labelled the judge study, so Jev is checked against Claude ([The judge study's results](#the-judge-studys-results)). In a blind [human check](#the-human-check) the developer labelled 15 fact items: agreement 80% with Claude's labels and 87% with Jev's verdicts. The claim labels, which Faithfulness and Contradicted Claims rest on, are still Claude's alone.
-  - These numbers are prompt v7's, at reasoning effort low, until the final round. Prompt v15 ([ADR 0016](adr/0016-coverage-gaps-shown-by-the-product.md)), with every generator at effort low and a 32k cap, has been run once on dev, on the 62 cases with the [Overview route and document-order fill](#the-overview-route-the-document-order-fill-and-latest-for-open-questions-145-2026-10-20): Fact Recall 0.70 and Faithfulness 0.95, with no Control Run beside it, so not a comparison, and Coverage Gaps stated is measured differently from v15 ([Luna at low effort](#luna-at-low-effort-prompt-v15-156-2026-10-20)).
-  - Speed at effort low: the first text comes after 2.6 seconds on average and 5.4 at most, and the full answer after 8.8 seconds on average and 13.7 at most, so every dev answer is within the demo's ceilings (10 seconds to the first text, 30 to the full answer). At effort medium ([#138's run](#luna-at-medium-effort-prompt-v15-138-2026-10-20)) the first text took more than 10 seconds for 21 of 60 answers, so every model answers at low.
+  - These numbers are prompt v7's, at reasoning effort low, until the final round. Prompt v15 ([ADR 0016](adr/0016-coverage-gaps-shown-by-the-product.md)), with every generator at effort low and a 32k cap, on #136's finished answer path, has been run twice on the 63 dev cases as the base round of spec #132: Fact Recall 0.69 and 0.72, Faithfulness 0.95 in both, and the second run states 12 more must-state facts than the first, enough to count as ahead under the rule, so one run a side cannot show a prompt change's effect of that size ([the v15 base round](#the-v15-base-round-and-its-generation-misses-160-2026-10-21)). Coverage Gaps stated is measured differently from v15.
+  - Speed at effort low: in the two runs of the v15 base round the first text comes after 2.4 to 2.5 seconds on average and 5.7 at most, and the full answer after 8.6 to 8.7 seconds on average and 14.2 at most, so every dev answer is within the demo's ceilings (10 seconds to the first text, 30 to the full answer). At effort medium ([#138's run](#luna-at-medium-effort-prompt-v15-138-2026-10-20)) the first text took more than 10 seconds for 21 of 60 answers, so every model answers at low.
   - A computed figure fails the figure check by design, and a follow-up that changes topic without naming a Company inherits the earlier one ([ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md)).
 
 The rest of these notes is the full history: each harness's method, then every run in the order it was made.
@@ -1848,6 +1848,73 @@ make eval-misses REPORTS=brief-suite.json
 - **The counts by Section are the shipped run's,** and the miss rates by Companies, the uncited facts and the best-ranked chunk shares are the shipped run and the Control Run pooled, as the spec's diagnosis read them; pooled, the command gives them exactly.
 - **One difference: 10 of 14 uncited, not 10 of 15.** In the Control Run's `risk-nvda-amd-competition`, NVIDIA's fact that competitors' products may be cheaper or better (stated, p = 0.97) has its quote in two Sources: S1, NVIDIA's FY2023 10-K Risk Factors, uncited, and S2, its FY2025 10-K Risk Factors, the fact's own Filing, cited. The spec's diagnosis took the first Source in number order and counted the fact as uncited; the report takes the fact's own Filing and Section first, so the answer cites the Source the fact was labelled from, and counts it as cited.
 - **The Brief Suite report** of that round (`brief-suite.json`) gives 21 Generation Misses of the 80 must-state facts reached in all 5 runs, the 21 generation misses #126 counted. The spec's table counts 73 run-misses there, each run that left a reached fact out, a unit the report does not use.
+
+### The v15 base round and its Generation Misses (#160, 2026-10-21)
+
+Part of spec #132: the round every #132 candidate is measured against, and the diagnosis of its misses, repeated on v15 before any candidate runs. The answer path is #136's finished one: the joined passages (#137), Coverage notes (ADR 0016, #139), the Overview route and document-order fill (#145), the "big tech" Company Group (#146) and the calendar months (#147), with #159's figure check. `gpt-6-luna` answered the 63 dev cases twice at reasoning effort low, as the round's shipped run and its Control Run: prompt v15, `fts5`, 600-token chunks, the 32k budget, `jev-1.13.0` at 0.6, code version `0bc99f66e57db4ec`. The two runs cost $0.57 in all ($0.18 in answers and $0.10 in Jev judging each).
+
+```sh
+make eval-generation                                   # the shipped run, generation-dev.json
+python -m edgar_eval.generation --split dev --model gpt-6-luna \
+    --json ../data/derived/eval/generation-control-dev.json   # the Control Run, as the comparison commands run it
+python -m edgar_eval.selection compare ../data/derived/eval/generation-dev.json \
+    ../data/derived/eval/generation-control-dev.json --rule prompts    # free
+make eval-misses REPORTS="generation-dev.json generation-control-dev.json"   # free
+```
+
+| Run | cases | citations valid | figures exact | gaps stated | structure followed | words | Fact Recall | detail recall | Faithfulness | answers with a Contradicted Claim | must-state facts stated | $ per answer | latency s | first text s |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **shipped run** | 63 | 0.89 | 0.95 | 0.73 | 0.81 | 436 | **0.69** | 0.44 | **0.95** | 2 | 229 of 334 | 0.0029 | 8.6 | 2.5 |
+| **Control Run** | 63 | 0.97 | 0.94 | 0.80 | 0.68 | 444 | **0.72** | 0.45 | **0.95** | 4 | 241 of 334 | 0.0029 | 8.7 | 2.4 |
+| #156's run (prompt v15, 62 cases) | 62 | 0.92 | 0.95 | 0.87 | 0.81 | 438 | 0.70 | 0.49 | 0.95 | 7 | | 0.0029 | 8.8 | 2.6 |
+
+Every answer is within the demo's ceilings: the first text after at most 5.7 seconds (5.0 in the Control Run) and the full answer within 13.0 (14.2). No answer reaches the cap; the longest used 1,344 of its 32,000 output tokens. Jev's own token limit failed its judgments on a few claims of `trend-jpm-revenue-snapshot` and `gap-cat-sales-snapshot` in both runs, so Faithfulness leaves those claims out. The figure check fails 3 cases in the shipped run and 4 in the Control Run, each a figure the answer computed: the combined share of NVIDIA's largest customers and Alphabet's capital expenditure growth in both runs, ExxonMobil's net income decline in the shipped run, and Tesla's net income decline and Caterpillar's sales decline from 2023 to 2024 in the Control Run.
+
+#### The Control Run is ahead of the shipped run
+
+Under ADR 0017's `prompts` rule (`compare --rule prompts`, free), the Control Run, the same setup answering again, states **241 of the 334 must-state facts against the shipped run's 229, +12, p ahead = 0.081**, under the 0.10 threshold: it comes out **ahead** on the rule's ahead metric. Its evidence was the same (223 against 213 of the 289 facts reached, 18 against 16 of the 45 not reached). It is also **behind on structure followed** (5 cases higher, 13 lower, p behind = 0.048), and indistinguishable on Fact Recall case by case (p ahead = 0.132), Faithfulness, Coverage Gaps and Contradicted Claims. Under `prompt-fix` it is not ahead: it fails the figure check in 4 cases against 3.
+
+- **Two runs of one setup differ by more than the rule's threshold,** on both the ahead metric of `prompts` and its new structure guardrail. ADR 0011's Control Run exists to catch exactly this: under ADR 0017, any `prompts` comparison against this round (v16, v17, the legal route, the combination) would be **inconclusive** whatever the candidate scored, and v15 would stand. A `prompt-fix` comparison (v18) is not made inconclusive by it.
+- **The developer decides before any candidate runs** (#160's acceptance criterion), so no candidate has been run. The choice is recorded in `prompt-choice-dev-control.json` beside the reports.
+
+#### The Generation Misses on v15
+
+`make eval-misses` read both reports on the current code with no case refused. The evidence of 289 of the 334 must-state facts reached the Answer Context in both runs (the retrieval is deterministic); the shipped run leaves 76 of them unstated and the Control Run 66.
+
+| | shipped run | Control Run | both, pooled | v7, pooled (#126, [#158](#the-generation-miss-report-158-2026-10-21)) |
+|---|---|---|---|---|
+| Generation Misses (of must-state facts reached) | **76** of 289 | **66** of 289 | 142 of 578 | 122 of 540 |
+| stated when reached | 74% | 77% | 75% | 77% |
+| by Section | Risk Factors 57, Legal Proceedings 7, MD&A 6, Market Risk 3, Business 2, Unsectioned 1 | Risk Factors 45, MD&A 9, Legal Proceedings 6, Market Risk 3, Unsectioned 2, Business 1 | Risk Factors 102, MD&A 15, Legal Proceedings 13 | |
+| miss rate, 1 / 2 / 3 / 4 / 5+ Companies | 0.20 / 0.33 / 0.21 / 0.44 / 0.24 | 0.17 / 0.29 / 0.24 / 0.25 / 0.21 | **0.18 / 0.31 / 0.23 / 0.34 / 0.23** | 0.15 / 0.24 / 0.35 / 0.31 / 0.22 |
+| missed when the holding Source is uncited | 7 of 13 | 10 of 12 | **17 of 25** | 10 of 14 |
+| miss rate when it is cited | 0.25 | 0.20 | 0.23 | 0.21 |
+| outside the best-ranked chunk, missed / stated | 59% / 63% | 58% / 63% | 59% / 63% | 61% / 62% |
+| mean words, missed / stated | 541 / 503 | 537 / 521 | 539 / 512 | |
+
+**Every Generation Miss read by hand.** Each of the 142 was read against its answer and its evidence quote and put in one class, by the spec's definitions (the reading is an agent's, as the spec asks, so the boundary calls are judgments: a claim kept without the particular the fact turns on is generalised, the particulars kept without the claim is headline dropped):
+
+| Generation Misses, by hand reading | shipped run (76) | Control Run (66) | v7's shipped run (60) | v7's Control Run (62) |
+|---|---|---|---|---|
+| **Generalised:** the topic covered but the particular dropped (a count, a court, a date, "has" softened to "could", a claim pooled across Companies) | **32** | **28** | 29 | 27 |
+| **Omitted:** not stated at all, including a claim moved to another Company and a prior year's change in an older MD&A | **19** | **20** | 16 | 20 |
+| **Headline dropped:** the particulars given but not the Company's own claim the fact is written as | **22** | **12** | 5 | 5 |
+| **Stated, but Jev scored it under the 0.6 cut-off** | **3** | **6** | 10 | 10 |
+
+- **It is still compression, not lost evidence.** As on v7, missed and stated facts sit at the same depth in their Source and as often outside its best-ranked chunk, and 125 of the 142 misses come from a Source the answer cites. Generalised is still the largest class.
+- **Headline dropped has grown** (22 and 12, against 5 and 5 on v7): the answers give a Company's particulars (the laws, competitors, programmes, sensitivities) and leave out the Company's own summary sentence the fact is written as, such as NVIDIA's "competition could adversely impact our market share and financial results", Microsoft's exposure to foreign exchange, interest rate, credit and equity price risk, Merck's "increasing regulation and political action", Tesla's belief that Robotaxi "unlocks the potential for significant business growth", and AbbVie's and Lilly's R&D failure risk. v15's rule 8, "never reduce them to broad categories", reads as a ban on the headline; v16 rewrites it for this.
+- **"Has happened" softened to "could" is the commonest generalisation.** Filings that say an event happened, or "has in the past, and may in the future", become a possible risk: Adobe's, Oracle's and Salesforce's past cybersecurity incidents, Tesla's lost tax credits and its driver assistance scrutiny, Boeing's 777X and 737-7 and 737-10 delays, Deere's tariffs that "have impacted" its sourcing and costs, and Nike's past demand declines. Quantity words go with it: "a substantial number" (Merck), "large numbers" (Lilly), "very few" (Johnson & Johnson), and about 190 million people affected by the Change Healthcare attack (UnitedHealth, in both runs).
+- **Legal particulars are dropped.** In `risk-wmt-tgt-legal-proceedings` the answers state 2 and 3 of the 7 must-state facts whose evidence reached them, the same as #126's v7 runs: the opioid multidistrict litigation is named without its about 250 cases against Walmart, the Target dismissal without its Minnesota court, the United States' suit in Delaware and the fiscal 2023 opioid accrual not at all. Its Answer Context still opens with Walmart's Financial Statements ([S1]), before its Legal Proceedings ([S2]), which #164's legal route candidate changes.
+- **Prior years' changes are omitted** in 6 misses: Alphabet's net income up 36% in 2024 and its Google Cloud revenue up 31% in 2024 (both runs), Meta's revenue up 22% in 2024 and Microsoft's revenue up 16% in fiscal 2024. Each sits in an older MD&A, mostly uncited: asked about two years, the answer gives the latest year's change only. v18's rule names them.
+- **Claims pooled across Companies are few** (a handful, such as "both describe AI as a competitive opportunity" for Alphabet and Meta, after which Meta's competition risk is never attributed to Meta), as are claims moved to another Company (Cisco's single-source components stated for AMD).
+- **More Companies, but not monotonically.** v7's diagnosis found the miss rate rising to 0.35 at three Companies. On v15 it is 0.18 at one Company and 0.31 at two, then 0.23, 0.34 and 0.23 for three, four and five or more (on 66, 32 and 124 facts reached): the second Company is where the rate jumps, and three or more are no worse than two. Answers with misses are longer than answers without (539 words against 512).
+- **Uncited Sources lose their facts,** as on v7: 17 of the 25 facts whose holding Source is never cited are missed (0.68), against 0.23 when it is cited, but they are 17 of 142 misses.
+
+**The floor of what the measurement can show.** Jev scored 9 of the 142 Generation Misses under the cut-off although the answer states them (3 in the shipped run, 6 in the Control Run): about 1 in 16 misses, or 1.6% of the 578 must-state facts reached, against 10 of 60 and 10 of 62 in v7's reading. A candidate's gain of two or three facts on dev is inside what Jev alone moves. This counts only facts stated and scored as missed, not the reverse (a fact scored as stated that the answer does not state), which this reading does not look for. Together with the Control Run's +12 facts, the noise of one run a side is larger than the effects #132's candidates are likely to have.
+
+**The candidates' wording.** The diagnosis keeps the list of candidates and adjusts the wording of v16 and v18, posted on their tickets before either runs (#161, #163): v16 also asks the answer to keep a Company's own assessment of materiality or outlook, the Filing's tense ("has", "has in the past") and its quantity words; v18 also asks that a question about two or more years gets each year's change the Sources state, and that a period total the Source states (nine months, a year) is quoted rather than only its parts. v17 is unchanged; its ticket (#162) notes that on v15 the miss rate jumps at two Companies, which v17's range leaves at 600 words.
+
+The reports, `generation-dev.json` and `generation-control-dev.json`, are the round's, which the export shows; `misses-generation-dev.json`, `misses-generation-control-dev.json` and `prompt-choice-dev-control.json` are beside them. #156's single v15 run is kept as `data/derived/eval-issue156/generation-dev.json`.
 
 ### Order and cost
 

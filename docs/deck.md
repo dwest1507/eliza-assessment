@@ -56,7 +56,7 @@ answer to question 3 of the email.
 
 | | What the analyst gets | Evidence |
 |---|---|---|
-| **Analyst hours per question** | A 300–600 word answer, the direct answer first, then per Company | 8.8 s per answer, first text after 2.6 s, $0.0029 per answer (dev) |
+| **Analyst hours per question** | A 300–600 word answer, the direct answer first, then per Company | 8.6 s per answer, first text after 2.5 s, $0.0029 per answer (dev) |
 | **Stated Coverage Gaps** | Snapshot trends, missing Companies, the stale Filing, missing guidance and differing periods, shown below the answer | Every expected gap stated: 1.00 (holdout) |
 | **Auditable citations** | Every `[Sn]` opens its Filing, Section, Report Period and passage | Citations valid 1.00, Faithfulness 0.95 (holdout) |
 
@@ -64,7 +64,7 @@ answer to question 3 of the email.
 
 10 analysts × 5 questions a week × 2 hours saved × $150 an hour × 48 weeks = **about $720k a year**, against $8.20 a week of Answer Calls even at the most expensive model's price ($0.15 at the shipped one's).
 
-> Sources: [Luna at low effort](evaluation.md#luna-at-low-effort-prompt-v15-156-2026-10-20), [the holdout run](evaluation.md#the-holdout-run), [assumption 12](assumptions.md#12-an-illustrative-value-model)
+> Sources: [the v15 base round](evaluation.md#the-v15-base-round-and-its-generation-misses-160-2026-10-21), [the holdout run](evaluation.md#the-holdout-run), [assumption 12](assumptions.md#12-an-illustrative-value-model)
 
 <!--
 The table is measured: the answer's speed and cost, and that it is checkable (every citation
