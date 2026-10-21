@@ -95,7 +95,7 @@ describe('passageBlocks', () => {
   it('turns a line that is just [...] into an elision', () => {
     expect(passageBlocks('Before.\n[...]\nAfter.')).toEqual([
       { kind: 'paragraph', text: 'Before.' },
-      { kind: 'elision' },
+      { kind: 'elision', label: 'passage skipped' },
       { kind: 'paragraph', text: 'After.' },
     ])
   })
@@ -103,7 +103,7 @@ describe('passageBlocks', () => {
   it('reads the gap the retrieval writes, [ followed by an ellipsis character ], as an elision', () => {
     expect(passageBlocks('Before.\n[…]\nAfter.')).toEqual([
       { kind: 'paragraph', text: 'Before.' },
-      { kind: 'elision' },
+      { kind: 'elision', label: 'passage skipped' },
       { kind: 'paragraph', text: 'After.' },
     ])
   })
@@ -122,8 +122,48 @@ describe('passageBlocks', () => {
       { kind: 'paragraph', text: 'Fiscal Year 2025 Summary' },
       { kind: 'table', rows: [['Year Ended'], ['Revenue', '$', '130,497']] },
       { kind: 'paragraph', text: 'Revenue grew on Data Center demand.\nIt was led by Hopper.' },
-      { kind: 'elision' },
+      { kind: 'elision', label: 'passage skipped' },
       { kind: 'table', rows: [['Net income', '72,880']] },
+    ])
+  })
+
+  it('labels the marker "passage skipped"', () => {
+    expect(passageBlocks(`Before.${GAP}After.`)).toContainEqual({
+      kind: 'elision',
+      label: 'passage skipped',
+    })
+  })
+
+  it('spaces sentences the Corpus glued together, on display only', () => {
+    expect(passageBlocks('Revenue rose on earnings.Summary of results follows.')).toEqual([
+      { kind: 'paragraph', text: 'Revenue rose on earnings. Summary of results follows.' },
+    ])
+    expect(passageBlocks('Net sales grew 9%.Services led (see Note 2).Margins held!Why?')).toEqual([
+      {
+        kind: 'paragraph',
+        text: 'Net sales grew 9%. Services led (see Note 2). Margins held! Why?',
+      },
+    ])
+    expect(passageBlocks('It said “we grew.”The board agreed.')).toEqual([
+      { kind: 'paragraph', text: 'It said “we grew.” The board agreed.' },
+    ])
+  })
+
+  it('spaces a heading glued to the sentence after it', () => {
+    expect(passageBlocks('Fiscal 2025 earnings.SummaryThe Company grew.')).toEqual([
+      { kind: 'paragraph', text: 'Fiscal 2025 earnings. Summary The Company grew.' },
+    ])
+    expect(passageBlocks('Results of OperationsWe sell iPhone.')).toEqual([
+      { kind: 'paragraph', text: 'Results of Operations We sell iPhone.' },
+    ])
+  })
+
+  it('leaves names, decimals, abbreviations, web addresses and tables unspaced', () => {
+    const text =
+      'PepsiCo and JPMorgan use iPhone, WeChat and LinkedIn. Revenue was 3.5 billion in the U.S. per investor.apple.com.'
+    expect(passageBlocks(text)).toEqual([{ kind: 'paragraph', text }])
+    expect(passageBlocks('| Change.Better | 3.5 |')).toEqual([
+      { kind: 'table', rows: [['Change.Better', '3.5']] },
     ])
   })
 
@@ -153,7 +193,7 @@ describe("the copy of the retrieval's gap marker", () => {
   it('shows as an elision between the two runs it joins', () => {
     expect(passageBlocks(`Before.${GAP}After.`)).toEqual([
       { kind: 'paragraph', text: 'Before.' },
-      { kind: 'elision' },
+      { kind: 'elision', label: 'passage skipped' },
       { kind: 'paragraph', text: 'After.' },
     ])
   })

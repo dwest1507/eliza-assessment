@@ -991,7 +991,7 @@ describe('Workspace', () => {
       ['Gross margin', '75.1', '%'],
     ])
     expect(within(source).queryByText(/\|/)).not.toBeInTheDocument()
-    expect(within(source).getByRole('separator', { name: 'Text left out' })).toBeInTheDocument()
+    expect(within(source).getByRole('separator', { name: 'Passage skipped' })).toBeInTheDocument()
     expect(within(source).getByText('Data Center revenue was a record.')).toBeInTheDocument()
   })
 

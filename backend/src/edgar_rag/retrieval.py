@@ -74,6 +74,12 @@ their place in the ranking. A change question ("how have the risks changed") ran
 chunks holding paragraphs new since the previous Filing of the same Form Type first, and
 cites only those paragraphs, from the Filing they are new in.
 
+A Source's chunks read in body order as continuous passages. Chunks next to each other in
+the Filing join as one passage, the opening each prose chunk repeats from the one before
+it shown once, and `GAP` ("[…]") stands only where text was skipped: between chunks whose
+positions are not consecutive, and beside a chunk cut down to its new paragraphs. Chunk
+selection and the budget are unchanged: each chosen chunk is counted whole.
+
 Question text is reduced to quoted terms before it reaches FTS5 `MATCH`, so FTS5
 operators in a question (`NOT`, `NEAR`, `*`, quotes, colons) are searched as words,
 never run. The terms leave out generic words ("main", "key") and the phrases that set a
@@ -112,6 +118,7 @@ from edgar_rag._chunks import (
     _sentences,
     chunk_filing,
     count_tokens,
+    opening_overlap,
 )
 from edgar_rag._coverage import (
     DEFAULT_MISSING_COMPANIES,
@@ -358,8 +365,9 @@ class Source:
     section: str
     item: str | None
     text: str
-    """The retrieved chunks of the Section, in body order; for a Facts Source, its rows
-    as text."""
+    """The retrieved chunks of the Section, in body order, those next to each other in
+    the Filing joined as one passage and `GAP` where text was skipped; for a Facts Source,
+    its rows as text."""
     kind: Literal["text", "facts"] = "text"
     facts: tuple[FactRow, ...] = ()
     """A Facts Source's rows, as the Filing reports them."""
@@ -1091,7 +1099,11 @@ def _candidates(
         row: dict[str, Any] = dict(chosen)
         new = _is_new(chosen, scope)
         if new:
-            row |= {"text": row["new_text"], "tokens": count_tokens(row["new_text"])}
+            row |= {
+                "text": row["new_text"],
+                "tokens": count_tokens(row["new_text"]),
+                "excerpt": row["new_text"] != row["text"],
+            }
         candidates.append(
             _Candidate(
                 row=row,
@@ -1177,10 +1189,37 @@ def _group(rows: Sequence[_Row], first_number: int) -> list[Source]:
                 fiscal_period=first["fiscal_period"],
                 section=first["section"],
                 item=first["item"] if len({r["item"] for r in group}) == 1 else None,
-                text=GAP.join(r["text"] for r in in_order),
+                text=_passage_text(in_order),
             )
         )
     return sources
+
+
+def _passage_text(rows: Sequence[_Row]) -> str:
+    """The text of one Source's chunks, in body order. Chunks next to each other in the
+    Filing read as one passage: the opening a prose chunk's successor repeats from it is
+    shown once (`opening_overlap`), and the two join with nothing between them, or with a
+    line break after a table or before one. `GAP` stands only where chunks were skipped:
+    between chunks whose ordinals are not consecutive, and beside a chunk cut down to its
+    new paragraphs, which leaves text out. The budget is unchanged: each chunk was
+    counted whole when it was chosen."""
+    text = ""
+    for before, row in zip([None, *rows], rows, strict=False):
+        if before is None:
+            text = row["text"]
+        elif _excerpt(before) or _excerpt(row) or row["ordinal"] != before["ordinal"] + 1:
+            text += GAP + row["text"]
+        elif before["kind"] == "prose" and (k := opening_overlap(before["text"], row["text"])):
+            text += row["text"][k:]
+        else:
+            prose = before["kind"] == row["kind"] == "prose"
+            text += (" " if prose else "\n") + row["text"]
+    return text
+
+
+def _excerpt(row: _Row) -> bool:
+    """Whether the row's text is a chunk cut down to its new paragraphs."""
+    return "excerpt" in row.keys() and bool(row["excerpt"])
 
 
 if __name__ == "__main__":

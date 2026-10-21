@@ -121,7 +121,7 @@ export default function SourcesPanel({ sources, cited, selected, onSelect }: Sou
 
 /**
  * A passage's text: its paragraphs, its flattened tables as tables (no header row, since
- * the Corpus marks none) and a visible break where the excerpt skips text.
+ * the Corpus marks none) and a visible break where retrieval skipped text.
  */
 function Passage({ text }: { text: string }) {
   return (
@@ -132,11 +132,11 @@ function Passage({ text }: { text: string }) {
             <div
               key={i}
               role="separator"
-              aria-label="Text left out"
+              aria-label="Passage skipped"
               className="flex items-center gap-3 text-[12px] text-muted"
             >
               <span className="h-px flex-1 border-t border-dashed border-line" />
-              <span aria-hidden="true">text left out</span>
+              <span aria-hidden="true">{block.label}</span>
               <span className="h-px flex-1 border-t border-dashed border-line" />
             </div>
           )

@@ -793,11 +793,15 @@ def test_on_the_risk_route_the_topic_word_outranks_risk_and_generic_words(index,
         for c in _chunks(index, section="Risk Factors")
         if c["filing_id"] in in_scope and topic in c["text"].lower()
     }
-    passages = {p for _, p in _passages(context)}
     (request,) = ranker.requests
     # The passages retrieved, best first: the ones on the topic rank before any other,
     # which only fill what is left of the budget once a larger one on the topic doesn't.
-    retrieved = [topic in text[i].lower() for i in request.lexical if text[i] in passages]
+    # A retrieved chunk's whole text is in its Source, joined to any next to it.
+    retrieved = [
+        topic in text[i].lower()
+        for i in request.lexical
+        if any(text[i] in s.text for s in context.sources)
+    ]
     assert 0 < sum(retrieved) < len(on_topic)  # more passages on the topic than fit
     assert retrieved == sorted(retrieved, reverse=True)
 
@@ -1106,6 +1110,96 @@ def test_an_index_built_by_an_older_version_says_to_rebuild_it(tmp_path, index):
         _ask(old, BRIEF_QUESTION)
 
 
+# --- Source text -------------------------------------------------------------------------
+
+GAP = "\n[…]\n"
+TESLA_10K = "TSLA_10-K_2025-12-31"
+# An outlook question reads the MD&A of Tesla's latest Filing, its FY2025 10-K.
+TESLA_OUTLOOK = "What is Tesla's outlook?"
+
+
+def _mdna(index):
+    """Tesla's FY2025 10-K MD&A chunks, by ordinal."""
+    return {c["ordinal"]: c for c in _chunks(index, filing_id=TESLA_10K, section="MD&A")}
+
+
+def _retrieve(index, rows, **kwargs):
+    """The Source citing Tesla's MD&A when retrieval ranks exactly these chunks."""
+    ids = [r["id"] for r in rows]
+    context = prepare_answer_context(
+        [Message("user", TESLA_OUTLOOK)],
+        index,
+        ranker=lambda request: [i for i in ids if i in request.eligible],
+        **kwargs,
+    )
+    (source,) = [s for s in context.sources if s.filing_id == TESLA_10K and s.section == "MD&A"]
+    return source
+
+
+def test_adjacent_chunks_join_as_one_passage_with_their_overlap_shown_once(index):
+    mdna = _mdna(index)
+    run = [mdna[76], mdna[77], mdna[78]]
+    assert all(c["kind"] == "prose" for c in run)
+    assert all(b["text"][:80] in a["text"] for a, b in zip(run, run[1:], strict=False))
+
+    source = _retrieve(index, [*run, mdna[80]])
+
+    # Ordinal 79 was not retrieved: exactly one marker, before the last chunk.
+    assert source.text.count(GAP) == 1
+    joined, after = source.text.split(GAP)
+    assert after == mdna[80]["text"]
+    assert joined.startswith(run[0]["text"])
+    assert joined.endswith(run[-1]["text"][-200:])
+    # Each chunk's opening repeats the end of the one before it; it is shown once.
+    for chunk in run[1:]:
+        assert joined.count(chunk["text"][:80]) == 1
+    assert len(joined) < sum(len(c["text"]) for c in run)
+
+
+def test_a_dropped_overlap_is_the_longest_suffix_the_next_chunk_opens_with(index):
+    mdna = _mdna(index)
+    a, b = mdna[76], mdna[77]
+    overlap = max(k for k in range(1, len(b["text"])) if a["text"].endswith(b["text"][:k]))
+
+    source = _retrieve(index, [a, b])
+
+    assert source.text == a["text"] + b["text"][overlap:]
+
+
+def test_a_table_and_the_prose_after_it_join_with_no_marker_and_no_text_lost(index):
+    mdna = _mdna(index)
+    table, prose = mdna[90], mdna[91]
+    assert (table["kind"], prose["kind"]) == ("table", "prose")
+
+    source = _retrieve(index, [table, prose])
+
+    assert GAP not in source.text
+    assert source.text == table["text"] + "\n" + prose["text"]
+
+
+def test_chunks_that_skip_an_ordinal_are_separated_by_exactly_one_marker(index):
+    mdna = _mdna(index)
+    chosen = [mdna[76], mdna[78], mdna[80]]
+
+    source = _retrieve(index, chosen)
+
+    assert source.text == GAP.join(c["text"] for c in chosen)
+
+
+def test_joining_passages_leaves_chunk_selection_and_the_budget_unchanged(index):
+    mdna = _mdna(index)
+    chosen = [mdna[76], mdna[77], mdna[78], mdna[80]]
+    budget = sum(c["tokens"] for c in chosen)
+
+    # Each chunk still costs its whole size: the overlap shown once frees no budget.
+    whole = _retrieve(index, chosen, context_budget=budget)
+    short = _retrieve(index, chosen, context_budget=budget - 1)
+
+    assert whole.text.endswith(GAP + mdna[80]["text"])
+    assert mdna[80]["text"][-200:] not in short.text
+    assert short.text.endswith(mdna[78]["text"][-200:])
+
+
 # --- Deduplication -----------------------------------------------------------------------
 
 _WORD = re.compile(r"[a-z0-9]+")
@@ -1118,7 +1212,8 @@ def _shingles(text):
 
 
 def _passages(context):
-    """Each retrieved chunk, with the Source that cites it."""
+    """Each passage retrieved (a run of chunks next to each other in the Filing, or a
+    chunk's new paragraphs), with the Source that cites it."""
     return [(s, p) for s in context.sources for p in s.text.split("\n[…]\n")]
 
 

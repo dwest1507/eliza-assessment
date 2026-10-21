@@ -1628,6 +1628,32 @@ By question type, against the version 2 holdout run:
 - **Two answers have a Contradicted Claim**, against three: two of Tesla's energy revenue increases in `trend-tsla-energy-two-years`, and a sentence on the basis of Apple's buyback figures in `followup-aapl-buybacks-change`. The judge study found Jev's contradicted verdicts noisy ([The judge study's results](#the-judge-studys-results)); they are reported as Jev gave them. The one invalid citation is an uncited sentence on the reporting basis in `followup-cmcsa-to-telecom-competition`.
 - **The two runs are measured by slightly different rules.** The version 2 run was scored before spec #88's measurement fixes ([Re-scored on the fixed measurement](#re-scored-on-the-fixed-measurement-2026-10-17)), and it cannot be re-scored offline: `make eval-rescore` redoes the figure check on each Answer Context prepared again, and the new retrieval gives most cases other Sources (it refuses at the first case, `risk-nflx-dis-streaming-competition`, 15 Sources against the 18 its answer was given). Fact Recall is scored the same way in both, since no answer in either was truncated; Faithfulness and Contradicted Claims are not quite, so their difference is not read.
 
+### Source passages joined (#137, 2026-10-20)
+
+Part of spec #136. A Source's chunks used to be joined with the gap marker `[…]` between every two of them, so a Source read as broken where its text was continuous: in the brief's risk comparison 27 of its 50 markers stood between chunks next to each other in the Filing, and the text after each repeated the chunk overlap (the opening a prose chunk carries over from the one before it). Now chunks next to each other in a Filing join as one passage: the longest end of a prose chunk that the next one opens with is shown once, and a table joins its neighbour on a new line. The marker stands only where text was skipped: between chunks whose positions in the Filing skip, and beside a chunk cut down to its new paragraphs on the change route. The Answer Call reads the same joined text. Chunk selection and the budget are unchanged: each chosen chunk still counts whole against its Company's share, so the same chunks are chosen for the same question. Across the dev split's 60 questions the markers fall from 3,699 to 2,618, and in the brief's risk comparison from 50 to 23. The Sources panel labels the marker "passage skipped" and spaces sentences the Corpus glued together ("earnings.Summary"), on display only.
+
+`make eval-retrieval` on dev, before (#130's code) and after (free), the shipped `fts5` Arm:
+
+| Question type | all facts before | after | must-state before | after |
+|---|---|---|---|---|
+| risk | 294 of 340 | 294 | 96 of 110 | 96 |
+| sector | 289 of 313 | 290 | 104 of 111 | 105 |
+| figure_trend | 104 of 159 | 104 | 34 of 55 | 34 |
+| outlook | 49 of 61 | 49 | 18 of 21 | 18 |
+| missing_company | 39 of 39 | 39 | 10 of 10 | 10 |
+| stale_filing | 22 of 27 | 22 | 8 of 9 | 8 |
+| **all** | **797 of 939 (84.9%)** | **798 (85.0%)** | **270 of 316 (85.4%)** | **271 (85.8%)** |
+
+| | hit@10 | recall@10 | MRR | Sources | Source tokens | must-state planning misses | must-state ranking misses |
+|---|---|---|---|---|---|---|---|
+| before (#130) | 0.965 | 0.879 | 0.771 | 11.5 | 27,431 | 3 | 43 |
+| after | 0.965 | 0.879 | 0.771 | 11.5 | 26,589 | 3 | 42 |
+
+- **One fact gained and none lost.** JPMorgan's must-state fact in `sector-banks-capital-liquidity` (its FY2025 10-K's Risk Factors) has an evidence quote that runs across a chunk boundary: the marker between the two chunks used to break it, and the joined passage holds it whole. Every other Arm gains the same fact, and `rerank` one more (`sector-aerospace-government`'s must-state fact in RTX's Business): `hybrid` 835 → 836, `hybrid-local` 820 → 821, `rerank` 786 → 788, `dense-local` 753 → 754, `dense` 775 unchanged. The screen's verdicts are unchanged: `hybrid-local` is kept (47 gained, 24 lost, p ahead = 0.004), `rerank` dropped (5 / 15, p behind = 0.021) and `dense-local` dropped.
+- **The ranking metrics are unchanged** (hit@k, recall@k and MRR are measured on the ranked chunks, which the join leaves alone), so the Floors do not move and are not re-recorded: `make eval-gate` passes at hit@10 0.965, recall@10 0.879 and MRR 0.771.
+- **The Answer Call reads about 3% less text** for the same chunks: the overlap shown once takes Source text from 27,431 to 26,589 tokens per Answer Context. The budget still counts each chunk whole, so the freed tokens go unused rather than buying more chunks.
+- **The comparisons stand as recorded.** The Arm and settings comparisons ([#127](#the-arm-comparison-on-the-new-retrieval-127-2026-10-18), [#129](#the-settings-comparison-on-the-new-retrieval-129-2026-10-18)) were decided on #126's retrieval reports and are not rerun. `retrieval-dev.json` was run again on all six Arms and exported with `make eval-export`, so the "How it works" page shows these numbers.
+
 ### Order and cost
 
 1. The Brief Suite and the label format.
