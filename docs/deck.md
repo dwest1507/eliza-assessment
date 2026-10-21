@@ -56,7 +56,7 @@ answer to question 3 of the email.
 
 | | What the analyst gets | Evidence |
 |---|---|---|
-| **Analyst hours per question** | A 300–600 word answer, the direct answer first, then per Company | 8.6 s per answer, first text after 2.5 s, $0.0029 per answer (dev) |
+| **Analyst hours per question** | A 300–600 word answer (up to 1,000 for many Companies), the direct answer first, then per Company | 8.6 s per answer, first text after 2.6 s, $0.0030 per answer (dev) |
 | **Stated Coverage Gaps** | Snapshot trends, missing Companies, the stale Filing, missing guidance and differing periods, shown below the answer | Every expected gap stated: 1.00 (holdout) |
 | **Auditable citations** | Every `[Sn]` opens its Filing, Section, Report Period and passage | Citations valid 1.00, Faithfulness 0.95 (holdout) |
 
@@ -64,7 +64,7 @@ answer to question 3 of the email.
 
 10 analysts × 5 questions a week × 2 hours saved × $150 an hour × 48 weeks = **about $720k a year**, against $8.20 a week of Answer Calls even at the most expensive model's price ($0.15 at the shipped one's).
 
-> Sources: [the v15 base round](evaluation.md#the-v15-base-round-and-its-generation-misses-160-2026-10-21), [the holdout run](evaluation.md#the-holdout-run), [assumption 12](assumptions.md#12-an-illustrative-value-model)
+> Sources: [prompt v19](evaluation.md#v19-the-combination-that-freezes-165-2026-10-21), [the holdout run](evaluation.md#the-holdout-run), [assumption 12](assumptions.md#12-an-illustrative-value-model)
 
 <!--
 The table is measured: the answer's speed and cost, and that it is checkable (every citation
@@ -141,7 +141,7 @@ Every choice was tried against alternatives, on test questions kept apart from t
 - **Retrieval: plain keyword search stays.** Embedding search, a hybrid of the two, a re-ranking model and two local embedding models were tried. None got the answers to state more of the key facts, and keyword search needs no extra model and no extra API call.
 - **The model: `gpt-6-luna` stays.** Larger OpenAI and Anthropic models stated somewhat more facts, but not reliably, at 20 to 65 times the cost. A smaller Claude model stated fewer.
 - **Passage size and how much text each answer reads: unchanged.** Smaller and larger passages, and a larger reading budget, reached more of the evidence but got no more of it into the answers than 600-token passages with a 32k budget.
-- **The prompt: each version kept only if it fixed named failures and broke nothing.** v7 held through v14; v15 moves the Coverage Gaps out of the answer, into Coverage notes below it.
+- **The prompt: each version kept only if it fixed named failures or stated more of the key facts, without harming the rest.** v7 held through v14; v15 moves the Coverage Gaps out of the answer, into Coverage notes below it. v19, the final prompt, states each point in full, gives more room when more Companies are asked about, and quotes figures rather than computing them.
 
 > Sources: [Arm comparison](evaluation.md#arm-comparison), [generator comparison](evaluation.md#generator-comparison), [prompt log](prompt-iterations.md), [version 2 comparisons](evaluation.md#the-version-2-comparisons-on-dev), [the Arm comparison on the new retrieval](evaluation.md#the-arm-comparison-on-the-new-retrieval-127-2026-10-18), [the settings comparison on the new retrieval](evaluation.md#the-settings-comparison-on-the-new-retrieval-129-2026-10-18), [ADR 0008](adr/0008-fts5-stays-the-shipped-arm.md), [ADR 0009](adr/0009-gpt-6-luna-stays-the-generator.md), [ADR 0011](adr/0011-one-sided-thresholds-and-a-control-run.md), [ADR 0016](adr/0016-coverage-gaps-shown-by-the-product.md)
 
@@ -171,7 +171,9 @@ state 225 and 229.
 
 Prompt: from v1 to v7, Fact Recall 0.45 to 0.65, Coverage Gaps stated 0.67 to 1.00, citations
 valid 0.75 to 0.90. v11 to v14 tried to keep comparisons within 600 words: the structure was
-followed by 0.79 of dev answers against v7's 0.80, so v7 stayed.
+followed by 0.79 of dev answers against v7's 0.80, so v7 stayed. v19, read over two runs
+a side: its answers state 242 of 334 must-state facts a run against v15's 232 (p = 0.085), and
+fail the figure check in 0.5 cases a run against 2.5.
 -->
 ---
 
@@ -180,12 +182,12 @@ followed by 0.79 of dev answers against v7's 0.80, so v7 stayed.
 - **Small evaluation.** 20 holdout cases in version 2, 10 in version 1: one case moves a share by 0.05. The numbers show the system works, not its exact rate.
 - **Answers miss facts.** Fact Recall 0.78 on the version 2 holdout, on the new retrieval: the answers miss 24 of 106 must-state facts, 9 of them because their evidence never reaches the prompt and 15 although it does.
 - **Follow-ups that change topic without naming a Company** inherit the earlier Companies. The Query Scope chips, at the top of each answer's "Sources", show it; the Golden Set measures it.
-- **Computed figures.** The model sometimes computes a growth rate rather than quoting the Filing; it labels it as derived.
+- **Figures are quoted, not computed.** From prompt v19 the answer quotes each figure as the Filing or the table states it; on dev, the cases failing the figure check fell from 2.5 a run to 0.5.
 - **Thin coverage.** Trends only for 13 Companies; Financial Facts only revenue, net income and segment revenue; guidance mostly sits outside the Filings.
 - **A small human check.** Claude drafted the evaluation's labels and labelled the judge study. The developer checked 15 fact labels blind: agreement 80% with Claude's labels and 87% with Jev's verdicts. The claim labels (Faithfulness, Contradicted Claims) are still Claude's alone. Accepted for a demo; production would use more hand-labelled data.
 - **Our own inputs and a hosted model.** The Sector table and the list of missing Companies are curated and disclosed, not yet confirmed by the Client. The Answer Call goes to a hosted API, behind one interface a local model can replace.
 
-> Sources: [the holdout run](evaluation.md#the-holdout-run), [the version 2 holdout run](evaluation.md#the-version-2-holdout-run), [the holdout on the new retrieval](evaluation.md#the-holdout-on-the-new-retrieval-130-2026-10-18), [ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md), [assumptions 4, 5, 9 and 10](assumptions.md), [EDA findings](findings.md), [ADR 0013](adr/0013-jev-stays-the-judge-checked-by-a-judge-study.md), [the human check](evaluation.md#the-human-check)
+> Sources: [the holdout run](evaluation.md#the-holdout-run), [the version 2 holdout run](evaluation.md#the-version-2-holdout-run), [the holdout on the new retrieval](evaluation.md#the-holdout-on-the-new-retrieval-130-2026-10-18), [prompt v19](evaluation.md#v19-the-combination-that-freezes-165-2026-10-21), [ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md), [assumptions 4, 5, 9 and 10](assumptions.md), [EDA findings](findings.md), [ADR 0013](adr/0013-jev-stays-the-judge-checked-by-a-judge-study.md), [the human check](evaluation.md#the-human-check)
 
 <!--
 Lead with the limits before the panel finds them. Each one is either measured (the

@@ -88,3 +88,13 @@ Applied offline to #126's saved reports (prompt v7, `compare --rule prompts`, fr
 - **Under `prompts`, the Control pair is not ahead:** 235 against 232 a run, +3, p ahead = 0.334. The round's `prompts` comparisons are conclusive when read two runs a side.
 - **Under `prompt-fix`, it is not ahead either:** 4.5 cases failing the figure check a run, against 2.5.
 - **Caveat: two guardrails move with noise.** The Control pair is behind the shipped pair on structure followed (3 cases higher, 13 lower, p behind = 0.011) and on Faithfulness (p behind = 0.140). Guardrails are not part of the Control Run check, so the round stands, but the same setup is blocked on both by noise alone. A candidate blocked only on structure or Faithfulness is decided by the rule as it stands, and its ticket records the margin beside the Control pair's.
+
+## Note (2026-10-21, #165): the combination ships on the developer's decision
+
+**What happened.** Spec #132's combination, prompt v19 (v16's rule 8, v17's word range, v18's rule 5), was run twice on dev and read two runs a side under `prompts`, every side's structure under v17's range ([evaluation notes](../evaluation.md#v19-the-combination-that-freezes-165-2026-10-21)):
+
+- **Ahead on facts stated:** 242 must-state facts a run against v15's 232, p ahead = 0.085.
+- **Behind on no guardrail but structure followed:** 6 cases higher, 12 lower, −0.048 [−0.111, +0.016], p behind = 0.119, so the rule's verdict is v15.
+- **The Control pair is not ahead** (+3, p ahead = 0.334), but it is further behind the shipped pair on the same guardrail: 4 higher, 11 lower, −0.071 [−0.143, −0.008], p behind = 0.059.
+
+**The decision.** As the note above says, a candidate blocked only on a guardrail that noise alone moves is the developer's call, with both margins side by side. The developer treated v19's structure margin as noise, since it is inside the Control pair's, so v19 qualifies under `prompts` and is the version that freezes (#153). The rule and its thresholds are unchanged; the choice file keeps the rule's own verdict, and the ruling is recorded here, on #165 and in the evaluation notes.

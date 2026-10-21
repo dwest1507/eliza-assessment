@@ -11,9 +11,9 @@
 - **The main limits.**
   - Small samples: on 20 cases one case moves a share by 0.05, so the numbers are directional, not exact rates.
   - A small human check: Claude drafted the Golden Set's facts and labelled the judge study, so Jev is checked against Claude ([The judge study's results](#the-judge-studys-results)). In a blind [human check](#the-human-check) the developer labelled 15 fact items: agreement 80% with Claude's labels and 87% with Jev's verdicts. The claim labels, which Faithfulness and Contradicted Claims rest on, are still Claude's alone.
-  - These numbers are prompt v7's, at reasoning effort low, until the final round. Prompt v15 ([ADR 0016](adr/0016-coverage-gaps-shown-by-the-product.md)), with every generator at effort low and a 32k cap, on #136's finished answer path, has been run four times on the 63 dev cases as the base round of spec #132: Fact Recall 0.69 to 0.72, Faithfulness 0.94 to 0.96, and 229 to 241 of the 334 must-state facts stated, so one run a side cannot show a prompt change's effect of that size. #132's candidates are read two runs a side, and on that reading the round's Control Runs are not ahead of its shipped runs ([the v15 base round](#the-v15-base-round-and-its-generation-misses-160-2026-10-21)). Coverage Gaps stated is measured differently from v15.
-  - Speed at effort low: in the v15 base round's first two runs, made one after the other, the first text comes after 2.4 to 2.5 seconds on average and 5.7 at most, and the full answer after 8.6 to 8.7 seconds on average and 14.2 at most, so every dev answer is within the demo's ceilings (10 seconds to the first text, 30 to the full answer). At effort medium ([#138's run](#luna-at-medium-effort-prompt-v15-138-2026-10-20)) the first text took more than 10 seconds for 21 of 60 answers, so every model answers at low.
-  - A computed figure fails the figure check by design, and a follow-up that changes topic without naming a Company inherits the earlier one ([ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md)).
+  - These numbers are prompt v7's, at reasoning effort low, until the final round. The prompt that freezes for it is v19 ([v19](#v19-the-combination-that-freezes-165-2026-10-21)): v15 ([ADR 0016](adr/0016-coverage-gaps-shown-by-the-product.md)), on #136's finished answer path, with spec #132's three qualifying changes combined (each point stated in full, more words for more Companies, figures quoted and never computed). Run twice on the 63 dev cases, it states 242 of the 334 must-state facts a run against v15's 232 (p ahead = 0.085, read two runs a side, since four runs of v15 alone state 229 to 241), with Fact Recall 0.73 and 0.72 and Faithfulness 0.95 and 0.97, and fails the figure check in 0.5 cases a run against 2.5. It is behind v15 on structure followed by a margin inside the one v15 shows against itself, which the developer treated as noise. Coverage Gaps stated is measured differently from v15.
+  - Speed at effort low: in v19's two dev runs, made with no other run beside them, the first text comes after 2.4 to 2.6 seconds on average and 5.8 at most, and the full answer after 8.0 to 8.6 seconds on average and 17.2 at most, so every dev answer is within the demo's ceilings (10 seconds to the first text, 30 to the full answer). At effort medium ([#138's run](#luna-at-medium-effort-prompt-v15-138-2026-10-20)) the first text took more than 10 seconds for 21 of 60 answers, so every model answers at low.
+  - A computed figure fails the figure check by design (from v19 the answer is told never to compute one), and a follow-up that changes topic without naming a Company inherits the earlier one ([ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md)).
 
 The rest of these notes is the full history: each harness's method, then every run in the order it was made.
 
@@ -598,7 +598,7 @@ The page shows what the reports hold, nothing more, with version 2's verdicts wo
 - **The generator comparison:** the round's Control Run and each challenger against the shipped generator on Fact Recall, Faithfulness, Coverage Gaps and Contradicted Claims (higher and lower, both one-sided p-values, the mean paired difference and its 95% bootstrap interval), whether it qualifies, and the choice.
 - **The holdout run:** the latest run's retrieval and answer scores beside dev's Shipped Arm, shipped run and Control Run, with the small-sample caveat.
 
-Exported on 2026-10-20 (#151, then #156), the page shows prompt v15's shipped run alone (#156's Luna run at effort low on the 62 dev cases, a new round with no Control Run or generator comparison yet; #138's run at effort medium and the previous round's v7 Control Run and Claude Haiku challenger are left out), and the holdout's latest run, [the holdout on the new retrieval](#the-holdout-on-the-new-retrieval-130-2026-10-18) (`generation-holdout-new-retrieval.json`).
+Exported on 2026-10-21 (#165), the page shows prompt v19's first run alone ([v19](#v19-the-combination-that-freezes-165-2026-10-21), `generation-dev-v19.json` as the round's shipped run): v19 starts a new round, decided against #160's v15 round, and no Control Run or generator comparison of it has been run, so #160's v15 pair, which the page showed from #160 until then, is left out. Exported on 2026-10-20 (#151, then #156), it showed prompt v15's shipped run alone (#156's Luna run at effort low on the 62 dev cases). Both show the holdout's latest run, [the holdout on the new retrieval](#the-holdout-on-the-new-retrieval-130-2026-10-18) (`generation-holdout-new-retrieval.json`).
 
 Before #151 the page also showed the Arm and settings comparisons, the Brief Suite's verdict per case and the Corpus coverage grid, and every holdout run. The page first exported on 2026-10-18 showed #73's Arm and settings comparisons this way, with the figures of [The Arm comparison](#the-arm-comparison) and [The settings comparison](#the-settings-comparison): `rerank` 15 cases higher and 10 lower on Fact Recall (p ahead = 0.212), `hybrid-local` 13 and 15 (p = 0.714), 600 / 48k 12 and 9 (p = 0.332), 800 / 48k 14 and 13 (p = 0.500), 450 / 48k 10 and 13 (p = 0.798), and the Control Run 11 and 10 (p = 0.500); `fts5`, 600-token chunks and the 32k budget chosen. Their fact-level reading ([The fact-level test on #73's reports](#the-fact-level-test-on-73s-reports)) was made offline and is not in the choice files, so the page did not show it. Since #129 the page shows this round's two comparisons instead, both decided fact by fact: `hybrid-local`'s third run, 234 of 316 must-state facts stated against 227 (p ahead = 0.182; [The Arm comparison on the new retrieval](#the-arm-comparison-on-the-new-retrieval-127-2026-10-18)), and 600 / 48k 233, 450 / 48k 229 and 800 / 48k 225 ([The settings comparison on the new retrieval](#the-settings-comparison-on-the-new-retrieval-129-2026-10-18)), with the Control Run at 226; `fts5`, 600-token chunks and the 32k budget chosen.
 
@@ -1912,7 +1912,7 @@ python -m edgar_eval.selection compare $E/generation-dev.json+$E/generation-dev-
   - #162's structure re-score covers all four v15 reports.
 - **The Generation Misses** above are the first pair's; the second pair's were not read.
 
-The second pair's reports are `generation-dev-run2.json` and `generation-control-dev-run2.json`, with the two choice files beside them; the export still shows the first pair.
+The second pair's reports are `generation-dev-run2.json` and `generation-control-dev-run2.json`, with the two choice files beside them; the export showed the first pair until v19 (#165).
 
 #### The Generation Misses on v15
 
@@ -1951,7 +1951,7 @@ The second pair's reports are `generation-dev-run2.json` and `generation-control
 
 **The candidates' wording.** The diagnosis keeps the list of candidates and adjusts the wording of v16 and v18, posted on their tickets before either runs (#161, #163): v16 also asks the answer to keep a Company's own assessment of materiality or outlook, the Filing's tense ("has", "has in the past") and its quantity words; v18 also asks that a question about two or more years gets each year's change the Sources state, and that a period total the Source states (nine months, a year) is quoted rather than only its parts. v17 is unchanged; its ticket (#162) notes that on v15 the miss rate jumps at two Companies, which v17's range leaves at 600 words.
 
-The reports, `generation-dev.json` and `generation-control-dev.json`, are the round's first pair, which the export shows; `misses-generation-dev.json`, `misses-generation-control-dev.json` and `prompt-choice-dev-control.json` are beside them. #156's single v15 run is kept as `data/derived/eval-issue156/generation-dev.json`.
+The reports, `generation-dev.json` and `generation-control-dev.json`, are the round's first pair, which the export showed until v19 (#165); `misses-generation-dev.json`, `misses-generation-control-dev.json` and `prompt-choice-dev-control.json` are beside them. #156's single v15 run is kept as `data/derived/eval-issue156/generation-dev.json`.
 
 ### v16: each point stated in full (#161, 2026-10-21)
 
@@ -2234,6 +2234,97 @@ The v15 pairs are in [the v15 round's table](#the-v15-base-round-and-its-generat
 - the screens: `retrieval-dev-legal-route.json` and `retrieval-dev-legal-route-no-fs.json`.
 
 The export shows no candidate report, so it is unchanged.
+
+### v19: the combination that freezes (#165, 2026-10-21)
+
+Spec #132's last step. Every candidate that qualified goes into one version, numbered next after the last candidate, and is confirmed once against [the v15 base round](#two-runs-a-side-the-control-runs-are-not-ahead):
+
+- **v17's word range** ([v17](#v17-answers-get-more-room-for-more-companies-162-2026-10-21)): the length block, the system rules' length line, the structure check and the re-score;
+- **v16's rule 8,** each point stated in full ([v16](#v16-each-point-stated-in-full-161-2026-10-21)), which qualified only under v17's range, so it comes with it;
+- **v18's rule 5,** figures quoted, never computed ([v18](#v18-answers-quote-figures-and-never-compute-them-163-2026-10-21)).
+
+\#164's legal proceedings route qualified in neither version ([above](#the-legal-proceedings-route-164-2026-10-21)), so the retrieval is v15's, and no code of it is merged. The three changes touch different lines of the template, so v19 is their union, with no new wording; every candidate's tests are kept, asserting v19. The full text is in the [prompt log](prompt-iterations.md#v19-v16-v17-and-v18-combined-the-version-that-freezes-165). Decided by ADR 0017's `prompts` rule, since two of its three parts are `prompts` candidates, two runs a side, with every side's structure read under v17's range (#162's re-scored copies of the four v15 reports).
+
+```sh
+make eval-generation NAME=v19 && make eval-generation NAME=v19-run2
+E=../data/derived/eval    # #162's re-scored copies of the four v15 reports beside v19's
+python -m edgar_eval.selection compare $E/generation-dev.json+$E/generation-dev-run2.json \
+    $E/generation-dev-v19.json+$E/generation-dev-v19-run2.json \
+    --control $E/generation-control-dev.json+$E/generation-control-dev-run2.json \
+    --rule prompts --json $E/prompt-choice-dev-v19.json      # free; also --rule prompt-fix
+```
+
+**The runs** (63 cases, `gpt-6-luna` at low, `fts5`, 600-token chunks, the 32k budget, `jev-1.13.0` at 0.6, code version `b233653cc01e182f`):
+
+| Run | citations valid | figures exact | gaps stated | structure followed | words | Fact Recall | detail recall | Faithfulness | answers with a Contradicted Claim | must-state facts stated | $ per answer | latency s | first text s |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **v19** | 0.92 | 0.98 | 0.87 | 0.79 | 509 | **0.73** | 0.46 | **0.95** | 4 | 246 of 334 | 0.0030 | 8.6 | 2.6 |
+| **v19 run 2** | 0.97 | 1.00 | 1.00 | 0.89 | 491 | **0.72** | 0.45 | **0.97** | 3 | 238 of 334 | 0.0030 | 8.0 | 2.4 |
+
+v15's two pairs are in [the v15 round's table](#the-v15-base-round-and-its-generation-misses-160-2026-10-21), and their structure under v17's check in [v17's section](#v17-answers-get-more-room-for-more-companies-162-2026-10-21). No answer reaches the cap; the longest used 1,927 of its 32,000 output tokens. Jev's own token limit failed its judgment of two claims of `gap-cat-sales-snapshot` in the first run, as in the base round.
+
+**Facts stated, two runs a side:**
+
+| Must-state facts stated (of 334) | run 1 | run 2 | mean a run |
+|---|---|---|---|
+| v15 shipped pair | 229 | 235 | 232 |
+| v15 Control pair | 241 | 229 | 235 |
+| v16 / v17 / v18 alone (pairs) | | | 244 / 240.5 / 233 |
+| **v19** | **246** | **238** | **242** |
+
+**The verdict under `prompts`: ahead on facts stated, blocked by structure followed alone** (`prompt-choice-dev-v19.json`).
+
+- **Facts stated:** 242 a run against v15's 232, **+10, p ahead = 0.085**: ahead. Of the 289 facts whose evidence was reached, it states 224.5 against 215.
+- **Behind on no other guardrail:** Fact Recall case by case 23 cases higher and 17 lower (p behind = 0.866), Faithfulness 21 and 18 (0.739), Coverage Gaps 2 and 0 (1.000), Contradicted Claims 5 and 5 (0.623).
+- **Behind on structure followed:** 6 cases higher, 12 lower, p behind = 0.119, under the 0.20 threshold. So the choice file records v15.
+- **The Control pair is not ahead** (+3, p ahead = 0.334), so the comparison is conclusive.
+
+**Structure followed, the two margins side by side** (v17's check, against the v15 shipped pair):
+
+| | cases higher | cases lower | mean difference (95% interval) | p behind |
+|---|---|---|---|---|
+| v19 pair | 6 | 12 | −0.048 [−0.111, +0.016] | **0.119** |
+| v15 Control pair | 4 | 11 | −0.071 [−0.143, −0.008] | **0.059** |
+
+**The developer's decision: v19 ships, the version that freezes.** Under the round's ruling ([ADR 0017's note](adr/0017-prompt-changes-decided-by-two-rules.md#note-2026-10-21-160-two-runs-a-side-in-spec-132s-round)), a candidate blocked only by a guardrail whose margin is inside the Control pair's on it is for the developer to decide (#165's comment of 2026-10-21). The developer chose to treat v19's structure margin as noise, as for v16:
+
+- **Why it reads as noise:** the same setup, v15 run again, is further behind the shipped pair on structure followed (p behind = 0.059, its interval wholly below zero) than v19 is (p behind = 0.119, its interval crossing zero).
+- **So:** v19 qualifies under `prompts`, ships, and is the prompt #153 freezes. This is the developer's ruling, recorded beside the rule's own verdict; the choice file is left as written.
+- **Not taken:** holding v19 as not qualifying would have shipped the single `prompts` winner with the most facts gained, v16, which qualified only under v17's range, so the choice would have fallen to the developer again. A new candidate tightening the two-Company length would have been outside the spec's "no subsets searched".
+
+**Figures (`prompt-fix`, for the record):** 0.5 cases a run fail the figure check, against the shipped pair's 2.5 (2 fixed, 0 broken). ExxonMobil's computed decline, NVIDIA's summed customer share and Alphabet's computed capex growth do not recur. Under `prompt-fix` alone v19 is blocked by the same structure margin (`prompt-fix-choice-dev-v19.json`). The one failure, in run 1, is `trend-goog-meta-net-income-two-years`: "$15,688 million", Meta's Q3 2024 net income, quoted from the Q3 2025 10-Q's comparison. As read, it is a figure quoted from the Filing, not one the answer computed.
+
+**Answer length at two Companies, v16's caveat.** v17's length block barely holds v16's two-Company answers to 600 words:
+
+| 2 Companies (16 cases), a run | v15 shipped | v15 Control | v16 | v17 | v19 |
+|---|---|---|---|---|---|
+| mean words | 491 | 513 | 540 | 506 | 537 |
+| answers over 600 | 1.0 | 3.0 | 4.5 | 2.0 | 3.5 |
+| structure followed | 0.94 | 0.78 | 0.72 | 0.88 | 0.78 |
+| must-state facts stated (of 104) | 64 | 67 | 64 | 69 | 65.5 |
+
+- **v19's answers over their range:** 8 in run 1 (`risk-aapl-nvda-supply-chain` at 747 words; `risk-wmt-tgt-legal-proceedings`, `sector-banks-risks`, `sector-banks-capital-liquidity`, `sector-energy-operational-risks` and `risk-pg-pep-input-costs` at 610 to 644; `sector-industrials-tariffs` at 1,001 of 1,000 and `sector-communication-services-advertising` at 1,133 of 1,000), and 4 in run 2 (`sector-software-cybersecurity` at 1,049 of 900, `followup-pharma-to-oil-majors` at 634, and two one-Company answers at 605 and 614).
+- **Its structure misses** are 13 and 7 a run, against 12 and 15 in the shipped pair: most are over its range, the rest short answers (81 to 289 words) and four- or five-sentence openings.
+
+**Where v19's facts come from** (a mean a run, against the v15 shipped pair; `v19-by-companies.json`):
+
+| Companies | cases | must-state facts | v19's range | v15 shipped pair | v19 | words, v15 shipped / v19 |
+|---|---|---|---|---|---|---|
+| 1 | 30 | 109 | 300–600 | 84.5 | 87.5 | 381 / 405 |
+| 2 | 16 | 104 | 300–600 | 64 | 65.5 | 491 / 537 |
+| 3 | 5 | 37 | 300–750 | 25 | 24.5 | 533 / 584 |
+| 4 | 2 | 16 | 300–900 | 8.5 | 9 | 632 / 884 |
+| 5 or more | 7 | 68 | 300–1,000 | 50 | **55.5** | 632 / 860 |
+| all (3 refusals have none) | 63 | 334 | | 232 | **242** | 436–444 / 491–509 |
+
+- **By question type:** sector questions gain 10.5 (93.5 against 83), risk questions lose 2 (70 against 72; v18 alone lost 4.5), figure trends are level (43).
+- **v17's caveat:** its gain at one and two Companies (+8) does not recur in the combination (+4.5), which fits #162's reading that it may have been noise. The combination's gain is where v16's "one Company a claim, each text Source a cited point" and v17's larger ceiling bear together: five or more Companies.
+
+**Speed, the product's:** no other paid run went at the same time. The first text came after 2.6 and 2.4 seconds on average and 5.8 and 4.7 at most, so no answer is over the demo's 10-second ceiling; the full answer after 8.6 and 8.0 seconds on average and 17.2 and 14.3 at most. $0.0030 an answer, against v15's $0.0029, for longer answers.
+
+**What ships.** `PROMPT_VERSION` is v19 on `feat/final-updates`, with v17's structure check, so `make eval-rescore` now redoes the structure check under v17's range: re-scoring a report scored before v17 moves its structure followed to v17's range (#160's v15 reports from 0.81, 0.76, 0.68 and 0.71 to 0.92, 0.86, 0.81 and 0.83). The v19 runs are the new round's shipped pair: in a worktree, `generation-dev-v19.json` goes in as `generation-dev.json` and `generation-dev-v19-run2.json` as `generation-dev-run2.json`. No Control Run of v19 has been run; v19 was decided against #160's v15 round, whose Control pair is v15's. So the export shows v19's first run alone, with no Control Run beside it, and #153's freeze starts from it.
+
+**Spend:** $0.59 for the two runs ($0.37 in answers, $0.22 in Jev judging); the comparisons were free. Spec #132's paid runs came to about $4.59 of its $10 cap. The reports are kept in `data/derived/eval-issue165/`: `generation-dev-v19.json`, `generation-dev-v19-run2.json`, `prompt-choice-dev-v19.json`, `prompt-fix-choice-dev-v19.json` and `v19-by-companies.json`, with the console output and the Answer Call log.
 
 ### Order and cost
 

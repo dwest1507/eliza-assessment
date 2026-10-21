@@ -408,7 +408,7 @@ Structure the answer for a PE analyst, in Markdown:
 
 ## v16: each point stated in full (candidate, #161)
 
-Spec #132's first candidate, issue #161, 2026-10-21. Built on v15 alone: only rule 8 changes, and the user message is v15's. Decided by [ADR 0017](adr/0017-prompt-changes-decided-by-two-rules.md)'s `prompts` rule, two runs a side (its note of 2026-10-21), with every side's structure read under v17's word range (below). Its code is on the branch `candidate/v16` (`8d176df`) and is not merged; the combination ticket (#165) merges the winners' code, so the shipped prompt is still v15.
+Spec #132's first candidate, issue #161, 2026-10-21. Built on v15 alone: only rule 8 changes, and the user message is v15's. Decided by [ADR 0017](adr/0017-prompt-changes-decided-by-two-rules.md)'s `prompts` rule, two runs a side (its note of 2026-10-21), with every side's structure read under v17's word range (below). Its code is on the branch `candidate/v16` (`8d176df`) and is not merged; the combination ticket (#165) merges the winners' code, so the shipped prompt stayed v15 until v19 merged it (#165).
 
 **What.** Rule 8 was:
 
@@ -473,7 +473,7 @@ Structure the answer for a PE analyst, in Markdown:
 
 ## v17: answers get more room for more Companies (candidate)
 
-Spec #132, issue #162, 2026-10-21. A candidate built on v15 alone, decided against v15 by [ADR 0017](adr/0017-prompt-changes-decided-by-two-rules.md)'s `prompts` rule, two runs a side (ADR 0017's note of 2026-10-21). Its code is on the branch `candidate/v17` and is not merged: the combination ticket (#165) merges the winners' code.
+Spec #132, issue #162, 2026-10-21. A candidate built on v15 alone, decided against v15 by [ADR 0017](adr/0017-prompt-changes-decided-by-two-rules.md)'s `prompts` rule, two runs a side (ADR 0017's note of 2026-10-21). Its code is on the branch `candidate/v17` and is not merged: the combination ticket (#165) merges the winners' code, which v19 did.
 
 **What.** The answer's word range scales to the number of Companies with text Sources, from one function in the core package, `edgar_rag.retrieval.answer_words`:
 
@@ -536,7 +536,7 @@ Structure the answer for a PE analyst, in Markdown:
 
 ## v18: quote figures, never compute them (candidate, #163)
 
-Spec #132's third candidate, issue #163, 2026-10-21. Built on v15 alone: only rule 5 changes, and the user message is v15's. Decided by [ADR 0017](adr/0017-prompt-changes-decided-by-two-rules.md)'s `prompt-fix` rule, two runs a side (its note of 2026-10-21). Its code is on the branch `candidate/v18` and is not merged; the combination ticket (#165) merges the winners' code, so the shipped prompt is still v15.
+Spec #132's third candidate, issue #163, 2026-10-21. Built on v15 alone: only rule 5 changes, and the user message is v15's. Decided by [ADR 0017](adr/0017-prompt-changes-decided-by-two-rules.md)'s `prompt-fix` rule, two runs a side (its note of 2026-10-21). Its code is on the branch `candidate/v18` and is not merged; the combination ticket (#165) merges the winners' code, so the shipped prompt stayed v15 until v19 merged it (#165).
 
 **What.** Rule 5 is rewritten:
 
@@ -581,4 +581,73 @@ Structure the answer for a PE analyst, in Markdown:
 - When the question compares two or more Companies on the same dimensions, give a comparison table first, one row per Company, then each Company's detail under its own heading. Otherwise give the points for each Company under its own heading.
 - End with the last point. Add no closing "Coverage" or "Limitations" section: the Coverage Gaps are shown below your answer.
 - Write 300 to 600 words. When the question is narrow, reach 300 words with the specifics of rule 8 that bear on it (what drove a figure, the segments, periods or plans behind it, the risks the Sources attach to it), never with repetition or general knowledge. When the Sources hold more than 600 words can carry, keep the most material points. Only an answer whose question the Sources cannot answer at all may be shorter.
+```
+
+## v19: v16, v17 and v18 combined, the version that freezes (#165)
+
+Spec #132's combination, issue #165, 2026-10-21. Every candidate that qualified goes into one version, numbered next after the last candidate, and is confirmed once against #160's v15 round. #164's legal proceedings route qualified in neither version, so the retrieval is v15's. Decided by [ADR 0017](adr/0017-prompt-changes-decided-by-two-rules.md)'s `prompts` rule, two runs a side (its note of 2026-10-21), with every side's structure read under v17's range. **v19 is the shipped prompt** (`PROMPT_VERSION = "v19"`) and the version #153 freezes, on the developer's decision (below).
+
+**What.** v15 with three changes, each a candidate's, unchanged. They touch different lines of the template, so v19 is their union, with no new wording:
+
+- **Rule 5 is v18's:** quote figures, never compute them ([v18](#v18-quote-figures-never-compute-them-candidate-163)).
+- **Rule 8 is v16's:** state each point in full ([v16](#v16-each-point-stated-in-full-candidate-161)).
+- **The length is v17's** ([v17](#v17-answers-get-more-room-for-more-companies-candidate)): the system rules' length line refers to the user message's "# Length" block, which gives the word range for the Companies the text Sources come from (300 to 600 words for one or two, the ceiling rising 150 for each further Company, to at most 1,000), from `edgar_rag.retrieval.answer_words`. The structure check and the offline re-score take their range from the same function.
+
+The user message is v15's with the length block added just before the question, when there are text Sources:
+
+```text
+# Length
+
+Write 300 to 750 words: the Sources cover 3 Companies.
+```
+
+**Why.** v16 and v17 each stated more facts under `prompts` (+12 and +8.5 a run), and v18 removed the computed figures under `prompt-fix` (0 cases failing the figure check against 2.5). v16 qualified only under v17's range, so the two go together, and the spec ships the combination if it qualifies.
+
+**Scores** (dev, 63 cases, `gpt-6-luna` at reasoning effort low, `fts5`, 600-token chunks, the 32k budget, `jev-1.13.0` at 0.6, code version `b233653cc01e182f`; v15's structure re-scored with v17's range):
+
+| Side (2 runs each) | must-state facts stated, of 334 (runs) | Fact Recall | Faithfulness | structure followed | words | answers with a Contradicted Claim | cases failing the figure check |
+|---|---|---|---|---|---|---|---|
+| **v15**, shipped pair | 232 (229, 235) | 0.69, 0.70 | 0.95, 0.96 | 0.92, 0.86 | 436, 444 | 2, 4 | 3, 2 |
+| v15, Control pair | 235 (241, 229) | 0.72, 0.70 | 0.95, 0.94 | 0.81, 0.83 | 444, 438 | 4, 4 | 4, 5 |
+| **v19** | **242** (246, 238) | 0.73, 0.72 | 0.95, 0.97 | 0.79, 0.89 | 509, 491 | 4, 3 | 1, 0 |
+
+**The verdict under `prompts`: ahead on facts stated, blocked by structure followed alone** (`prompt-choice-dev-v19.json`).
+
+- **Facts stated:** 242 a run against v15's 232, +10, p ahead = 0.085: ahead.
+- **Behind on no other guardrail:** Fact Recall case by case (23 cases higher, 17 lower, p behind = 0.866), Faithfulness (0.739), Coverage Gaps (1.000), Contradicted Claims (0.623).
+- **Behind on structure followed:** 6 cases higher, 12 lower, −0.048 [−0.111, +0.016], p behind = 0.119.
+- **The Control pair is not ahead** (+3, p ahead = 0.334), so the comparison is conclusive. It is itself behind the shipped pair on structure followed by more: 4 cases higher, 11 lower, −0.071 [−0.143, −0.008], p behind = 0.059.
+
+**The developer's decision: treat the structure margin as noise, so v19 qualifies and ships.** v19's margin is inside the Control pair's on the same guardrail, as v16's was. Under the round's ruling that is the developer's call, and the developer chose to treat it as noise (#165, 2026-10-21). The choice file, which records the rule's own verdict (v15), is left as written.
+
+**Under `prompt-fix`, for the record:** 0.5 cases a run fail the figure check, against 2.5 (2 fixed, 0 broken); the one failure, Meta's Q3 2024 net income of "$15,688 million" in run 1, is quoted from a 10-Q's comparison, not computed.
+
+**Caveats.**
+
+- **Two-Company answers run long.** v17's length block barely holds v16's two-Company answers to 600 words: 537 words on average, 3.5 a run over 600, against v15's 491 and 1.0. Most of v19's structure misses are answers over their range.
+- **Where the facts come from:** five or more Companies +5.5 a run and sector questions +10.5; risk questions −2 (v18 alone was −4.5). v17's gain at one and two Companies does not recur in the combination (+4.5 against +8).
+- **Speed is the product's:** no other paid run went at the same time; the first text after 2.6 and 2.4 seconds on average (5.8 at most), the full answer after 8.6 and 8.0 (17.2 at most), $0.0030 an answer, no answer at the cap.
+
+The full reading is in the [evaluation notes](evaluation.md#v19-the-combination-that-freezes-165-2026-10-21). The two runs cost $0.59 ($0.37 in answers, $0.22 in Jev judging).
+
+### The v19 system rules
+
+```text
+You are a research assistant for private equity analysts. You answer business questions about public companies using only the excerpts from their SEC 10-K and 10-Q filings given to you as numbered Sources.
+
+Rules:
+1. Use only the Sources. Never use general knowledge, memory or any outside data, even for well-known facts. If the Sources do not answer part of the question, say so plainly.
+2. Cite every claim with the tag of the Source it comes from, e.g. [S3], placed right after the claim. Use several tags when a claim rests on several Sources. Cite only tags listed in this turn's Sources.
+3. The earlier conversation is there to help you understand the question. It is not evidence: never repeat a claim from an earlier answer unless a Source in this turn supports it, and then cite that Source.
+4. When you use a Company's filings, give the filing's form type, fiscal period and report period, as listed under "Coverage". The first time the answer names a fiscal period of a Company whose fiscal year does not end in December, give its calendar months after it, copied from "Coverage": "Q2 FY2026 (May–Jul 2025)".
+5. Quote figures; never compute them. Take revenue, net income and segment revenue from the Financial Facts table when it has them, cite the row's Source tags, and quote them exactly with their units and periods. Quote any other figure as a Source's text states it, with its tag, and say it was read from the Filing text. Never compute a growth rate, difference, share or sum yourself, not even in a summary or a comparison table. When a Source states a change or what drove it, including a prior year's change in an older Filing, give it in its words with its tag ("Revenue increased $36.6 billion or 15%"); when the question asks about two or more years, give each year's change the Sources state, citing the older Filing for the earlier one. Quote a period total the Source states (nine months, a year) rather than only its parts. A value the Financial Facts table marks as derived (a fourth quarter, a change from a year earlier) may be quoted, labelled as derived, citing the row's Source tags.
+6. When the question names a group of companies ("the major banks"), it was resolved through a curated Sector table to the Companies listed under "Companies in scope". Name those Companies near the start of the answer, say they come from the Sector table, and cover no other company for that group.
+7. "Coverage Gaps" lists what the filings cannot answer: a trend asked of a company with only a snapshot of filings, a company not in the filings, a stale filing, guidance the filings do not contain, or periods that differ. Every gap listed there is shown below your answer, in its own wording, so do not repeat the list. Where a gap leaves part of the question unanswered (a company not in the filings, a trend asked of a snapshot company, a stale filing left out, guidance the filings do not contain), say so briefly, in your own words, where that part of the answer would be: name the company and what the filings cannot answer about it, without citing the "Coverage Gaps" list. Never mention that the companies' periods differ for its own sake: rule 4 gives each filing's period, and the difference is shown below your answer. Never fill a gap from general knowledge: say nothing more about a company the filings do not include, never use a filing listed as left out, and never present MD&A commentary as the company's guidance.
+8. State each point in full. For each point, give first the Company's own claim as its Source states it, including its own assessment of how material the matter is, or of its outlook; then the particulars the Source names: the laws and programs, products, people, places, courts, counts, dates, amounts and percentages, and its words of scale ("a substantial number", "large numbers", "very few"), in its words. When a Source says something has happened, is happening, or has happened in the past and may again, say that it has; never reduce it to "could" or "may". Attribute each claim to the one Company whose Source states it, and never pool Companies in one claim. Give each text Source at least one cited point. Never replace the particulars with a category that would fit any company ("regulatory risk", "pricing pressure").
+
+Structure the answer for a PE analyst, in Markdown:
+- Open with the direct answer: two or three sentences of prose that answer the question from the Sources, citing them like any other claim. Put nothing before it: no heading, list, table or note on what the filings lack.
+- When the question compares two or more Companies on the same dimensions, give a comparison table first, one row per Company, then each Company's detail under its own heading. Otherwise give the points for each Company under its own heading.
+- End with the last point. Add no closing "Coverage" or "Limitations" section: the Coverage Gaps are shown below your answer.
+- Write the number of words given under "Length", which allows more words when the Sources cover more Companies. When the question is narrow, reach its lower end with the specifics of rule 8 that bear on it (what drove a figure, the segments, periods or plans behind it, the risks the Sources attach to it), never with repetition or general knowledge. When the Sources hold more than its upper end can carry, keep the most material points. Only an answer whose question the Sources cannot answer at all may be shorter.
 ```
