@@ -1,5 +1,7 @@
 """The generation harness's checks in code, on hand-written answers."""
 
+from collections.abc import Mapping, Sequence
+
 import pytest
 
 from edgar_eval.answer_checks import (
@@ -12,7 +14,7 @@ from edgar_eval.answer_checks import (
 )
 from edgar_eval.generation import check_answer_figures
 from edgar_rag.golden_set import CoverageGapLabel
-from edgar_rag.retrieval import FactRow, Source
+from edgar_rag.retrieval import FactRow, Source, answer_words
 
 # --- Citation validity --------------------------------------------------------------------
 
@@ -1060,6 +1062,49 @@ def test_an_answer_outside_300_to_600_words_fails(repeats, verdict):
     )
 
     assert [p for p in check.problems if "words" in p] == [f"{check.words} words, {verdict}"]
+
+
+FOUR_COMPANIES = {
+    "AAPL": ("Apple Inc", "Apple"),
+    "TSLA": ("Tesla Inc", "Tesla"),
+    "TGT": ("Target Corp", "Target"),
+    "NVDA": ("NVIDIA Corp", "NVIDIA"),
+}
+
+
+def _answer_of(words: int, companies: Mapping[str, Sequence[str]]) -> str:
+    """An answer in the structure, a heading per Company, padded to `words` words."""
+    opening = "The four Companies face distinct risks [S1]. Each one is set out below [S2]."
+    headings = "\n\n".join(
+        f"## {names[-1]}\n\n{names[-1]} has risks [S1]." for names in companies.values()
+    )
+    answer = f"{opening}\n\n{headings}"
+    pad = words - check_structure(answer, companies).words
+    return f"{answer}\n\n" + " ".join(["risk"] * pad) + " [S1]."
+
+
+def test_the_structure_check_allows_more_words_for_more_source_companies():
+    """Prompt v17: the check's word range comes from the prompt's `answer_words`, applied
+    to the answer's Source Companies, so 900 words pass with four and fail with two."""
+    four = check_structure(_answer_of(900, FOUR_COMPANIES), FOUR_COMPANIES)
+    assert four.words == 900
+    assert four.passed, four.problems
+
+    two = {t: FOUR_COMPANIES[t] for t in ("AAPL", "TSLA")}
+    check = check_structure(_answer_of(900, two), two)
+    assert check.words == 900
+    assert check.problems == ("900 words, over 600",)
+
+
+@pytest.mark.parametrize("companies", [1, 2, 3, 4, 5, 7])
+def test_the_structure_checks_word_range_is_the_prompts(companies):
+    tickers = {f"T{i}": (f"Company {i}",) for i in range(companies)}
+    low, high = answer_words(companies)
+
+    for words, passed in ((low - 1, False), (low, True), (high, True), (high + 1, False)):
+        check = check_structure(_answer_of(words, tickers), tickers)
+        assert check.words == words
+        assert check.passed is passed, check.problems
 
 
 def test_an_answer_with_no_sources_need_only_open_with_its_direct_answer():

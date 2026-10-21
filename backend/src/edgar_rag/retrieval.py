@@ -141,7 +141,13 @@ from edgar_rag._coverage import (
     stale_filings_left_out,
 )
 from edgar_rag._facts import FactNote, FactRow
-from edgar_rag._prompt import HISTORY_MAX_TOKENS, HISTORY_TURNS, PROMPT_VERSION, render
+from edgar_rag._prompt import (
+    HISTORY_MAX_TOKENS,
+    HISTORY_TURNS,
+    PROMPT_VERSION,
+    answer_words,
+    render,
+)
 from edgar_rag._query_scope import (
     LATEST,
     OVERVIEW_SECTIONS,
@@ -192,6 +198,7 @@ __all__ = [
     "SectorPhrase",
     "Source",
     "TimeWindow",
+    "answer_words",
     "build_index",
     "common_names",
     "count_tokens",

@@ -4,7 +4,7 @@ One fixed template with a version constant. Every change to it bumps `PROMPT_VER
 and gets an entry in `docs/prompt-iterations.md`, with what changed, why, and its dev
 scores before and after.
 
-v15 renders, in this order: the system rules, the Coverage Gaps (which the product shows
+v17 renders, in this order: the system rules, the Coverage Gaps (which the product shows
 below the answer as Coverage notes, and the answer acknowledges only where one leaves
 part of the question unanswered, ADR 0016), the Companies each Sector phrase or curated
 Company Group resolved to (when the question uses one), each Company's coverage (its
@@ -13,7 +13,8 @@ calendar months and Report Periods), the Financial Facts table (when the questio
 names a metric, each Fiscal Period with its calendar months), the text Sources grouped
 by Company (each label giving its Filing's calendar months), the earlier conversation
 (the last 10 turns under a token cap, with each earlier answer's Source tags rewritten
-as the Filing IDs they cited), and the latest question.
+as the Filing IDs they cited), the answer's length (its word range, from
+`answer_words`, when there are text Sources), and the latest question.
 """
 
 from __future__ import annotations
@@ -32,10 +33,29 @@ if TYPE_CHECKING:
     from edgar_rag._query_scope import ScopeFiling
     from edgar_rag.retrieval import Message, QueryScope, Source
 
-PROMPT_VERSION = "v15"
+PROMPT_VERSION = "v17"
 
 HISTORY_TURNS = 10
 HISTORY_MAX_TOKENS = 6_000
+
+MIN_WORDS = 300
+"""The answer's floor in words, whatever the number of Companies."""
+BASE_MAX_WORDS = 600
+"""The answer's ceiling in words for one or two Companies."""
+WORDS_PER_COMPANY = 150
+"""How far the ceiling rises for each Company after the second."""
+MAX_WORDS = 1_000
+"""The ceiling's limit, however many Companies."""
+
+
+def answer_words(companies: int) -> tuple[int, int]:
+    """The answer's word range for a question whose text Sources come from `companies`
+    Companies: 300 to 600 words for one or two, the ceiling rising by 150 for each
+    further Company, to at most 1,000 (750 for three, 900 for four). The prompt's length
+    block and the structure check both read it, so the two can't drift."""
+    extra = max(companies - 2, 0) * WORDS_PER_COMPANY
+    return MIN_WORDS, min(BASE_MAX_WORDS + extra, MAX_WORDS)
+
 
 SYSTEM_RULES = """\
 You are a research assistant for private equity analysts. You answer business questions \
@@ -94,11 +114,13 @@ comparison table first, one row per Company, then each Company's detail under it
 heading. Otherwise give the points for each Company under its own heading.
 - End with the last point. Add no closing "Coverage" or "Limitations" section: the \
 Coverage Gaps are shown below your answer.
-- Write 300 to 600 words. When the question is narrow, reach 300 words with the specifics \
-of rule 8 that bear on it (what drove a figure, the segments, periods or plans behind it, \
-the risks the Sources attach to it), never with repetition or general knowledge. When the \
-Sources hold more than 600 words can carry, keep the most material points. Only an answer \
-whose question the Sources cannot answer at all may be shorter."""
+- Write the number of words given under "Length", which allows more words when the \
+Sources cover more Companies. When the question is narrow, reach its lower end with the \
+specifics of rule 8 that bear on it (what drove a figure, the segments, periods or plans \
+behind it, the risks the Sources attach to it), never with repetition or general \
+knowledge. When the Sources hold more than its upper end can carry, keep the most \
+material points. Only an answer whose question the Sources cannot answer at all may be \
+shorter."""
 
 # A run of Source tags in an earlier answer ("[S1]", "[S1][S2]", "[S3, S1]"). They
 # pointed at that turn's Sources, not this turn's.
@@ -118,8 +140,9 @@ def render(
 ) -> list[tuple[str, str]]:
     """The prompt as (role, content) messages: the system rules, then one user message
     holding the Coverage Gaps, the Companies each Sector phrase resolved to, each
-    Company's coverage, the Financial Facts, the text Sources, the earlier conversation
-    and the question."""
+    Company's coverage, the Financial Facts, the text Sources, the earlier conversation,
+    the answer's length (when there are text Sources) and the question."""
+    text = [s for s in sources if s.kind == "text"]
     parts = ["# Coverage Gaps", "\n".join(f"- {gap.text}" for gap in gaps) or "None."]
     if scope.sector_phrases:
         parts += ["# Companies in scope", _render_sector_phrases(scope)]
@@ -127,11 +150,22 @@ def render(
         parts += ["# Coverage", _render_coverage(coverage)]
     if scope.metrics:
         parts += ["# Financial Facts", _render_facts(sources, facts, notes)]
-    parts += ["# Sources", _render_sources([s for s in sources if s.kind == "text"])]
+    parts += ["# Sources", _render_sources(text)]
     if earlier := _render_history(history):
         parts += ["# Earlier conversation (context only, not evidence)", earlier]
+    if text:
+        parts += ["# Length", _render_length(text)]
     parts += ["# Question", question.strip()]
     return [("system", SYSTEM_RULES), ("user", "\n\n".join(parts))]
+
+
+def _render_length(sources: Sequence[Source]) -> str:
+    """The one-line length block: the word range for the Companies the text Sources
+    come from."""
+    companies = len({s.ticker for s in sources})
+    low, high = answer_words(companies)
+    noun = "Company" if companies == 1 else "Companies"
+    return f"Write {low} to {high:,} words: the Sources cover {companies} {noun}."
 
 
 def _render_sector_phrases(scope: QueryScope) -> str:

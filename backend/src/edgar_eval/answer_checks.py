@@ -18,7 +18,7 @@ from decimal import Decimal
 from functools import cache
 
 from edgar_rag.golden_set import CoverageGapLabel
-from edgar_rag.retrieval import FactRow, Source, load_missing_companies
+from edgar_rag.retrieval import FactRow, Source, answer_words, load_missing_companies
 
 __all__ = [
     "CitationCheck",
@@ -770,9 +770,6 @@ def _missing_company_names() -> tuple[tuple[str, ...], ...]:
 
 # --- Answer structure -------------------------------------------------------------------
 
-MIN_WORDS = 300
-MAX_WORDS = 600
-
 
 @dataclass(frozen=True)
 class StructureCheck:
@@ -790,19 +787,22 @@ class StructureCheck:
 
 def check_structure(answer: str, companies: Mapping[str, Sequence[str]]) -> StructureCheck:
     """The structure of assumption 8: a direct answer of two or three sentences first,
-    then the points per Company under a heading each, or a comparison table, in 300 to
-    600 words. `companies` are the Companies the answer's Sources come from, each with
-    the names an answer may call it by. An answer with no Sources is its Coverage Gaps
+    then the points per Company under a heading each, or a comparison table, within the
+    word range the prompt gives (`edgar_rag.retrieval.answer_words`, from prompt v17: 300
+    to 600 words for one or two Companies, the ceiling rising 150 for each further one,
+    to at most 1,000). `companies` are the Companies the answer's Sources come from, each
+    with the names an answer may call it by. An answer with no Sources is its Coverage Gaps
     alone, so it need only open with its direct answer. No closing Coverage note is
     required: from prompt v15 the product shows the Coverage Gaps below the answer
     (ADR 0016)."""
     words = _words(answer)
     found = [_opening_problem(answer)]
     if companies:
+        low, high = answer_words(len(companies))
         found += [
             _per_company_problem(answer, companies),
-            f"{words} words, under {MIN_WORDS}" if words < MIN_WORDS else None,
-            f"{words} words, over {MAX_WORDS}" if words > MAX_WORDS else None,
+            f"{words} words, under {low}" if words < low else None,
+            f"{words} words, over {high}" if words > high else None,
         ]
     return StructureCheck(words=words, problems=tuple(p for p in found if p))
 
