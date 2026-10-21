@@ -16,9 +16,10 @@ const SOURCES = [
     formType: '10-K',
     reportPeriod: '2025-09-27',
     fiscalPeriod: 'FY2025',
+    calendarMonths: 'Oct 2024–Sep 2025',
     section: 'Risk Factors',
     item: 'Item 1A',
-    label: 'AAPL 10-K FY2025, Risk Factors (Item 1A).',
+    label: 'AAPL 10-K FY2025 (Oct 2024–Sep 2025), Risk Factors (Item 1A).',
     text: 'A significant majority of the Company’s manufacturing is performed by outsourcing partners.',
   },
   {
@@ -29,9 +30,10 @@ const SOURCES = [
     formType: '10-K',
     reportPeriod: '2025-12-31',
     fiscalPeriod: 'FY2025',
+    calendarMonths: 'Jan–Dec 2025',
     section: 'Risk Factors',
     item: 'Item 1A',
-    label: 'TSLA 10-K FY2025, Risk Factors (Item 1A).',
+    label: 'TSLA 10-K FY2025 (Jan–Dec 2025), Risk Factors (Item 1A).',
     text: 'We may be impacted by trade policies, political uncertainty and tariffs.',
   },
 ]
@@ -45,9 +47,10 @@ const UNCITED_SOURCE = {
   formType: '10-K',
   reportPeriod: '2025-06-30',
   fiscalPeriod: 'FY2025',
+  calendarMonths: 'Jul 2024–Jun 2025',
   section: 'Risk Factors',
   item: 'Item 1A',
-  label: 'MSFT 10-K FY2025, Risk Factors (Item 1A).',
+  label: 'MSFT 10-K FY2025 (Jul 2024–Jun 2025), Risk Factors (Item 1A).',
   text: 'Our global operations subject us to potential trade restrictions.',
 }
 
@@ -96,9 +99,10 @@ const FACTS_SOURCE = {
   formType: '10-Q',
   reportPeriod: '2025-10-26',
   fiscalPeriod: 'Q3 FY2026',
+  calendarMonths: 'Aug–Oct 2025',
   section: 'Financial Facts',
   item: null,
-  label: 'NVDA 10-Q Q3 FY2026, Financial Facts.',
+  label: 'NVDA 10-Q Q3 FY2026 (Aug–Oct 2025), Financial Facts.',
   text: 'Revenue, 3 months ended 2025-10-26: $57,006 million (reported as "Revenue")',
   kind: 'facts',
   rows: [
@@ -296,7 +300,7 @@ describe('Workspace', () => {
     const panel = await screen.findByRole('tabpanel', { name: 'Sources' })
     const source = within(panel).getByRole('region', { name: /^S2/ })
     expect(within(source).getByRole('heading', { level: 3 })).toHaveTextContent(
-      'S2Tesla 10-K, FY2025 · Risk Factors'
+      'S2Tesla 10-K, FY2025 (Jan–Dec 2025) · Risk Factors'
     )
 
     // The Filing metadata waits under a collapsed toggle.
@@ -425,7 +429,7 @@ describe('Workspace', () => {
     await user.click(within(answer).getByRole('link', { name: 'Source S1' }))
     const panel = await screen.findByRole('tabpanel', { name: 'Sources' })
     expect(within(panel).getByRole('region', { name: /^S1/ })).toHaveTextContent(
-      'Apple 10-K, FY2025 · Risk Factors'
+      'Apple 10-K, FY2025 (Oct 2024–Sep 2025) · Risk Factors'
     )
 
     release()
@@ -471,7 +475,10 @@ describe('Workspace', () => {
       within(cited)
         .getAllByRole('button')
         .map((chip) => chip.textContent)
-    ).toEqual(['S1 AAPL 10-K FY2025, Risk Factors', 'S2 TSLA 10-K FY2025, Risk Factors'])
+    ).toEqual([
+      'S1 AAPL 10-K FY2025 (Oct 2024–Sep 2025), Risk Factors',
+      'S2 TSLA 10-K FY2025 (Jan–Dec 2025), Risk Factors',
+    ])
 
     // The Sources it was given but does not cite wait under their own collapsed toggle.
     const also = within(answer).getByRole('button', { name: 'Also retrieved (1)' })
@@ -484,17 +491,17 @@ describe('Workspace', () => {
       within(retrieved)
         .getAllByRole('button')
         .map((chip) => chip.textContent)
-    ).toEqual(['S3 MSFT 10-K FY2025, Risk Factors'])
+    ).toEqual(['S3 MSFT 10-K FY2025 (Jul 2024–Jun 2025), Risk Factors'])
 
     // Each chip opens the Sources tab at its Source, an uncited one too.
     await user.click(within(cited).getByRole('button', { name: /^S2/ }))
     const panel = await screen.findByRole('tabpanel', { name: 'Sources' })
     expect(within(panel).getByRole('region', { name: /^S2/ })).toHaveTextContent(
-      'Tesla 10-K, FY2025 · Risk Factors'
+      'Tesla 10-K, FY2025 (Jan–Dec 2025) · Risk Factors'
     )
     await user.click(within(retrieved).getByRole('button', { name: /^S3/ }))
     expect(within(panel).getByRole('region', { name: /^S3/ })).toHaveTextContent(
-      'Microsoft 10-K, FY2025 · Risk Factors'
+      'Microsoft 10-K, FY2025 (Jul 2024–Jun 2025) · Risk Factors'
     )
   })
 
@@ -531,9 +538,12 @@ describe('Workspace', () => {
     // Cited tabs in the accent colour, the uncited one muted, each saying which it is.
     const [s1, s2, s3] = tabs
     expect(s1).toHaveAttribute('aria-pressed', 'true')
-    expect(s1).toHaveAttribute('title', 'Cited: AAPL 10-K FY2025, Risk Factors')
+    expect(s1).toHaveAttribute('title', 'Cited: AAPL 10-K FY2025 (Oct 2024–Sep 2025), Risk Factors')
     expect(s2).toHaveClass('text-accent-strong')
-    expect(s3).toHaveAttribute('title', 'Retrieved, not cited: MSFT 10-K FY2025, Risk Factors')
+    expect(s3).toHaveAttribute(
+      'title',
+      'Retrieved, not cited: MSFT 10-K FY2025 (Jul 2024–Jun 2025), Risk Factors'
+    )
     expect(s3).toHaveClass('text-muted')
     expect(s3).not.toHaveClass('text-accent-strong')
 
@@ -542,11 +552,43 @@ describe('Workspace', () => {
     expect(s3).toHaveAttribute('aria-pressed', 'true')
     const source = within(panel).getByRole('region', { name: /^S3/ })
     const heading = within(source).getByRole('heading', { level: 3 })
-    expect(heading).toHaveTextContent('S3Microsoft 10-K, FY2025 · Risk Factors')
-    expect(heading).toHaveAttribute('title', 'MSFT 10-K FY2025, Risk Factors (Item 1A).')
+    expect(heading).toHaveTextContent('S3Microsoft 10-K, FY2025 (Jul 2024–Jun 2025) · Risk Factors')
+    expect(heading).toHaveAttribute(
+      'title',
+      'MSFT 10-K FY2025 (Jul 2024–Jun 2025), Risk Factors (Item 1A).'
+    )
     expect(source).toHaveTextContent(
       'Our global operations subject us to potential trade restrictions.'
     )
+  })
+
+  it("gives each Source's calendar months beside its fiscal period, in the header and the list", async () => {
+    fetchMock.mockImplementation(async () =>
+      uiMessageStream(ANSWER, QUERY_SCOPE, [...SOURCES, UNCITED_SOURCE])
+    )
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    await user.click(await within(answer).findByRole('link', { name: 'Source S1' }))
+
+    const panel = await screen.findByRole('tabpanel', { name: 'Sources' })
+    const heading = within(within(panel).getByRole('region', { name: /^S1/ })).getByRole(
+      'heading',
+      { level: 3 }
+    )
+    expect(heading).toHaveTextContent('S1Apple 10-K, FY2025 (Oct 2024–Sep 2025) · Risk Factors')
+
+    const strip = within(panel).getByRole('navigation', { name: "This answer's Sources" })
+    expect(
+      within(strip)
+        .getAllByRole('button')
+        .map((tab) => tab.title)
+    ).toEqual([
+      'Cited: AAPL 10-K FY2025 (Oct 2024–Sep 2025), Risk Factors',
+      'Cited: TSLA 10-K FY2025 (Jan–Dec 2025), Risk Factors',
+      'Retrieved, not cited: MSFT 10-K FY2025 (Jul 2024–Jun 2025), Risk Factors',
+    ])
   })
 
   it('shows only the opening paragraph until "Show full analysis" is clicked', async () => {
@@ -588,7 +630,7 @@ describe('Workspace', () => {
 
     const panel = await screen.findByRole('tabpanel', { name: 'Sources' })
     expect(within(panel).getByRole('region', { name: /^S1/ })).toHaveTextContent(
-      'Apple 10-K, FY2025 · Risk Factors'
+      'Apple 10-K, FY2025 (Oct 2024–Sep 2025) · Risk Factors'
     )
   })
 
@@ -914,7 +956,7 @@ describe('Workspace', () => {
     const panel = await screen.findByRole('tabpanel', { name: 'Sources' })
     const source = within(panel).getByRole('region', { name: /^S1/ })
     expect(within(source).getByRole('heading', { level: 3 })).toHaveTextContent(
-      'S1NVIDIA 10-Q, Q3 FY2026 · Financial Facts'
+      'S1NVIDIA 10-Q, Q3 FY2026 (Aug–Oct 2025) · Financial Facts'
     )
     await user.click(within(source).getByRole('button', { name: 'Filing details' }))
     expect(within(source).getByText('Filing ID').nextElementSibling?.textContent).toBe(
@@ -950,9 +992,10 @@ describe('Workspace', () => {
       formType: '10-Q',
       reportPeriod: '2024-07-28',
       fiscalPeriod: 'Q2 FY2025',
+      calendarMonths: 'May–Jul 2024',
       section: 'MD&A',
       item: 'Item 2',
-      label: 'NVDA 10-Q Q2 FY2025, MD&A (Item 2).',
+      label: 'NVDA 10-Q Q2 FY2025 (May–Jul 2024), MD&A (Item 2).',
       text: [
         'Second Quarter of Fiscal Year 2025 Summary',
         '| Three Months Ended |  |',
@@ -975,7 +1018,7 @@ describe('Workspace', () => {
     const panel = await screen.findByRole('tabpanel', { name: 'Sources' })
     const source = within(panel).getByRole('region', { name: /^S1/ })
     expect(within(source).getByRole('heading', { level: 3 })).toHaveTextContent(
-      'S1NVIDIA 10-Q, Q2 FY2025 · MD&A'
+      'S1NVIDIA 10-Q, Q2 FY2025 (May–Jul 2024) · MD&A'
     )
     const table = within(source).getByRole('table', { name: 'Table from the passage' })
     const rows = within(table)
@@ -1114,7 +1157,7 @@ describe('The side panel', () => {
     await user.click(railSources())
     const panel = screen.getByRole('tabpanel', { name: 'Sources' })
     expect(within(panel).getByRole('region', { name: /^S1/ })).toHaveTextContent(
-      'Microsoft 10-K, FY2025 · Risk Factors'
+      'Microsoft 10-K, FY2025 (Jul 2024–Jun 2025) · Risk Factors'
     )
     expect(
       within(within(panel).getByRole('navigation', { name: "This answer's Sources" }))
@@ -1133,7 +1176,7 @@ describe('The side panel', () => {
     await user.click(within(first).getByRole('link', { name: 'Source S2' }))
     const panel = screen.getByRole('tabpanel', { name: 'Sources' })
     expect(within(panel).getByRole('region', { name: /^S2/ })).toHaveTextContent(
-      'Tesla 10-K, FY2025 · Risk Factors'
+      'Tesla 10-K, FY2025 (Jan–Dec 2025) · Risk Factors'
     )
     expect(railSources()).toHaveAttribute('aria-pressed', 'true')
 
@@ -1148,7 +1191,7 @@ describe('The side panel', () => {
       within(screen.getByRole('tabpanel', { name: 'Sources' })).getByRole('region', {
         name: /^S1/,
       })
-    ).toHaveTextContent('Microsoft 10-K, FY2025 · Risk Factors')
+    ).toHaveTextContent('Microsoft 10-K, FY2025 (Jul 2024–Jun 2025) · Risk Factors')
   })
 
   it('on a narrow screen, puts the toolbar above the question box and the panel full-screen', async () => {

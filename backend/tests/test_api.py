@@ -173,6 +173,7 @@ def test_each_source_carries_its_tag_filing_metadata_and_passage(client, index):
             "formType": source.form_type,
             "reportPeriod": source.report_period,
             "fiscalPeriod": source.fiscal_period,
+            "calendarMonths": source.calendar_months,
             "section": source.section,
             "item": source.item,
             "label": source.label,
@@ -180,6 +181,20 @@ def test_each_source_carries_its_tag_filing_metadata_and_passage(client, index):
             "kind": "text",
         }
     assert {s["ticker"] for s in sources} == {"AAPL", "TSLA", "JPM"}
+
+
+def test_each_source_label_carries_its_calendar_months(client):
+    question = "How has NVIDIA's revenue changed over the last two years?"
+    sources = part_of(events(chat(client, user(question))), "data-sources")["data"]["sources"]
+
+    assert sources
+    for sent in sources:
+        assert f"{sent['fiscalPeriod']} ({sent['calendarMonths']}), " in sent["label"]
+    by_filing = {s["filingId"]: s for s in sources}
+    q2 = by_filing["NVDA_10-Q_2025-07-27"]
+    assert q2["calendarMonths"] == "May–Jul 2025"
+    assert q2["label"].startswith("NVDA 10-Q Q2 FY2026 (May–Jul 2025), ")
+    assert by_filing["NVDA_10-K_2025-01-26"]["calendarMonths"] == "Feb 2024–Jan 2025"
 
 
 def test_coverage_gaps_stream_as_a_data_part_before_any_text(client):

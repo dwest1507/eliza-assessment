@@ -147,7 +147,7 @@ from edgar_rag._query_scope import (
 )
 from edgar_rag._repeats import GAP, NEAR_DUPLICATE, NEW_TEXT, new_text, shingles
 from edgar_rag._topics import added_terms
-from edgar_rag.corpus import Filing
+from edgar_rag.corpus import Filing, filing_months
 from edgar_rag.paths import DERIVED_DIR
 
 __all__ = [
@@ -377,12 +377,19 @@ class Source:
         return f"S{self.number}"
 
     @property
+    def calendar_months(self) -> str:
+        """The calendar months its Filing reports on: "May–Jul 2025"."""
+        return filing_months(self.report_period, self.form_type)
+
+    @property
     def label(self) -> str:
-        """How the Source is named in the prompt and in citations."""
+        """How the Source is named in the prompt and in citations: "NVDA 10-Q Q2 FY2026
+        (May–Jul 2025), Management's Discussion and Analysis (Item 2). Filing ID ..."."""
         period = f" {self.fiscal_period}" if self.fiscal_period else ""
         item = f" ({self.item})" if self.item else ""
         return (
-            f"{self.ticker} {self.form_type}{period}, {self.section}{item}. "
+            f"{self.ticker} {self.form_type}{period} ({self.calendar_months}), "
+            f"{self.section}{item}. "
             f"Filing ID {self.filing_id}, Report Period {self.report_period}."
         )
 

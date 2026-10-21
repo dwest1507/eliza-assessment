@@ -135,5 +135,5 @@ The calendar quarter in which the Report Period ends (the `Quarter:` header fiel
 _Avoid_: Quarter (unqualified)
 
 **Fiscal Period**:
-The company's own fiscal year and quarter for a Filing (e.g. NVIDIA "Q2 FY2026"), derived from the Report Period and the company's fiscal year end. A secondary label only.
+The company's own fiscal year and quarter for a Filing (e.g. NVIDIA "Q2 FY2026"), derived from the Report Period and the company's fiscal year end. A secondary label only, always given with its calendar months where a reader sees it (NVIDIA's "Q2 FY2026 (May–Jul 2025)").
 _Avoid_: Quarter (unqualified)

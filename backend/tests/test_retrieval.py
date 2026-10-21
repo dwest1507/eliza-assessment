@@ -7,6 +7,7 @@ import sqlite3
 import pytest
 
 from edgar_rag import _topics
+from edgar_rag.corpus import filing_months
 from edgar_rag.retrieval import (
     CHUNK_TOKENS,
     CONTEXT_BUDGET_TOKENS,
@@ -321,7 +322,9 @@ def test_a_source_carries_its_citation_metadata_and_passage(index):
     assert source.filing_id == f"TSLA_{source.form_type}_{source.report_period}"
     assert source.fiscal_period
     assert "Texas" in source.text
-    assert source.label.startswith(f"TSLA {source.form_type} {source.fiscal_period}, ")
+    assert source.label.startswith(
+        f"TSLA {source.form_type} {source.fiscal_period} ({source.calendar_months}), "
+    )
 
 
 def test_the_prompt_renders_rules_sources_and_question(index):
@@ -1752,8 +1755,116 @@ def test_the_prompt_gives_each_companys_coverage_report_periods_and_fiscal_perio
         for filing in company.in_scope:
             assert (
                 f"{filing.filing_id} ({filing.form_type} {filing.fiscal_period}, "
+                f"{filing_months(filing.report_period, filing.form_type)}, "
                 f"Report Period {filing.report_period})"
             ) in coverage
+
+
+@pytest.fixture(scope="module")
+def msft_index(tmp_path_factory):
+    """Microsoft's Filings from FY2025 on: its fiscal year ends in June."""
+    from datetime import date
+
+    from edgar_rag.corpus import load_corpus
+    from edgar_rag.retrieval import build_index
+
+    filings = [
+        f for f in load_corpus() if f.ticker == "MSFT" and f.report_period >= date(2024, 9, 1)
+    ]
+    return build_index(filings, tmp_path_factory.mktemp("msft_index") / "edgar_rag.sqlite")
+
+
+@pytest.mark.parametrize(
+    ("question", "company_line", "filings"),
+    [
+        # NVIDIA's 52/53-week year ends in late January: FY2026's second quarter is
+        # May to July 2025, and FY2025 ran from February 2024 to January 2025.
+        (
+            "How has NVIDIA's revenue changed over the last two years?",
+            "NVIDIA Corporation (NVDA): Tracked Company; fiscal year ends in January",
+            [
+                "NVDA_10-K_2025-01-26 (10-K FY2025, Feb 2024–Jan 2025, Report Period 2025-01-26)",
+                "NVDA_10-Q_2025-07-27 (10-Q Q2 FY2026, May–Jul 2025, Report Period 2025-07-27)",
+                "NVDA_10-Q_2025-10-26 (10-Q Q3 FY2026, Aug–Oct 2025, Report Period 2025-10-26)",
+            ],
+        ),
+        # Apple's year ends in late September: its first quarter is October to December.
+        (
+            BRIEF_QUESTION,
+            "Apple Inc (AAPL): Tracked Company; fiscal year ends in September",
+            [
+                "AAPL_10-K_2025-09-27 (10-K FY2025, Oct 2024–Sep 2025, Report Period 2025-09-27)",
+                "AAPL_10-Q_2025-12-27 (10-Q Q1 FY2026, Oct–Dec 2025, Report Period 2025-12-27)",
+            ],
+        ),
+        # Tesla's year is the calendar year.
+        (
+            "How has Tesla's revenue changed over the last two years?",
+            "Tesla Inc (TSLA): Tracked Company; fiscal year ends in December",
+            [
+                "TSLA_10-K_2025-12-31 (10-K FY2025, Jan–Dec 2025, Report Period 2025-12-31)",
+                "TSLA_10-Q_2025-06-30 (10-Q Q2 FY2025, Apr–Jun 2025, Report Period 2025-06-30)",
+            ],
+        ),
+    ],
+)
+def test_the_coverage_block_gives_each_filings_calendar_months(
+    index, question, company_line, filings
+):
+    coverage = _section(_ask(index, question).messages[1].content, "Coverage")
+
+    assert company_line in coverage
+    for filing in filings:
+        assert filing in coverage
+
+
+def test_the_coverage_block_gives_calendar_months_for_a_june_year_end(msft_index):
+    """Microsoft's year ends on June 30: FY2026's first quarter is July to September 2025."""
+    coverage = _section(
+        _ask(msft_index, "What are Microsoft's main risk factors?").messages[1].content,
+        "Coverage",
+    )
+
+    assert "Microsoft Corporation (MSFT): Tracked Company; fiscal year ends in June" in coverage
+    assert (
+        "MSFT_10-K_2025-06-30 (10-K FY2025, Jul 2024–Jun 2025, Report Period 2025-06-30)"
+    ) in coverage
+    assert (
+        "MSFT_10-Q_2025-09-30 (10-Q Q1 FY2026, Jul–Sep 2025, Report Period 2025-09-30)"
+    ) in coverage
+    assert (
+        "MSFT_10-Q_2025-12-31 (10-Q Q2 FY2026, Oct–Dec 2025, Report Period 2025-12-31)"
+    ) in coverage
+
+
+def test_the_prompt_asks_for_calendar_months_beside_a_non_december_fiscal_period(index):
+    """Prompt v15: the first time the answer names a fiscal period of a Company whose year
+    doesn't end in December, it gives the calendar months the Coverage block lists."""
+    context = _ask(index, "How has NVIDIA's revenue changed over the last two years?")
+    rules = " ".join(context.messages[0].content.split())
+
+    assert (
+        "The first time the answer names a fiscal period of a Company whose fiscal year "
+        "does not end in December, give its calendar months after it"
+    ) in rules
+    assert 'copied from "Coverage"' in rules
+    assert '"Q2 FY2026 (May–Jul 2025)"' in rules
+
+
+def test_each_source_label_carries_its_calendar_months(index):
+    context = _ask(index, "How has NVIDIA's revenue changed over the last two years?")
+    user = context.messages[1].content
+    labels = {s.filing_id: s.label for s in context.sources}
+
+    assert labels["NVDA_10-Q_2025-07-27"].startswith("NVDA 10-Q Q2 FY2026 (May–Jul 2025), ")
+    assert labels["NVDA_10-K_2025-01-26"].startswith("NVDA 10-K FY2025 (Feb 2024–Jan 2025), ")
+    for source in context.sources:
+        assert f"[{source.tag}] {source.label}" in user
+    # The Financial Facts rows give the months beside each fiscal period too, a derived
+    # fourth quarter included.
+    facts = _section(user, "Financial Facts")
+    assert "| NVDA | Revenue | Q3 FY2026 (Aug–Oct 2025) | 3 months ended 2025-10-26 |" in facts
+    assert "| NVDA | Revenue | Q4 FY2025 (Nov 2024–Jan 2025) | " in facts
 
 
 def test_the_prompt_says_what_the_stale_filing_is_in_the_coverage_block(gap_index):

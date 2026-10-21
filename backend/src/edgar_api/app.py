@@ -10,8 +10,9 @@ front-end's `useChat` reads it as is:
    answer: the Companies, the Sector phrases and the Companies each resolved to, the
    time window, the Section hints, the metric and the places retrieval searched (each
    Filing's Section, or a `section` of null for a Filing searched whole);
-3. `data-sources`: every numbered Source with its tag, Filing metadata and passage, so
-   citations are clickable before the answer arrives;
+3. `data-sources`: every numbered Source with its tag, Filing metadata (its calendar
+   months among them, also in its label) and passage, so citations are clickable
+   before the answer arrives;
 4. `data-coverage-gaps`: every Coverage Gap (its kind, label, Companies and fixed
    wording), shown as a callout beside the answer; an empty list when there is none;
 5. `start-step`, `text-start`, one `text-delta` per streamed piece of the answer,
@@ -321,6 +322,7 @@ def _source(s: Source) -> dict[str, Any]:
         "formType": s.form_type,
         "reportPeriod": s.report_period,
         "fiscalPeriod": s.fiscal_period,
+        "calendarMonths": s.calendar_months,
         "section": s.section,
         "item": s.item,
         "label": s.label,

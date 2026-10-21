@@ -12,15 +12,21 @@ const nvidiaSource: Source = {
   formType: '10-Q',
   reportPeriod: '2024-07-28',
   fiscalPeriod: 'Q2 FY2025',
+  calendarMonths: 'May–Jul 2024',
   section: 'MD&A',
   item: 'Item 2',
-  label: 'NVDA 10-Q Q2 FY2025, MD&A (Item 2).',
+  label: 'NVDA 10-Q Q2 FY2025 (May–Jul 2024), MD&A (Item 2).',
   text: 'a passage',
 }
 
 describe('sourceHeading', () => {
-  it('names the Company, form type, Fiscal Period and Section', () => {
-    expect(sourceHeading(nvidiaSource)).toBe('NVIDIA 10-Q, Q2 FY2025 · MD&A')
+  it('names the Company, form type, Fiscal Period with its calendar months, and Section', () => {
+    expect(sourceHeading(nvidiaSource)).toBe('NVIDIA 10-Q, Q2 FY2025 (May–Jul 2024) · MD&A')
+  })
+
+  it('leaves the months out for a Source sent before they were', () => {
+    const earlier = { ...nvidiaSource, calendarMonths: undefined }
+    expect(sourceHeading(earlier)).toBe('NVIDIA 10-Q, Q2 FY2025 · MD&A')
   })
 
   it('drops a corporate suffix from the Company name', () => {

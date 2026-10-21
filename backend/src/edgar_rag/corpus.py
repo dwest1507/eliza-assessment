@@ -390,6 +390,45 @@ def _period_month(d: date) -> tuple[int, int]:
     return d.year, d.month
 
 
+MONTH_NAMES = (
+    "January February March April May June July August September October November December"
+).split()
+
+
+def month_span(end_year: int, end_month: int, months: int) -> str:
+    """The calendar months of a period `months` long that ends in month `end_month` (1 to
+    12) of `end_year`: "May–Jul 2025" for a quarter, "Oct 2024–Sep 2025" for a year that
+    crosses a calendar year."""
+    end = end_year * 12 + end_month - 1
+    (start_year, start), (_, end) = divmod(end - months + 1, 12), divmod(end, 12)
+    first, last = MONTH_NAMES[start][:3], f"{MONTH_NAMES[end][:3]} {end_year}"
+    return f"{first}–{last}" if start_year == end_year else f"{first} {start_year}–{last}"
+
+
+def calendar_months(report_period: date | str, months: int) -> str:
+    """The calendar months of a period `months` long (3 or 12) to a Report Period, ending
+    in the month that date stands for (a 52/53-week period that ends in the first days of
+    a month stands for the month before): "May–Jul 2025" for NVIDIA's quarter to
+    2025-07-27, "Oct 2024–Sep 2025" for Apple's year to 2025-09-27."""
+    if isinstance(report_period, str):
+        report_period = date.fromisoformat(report_period)
+    return month_span(*_period_month(report_period), months)
+
+
+def filing_months(report_period: date | str, form_type: str) -> str:
+    """The calendar months a Filing reports on: its year for a 10-K, its quarter for a
+    10-Q."""
+    return calendar_months(report_period, 12 if form_type.startswith("10-K") else 3)
+
+
+def year_end_month(report_period: date | str) -> str:
+    """The month a 10-K's Report Period ends its fiscal year in, named: "January" for
+    NVIDIA's 2025-01-26, "June" for Microsoft's 2025-06-30."""
+    if isinstance(report_period, str):
+        report_period = date.fromisoformat(report_period)
+    return MONTH_NAMES[_period_month(report_period)[1] - 1]
+
+
 def _with_fiscal_period(filing: Filing, fiscal_year_end_month: int | None) -> Filing:
     if fiscal_year_end_month is None:
         return filing

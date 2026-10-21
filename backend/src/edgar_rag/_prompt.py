@@ -7,9 +7,11 @@ scores before and after.
 v15 renders, in this order: the system rules, the Coverage Gaps (which the product shows
 below the answer as Coverage notes, and the answer acknowledges only where one leaves
 part of the question unanswered, ADR 0016), the Companies each Sector phrase resolved
-to (when the question uses one), each Company's coverage (its class, Filings, Report
-Periods and Fiscal Periods), the Financial Facts table (when the question names a
-metric), the text Sources grouped by Company, the earlier conversation (the last 10
+to (when the question uses one), each Company's coverage (its class, the month its
+fiscal year ends in, and its Filings with their Fiscal Periods, calendar months and
+Report Periods), the Financial Facts table (when the question names a metric, each
+Fiscal Period with its calendar months), the text Sources grouped by Company (each
+label giving its Filing's calendar months), the earlier conversation (the last 10
 turns under a token cap, with each earlier answer's Source tags rewritten as the Filing
 IDs they cited), and the latest question.
 """
@@ -22,6 +24,7 @@ from typing import TYPE_CHECKING
 
 from edgar_rag._chunks import count_tokens
 from edgar_rag._coverage import COVERAGE_LABELS
+from edgar_rag.corpus import calendar_months, filing_months, year_end_month
 
 if TYPE_CHECKING:
     from edgar_rag._coverage import CompanyCoverage, CoverageGap
@@ -49,7 +52,9 @@ listed in this turn's Sources.
 evidence: never repeat a claim from an earlier answer unless a Source in this turn \
 supports it, and then cite that Source.
 4. When you use a Company's filings, give the filing's form type, fiscal period and \
-report period, as listed under "Coverage".
+report period, as listed under "Coverage". The first time the answer names a fiscal \
+period of a Company whose fiscal year does not end in December, give its calendar months \
+after it, copied from "Coverage": "Q2 FY2026 (May–Jul 2025)".
 5. Take revenue, net income and segment revenue from the Financial Facts table when it \
 has them, cite the row's Source tags, and quote figures exactly with their units and \
 periods. Label a derived figure as derived: a fourth quarter computed from a 10-K less \
@@ -156,12 +161,18 @@ def _render_coverage(coverage: Sequence[CompanyCoverage]) -> str:
             span = f"1 Filing in the Corpus, {_period(held[0])}"
         else:
             span = "no Filings in the Corpus"
-        lines = [f"{company.name} ({company.ticker}): {kind}; {span}."]
+        annual = [f for f in held if f.form_type.startswith("10-K")]
+        year_end = (
+            f"fiscal year ends in {year_end_month(annual[-1].report_period)}; " if annual else ""
+        )
+        lines = [f"{company.name} ({company.ticker}): {kind}; {year_end}{span}."]
         if company.in_scope:
             lines.append(
                 "In scope: "
                 + "; ".join(
-                    f"{f.filing_id} ({f.form_type} {_period(f)}, Report Period {f.report_period})"
+                    f"{f.filing_id} ({f.form_type} {_period(f)}, "
+                    f"{filing_months(f.report_period, f.form_type)}, "
+                    f"Report Period {f.report_period})"
                     for f in company.in_scope
                 )
                 + "."
@@ -220,7 +231,8 @@ def _render_facts(
                 else ""
             )
             lines.append(
-                f"| {r.ticker} | {r.metric_name} | {r.fiscal_period} | "
+                f"| {r.ticker} | {r.metric_name} | {r.fiscal_period} "
+                f"({calendar_months(r.report_period, r.months)}) | "
                 f"{r.months} months ended {r.report_period} | {money(r.value)} | {basis} | "
                 f"{change} | {' '.join(f'[{t}]' for t in r.sources)} |"
             )

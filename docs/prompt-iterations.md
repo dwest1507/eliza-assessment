@@ -334,7 +334,7 @@ Jev refused to judge `trend-jpm-revenue-snapshot` (`max_tokens_exceeded`) on eve
 
 The over-length answers are left as they are, as after v9. A five-Company comparison is the one case the plan fixed every time; a plan for four or more Companies only would reach that case alone, one answer in 20, which this rule cannot tell from noise. The five runs cost $0.238 in Answer Calls and $0.105 in Jev judging, **about $0.34 in all**.
 
-## v15: Coverage Gaps shown by the product, and comparison tables (ADR 0016)
+## v15: Coverage Gaps shown by the product, comparison tables (ADR 0016) and calendar months
 
 Spec #136, issue #139, 2026-10-20. v8 to v14 already name discarded versions above, so this one is v15. It is the first change of the spec's prompt: the spec's calendar months for fiscal periods and #132's prompt decisions join v15 rather than making a v16, so its dev scores are taken once all of them are in, with `gpt-6-luna`, before the freeze and the final round.
 
@@ -356,6 +356,22 @@ Spec #136, issue #139, 2026-10-20. v8 to v14 already name discarded versions abo
 - "Compare JPMorgan and Wells Fargo" has no topic word, so retrieval finds no Sources (the spec's Overview route is for that). The answer is a refusal that says Wells Fargo is not included.
 - A first draft of the rules, without the "periods differ" sentence, still ended the brief's first and third openings with "the periods are not aligned" or "filings covering different fiscal periods", and its Wells Fargo answer said only "the other requested company". So rule 7 now says to name the company and not to mention periods differing for its own sake. The answers ran 450 to 600 words, apart from the five-Company pharmaceutical answer (603) and the refusal. The three rounds of hand checks cost about 4 cents.
 
+### Calendar months (#147)
+
+Issue #147, 2026-10-20, joins v15 as the spec planned.
+
+**What.** Rule 4 gains a sentence: the first time the answer names a fiscal period of a Company whose fiscal year does not end in December, it gives the period's calendar months after it, copied from "Coverage", as in "Q2 FY2026 (May–Jul 2025)". The user message now supplies them:
+
+- each Company's line under "Coverage" names the month its fiscal year ends in, from its latest 10-K ("NVIDIA Corporation (NVDA): Tracked Company; fiscal year ends in January; ...");
+- each Filing in scope gives its calendar months between its fiscal period and its Report Period ("NVDA_10-Q_2025-07-27 (10-Q Q2 FY2026, May–Jul 2025, Report Period 2025-07-27)");
+- each Source label gives them beside the fiscal period ("NVDA 10-Q Q2 FY2026 (May–Jul 2025), Management's Discussion and Analysis (Item 2). Filing ID ..."), and so does each Financial Facts row ("Q4 FY2025 (Nov 2024–Jan 2025)").
+
+The months are worked out in code (`edgar_rag.corpus.calendar_months`), never by the model: a quarter or year ends in the month its Report Period stands for, a 52/53-week period ending in a month's first days standing for the month before, as the Fiscal Period does. The evaluation export's Company Calendar formats its months with the same helper.
+
+**Why.** "Q3 FY2026" means August to October 2025 for NVIDIA and nothing a reader can place without looking it up; Apple's Q1 is October to December, Microsoft's July to September. A December year needs no months, since its fiscal periods are the calendar's, so the rule leaves them out of the answer there, while the Coverage block and the labels still give them.
+
+**Hand check.** Not yet run: `make ask "How has NVIDIA's revenue and growth outlook changed over the last two years?"` (`gpt-6-luna`, about a cent) waits on the developer's approval of the paid call.
+
 ### The v15 system rules
 
 ```text
@@ -365,7 +381,7 @@ Rules:
 1. Use only the Sources. Never use general knowledge, memory or any outside data, even for well-known facts. If the Sources do not answer part of the question, say so plainly.
 2. Cite every claim with the tag of the Source it comes from, e.g. [S3], placed right after the claim. Use several tags when a claim rests on several Sources. Cite only tags listed in this turn's Sources.
 3. The earlier conversation is there to help you understand the question. It is not evidence: never repeat a claim from an earlier answer unless a Source in this turn supports it, and then cite that Source.
-4. When you use a Company's filings, give the filing's form type, fiscal period and report period, as listed under "Coverage".
+4. When you use a Company's filings, give the filing's form type, fiscal period and report period, as listed under "Coverage". The first time the answer names a fiscal period of a Company whose fiscal year does not end in December, give its calendar months after it, copied from "Coverage": "Q2 FY2026 (May–Jul 2025)".
 5. Take revenue, net income and segment revenue from the Financial Facts table when it has them, cite the row's Source tags, and quote figures exactly with their units and periods. Label a derived figure as derived: a fourth quarter computed from a 10-K less three 10-Qs, a growth rate, or any figure you compute yourself, citing the rows it comes from. When a figure is not in the table and you read it from a Source's text instead, say it was read from the Filing text. When a Source's text states a change itself ("Revenue increased $36.6 billion or 15%") or what drove it, give that too, in its words and with its tag, rather than computing the change yourself.
 6. When the question names a group of companies ("the major banks"), it was resolved through a curated Sector table to the Companies listed under "Companies in scope". Name those Companies near the start of the answer, say they come from the Sector table, and cover no other company for that group.
 7. "Coverage Gaps" lists what the filings cannot answer: a trend asked of a company with only a snapshot of filings, a company not in the filings, a stale filing, guidance the filings do not contain, or periods that differ. Every gap listed there is shown below your answer, in its own wording, so do not repeat the list. Where a gap leaves part of the question unanswered (a company not in the filings, a trend asked of a snapshot company, a stale filing left out, guidance the filings do not contain), say so briefly, in your own words, where that part of the answer would be: name the company and what the filings cannot answer about it, without citing the "Coverage Gaps" list. Never mention that the companies' periods differ for its own sake: rule 4 gives each filing's period, and the difference is shown below your answer. Never fill a gap from general knowledge: say nothing more about a company the filings do not include, never use a filing listed as left out, and never present MD&A commentary as the company's guidance.

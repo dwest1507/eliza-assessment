@@ -125,7 +125,7 @@ def test_the_last_two_years_of_nvidia_revenue_puts_eight_quarters_in_the_prompt(
         line = next(
             line
             for line in facts.splitlines()
-            if f"| {row.fiscal_period} |" in line and "Revenue |" in line
+            if f"| {row.fiscal_period} (" in line and "Revenue |" in line
         )
         assert f"${value} million" in line
         assert all(f"[{tag}]" in line for tag in row.sources)
@@ -165,7 +165,7 @@ def test_a_derived_fourth_quarter_is_labelled_derived_and_cites_the_filings_it_c
         "NVDA_10-Q_2023-07-30",
         "NVDA_10-Q_2023-10-29",
     ]
-    line = next(line for line in _facts_section(context).splitlines() if "| Q4 FY2024 |" in line)
+    line = next(line for line in _facts_section(context).splitlines() if "| Q4 FY2024 (" in line)
     assert "derived" in line.lower()
 
 
@@ -179,7 +179,7 @@ def test_a_year_on_year_change_is_derived_from_two_rows_in_the_table(index):
         "NVDA_10-Q_2025-10-26",
         "NVDA_10-Q_2024-10-27",
     }
-    line = next(line for line in _facts_section(context).splitlines() if "| Q3 FY2026 |" in line)
+    line = next(line for line in _facts_section(context).splitlines() if "| Q3 FY2026 (" in line)
     assert "+62.5%" in line
 
 

@@ -65,7 +65,7 @@ from typing import Any, TextIO
 
 from edgar_eval.metrics import mcnemar_exact
 from edgar_eval.selection import AHEAD_P, BEHIND_P, EVIDENCE_STATUSES
-from edgar_rag.corpus import Filing, load_corpus, report_quarter
+from edgar_rag.corpus import MONTH_NAMES, Filing, load_corpus, month_span, report_quarter
 from edgar_rag.financial_facts import extract_financial_facts
 from edgar_rag.golden_set import DEFAULT_GOLDEN_SET, load_brief_suite, load_golden_set
 from edgar_rag.paths import DERIVED_DIR, REPO_ROOT
@@ -232,9 +232,6 @@ def coverage_grid(filings: Iterable[Filing]) -> dict[str, Any]:
     return {"periods": periods, "companies": rows}
 
 
-_MONTH_NAMES = (
-    "January February March April May June July August September October November December"
-).split()
 _FISCAL_PERIOD = re.compile(r"^(?:Q([1-4]) )?FY(\d{4})$")
 
 
@@ -330,15 +327,13 @@ def _period(
     """One row of a Company Calendar: a fiscal quarter, or (`quarter` None) a fiscal year."""
     # Fiscal year Y ends in month `end_month` of calendar year Y; each quarter before the
     # fourth ends three months earlier than the next.
-    end = fiscal_year * 12 + (end_month or 12) - 1 - 3 * (4 - (quarter or 4))
-    start = end - (2 if quarter else 11)
-    (start_year, start_month), (end_year, end_month_index) = divmod(start, 12), divmod(end, 12)
-    first = _MONTH_NAMES[start_month][:3]
-    last = f"{_MONTH_NAMES[end_month_index][:3]} {end_year}"
+    end_year, end_month_index = divmod(
+        fiscal_year * 12 + (end_month or 12) - 1 - 3 * (4 - (quarter or 4)), 12
+    )
     return {
         "fiscalPeriod": fiscal_period,
         "kind": "quarter" if quarter else "year",
-        "months": f"{first}–{last}" if start_year == end_year else f"{first} {start_year}–{last}",
+        "months": month_span(end_year, end_month_index + 1, 3 if quarter else 12),
         "calendarYear": end_year,
         "filing": (
             {
@@ -362,11 +357,11 @@ def _fiscal_year_end(filings: list[Filing]) -> str | None:
     ends = [f.report_period for f in filings if f.form_type == "10-K"]
     if month is None or not ends:
         return None
-    name = _MONTH_NAMES[month - 1]
+    name = MONTH_NAMES[month - 1]
     if all((d + timedelta(days=1)).day == 1 for d in ends) and len({d.day for d in ends}) == 1:
         return f"{name} {ends[0].day}"
     if any(d.month != month for d in ends):
-        return f"late {name} or early {_MONTH_NAMES[month % 12]}"
+        return f"late {name} or early {MONTH_NAMES[month % 12]}"
     return f"late {name}"
 
 

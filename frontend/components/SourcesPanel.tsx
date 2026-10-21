@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import Disclosure from '@/components/Disclosure'
 import type { FactRow, Source } from '@/lib/chat'
-import { passageBlocks, sourceHeading } from '@/lib/source'
+import { monthsNote, passageBlocks, sourceHeading } from '@/lib/source'
 
 interface SourcesPanelProps {
   /** Every Source of one answer, cited or not, in tag order. */
@@ -13,10 +13,10 @@ interface SourcesPanelProps {
   onSelect: (tag: string) => void
 }
 
-/** How a Source reads in a list: "TSLA 10-K FY2025, Risk Factors". */
+/** How a Source reads in a list: "NVDA 10-Q Q2 FY2026 (May–Jul 2025), MD&A". */
 export function shortLabel(source: Source): string {
   const period = source.fiscalPeriod ? ` ${source.fiscalPeriod}` : ''
-  return `${source.ticker} ${source.formType}${period}, ${source.section}`
+  return `${source.ticker} ${source.formType}${period}${monthsNote(source)}, ${source.section}`
 }
 
 /**

@@ -31,6 +31,9 @@ export interface Source {
   formType: string
   reportPeriod: string
   fiscalPeriod: string | null
+  /** The calendar months its Filing reports on ("May–Jul 2025"); absent from a Source
+   * saved before the API sent them. */
+  calendarMonths?: string | null
   section: string
   item: string | null
   label: string

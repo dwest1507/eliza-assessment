@@ -12,9 +12,17 @@ function readableDate(isoDate: string): string {
   return match && month ? `${month} ${Number(match[3])}, ${match[1]}` : isoDate
 }
 
-/** The period a Source covers: its Fiscal Period, or the Report Period as a date. */
+/** A Source's calendar months in brackets, " (May–Jul 2025)", or nothing without them. */
+export function monthsNote(source: Source): string {
+  return source.calendarMonths ? ` (${source.calendarMonths})` : ''
+}
+
+/**
+ * The period a Source covers: its Fiscal Period with its calendar months, or the Report
+ * Period as a date.
+ */
 function readablePeriod(source: Source): string {
-  if (source.fiscalPeriod) return source.fiscalPeriod
+  if (source.fiscalPeriod) return `${source.fiscalPeriod}${monthsNote(source)}`
   const span = source.formType.startsWith('10-K')
     ? 'year'
     : source.formType.startsWith('10-Q')
@@ -25,7 +33,8 @@ function readablePeriod(source: Source): string {
 
 /**
  * The one line that tells a reader what a Source is, naming its Company, Form Type,
- * period and Section: "NVIDIA 10-Q, Q2 FY2025 · MD&A".
+ * period with its calendar months, and Section: "NVIDIA 10-Q, Q2 FY2026 (May–Jul 2025) ·
+ * MD&A".
  */
 export function sourceHeading(source: Source): string {
   const company = source.company.replace(COMPANY_SUFFIX, '')
