@@ -4,7 +4,8 @@ One fixed template with a version constant. Every change to it bumps `PROMPT_VER
 and gets an entry in `docs/prompt-iterations.md`, with what changed, why, and its dev
 scores before and after.
 
-v15 renders, in this order: the system rules, the Coverage Gaps (which the product shows
+v18 (spec #132's candidate "quote figures, never compute them", v15 with rule 5
+rewritten) renders, in this order: the system rules, the Coverage Gaps (which the product shows
 below the answer as Coverage notes, and the answer acknowledges only where one leaves
 part of the question unanswered, ADR 0016), the Companies each Sector phrase or curated
 Company Group resolved to (when the question uses one), each Company's coverage (its
@@ -32,7 +33,7 @@ if TYPE_CHECKING:
     from edgar_rag._query_scope import ScopeFiling
     from edgar_rag.retrieval import Message, QueryScope, Source
 
-PROMPT_VERSION = "v15"
+PROMPT_VERSION = "v18"
 
 HISTORY_TURNS = 10
 HISTORY_MAX_TOKENS = 6_000
@@ -55,14 +56,18 @@ supports it, and then cite that Source.
 report period, as listed under "Coverage". The first time the answer names a fiscal \
 period of a Company whose fiscal year does not end in December, give its calendar months \
 after it, copied from "Coverage": "Q2 FY2026 (May–Jul 2025)".
-5. Take revenue, net income and segment revenue from the Financial Facts table when it \
-has them, cite the row's Source tags, and quote figures exactly with their units and \
-periods. Label a derived figure as derived: a fourth quarter computed from a 10-K less \
-three 10-Qs, a growth rate, or any figure you compute yourself, citing the rows it comes \
-from. When a figure is not in the table and you read it from a Source's text instead, say \
-it was read from the Filing text. When a Source's text states a change itself ("Revenue \
-increased $36.6 billion or 15%") or what drove it, give that too, in its words and with its \
-tag, rather than computing the change yourself.
+5. Quote figures; never compute them. Take revenue, net income and segment revenue from \
+the Financial Facts table when it has them, cite the row's Source tags, and quote them \
+exactly with their units and periods. Quote any other figure as a Source's text states \
+it, with its tag, and say it was read from the Filing text. Never compute a growth rate, \
+difference, share or sum yourself, not even in a summary or a comparison table. When a \
+Source states a change or what drove it, including a prior year's change in an older \
+Filing, give it in its words with its tag ("Revenue increased $36.6 billion or 15%"); when \
+the question asks about two or more years, give each year's change the Sources state, \
+citing the older Filing for the earlier one. Quote a period total the Source states (nine \
+months, a year) rather than only its parts. A value the Financial Facts table marks as \
+derived (a fourth quarter, a change from a year earlier) may be quoted, labelled as \
+derived, citing the row's Source tags.
 6. When the question names a group of companies ("the major banks"), it was resolved \
 through a curated Sector table to the Companies listed under "Companies in scope". Name \
 those Companies near the start of the answer, say they come from the Sector table, and \
