@@ -131,7 +131,7 @@ No id is in both files: the loader rejects one that is.
 
 ## Version 2
 
-Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions and four variants of each, and version 2's file, with all three batches of version 1's 27 other cases rewritten and all six slices of new cases, 80 cases in all, are built, and the split is [frozen](#the-frozen-split): 60 dev cases and 20 holdout cases, none pending. Two dev cases were [added later](#cases-added-later), 82 in all. Version 2 is the harnesses' default; its dev split has been measured and its holdout scored once ([evaluation](evaluation.md#the-version-2-holdout-run)).
+Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions and four variants of each, and version 2's file, with all three batches of version 1's 27 other cases rewritten and all six slices of new cases, 80 cases in all, are built, and the split is [frozen](#the-frozen-split): 60 dev cases and 20 holdout cases, none pending. Three dev cases were [added later](#cases-added-later), 83 in all. Version 2 is the harnesses' default; its dev split has been measured and its holdout scored once ([evaluation](evaluation.md#the-version-2-holdout-run)).
 
 ### The file
 
@@ -369,6 +369,7 @@ The mix by kind of question, counted as in [Checks](#the-file), against [ADR 001
 | Follow-ups | 6 | ~8 | 5 | ~3 |
 | **Total** | **60** | 60 | **20** | 20 |
 | Overview questions, [added later](#cases-added-later) | 2 | – | 0 | – |
+| Sector questions, [added later](#cases-added-later) | 1 | – | 0 | – |
 
 The hash decided the holdout's mix, so it is reported and not adjusted: the holdout has more follow-ups and fewer Coverage Gap cases than the table, and dev the reverse. All five new follow-ups fell in the holdout, so dev's six are version 1's rewrites. Dev's Coverage Gap count is high because nine of the 27 rewritten version 1 cases are Coverage Gap cases, beside six new ones. The rewritten cases count 4 risk, 5 trend, 3 sector, 9 Coverage Gap and 6 follow-up cases, all dev; the new ones 16 risk (10 dev, 6 holdout), 11 trend (7, 4), 13 sector (10, 3), 8 Coverage Gap (6, 2) and 5 follow-ups (0, 5). No case moves from here on: a case added later is `dev` unless a new Golden Set version says otherwise, and version 2's holdout is scored once, on the final version 2 setup ([the holdout rule](evaluation.md#the-holdout-rule)): that run has been made ([The version 2 holdout run](evaluation.md#the-version-2-holdout-run)).
 
@@ -382,6 +383,12 @@ A case added after the freeze is `dev` by the split rule, never enters the diges
 |---|---|---|---|
 | `overview-ko-pep-compare` ("Compare Coke and Pepsi") | Coca-Cola, PepsiCo | 4 / 6 | Business and Risk Factors of Coca-Cola's FY2024 10-K, the MD&A of its Q3 FY2025 10-Q; Business, MD&A and Risk Factors of PepsiCo's FY2025 10-K. Expects the periods differ gap: their latest 10-Ks are a year apart |
 | `overview-jpm-doing` ("How is JP Morgan doing?") | JPMorgan | 3 / 4 | Business and Risk Factors of its FY2025 10-K, and the financial review the Corpus holds in Other, after Item 15, where its 2025 net income and revenue are (must-state). Its figures are stated as changes, since the SEC reference the figure check reads caches Tracked Companies only |
+
+- **The "big tech" Company Group's question** (#146, 2026-10-20), a sector question: "big tech companies" names the curated Company Group of the Sector table's `group` column, not the Information Technology Sector ([assumption 5](assumptions.md#5-a-curated-sector-table-is-acceptable), [evaluation](evaluation.md#the-big-tech-company-group-146-2026-10-20)). The mix above counts it in its own row; the test's pinned mix counts it with the sector questions, 14 dev.
+
+| Case | Companies | Required Facts (must-state / detail) | Sections drafted from |
+|---|---|---|---|
+| `group-big-tech-ai-risks` ("What are the main AI risks for big tech companies?") | Apple, Amazon, Alphabet, Meta, Microsoft, NVIDIA, Tesla | 11 / 16 | Every AI passage of each Company's latest Risk Factors: the FY2025 10-Ks of Apple, Amazon, Alphabet, Meta and Tesla, and the latest 10-Qs of Microsoft (Q2 FY2026) and NVIDIA (Q3 FY2026), which restate their risk factors. Each Company's headline AI risk (one or two) is must-state. Alphabet's and Meta's facts repeat `risk-goog-meta-ai`'s. Expects the periods differ gap |
 
 ### What is decided
 

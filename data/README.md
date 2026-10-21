@@ -32,6 +32,7 @@ Filings carry no sector, so each Company is mapped to one in a small curated tab
 |---|---|
 | `ticker`, `company` | As in the Filing headers |
 | `sector`, `industry` | GICS-style sector and industry |
+| `group` | The curated Company Group the Company belongs to, or empty: `Big Tech` for AAPL, MSFT, GOOG, AMZN, META, NVDA and TSLA |
 | `sic_code`, `sic_description` | The Company's SEC Standard Industrial Classification |
 | `sic_agrees` | `yes` when the SIC code points to the same sector and industry as the GICS-style label, else `no` |
 | `note` | Why they disagree (required when `sic_agrees` is `no`), or another caveat |
@@ -44,6 +45,8 @@ Sources:
 The GE row describes the Filing in the Corpus, GE Capital's FY2014 10-K, not today's General Electric. Unlike the Corpus, this table is ours to edit; a test checks it has exactly one row per Company and an explanation for every disagreement.
 
 **Sector phrases resolve only through this table** (assumption 5). The query parser ([`_query_scope.py`](../backend/src/edgar_rag/_query_scope.py)) maps a phrase to values of the `industry` or `sector` column, never to Companies, and the Companies are whichever rows hold those values. "The major pharmaceutical companies" (or "drugmakers", "big pharma") is industry Pharmaceuticals or Biotechnology: JNJ, LLY, MRK, PFE and ABBV. "The major banks" is industry Banks: BAC and JPM. "The oil majors" (or "oil and gas companies") is industry Oil, Gas & Consumable Fuels: CVX and XOM. Software, semiconductor, aerospace and defense, retail, auto, telecom and beverage companies are read on the industry column the same way, and technology, health care, financial, energy and industrial companies, consumer staples, consumer discretionary and communication services on the sector column. A sector word needs a group noun ("oil companies", not "oil prices"). Every answer names the Companies a phrase resolved to, and the front-end shows them as a chip, so a disputed mapping is visible and is fixed here, in the table.
+
+**Company Groups resolve the same way, on the `group` column** (assumption 5). A Company Group is a curated, named set of Companies that no Sector captures. Its one group is "Big Tech": "big tech" or "megacap tech" (with or without "companies", "stocks" and the like) is AAPL, MSFT, GOOG, AMZN, META, NVDA and TSLA, read before the sector phrases, so "big tech companies" is never the Information Technology Sector's "tech companies", which would leave out Alphabet, Amazon, Meta and Tesla and bring in Adobe, Cisco, IBM and the other software and chip makers. The answer says the Companies come from the curated Company Group, and the chip names the group. A Company belongs to at most one group. Changing the column changes the index, so rebuild it (`make index`).
 
 ## Companies missing from the Corpus (`reference/missing_companies.csv`)
 

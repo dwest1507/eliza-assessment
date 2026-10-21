@@ -372,6 +372,16 @@ The months are worked out in code (`edgar_rag.corpus.calendar_months`), never by
 
 **Hand check** (`make ask "How has NVIDIA's revenue and growth outlook changed over the last two years?"`, `gpt-6-luna`, 2026-10-20). The answer gives the months the first time it names each of NVIDIA's Filing periods: "FY2024 (Feb 2023–Jan 2024)", "FY2025 (Feb 2024–Jan 2025)", "Q1 FY2026 (Feb–Apr 2025)", "Q2 FY2026 (May–Jul 2025)", "Q3 FY2026 (Aug–Oct 2025)", "Q2 FY2025 (May–Jul 2024)" and "Q3 FY2025 (Aug–Oct 2024)", and leaves them out when it names a period again. Two mentions have none: "Q4 FY2025", in management's expectation of Blackwell revenue, and "FY2026" as a whole year still under way; neither is a Filing in the Coverage block. Every Source label gives the months too ("NVDA 10-Q Q2 FY2026 (May–Jul 2025), MD&A (Part I, Item 2)"). About 32k input and 1,750 output tokens, 17 seconds, under half a cent.
 
+### Company Groups (#146)
+
+Issue #146, 2026-10-20, joins v15 like #147, since v15 is the spec's prompt and is scored once all of the spec's answer-path changes are in.
+
+**What.** The system rules are unchanged. The user message's "Companies in scope" now names a curated Company Group as one: "big tech companies" resolves through the Sector table's `group` column, and its line reads `"big tech companies" was resolved through the curated Company Group "Big Tech" in the Sector table to: Apple Inc (AAPL), Amazon.com Inc (AMZN), ...`, where a Sector phrase's still reads `... was resolved through the Sector table (industry: Banks) to: ...`. Rule 6 already asks the answer to name the Companies near the start and say they come from the Sector table.
+
+**Why.** "Big tech" means Apple, Microsoft, Alphabet, Amazon, Meta, NVIDIA and Tesla, which no Sector captures; read as the Information Technology Sector it dropped three of them and added Adobe, Cisco and IBM ([assumption 5](assumptions.md#5-a-curated-sector-table-is-acceptable)). The answer should say the group is a curated one, as it says a Sector phrase's Companies come from the table.
+
+**Hand check** (`make ask "What are the main AI risks for big tech companies?"`, `gpt-6-luna`, 2026-10-20). The answer opens "The curated Sector table defines "Big Tech" here as Apple, Amazon.com, Alphabet, Meta Platforms, Microsoft, NVIDIA and Tesla", then gives a comparison table of the seven and a section for each, citing each one's latest Risk Factors (Microsoft's and NVIDIA's latest 10-Qs). It does not mention the periods differing. About 23k input and 1,900 output tokens, 23.5 seconds, under a cent.
+
 ### The v15 system rules
 
 ```text

@@ -15,9 +15,9 @@ table of contents is located. The cleaned body is then split into Sections at it
 headings, skipping the table of contents. Each Section carries its standard name and
 its original Item label; text outside any Item is kept as an "Unsectioned" Section.
 
-Every Filing carries its Company's Sector and industry from the curated Sector table
-(`data/reference/sectors.csv`). Coverage is also Company-level, so only `load_corpus`
-classes each Company as a Tracked Company or a Snapshot Company.
+Every Filing carries its Company's Sector, industry and Company Group (if any) from the
+curated Sector table (`data/reference/sectors.csv`). Coverage is also Company-level, so
+only `load_corpus` classes each Company as a Tracked Company or a Snapshot Company.
 """
 
 from __future__ import annotations
@@ -111,6 +111,9 @@ class SectorRow:
     sic_description: str
     sic_agrees: bool
     note: str
+    group: str | None = None
+    """The curated Company Group the Company belongs to ("Big Tech"), a named set of
+    Companies no Sector captures, or None."""
 
 
 @dataclass(frozen=True)
@@ -141,6 +144,8 @@ class Filing:
     fiscal_period: str | None = None
     sector: str | None = None
     industry: str | None = None
+    group: str | None = None
+    """The Company's curated Company Group from the Sector table, or None."""
     coverage: Coverage | None = None
     diagnostics: tuple[Diagnostic, ...] = ()
 
@@ -238,7 +243,12 @@ def load_filing(path: str | Path, fiscal_year_end_month: int | None = None) -> F
     )
     sector_row = _sector_rows(DEFAULT_SECTOR_TABLE).get(filing.ticker)
     if sector_row:
-        filing = replace(filing, sector=sector_row.sector, industry=sector_row.industry)
+        filing = replace(
+            filing,
+            sector=sector_row.sector,
+            industry=sector_row.industry,
+            group=sector_row.group,
+        )
     if fiscal_year_end_month is None and form_type == "10-K":
         fiscal_year_end_month = _period_month(report_period)[1]
     return _with_fiscal_period(filing, fiscal_year_end_month)
@@ -286,6 +296,7 @@ def load_sector_table(path: str | Path = DEFAULT_SECTOR_TABLE) -> list[SectorRow
                 sic_description=row["sic_description"],
                 sic_agrees=row["sic_agrees"] == "yes",
                 note=row["note"],
+                group=row["group"] or None,
             )
             for row in csv.DictReader(f)
         ]

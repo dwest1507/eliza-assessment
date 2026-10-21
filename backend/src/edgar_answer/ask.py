@@ -74,8 +74,9 @@ def _print_context(context: AnswerContext, out: TextIO) -> None:
     )
     scope = context.query_scope
     for phrase in scope.sector_phrases:
+        kind = "Company Group" if phrase.is_company_group else "Sector phrase"
         print(
-            f'  Sector phrase: "{phrase.phrase}" → {", ".join(phrase.tickers) or "none"} '
+            f'  {kind}: "{phrase.phrase}" → {", ".join(phrase.tickers) or "none"} '
             f"({phrase.column}: {', '.join(phrase.values)})",
             file=out,
         )

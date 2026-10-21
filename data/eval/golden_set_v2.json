@@ -11610,6 +11610,251 @@
         }
       ],
       "expected_coverage_gaps": []
+    },
+    {
+      "id": "group-big-tech-ai-risks",
+      "question": "What are the main AI risks for big tech companies?",
+      "history": [],
+      "question_type": "sector",
+      "split": "dev",
+      "starter": null,
+      "tags": [],
+      "notes": "Added in #146, after the split was frozen, so dev by the split rule. \"Big tech companies\" names the curated Company Group of the Sector table's group column (assumption 5): Apple, Amazon, Alphabet, Meta, Microsoft, NVIDIA and Tesla, not the Information Technology Sector, which would leave out Alphabet, Amazon and Meta and bring in Adobe, Cisco and IBM. A risk question with no time phrase reads each Company's latest Filings: the latest 10-K plus any later 10-Qs. Microsoft's and NVIDIA's latest 10-Qs restate their risk factors (NVIDIA's latest 10-K is FY2025's, to January 2025), so their facts cite those 10-Qs; Apple's latest 10-Q only points back to its 10-K. Their latest 10-Ks end in September 2025, December 2025, June 2025 and January 2025, so the periods differ. Drafted from every AI passage in each Risk Factors Section: each Company's headline AI risk (one or two) is must-state, its other AI risks details. Alphabet's and Meta's facts repeat risk-goog-meta-ai's.",
+      "expected_sources": [
+        {
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "Risk Factors"
+        },
+        {
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors"
+        }
+      ],
+      "required_facts": [
+        {
+          "fact": "Apple says new technologies such as artificial intelligence features can increase safety risks, including exposing users to harmful, inaccurate or other negative content.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "The introduction of new and complex technologies, such as artificial intelligence features, can increase these and other safety risks, including exposing users to harmful, inaccurate or other negative content and experiences.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Apple says machine learning and artificial intelligence can involve using copyrighted materials for training and reproducing copyrighted materials in their outputs.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "including machine learning and artificial intelligence, which can involve, among other things, the acquisition and use of copyrighted materials for training as well as the potential reproduction of copyrighted materials in their outputs",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says expanding its use of machine learning and artificial intelligence features means navigating new legal, regulatory and ethical considerations.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "as the Company expands the use of technologies, such as machine learning and artificial intelligence features, and must navigate new legal, regulatory and ethical considerations relating to such technologies",
+          "tier": "detail"
+        },
+        {
+          "fact": "Apple says the risk of inadvertent disclosure of personal data can increase with artificial intelligence features.",
+          "filing_id": "AAPL_10-K_2025-09-27",
+          "section": "Risk Factors",
+          "evidence": "The risks of inadvertent disclosure of personal data can increase with the introduction of new and complex technologies, such as artificial intelligence features",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon says the profitability or other intended benefits of its newer activities, including artificial intelligence and machine learning, may not meet its expectations or recoup its significant investments.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "profitability or other intended benefits, if any, in our newer activities (including development and adoption of automation, artificial intelligence, and machine learning technologies for customer and internal use), may not meet our expectations, and we may not be successful enough in these newer activities to recoup our investments in them, which investments are often significant.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Amazon says its and its customers' development and use of artificial intelligence may result in increased claims of infringement.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "our and our customers’ development and use of artificial intelligence may result in increased claims of infringement or other claims",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Amazon says it relies on a limited group of suppliers for semiconductor products, including artificial intelligence infrastructure such as graphics processing units.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "we rely on a limited group of suppliers for semiconductor products, including products related to artificial intelligence infrastructure such as graphics processing units.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Amazon says practical applications of artificial intelligence and machine learning continue to increase its competition.",
+          "filing_id": "AMZN_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "practical applications of artificial intelligence and machine learning, digital content, satellites, and electronic devices continue to increase our competition.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Alphabet says AI technology and services are highly competitive, rapidly evolving and require significant investment.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "AI technology and services are highly competitive, rapidly evolving, and require significant investment, including technical infrastructure, development, and operational costs.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Alphabet says issues in the development and use of AI may result in reputational harm and increased liability exposure.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Issues in the development and use of AI may result in reputational harm and increased liability exposure.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Alphabet says energy supply is constrained globally by the increase in demand for energy to power AI compute.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "energy supply is constrained globally due to the significant increase in demand for and limited availability of energy to power AI compute.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Alphabet says the EU AI Act introduces requirements for AI systems and models placed on the market in the EU.",
+          "filing_id": "GOOG_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "The EU AI Act introduces various requirements for AI systems and models placed on the market in the EU",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta says it may not be successful in its AI initiatives, which could adversely affect its business, reputation or financial results.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We may not be successful in our artificial intelligence initiatives, which could adversely affect our business, reputation, or financial results.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Meta expects its AI initiatives will require increased investment in infrastructure and headcount.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "In particular, we expect our AI initiatives will require increased investment in infrastructure and headcount.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Meta says its AI efforts subject it to risks related to harmful or illegal content.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "our AI-related efforts, particularly those related to generative AI and superintelligence, subject us to risks related to harmful or illegal content",
+          "tier": "detail"
+        },
+        {
+          "fact": "Meta says it faces significant competition from other companies developing their own AI features and technologies.",
+          "filing_id": "META_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "we face significant competition from other companies that are developing their own AI features and technologies",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says issues in the development, deployment and use of AI may result in reputational or competitive harm or liability.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Issues in the development, deployment, and use of AI may result in reputational or competitive harm or liability.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft says it is incurring significant costs to build and maintain infrastructure for cloud-based and AI services, reducing operating margins.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "We are incurring significant costs to build and maintain infrastructure to support cloud-based and AI services, reducing operating margins.",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Microsoft says AI technology and services are a highly competitive and rapidly evolving market that new competitors continue to enter.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "AI technology and services are a highly competitive and rapidly evolving market, and new competitors continue to enter the market.",
+          "tier": "detail"
+        },
+        {
+          "fact": "Microsoft says the EU's AI Act may increase costs or impact the provision or operation of its AI models and services in the European market.",
+          "filing_id": "MSFT_10-Q_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "the EU’s AI Act may increase costs or impact the provision or operation of our AI models and services in the European market",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says export controls and other restrictions targeting GPUs and semiconductors associated with AI would further limit its ability to export its technology, products or services.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "Risk Factors",
+          "evidence": "Export controls and other restrictions targeting GPUs and semiconductors associated with AI, which have been imposed and are likely to be more restrictive, would further limit our ability to export our technology, products, or services",
+          "tier": "must_state"
+        },
+        {
+          "fact": "NVIDIA says its position in markets relating to AI has led to increased interest in its business from regulators worldwide.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "Risk Factors",
+          "evidence": "Our position in markets relating to AI has led to increased interest in our business from regulators worldwide",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says the EU AI Act may impact its ability to train, deploy or release AI models in the EU.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "Risk Factors",
+          "evidence": "The EU AI Act may impact our ability to train, deploy, or release AI models in the EU.",
+          "tier": "detail"
+        },
+        {
+          "fact": "NVIDIA says it is difficult to estimate the impact of accelerated computing and AI models on its reported revenue or forecasted demand.",
+          "filing_id": "NVDA_10-Q_2025-10-26",
+          "section": "Risk Factors",
+          "evidence": "it is difficult to estimate with any reasonable degree of precision the impact of accelerated computing and AI models on our reported revenue or forecasted demand",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says that as it develops its artificial intelligence services and products it may face challenges including the availability and cost of energy, processing power limitations and the power requirements of its data centers.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "as we continue to develop our artificial intelligence services and products, we may face many additional challenges, including the availability and cost of energy, processing power limitations and the substantial power requirements for our data centers",
+          "tier": "must_state"
+        },
+        {
+          "fact": "Tesla says AI innovation demands greater compute, memory, energy and thermal resources, which may prove insufficient in scale or affordability for its requirements.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "such innovation demands exponentially greater compute, memory, energy and thermal resources, which may prove insufficient in scale or affordability to meet our requirements",
+          "tier": "detail"
+        },
+        {
+          "fact": "Tesla says its future plans, including AI innovations, are capital-intensive.",
+          "filing_id": "TSLA_10-K_2025-12-31",
+          "section": "Risk Factors",
+          "evidence": "Our business and our future plans for expansion, supporting infrastructure for our businesses, and AI innovations, including growth in our fleet of AI-enabled company-operated assets and new businesses, such as our development and production of Bots, are capital-intensive",
+          "tier": "detail"
+        }
+      ],
+      "expected_coverage_gaps": [
+        {
+          "kind": "periods_differ",
+          "companies": [
+            "AAPL",
+            "AMZN",
+            "GOOG",
+            "META",
+            "MSFT",
+            "NVDA",
+            "TSLA"
+          ]
+        }
+      ]
     }
   ]
 }

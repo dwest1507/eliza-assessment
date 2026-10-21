@@ -217,11 +217,12 @@ Sections are all stubs or missing is searched whole."""
 
 _CANDIDATES_PER_COMPANY = 200
 
-INDEX_VERSION = 5
+INDEX_VERSION = 6
 """Bumped whenever the index's tables change, so an older index is rebuilt, not misread.
 Version 2 adds the `filings` and `sections` tables; version 3 stores each Company's
 repeated chunks once, listing their Filings in `chunk_filings`; version 4 adds the
-`financial_facts` table of ADR 0001; version 5 adds the `settings` table."""
+`financial_facts` table of ADR 0001; version 5 adds the `settings` table; version 6 adds
+each Company's curated Company Group (`companies.company_group`)."""
 
 _SCHEMA = """
 CREATE TABLE companies (
@@ -229,7 +230,8 @@ CREATE TABLE companies (
     name TEXT NOT NULL,
     sector TEXT,
     industry TEXT,
-    coverage TEXT
+    coverage TEXT,
+    company_group TEXT
 );
 CREATE TABLE chunks (
     id INTEGER PRIMARY KEY,
@@ -311,11 +313,13 @@ class QueryScope:
     """What the rules resolved from the question before retrieval."""
 
     companies: tuple[ScopeCompany, ...]
-    """The Companies the question names, by name, ticker or Sector phrase, in the order
-    it first names them."""
+    """The Companies the question names, by name, ticker, Sector phrase or Company Group,
+    in the order it first names them."""
     sector_phrases: tuple[SectorPhrase, ...]
-    """The Sector phrases the question uses, each with the Sector table rows and the
-    Companies it resolved to, so the answer and the front-end can name them."""
+    """The Sector phrases and Company Groups the question uses, each with the Sector table
+    rows and the Companies it resolved to, so the answer and the front-end can name them.
+    A Company Group's phrase is read against the table's group column
+    (`SectorPhrase.is_company_group`)."""
     time_window: TimeWindow
     """The window each Company's Filings are filtered to. A risk, cybersecurity,
     dependence, outlook or Overview question, and a question naming no Company that asks
@@ -486,7 +490,14 @@ def build_index(
         for filing in sorted(filings, key=lambda f: (f.ticker, f.report_period, f.filing_id)):
             companies.setdefault(
                 filing.ticker,
-                (filing.ticker, filing.company, filing.sector, filing.industry, filing.coverage),
+                (
+                    filing.ticker,
+                    filing.company,
+                    filing.sector,
+                    filing.industry,
+                    filing.coverage,
+                    filing.group,
+                ),
             )
             earlier = previous.get((filing.ticker, filing.form_type))
             seen: set[int] = set()
@@ -513,7 +524,7 @@ def build_index(
                 f"INSERT INTO financial_facts VALUES ({', '.join('?' * 12)})",
                 _facts.store_rows(filing),
             )
-        db.executemany("INSERT INTO companies VALUES (?, ?, ?, ?, ?)", companies.values())
+        db.executemany("INSERT INTO companies VALUES (?, ?, ?, ?, ?, ?)", companies.values())
         db.executescript(
             """
             INSERT INTO filings
@@ -779,9 +790,11 @@ def _companies(db: sqlite3.Connection) -> list[ScopeCompany]:
             row["sector"],
             row["industry"],
             latest.get(row["ticker"]),
+            row["company_group"],
         )
         for row in db.execute(
-            "SELECT ticker, name, coverage, sector, industry FROM companies ORDER BY ticker"
+            "SELECT ticker, name, coverage, sector, industry, company_group FROM companies "
+            "ORDER BY ticker"
         )
     ]
 

@@ -6,14 +6,14 @@ scores before and after.
 
 v15 renders, in this order: the system rules, the Coverage Gaps (which the product shows
 below the answer as Coverage notes, and the answer acknowledges only where one leaves
-part of the question unanswered, ADR 0016), the Companies each Sector phrase resolved
-to (when the question uses one), each Company's coverage (its class, the month its
-fiscal year ends in, and its Filings with their Fiscal Periods, calendar months and
-Report Periods), the Financial Facts table (when the question names a metric, each
-Fiscal Period with its calendar months), the text Sources grouped by Company (each
-label giving its Filing's calendar months), the earlier conversation (the last 10
-turns under a token cap, with each earlier answer's Source tags rewritten as the Filing
-IDs they cited), and the latest question.
+part of the question unanswered, ADR 0016), the Companies each Sector phrase or curated
+Company Group resolved to (when the question uses one), each Company's coverage (its
+class, the month its fiscal year ends in, and its Filings with their Fiscal Periods,
+calendar months and Report Periods), the Financial Facts table (when the question
+names a metric, each Fiscal Period with its calendar months), the text Sources grouped
+by Company (each label giving its Filing's calendar months), the earlier conversation
+(the last 10 turns under a token cap, with each earlier answer's Source tags rewritten
+as the Filing IDs they cited), and the latest question.
 """
 
 from __future__ import annotations
@@ -140,10 +140,16 @@ def _render_sector_phrases(scope: QueryScope) -> str:
     for phrase in scope.sector_phrases:
         basis = " or ".join(phrase.values)
         covered = ", ".join(names[t] for t in phrase.tickers) or "no Company in the Corpus"
-        lines.append(
-            f'"{phrase.phrase}" was resolved through the Sector table ({phrase.column}: '
-            f"{basis}) to: {covered}."
-        )
+        if phrase.is_company_group:
+            lines.append(
+                f'"{phrase.phrase}" was resolved through the curated Company Group '
+                f'"{basis}" in the Sector table to: {covered}.'
+            )
+        else:
+            lines.append(
+                f'"{phrase.phrase}" was resolved through the Sector table ({phrase.column}: '
+                f"{basis}) to: {covered}."
+            )
     return "\n".join(lines)
 
 

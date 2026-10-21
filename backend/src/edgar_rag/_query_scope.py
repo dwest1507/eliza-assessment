@@ -11,7 +11,9 @@ Rule-based, with no LLM (ADR 0003). It recognises:
 - Sector phrases ("the major pharmaceutical companies", "the major banks", "the oil
   majors"), resolved only through the sector and industry columns of the curated Sector
   table (assumption 5). Each phrase names table values, never Companies, so the Companies
-  it covers are whatever the table says.
+  it covers are whatever the table says. A Company Group phrase ("big tech", "megacap
+  tech") is read the same way, against the table's group column: a curated, named set of
+  Companies that no Sector captures.
 - Section hints: risk factors, legal proceedings, MD&A, market risk (its own name, or
   a kind of market risk with "risk", "exposure" or "sensitivity": "interest rate and
   foreign exchange risk", "FX exposure"), business, and cybersecurity, which plans the
@@ -82,6 +84,9 @@ class ScopeCompany:
     latest_fiscal_year: int | None = None
     """The fiscal year of the Company's latest Filing, which a year named in a question
     is measured against: a later one is a future year, which no Filing covers."""
+    group: str | None = None
+    """The curated Company Group the Sector table puts the Company in ("Big Tech"), or
+    None."""
 
 
 # Aliases the Filing names don't yield by dropping a suffix.
@@ -206,17 +211,24 @@ def _names(company: ScopeCompany) -> set[str]:
 
 @dataclass(frozen=True)
 class SectorPhrase:
-    """A phrase naming a group of Companies, and the Sector table rows it resolved to."""
+    """A phrase naming a group of Companies, and the Sector table rows it resolved to. A
+    phrase read against the group column names a Company Group ("big tech")."""
 
     phrase: str
     """The phrase as the question writes it, e.g. "pharmaceutical companies"."""
-    column: Literal["sector", "industry"]
+    column: Literal["sector", "industry", "group"]
     """The Sector table column the phrase is read against."""
     values: tuple[str, ...]
     """The values of that column the phrase covers, e.g. ("Pharmaceuticals",
     "Biotechnology")."""
     tickers: tuple[str, ...]
     """The Companies whose row holds one of the values, by value and then ticker."""
+
+    @property
+    def is_company_group(self) -> bool:
+        """Whether the phrase names a curated Company Group rather than a Sector or an
+        industry."""
+        return self.column == "group"
 
 
 # A word that makes a sector or industry word a group of Companies: "software companies",
@@ -229,10 +241,18 @@ _GROUP = (
 # Each phrase is read against one column of the Sector table, in this order; text matched
 # by an earlier phrase is not read again. The table, not this list, decides which
 # Companies a phrase covers, so a disputed mapping is fixed in `sectors.csv`.
-_SectorRule = tuple[re.Pattern[str], Literal["sector", "industry"], tuple[str, ...]]
+_SectorRule = tuple[re.Pattern[str], Literal["sector", "industry", "group"], tuple[str, ...]]
 _SECTOR_PHRASES: tuple[_SectorRule, ...] = tuple(
     (re.compile(pattern, re.I), column, values)
     for pattern, column, values in (
+        (
+            # A Company Group, read first so "big tech companies" is never the
+            # Information Technology Sector's "tech companies", which would leave out
+            # Alphabet, Amazon and Meta and bring in Adobe, Cisco and IBM.
+            rf"\b(?:big|mega[\s-]?cap)\s+tech(?:nology)?(?:\s+{_GROUP})?\b|\bbig\s+techs\b",
+            "group",
+            ("Big Tech",),
+        ),
         (
             # AbbVie is Biotechnology in the GICS-style label but a drug maker by SIC
             # (2834), so it counts as a pharmaceutical company (assumption 5).

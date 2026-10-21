@@ -158,6 +158,24 @@ def test_the_query_scope_carries_the_companies_a_sector_phrase_resolved_to(secto
     assert scope["metric"] is None
 
 
+def test_the_query_scope_names_a_company_group_and_its_tickers(big_tech_index):
+    client = TestClient(create_app(index=big_tech_index, model=FakeModel(), log_path=None))
+
+    parts = events(chat(client, user("What are the main AI risks for big tech companies?")))
+
+    scope = part_of(parts, "data-query-scope")["data"]
+    big_tech = ["AAPL", "AMZN", "GOOG", "META", "MSFT", "NVDA", "TSLA"]
+    assert [c["ticker"] for c in scope["companies"]] == big_tech
+    assert scope["sectorPhrases"] == [
+        {
+            "phrase": "big tech companies",
+            "column": "group",
+            "values": ["Big Tech"],
+            "tickers": big_tech,
+        }
+    ]
+
+
 def test_each_source_carries_its_tag_filing_metadata_and_passage(client, index):
     expected = prepare_answer_context([Message("user", QUESTION)], index).sources
 

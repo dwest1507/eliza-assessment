@@ -885,6 +885,41 @@ describe('Workspace', () => {
     )
   })
 
+  it('shows a Company Group as a curated group with the Companies it covers', async () => {
+    const bigTech = ['AAPL', 'AMZN', 'GOOG', 'META', 'MSFT', 'NVDA', 'TSLA']
+    fetchMock.mockImplementation(async () =>
+      uiMessageStream(ANSWER, {
+        companies: bigTech.map((ticker) => ({ ticker, name: ticker, coverage: 'tracked' })),
+        sectorPhrases: [
+          {
+            phrase: 'big tech companies',
+            column: 'group',
+            values: ['Big Tech'],
+            tickers: bigTech,
+          },
+        ],
+        timeWindow: { kind: 'latest', count: null, label: 'latest' },
+        sections: ['Risk Factors'],
+        metric: null,
+      })
+    )
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.type(
+      screen.getByRole('textbox', { name: 'Question' }),
+      'What are the main AI risks for big tech companies?{Enter}'
+    )
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    await user.click(await within(answer).findByRole('button', { name: /^Sources/ }))
+
+    const chips = within(answer).getByRole('list', { name: 'Query Scope' })
+    const chip = within(chips).getByText(`“big tech companies” → ${bigTech.join(', ')}`)
+    expect(chip.closest('li')).toHaveAttribute(
+      'title',
+      'Company Group “Big Tech”, curated in the Sector table'
+    )
+  })
+
   it('shows each Coverage Gap as a Coverage note in its fixed wording, in plain words', async () => {
     const gaps = [
       WELLS_FARGO_GAP,

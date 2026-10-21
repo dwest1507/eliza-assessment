@@ -79,12 +79,13 @@ Status:
 
 ## 5. A curated Sector table is acceptable
 
-- **Assumption:** No Filing carries a sector, but questions like "the major pharmaceutical companies" need one. We curate a GICS-style Company-to-Sector table (`data/reference/sectors.csv`), state its source, cross-check it against SEC SIC codes, and disclose it. Sector phrases resolve only through it.
+- **Assumption:** No Filing carries a sector, but questions like "the major pharmaceutical companies" need one. We curate a GICS-style Company-to-Sector table (`data/reference/sectors.csv`), state its source, cross-check it against SEC SIC codes, and disclose it. Sector phrases, and the curated Company Groups it also holds ("big tech"), resolve only through it.
   - The table maps the 54 Companies to 8 sectors: Information Technology (10), Financials (10), Health Care (7), Communication Services (7), Consumer Discretionary (6), Consumer Staples (6), Industrials (6), Energy (2).
   - SEC SIC codes disagree with the GICS-style label for 14 Companies, each explained in the table. The ones that change answers: UnitedHealth is a health insurer by SIC but Health Care here; Thermo Fisher is an instrument maker by SIC but Health Care (Life Sciences Tools) here; Alphabet, Meta, Disney and Netflix are Communication Services here; Visa and Mastercard are Financials; Walmart, Costco and Target are Consumer Staples.
   - "The major pharmaceutical companies" is **JNJ, LLY, MRK, PFE and ABBV** (all SIC 2834; GICS puts AbbVie in Biotechnology). UnitedHealth and Thermo Fisher are excluded. Only JNJ and PFE have more than one Filing.
   - The GE Filing is GE Capital's FY2014 report (assumption 3), so it is classed as Financials rather than as General Electric's Industrials.
   - Other sector phrases resolve the same way, on the industry column. "The major banks" is **Bank of America and JPMorgan** (Banks); Goldman Sachs and Morgan Stanley are Capital Markets and are left out. "The oil majors" is **Chevron and ExxonMobil**.
+  - The table also holds one curated **Company Group**, a named set of Companies that no Sector captures, in its `group` column, resolved the same way and disclosed with it: "big tech" (or "megacap tech") is **Apple, Microsoft, Alphabet, Amazon, Meta, NVIDIA and Tesla**, the group the phrase means in the industry, not the Information Technology Sector, which would leave out Alphabet and Meta (Communication Services) and Amazon and Tesla (Consumer Discretionary) and bring in Adobe, Cisco, IBM and the other software and chip makers. "Tech companies" alone is still the Sector. The answer says the group comes from the curated table, as it does for a Sector phrase.
 - **Why it matters:** Without it, sector-scoped questions rely on retrieval guessing which Companies are relevant, and a disputed mapping changes which Companies an answer covers.
 - **Asked in email:** No.
 - **Status:** not confirmed

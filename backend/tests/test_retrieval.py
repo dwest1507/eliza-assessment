@@ -1712,6 +1712,89 @@ def test_words_that_only_mention_a_sector_are_not_sector_phrases(sector_index, q
     assert context.query_scope.sector_phrases == ()
 
 
+# --- Company Groups ----------------------------------------------------------------------
+
+BIG_TECH_QUESTION = "What are the main AI risks for big tech companies?"
+BIG_TECH = ["AAPL", "AMZN", "GOOG", "META", "MSFT", "NVDA", "TSLA"]
+
+
+def test_big_tech_resolves_to_the_curated_company_group(big_tech_index):
+    context = _ask(big_tech_index, BIG_TECH_QUESTION)
+
+    assert [c.ticker for c in context.query_scope.companies] == BIG_TECH
+    assert {s.ticker for s in context.sources} == set(BIG_TECH)
+    [group] = context.query_scope.sector_phrases
+    assert group.phrase == "big tech companies"
+    assert group.column == "group"
+    assert group.is_company_group
+    assert group.values == ("Big Tech",)
+    assert group.tickers == tuple(BIG_TECH)
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "How do the megacap tech companies describe competition?",
+        "What does Big Tech say about AI regulation?",
+        "What are the risk factors of the megacap tech names?",
+    ],
+)
+def test_megacap_tech_and_big_tech_alone_name_the_same_group(big_tech_index, question):
+    context = _ask(big_tech_index, question)
+
+    assert [c.ticker for c in context.query_scope.companies] == BIG_TECH
+    assert [p.column for p in context.query_scope.sector_phrases] == ["group"]
+
+
+def test_tech_companies_still_resolve_to_the_information_technology_sector(big_tech_index):
+    context = _ask(big_tech_index, "What are the main AI risks for tech companies?")
+
+    [phrase] = context.query_scope.sector_phrases
+    assert (phrase.column, phrase.values) == ("sector", ("Information Technology",))
+    assert not phrase.is_company_group
+    assert {c.ticker for c in context.query_scope.companies} == {
+        "AAPL",
+        "ADBE",
+        "CSCO",
+        "IBM",
+        "MSFT",
+        "NVDA",
+    }
+
+
+def test_the_prompt_names_a_company_group_as_a_curated_group(big_tech_index):
+    context = _ask(big_tech_index, BIG_TECH_QUESTION)
+
+    in_scope = context.messages[1].content.split("# Companies in scope")[1].split("# ")[0]
+    assert '"big tech companies"' in in_scope
+    assert 'curated Company Group "Big Tech"' in in_scope
+    for name in ("Apple Inc", "Amazon", "Alphabet", "Meta Platforms", "Microsoft", "NVIDIA"):
+        assert name in in_scope
+    assert "Tesla" in in_scope
+    assert "Adobe" not in in_scope and "Cisco" not in in_scope
+
+
+def test_the_index_carries_each_companys_group(big_tech_index):
+    db = sqlite3.connect(big_tech_index)
+    groups = dict(db.execute("SELECT ticker, company_group FROM companies"))
+    db.close()
+
+    assert {t for t, g in groups.items() if g == "Big Tech"} == set(BIG_TECH)
+    assert groups["ADBE"] is None and groups["IBM"] is None
+
+
+def test_an_index_built_before_company_groups_is_refused(tmp_path, big_tech_index):
+    old = tmp_path / "old.sqlite"
+    old.write_bytes(big_tech_index.read_bytes())
+    db = sqlite3.connect(old)
+    db.execute("PRAGMA user_version = 5")
+    db.commit()
+    db.close()
+
+    with pytest.raises(RuntimeError, match="make index"):
+        _ask(old, BIG_TECH_QUESTION)
+
+
 # --- Metric ------------------------------------------------------------------------------
 
 

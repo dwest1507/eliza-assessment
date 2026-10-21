@@ -42,10 +42,11 @@ export interface Source {
   rows?: FactRow[]
 }
 
-/** A Sector phrase in the question and the Sector table rows it resolved to. */
+/** A Sector phrase or Company Group in the question and the Sector table rows it resolved to. */
 export interface SectorPhrase {
   phrase: string
-  column: 'sector' | 'industry'
+  /** The Sector table column the phrase was read against: `group` for a Company Group. */
+  column: 'sector' | 'industry' | 'group'
   values: string[]
   tickers: string[]
 }

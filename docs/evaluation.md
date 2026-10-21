@@ -2,7 +2,7 @@
 
 ## At a glance
 
-- **What was measured.** Whether the passages that state the answer reach the one Answer Call (the [retrieval harness](#retrieval-harness), no LLM), and whether the answers are right (the [generation harness](#generation-harness)): the share of the facts a good answer must state that it states (Fact Recall), the share of cited claims their cited passage supports (Faithfulness, both judged by a pinned Jev), and, in code, valid citations, exact figures and gaps acknowledged. On [Golden Set](golden-set.md) version 2: 82 labelled questions, 62 dev for every choice and 20 holdout kept for the final check.
+- **What was measured.** Whether the passages that state the answer reach the one Answer Call (the [retrieval harness](#retrieval-harness), no LLM), and whether the answers are right (the [generation harness](#generation-harness)): the share of the facts a good answer must state that it states (Fact Recall), the share of cited claims their cited passage supports (Faithfulness, both judged by a pinned Jev), and, in code, valid citations, exact figures and gaps acknowledged. On [Golden Set](golden-set.md) version 2: 83 labelled questions, 63 dev for every choice and 20 holdout kept for the final check.
 - **The headline numbers**, the shipped setup (`fts5`, `gpt-6-luna`, prompt v7) on the 20 holdout cases ([The holdout on the new retrieval](#the-holdout-on-the-new-retrieval-130-2026-10-18)):
   - Fact Recall 0.78 and Faithfulness 0.94 (0.72 and 0.95 on the 60 dev cases);
   - citations valid 0.95, figures exact 0.90, Coverage Gaps stated 1.00;
@@ -1786,6 +1786,21 @@ The report is `generation-dev.json`, which the export shows; #138's medium run i
 - **The two overview cases are answered poorly.** `overview-ko-pep-compare` states 1 of its 4 must-state facts although the evidence of all 4 reached the prompt, and `overview-jpm-doing` 1 of 3, the one whose evidence reached it; Fact Recall 0.29 on the two. The route gets the right passages to the answer model for Coca-Cola and PepsiCo, and the answer leaves them out.
 - **Coverage Gaps stated 0.87** (13 of 15): `stale-gecc-eni-2014` and `gap-cat-sales-snapshot` do not say what part of the question they cannot answer. **Structure is followed in 0.81**: of the 12 misses, eight are answers over 600 words, three under 300, and one opens with four sentences.
 - **Two Jev judgments failed** again on `trend-jpm-revenue-snapshot` (Jev's own token limit, on 4 claims), so Faithfulness leaves those claims out.
+
+### The "big tech" Company Group (#146, 2026-10-20)
+
+Part of spec #136. "Big tech companies" resolved to the Information Technology Sector, which leaves out Alphabet, Amazon and Meta and brings in Adobe, Cisco and IBM (ten Companies, among them AMD, Intel, Oracle and Salesforce). It now names a curated Company Group, "Big Tech": Apple, Amazon, Alphabet, Meta, Microsoft, NVIDIA and Tesla, held in a new `group` column of the Sector table and resolved like a Sector phrase ([assumption 5](assumptions.md#5-a-curated-sector-table-is-acceptable)). "Big tech" and "megacap tech" match it, with or without a group noun; "tech companies" alone is still the Sector. The index carries each Company's group (index version 6, so `make index` rebuilds an older index), the Query Scope records the phrase with the group's tickers, the stream's Query Scope part and its chip name them, and the prompt's "Companies in scope" says the Companies come from the curated Company Group in the Sector table. The hand check (`make ask`, `gpt-6-luna`, under a cent) opened with "The curated Sector table defines "Big Tech" here as Apple, Amazon.com, Alphabet, Meta Platforms, Microsoft, NVIDIA and Tesla", then a comparison table of the seven.
+
+Golden Set version 2 gains one dev case, added after the split was frozen and so `dev` by its rule: `group-big-tech-ai-risks`, "What are the main AI risks for big tech companies?", a sector question, labelled from every AI passage of each Company's latest Risk Factors ([Cases added later](golden-set.md#cases-added-later)). Under the old resolution, 15 of its 27 facts (7 of its 11 must-state facts) belonged to Companies the Sector leaves out.
+
+`make eval-retrieval` on dev, before (#145's code) and after (free; the hosted Arms embedded the one new question, a fraction of a cent): no case of the 59 both runs score changes on any Arm. The new case reaches 18 of its 27 facts and 8 of its 11 must-state facts on `fts5`, at 29,937 Source tokens, with its first expected Source at rank 1; its 3 must-state misses (both of Amazon's, and Tesla's energy and processing power challenges) are ranking misses in Risk Factors Sections it searched.
+
+| `fts5`, dev | scored cases | hit@10 | recall@10 | MRR | Source tokens | facts reached | must-state reached | must-state ranking misses |
+|---|---|---|---|---|---|---|---|---|
+| before (#145) | 59 | 0.966 | 0.877 | 0.779 | 28,126 | 826 of 956 | 281 of 323 | 37 |
+| after, with the new case | 60 | 0.967 | 0.879 | 0.782 | 28,156 | 844 of 983 | 289 of 334 | 40 |
+
+On the other Arms the new case reaches `dense` 20, `hybrid-local` 19, `fts5` and `hybrid` 18, `dense-local` 15 and `rerank` 12 of its 27 facts, so `fts5` reaches 844, `hybrid` 866, `hybrid-local` 852, `rerank` 828, `dense` 807 and `dense-local` 781 of 983. The screen still keeps only `hybrid-local` (35 gained, 27 lost, p behind = 0.874). The Floors are re-recorded (`make eval-floors`, ADR 0014), since the scored cases rise from 59 to 60: hit@10 0.96 and recall@10 0.87 as before, MRR 0.78 from 0.77. No generation run is made here; the comparisons stand as recorded, and `make eval-export` shows the new retrieval numbers.
 
 ### Order and cost
 

@@ -6,8 +6,8 @@ interface Chip {
 }
 
 /**
- * The chips for one answer's Query Scope, in reading order: each Sector phrase with the
- * Companies it resolved to, then the other Companies, the time window, the Section hints
+ * The chips for one answer's Query Scope, in reading order: each Sector phrase or Company
+ * Group with the Companies it resolved to, then the other Companies, the time window, the Section hints
  * and the metric. A Company a Sector phrase covers is shown in that phrase's chip only.
  */
 export function scopeChips(scope: QueryScope): Chip[] {
@@ -17,7 +17,10 @@ export function scopeChips(scope: QueryScope): Chip[] {
     phrase.tickers.forEach((ticker) => inPhrase.add(ticker))
     chips.push({
       text: `“${phrase.phrase}” → ${phrase.tickers.join(', ') || 'no Company'}`,
-      title: `Sector phrase resolved through the Sector table (${phrase.column}: ${phrase.values.join(', ')})`,
+      title:
+        phrase.column === 'group'
+          ? `Company Group “${phrase.values.join(', ')}”, curated in the Sector table`
+          : `Sector phrase resolved through the Sector table (${phrase.column}: ${phrase.values.join(', ')})`,
     })
   }
   for (const company of scope.companies) {
