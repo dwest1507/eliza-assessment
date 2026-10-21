@@ -1953,6 +1953,64 @@ The second pair's reports are `generation-dev-run2.json` and `generation-control
 
 The reports, `generation-dev.json` and `generation-control-dev.json`, are the round's first pair, which the export shows; `misses-generation-dev.json`, `misses-generation-control-dev.json` and `prompt-choice-dev-control.json` are beside them. #156's single v15 run is kept as `data/derived/eval-issue156/generation-dev.json`.
 
+### v17: answers get more room for more Companies (#162, 2026-10-21)
+
+Spec #132's second candidate, built on v15 alone: the answer's word range scales to the number of Companies with text Sources, 300 to 600 words for one or two, the ceiling rising 150 for each further Company, to at most 1,000 (the [prompt log](prompt-iterations.md#v17-answers-get-more-room-for-more-companies-candidate) has the full text). One function in the core package gives the range to the prompt's length block and to the structure check. Its code is on the branch `candidate/v17`, not merged; #165 merges the winners'. Decided by ADR 0017's `prompts` rule, two runs a side, against [the v15 base round](#two-runs-a-side-the-control-runs-are-not-ahead).
+
+```sh
+make eval-rescore REPORTS="generation-dev.json generation-dev-run2.json generation-control-dev.json generation-control-dev-run2.json"   # copies, free
+make eval-generation NAME=v17 && make eval-generation NAME=v17-run2
+E=../data/derived/eval
+python -m edgar_eval.selection compare $E/generation-dev.json+$E/generation-dev-run2.json \
+    $E/generation-dev-v17.json+$E/generation-dev-v17-run2.json \
+    --control $E/generation-control-dev.json+$E/generation-control-dev-run2.json \
+    --rule prompts --json $E/prompt-choice-dev-v17.json      # free
+```
+
+**The base runs' structure, re-scored with v17's range** (free, on copies of #160's four reports; the figure check, Coverage Gap claims and uncited claims are unchanged). v15 answers about three or more Companies that ran over 600 words now fall inside their range, so the structure guardrail compares like with like:
+
+| v15 report | structure followed, v15's check | v17's check |
+|---|---|---|
+| shipped run | 0.81 | 0.92 |
+| shipped run 2 | 0.76 | 0.86 |
+| Control Run | 0.68 | 0.81 |
+| Control Run 2 | 0.71 | 0.83 |
+
+**The candidate's runs** (63 cases, `gpt-6-luna` at low, code version `bdbf8d350beaa248`):
+
+| Run | citations valid | figures exact | gaps stated | structure followed | words | Fact Recall | detail recall | Faithfulness | answers with a Contradicted Claim | must-state facts stated | $ per answer | latency s | first text s |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| v17 | 0.95 | 0.92 | 0.87 | 0.86 | 456 | 0.72 | 0.48 | 0.96 | 4 | 236 of 334 | 0.0029 | 19.3* | 4.8* |
+| v17 run 2 | 0.92 | 0.94 | 0.93 | 0.87 | 470 | 0.74 | 0.48 | 0.95 | 3 | 245 of 334 | 0.0029 | 8.7* | 2.3* |
+
+\* Other tickets' paid runs ran at the same time, so these latencies are not the product's, the first run's least of all (its longest answer took 32.2 seconds, the second run's 16.4). Nothing here is decided on latency. No answer reaches the cap; the longest used 1,657 of its 32,000 output tokens. Jev's own token limit failed its judgments on a few claims of `trend-jpm-revenue-snapshot` and `gap-cat-sales-snapshot` in both runs, as in the base round.
+
+**The verdict: v17 qualifies under `prompts`.**
+
+- **Facts stated:** 240.5 must-state facts a run against v15's 232, **+8.5, p ahead = 0.091**, under the 0.10 threshold: ahead.
+- **Behind on no guardrail:** Fact Recall case by case 24 cases higher and 17 lower (p behind = 0.894), Faithfulness 23 and 19 (0.780), Coverage Gaps 2 and 1 (0.875), Contradicted Claims 4 and 4 (0.637), structure followed 6 and 6 (0.613).
+- **The Control pair is not ahead** (+3, p ahead = 0.334), so the comparison is conclusive. On v17's structure check it is behind on structure followed (4 cases higher, 11 lower, p behind = 0.059) and on Faithfulness (0.140) by noise alone; v17 is behind on neither.
+- **Figures, not a `prompts` guardrail:** v17 fails the figure check in 4.5 cases a run against 2.5 (1 fixed, 3 broken), as the Control pair does (4.5); each failure is a figure the answer computed, which v18 targets.
+
+So v17 goes into the combination (#165).
+
+**Facts stated by the number of Companies with text Sources** (a mean a run; `v17-by-companies.json`):
+
+| Companies | cases | must-state facts | v17's range | v15 shipped pair | v15 Control pair | v17 | words, v15 shipped / Control / v17 |
+|---|---|---|---|---|---|---|---|
+| 1 | 30 | 109 | 300–600 | 84.5 | 84.5 | **87.5** | 381 / 373 / 385 |
+| 2 | 16 | 104 | 300–600 | 64 | 67 | **69** | 491 / 513 / 506 |
+| 3 | 5 | 37 | 300–750 | 25 | 23 | 23 | 533 / 540 / 548 |
+| 4 | 2 | 16 | 300–900 | 8.5 | 10.5 | 12.5 | 632 / 654 / 776 |
+| 5 or more | 7 | 68 | 300–1,000 | 50 | 50 | 48.5 | 632 / 614 / 739 |
+| all (3 refusals have none) | 63 | 334 | | 232 | 235 | **240.5** | 436–444 / 438–444 / 456–470 |
+
+- **The gain is not where the range changes.** 8 of v17's 8.5 facts are at one and two Companies, where its range is v15's 600 words. At three or more Companies, where the ceiling rises and the answers did grow (by 15 words at three Companies, 144 at four and 107 at five or more), v17 states 84 facts against 83.5.
+- **What changed at one or two Companies** is only the length block restating the range beside the question. The gain there may be an effect of that, or noise at the threshold's edge: the Control pair, the same setup as v15, moved +3 at two Companies. The combination's confirmation run reads it again.
+- **The longer answers stay in range:** at three or more Companies v17's answers miss the structure only by a four-sentence opening (`sector-aerospace-government`, `sector-software-cybersecurity`, `sector-software-ai-risks`), never by length.
+
+**Spend:** $0.58 for the two runs ($0.37 in answers, $0.21 in Jev judging). The reports, `generation-dev-v17.json`, `generation-dev-v17-run2.json`, `prompt-choice-dev-v17.json` and `v17-by-companies.json`, are kept in `data/derived/eval-issue162/`, with the re-scored copies of the four v15 reports in its `rescored-v15/`; #160's originals are unchanged. The export shows no candidate report, so it is unchanged.
+
 ### Order and cost
 
 1. The Brief Suite and the label format.

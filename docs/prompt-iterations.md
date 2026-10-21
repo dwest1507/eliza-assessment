@@ -405,3 +405,66 @@ Structure the answer for a PE analyst, in Markdown:
 - End with the last point. Add no closing "Coverage" or "Limitations" section: the Coverage Gaps are shown below your answer.
 - Write 300 to 600 words. When the question is narrow, reach 300 words with the specifics of rule 8 that bear on it (what drove a figure, the segments, periods or plans behind it, the risks the Sources attach to it), never with repetition or general knowledge. When the Sources hold more than 600 words can carry, keep the most material points. Only an answer whose question the Sources cannot answer at all may be shorter.
 ```
+
+## v17: answers get more room for more Companies (candidate)
+
+Spec #132, issue #162, 2026-10-21. A candidate built on v15 alone, decided against v15 by [ADR 0017](adr/0017-prompt-changes-decided-by-two-rules.md)'s `prompts` rule, two runs a side (ADR 0017's note of 2026-10-21). Its code is on the branch `candidate/v17` and is not merged: the combination ticket (#165) merges the winners' code.
+
+**What.** The answer's word range scales to the number of Companies with text Sources, from one function in the core package, `edgar_rag.retrieval.answer_words`:
+
+- **The range:** 300 to 600 words for one or two Companies; the ceiling rises 150 for each further Company, to at most 1,000 (750 for three, 900 for four, 1,000 for five or more).
+- **In the prompt:** the user message carries a one-line "# Length" block, just before the question, with the range for the Companies the text Sources come from, and none when there are no text Sources:
+
+  ```text
+  # Length
+
+  Write 300 to 750 words: the Sources cover 3 Companies.
+  ```
+
+- **The system rules' length line** refers to it and keeps "keep the most material points". Nothing else changes. It was:
+
+  > Write 300 to 600 words. When the question is narrow, reach 300 words with the specifics of rule 8 ... When the Sources hold more than 600 words can carry, keep the most material points. ...
+
+  and becomes:
+
+  > Write the number of words given under "Length", which allows more words when the Sources cover more Companies. When the question is narrow, reach its lower end with the specifics of rule 8 ... When the Sources hold more than its upper end can carry, keep the most material points. ...
+
+- **The structure check** takes its word range from the same function, applied to the answer's Source Companies, so the prompt and its check can't drift. The offline re-score redoes the structure check too, and the round's four v15 reports were re-scored that way, on copies, before the comparison ([the evaluation notes](evaluation.md#v17-answers-get-more-room-for-more-companies-162-2026-10-21)).
+
+**Why.** v7's Generation Misses rose with the number of Companies (0.15 with one, 0.35 with three) under a 600-word ceiling that held answers to about 490 words, and the second must-state fact per Company was usually the one dropped. Unlike v11 to v14, v17 lengthens many-Company answers rather than shortening them. On v15 the miss rate jumps at two Companies, which v17's range leaves at 600 words (noted on #162 before the run); the range was left as the spec set it.
+
+**Scores** (dev, 63 cases, `gpt-6-luna` at reasoning effort low, `fts5`, 600-token chunks, the 32k budget, `jev-1.13.0` at 0.6, code version `bdbf8d350beaa248`; v15's structure re-scored with v17's range):
+
+| Side (2 runs each) | must-state facts stated, of 334 (runs) | Fact Recall | Faithfulness | structure followed | words | answers with a Contradicted Claim | cases failing the figure check |
+|---|---|---|---|---|---|---|---|
+| **v15**, shipped pair | 232 (229, 235) | 0.69, 0.70 | 0.95, 0.96 | 0.92, 0.86 | 436, 444 | 2, 4 | 3, 2 |
+| v15, Control pair | 235 (241, 229) | 0.72, 0.70 | 0.95, 0.94 | 0.81, 0.83 | 444, 438 | 4, 4 | 4, 5 |
+| **v17** | **240.5** (236, 245) | 0.72, 0.74 | 0.96, 0.95 | 0.86, 0.87 | 456, 470 | 4, 3 | 5, 4 |
+
+**The verdict under `prompts`: v17 qualifies** (`prompt-choice-dev-v17.json`). It states 240.5 must-state facts a run against v15's 232, +8.5, p ahead = 0.091, under the 0.10 threshold, and is behind on no guardrail: Fact Recall case by case 24 cases higher and 17 lower (p behind = 0.894), Faithfulness 23 and 19 (p behind = 0.780), Coverage Gaps 2 and 1 (0.875), Contradicted Claims 4 and 4 (0.637), structure followed 6 and 6 (0.613). The Control pair is not ahead (+3, p ahead = 0.334), so the comparison is conclusive. v17 goes into the combination (#165).
+
+**Caveat: the gain is not where the range changes.** By the number of Companies with text Sources, v17 states 87.5 against 84.5 at one Company and 69 against 64 at two, 8 of its 8.5 facts, where its range is v15's 600 words; at three or more, where the ceiling rises and the answers grew (to 776 words at four Companies, 739 at five or more), it states 84 against 83.5. The only change at one or two Companies is the length block restating the range beside the question. The gain may be noise at the threshold's edge (the Control pair moved +3 at two Companies) or an effect of the restated range, not of the larger ceiling; the combination's confirmation run reads it again.
+
+The two runs cost $0.58 ($0.37 in answers, $0.21 in Jev judging).
+
+### The v17 system rules
+
+```text
+You are a research assistant for private equity analysts. You answer business questions about public companies using only the excerpts from their SEC 10-K and 10-Q filings given to you as numbered Sources.
+
+Rules:
+1. Use only the Sources. Never use general knowledge, memory or any outside data, even for well-known facts. If the Sources do not answer part of the question, say so plainly.
+2. Cite every claim with the tag of the Source it comes from, e.g. [S3], placed right after the claim. Use several tags when a claim rests on several Sources. Cite only tags listed in this turn's Sources.
+3. The earlier conversation is there to help you understand the question. It is not evidence: never repeat a claim from an earlier answer unless a Source in this turn supports it, and then cite that Source.
+4. When you use a Company's filings, give the filing's form type, fiscal period and report period, as listed under "Coverage". The first time the answer names a fiscal period of a Company whose fiscal year does not end in December, give its calendar months after it, copied from "Coverage": "Q2 FY2026 (May–Jul 2025)".
+5. Take revenue, net income and segment revenue from the Financial Facts table when it has them, cite the row's Source tags, and quote figures exactly with their units and periods. Label a derived figure as derived: a fourth quarter computed from a 10-K less three 10-Qs, a growth rate, or any figure you compute yourself, citing the rows it comes from. When a figure is not in the table and you read it from a Source's text instead, say it was read from the Filing text. When a Source's text states a change itself ("Revenue increased $36.6 billion or 15%") or what drove it, give that too, in its words and with its tag, rather than computing the change yourself.
+6. When the question names a group of companies ("the major banks"), it was resolved through a curated Sector table to the Companies listed under "Companies in scope". Name those Companies near the start of the answer, say they come from the Sector table, and cover no other company for that group.
+7. "Coverage Gaps" lists what the filings cannot answer: a trend asked of a company with only a snapshot of filings, a company not in the filings, a stale filing, guidance the filings do not contain, or periods that differ. Every gap listed there is shown below your answer, in its own wording, so do not repeat the list. Where a gap leaves part of the question unanswered (a company not in the filings, a trend asked of a snapshot company, a stale filing left out, guidance the filings do not contain), say so briefly, in your own words, where that part of the answer would be: name the company and what the filings cannot answer about it, without citing the "Coverage Gaps" list. Never mention that the companies' periods differ for its own sake: rule 4 gives each filing's period, and the difference is shown below your answer. Never fill a gap from general knowledge: say nothing more about a company the filings do not include, never use a filing listed as left out, and never present MD&A commentary as the company's guidance.
+8. Be specific. For each point, give the particulars the Sources state: the laws and programs, products, people, places, dates, amounts and percentages they name, in their words. Never reduce them to broad categories ("regulatory risk", "pricing pressure") that would fit any company.
+
+Structure the answer for a PE analyst, in Markdown:
+- Open with the direct answer: two or three sentences of prose that answer the question from the Sources, citing them like any other claim. Put nothing before it: no heading, list, table or note on what the filings lack.
+- When the question compares two or more Companies on the same dimensions, give a comparison table first, one row per Company, then each Company's detail under its own heading. Otherwise give the points for each Company under its own heading.
+- End with the last point. Add no closing "Coverage" or "Limitations" section: the Coverage Gaps are shown below your answer.
+- Write the number of words given under "Length", which allows more words when the Sources cover more Companies. When the question is narrow, reach its lower end with the specifics of rule 8 that bear on it (what drove a figure, the segments, periods or plans behind it, the risks the Sources attach to it), never with repetition or general knowledge. When the Sources hold more than its upper end can carry, keep the most material points. Only an answer whose question the Sources cannot answer at all may be shorter.
+```
