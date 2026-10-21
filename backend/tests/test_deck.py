@@ -93,9 +93,55 @@ def test_the_future_state_follows_the_clients_answers(slides):
     asked for live EDGAR ingestion to be proposed as the way to fill the gaps (assumption 2)."""
     [future] = [s for s in slides if "future" in s.splitlines()[0].lower()]
     lowered = future.lower()
-    for item in ("data room", "edgar", "earnings-call transcripts", "alert"):
+    for item in (
+        "data room",
+        "edgar",
+        "earnings-call transcripts",
+        "alert",
+        "passage-level citations",
+        "financial facts for every company",
+    ):
         assert item in lowered, f"the future state leaves out {item!r}"
     assert "multi-step" not in lowered
+
+
+_NOTES = re.compile(r"<!--.*?-->", re.S)
+
+
+def _body(slide: str) -> str:
+    """A slide as the panel sees it: without its speaker notes."""
+    return _NOTES.sub(" ", slide)
+
+
+def _notes(slide: str) -> str:
+    return " ".join(_NOTES.findall(slide))
+
+
+def test_the_value_slide_carries_the_illustrative_value_model(slides):
+    """The value model is assumption 12, not confirmed: the slide shows its calculation,
+    says it is illustrative and links the assumption its inputs come from."""
+    [value] = [s for s in slides if "value" in s.splitlines()[0].lower()]
+    body = _body(value)
+    assert "illustrative" in body.lower()
+    assert "assumptions.md#12" in body
+    for figure in ("720k", "$150", "48"):
+        assert figure in body, f"the value slide leaves out {figure!r}"
+    assumptions = (REPO / "docs" / "assumptions.md").read_text(encoding="utf-8")
+    [twelve] = re.findall(r"^## 12\..*?(?=^## |\Z)", assumptions, re.M | re.S)
+    assert "- **Status:** not confirmed" in twelve
+    assert re.search(r"^\| 12 \|.*\| not confirmed \|$", assumptions, re.M)
+
+
+def test_the_choices_slide_keeps_its_statistics_in_the_speaker_notes(slides):
+    [choices] = [s for s in slides if "choices" in s.splitlines()[0].lower()]
+    body = _LINK.sub("]", _body(choices))
+    for term in (r"\bp\s*[=<]", r"McNemar", r"Control Run", r"one-sided"):
+        assert not re.search(term, body), f"the choices slide shows {term!r} outside its notes"
+    assert re.search(r"\bp\s*=", _notes(choices)), "the statistics belong in the notes"
+
+
+def test_no_slide_mentions_the_brief_suite(slides):
+    assert not [n for n, s in enumerate(slides, start=1) if "brief suite" in s.lower()]
 
 
 def test_the_figure_rule_reads_figures_not_labels():

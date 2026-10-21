@@ -22,6 +22,7 @@ Status:
 | 9 | Companies missing from the Corpus are named as missing, never answered | No | not confirmed |
 | 10 | A mainstream hosted LLM API is acceptable for the demo | No | not confirmed |
 | 11 | Questions are asked in a chat, and follow-ups build on earlier ones | No | not confirmed |
+| 12 | An illustrative value model: about $720k a year of analyst time saved | No | not confirmed |
 
 ## 1. One API call per question
 
@@ -133,4 +134,15 @@ Status:
 - **Assumption:** The Client asks questions in a conversation, not one at a time: an analyst asks about Apple, Tesla and JPMorgan's risks, then "Which of them has the most regulatory exposure?". Each user message is a question and gets exactly one Answer Call, which sees the last 10 turns of the conversation. Earlier answers help the model understand the question but are never evidence: every claim cites a Source retrieved for the current message. A follow-up that leaves out the Companies, time window, Section or metric inherits them from earlier messages by rules ([ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md)), and each answer shows the Query Scope it used.
 - **Why it matters:** The brief asks for "a natural-language business question as input", which reads as one question at a time. A chat is closer to how an analyst works, but it makes follow-up handling part of retrieval and of what we evaluate.
 - **Asked in email:** No.
+- **Status:** not confirmed
+
+## 12. An illustrative value model
+
+- **Assumption:** An illustrative model of what the workspace is worth to a deal team, with inputs we chose and the Client has not given us. None of them is measured. They are there so the Client can replace them with their own.
+  - **Inputs:** 10 analysts, each asking 5 questions a week, each question saving 2 hours of reading, at $150 an hour, over 48 working weeks a year.
+  - **Formula:** analysts × questions a week × hours saved per question × hourly rate × working weeks = value a year.
+  - **Result:** 10 × 5 × 2 × $150 × 48 = $720,000, **about $720k a year**: 50 questions a week, 2,400 a year, 4,800 analyst hours saved.
+  - **Against the cost of the Answer Calls:** 50 Answer Calls a week. At the shipped `gpt-6-luna`'s $0.0028 per answer ([the holdout on the new retrieval](evaluation.md#the-holdout-on-the-new-retrieval-130-2026-10-18)) that is $0.14 a week. Even at the most expensive model compared, `claude-opus-5-5` at $0.164 per answer ([Generator comparison](evaluation.md#generator-comparison)), it is $8.20 a week, about $394 a year: well under $10 a week. The cost of hosting, maintenance and the analysts' time checking the cited Sources is left out.
+- **Why it matters:** The brief's value case rests on analyst time, which we cannot measure without the Client. A worked figure lets the Client weigh the investment, as long as it is read as illustrative: the answer is fast and cheap (measured), and the time it saves is the Client's to confirm.
+- **Asked in email:** No. To agree with the Client: how many analysts, how many questions each asks a week, and how long one takes to answer by hand today.
 - **Status:** not confirmed

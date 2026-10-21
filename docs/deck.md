@@ -57,21 +57,23 @@ answer to question 3 of the email.
 | | What the analyst gets | Evidence (holdout run) |
 |---|---|---|
 | **Analyst hours per question** | A 300–600 word answer, the direct answer first, then per Company | 9.5 s per answer, first text after 3.1 s, $0.0030 per answer |
-| **Stated Coverage Gaps** | Snapshot trends, missing Companies, the stale Filing, missing guidance and differing periods, in fixed words | Every expected gap stated: 1.00 |
+| **Stated Coverage Gaps** | Snapshot trends, missing Companies, the stale Filing, missing guidance and differing periods, shown below the answer | Every expected gap stated: 1.00 |
 | **Auditable citations** | Every `[Sn]` opens its Filing, Section, Report Period and passage | Citations valid 1.00, Faithfulness 0.95 |
 
-The Answer Call reads about 25,500 tokens chosen from the Filings, where one median 10-K is about 98k.
+**An illustrative value model** ([assumption 12](assumptions.md#12-an-illustrative-value-model), not confirmed: the inputs are ours, for the Client to replace):
 
-**To agree with the Client:** questions asked per week and hours per question today. Hours saved = questions × (hours reading today − minutes checking the cited Sources).
+10 analysts × 5 questions a week × 2 hours saved × $150 an hour × 48 weeks = **about $720k a year**, against $8.20 a week of Answer Calls even at the most expensive model's price ($0.14 at the shipped one's).
 
-> Sources: [the holdout run](evaluation.md#the-holdout-run), [EDA findings](findings.md)
+> Sources: [the holdout run](evaluation.md#the-holdout-run), [assumption 12](assumptions.md#12-an-illustrative-value-model)
 
 <!--
-Do not quote an hours-saved figure we have not measured: the inputs are the Client's.
-The defensible numbers are the measured ones: the answer's speed and cost, and that the
-answer is checkable (every citation opens the passage) and honest about what is missing.
+The table is measured: the answer's speed and cost, and that it is checkable (every citation
+opens the passage) and honest about what is missing. The value model is not: its inputs are
+assumption 12, chosen by us and not confirmed. Say so, then ask the Client for their own
+numbers: how many analysts, how many questions each asks a week, and how long one takes by
+hand today. Even at a quarter of our hours saved, the value dwarfs the cost of the Answer
+Calls.
 -->
-
 ---
 
 # Demo hand-off: one question, end to end
@@ -88,7 +90,7 @@ question → **rules** resolve the Query Scope (Companies, Sector phrase, time w
 
 <!--
 Run `make dev` before the meeting and open http://localhost:3000. Items 1 to 4 are starter
-prompts, and every starter is a Golden Set or Brief Suite case, so each one is measured. Each answer
+prompts, and every starter is an evaluation case, so each one is measured. Each answer
 opens on its short answer, the two or three sentence direct answer; click "Show full analysis" before
 pointing at a table or a figure, since they sit in the rest of the answer. Once the answer is
 complete, its Coverage notes appear below it, then the "Sources" disclosure: its Query Scope chips
@@ -131,37 +133,58 @@ without naming a Company, ADR 0003's known weakness.
 
 ---
 
-# How the choices were made: fixed rules, measured on dev
+# How the choices were made: nothing beat the simple setup
 
-- **Retrieval: FTS5 stays.** Dense embeddings, a hybrid and a cross-encoder re-ranker all reach hit@10 0.88, the same as FTS5, on the same cases (p = 1.000). None was ahead on Fact Recall, and FTS5 adds no model, no embedding call and no 300 MB matrix.
-- **Generator: `gpt-6-luna` stays.** `gpt-6.1-sol`, Claude Sonnet and Claude Opus state more Required Facts (0.73 to 0.75 against 0.62), but on too few cases (p = 0.062), at 20 to 65 times the cost: $0.049, $0.081 and $0.164 per answer against $0.0025.
-- **Prompt: v1 to v14, v7 kept.** Each version was written for named failing dev cases and kept only if it fixed them and fell behind on nothing. From v1 to v7: Fact Recall 0.45 to 0.65, Coverage Gaps stated 0.67 to 1.00, citations valid 0.75 to 0.90. v11 to v14 tried to keep comparisons within 600 words: the structure was followed by 0.79 of dev answers against v7's 0.80, so v7 stays.
-- **Version 2, 60 dev cases: every choice confirmed.** Directional: one-sided p < 0.10, fixed before running, each comparison beside a Control Run. No Arm, setting or Claude Haiku 5.5 was ahead on Fact Recall; Haiku was behind (0.38 against 0.72), with 27 of 60 answers cut off at its token cap.
-- **On the new retrieval, FTS5 still stays.** Decided fact by fact: `hybrid-local` reaches more evidence (820 of 939 facts against 797), and its answers state 235 of 316 must-state facts against 227 in each of two runs, all of the gain from evidence only it reached. That is not ahead (p = 0.180 and 0.189, against 0.10), so no local model ships.
-- **And 600-token chunks with the 32k budget still stay.** A 48k budget reaches more evidence (830 of 939 facts at 600-token chunks), but its answers state 233 must-state facts against 227 (p = 0.195); 800- and 450-token chunks at 48k state 225 and 229.
+Every choice was tried against alternatives, on test questions kept apart from the final check, with the rule for a win written down before each run.
 
-> Sources: [Arm comparison](evaluation.md#arm-comparison), [generator comparison](evaluation.md#generator-comparison), [prompt log](prompt-iterations.md), [version 2 comparisons](evaluation.md#the-version-2-comparisons-on-dev), [the Arm comparison on the new retrieval](evaluation.md#the-arm-comparison-on-the-new-retrieval-127-2026-10-18), [the settings comparison on the new retrieval](evaluation.md#the-settings-comparison-on-the-new-retrieval-129-2026-10-18), [ADR 0008](adr/0008-fts5-stays-the-shipped-arm.md), [ADR 0009](adr/0009-gpt-6-luna-stays-the-generator.md), [ADR 0011](adr/0011-one-sided-thresholds-and-a-control-run.md)
+- **Retrieval: plain keyword search stays.** Embedding search, a hybrid of the two, a re-ranking model and two local embedding models were tried. None got the answers to state more of the key facts, and keyword search needs no extra model and no extra API call.
+- **The model: `gpt-6-luna` stays.** Larger OpenAI and Anthropic models stated somewhat more facts, but not reliably, at 20 to 65 times the cost. A smaller Claude model stated fewer.
+- **Passage size and how much text each answer reads: unchanged.** Smaller and larger passages, and a larger reading budget, reached more of the evidence but got no more of it into the answers than 600-token passages with a 32k budget.
+- **The prompt: each version kept only if it fixed named failures and broke nothing.** v7 held through v14; v15 moves the Coverage Gaps out of the answer, into Coverage notes below it.
+
+> Sources: [Arm comparison](evaluation.md#arm-comparison), [generator comparison](evaluation.md#generator-comparison), [prompt log](prompt-iterations.md), [version 2 comparisons](evaluation.md#the-version-2-comparisons-on-dev), [the Arm comparison on the new retrieval](evaluation.md#the-arm-comparison-on-the-new-retrieval-127-2026-10-18), [the settings comparison on the new retrieval](evaluation.md#the-settings-comparison-on-the-new-retrieval-129-2026-10-18), [ADR 0008](adr/0008-fts5-stays-the-shipped-arm.md), [ADR 0009](adr/0009-gpt-6-luna-stays-the-generator.md), [ADR 0011](adr/0011-one-sided-thresholds-and-a-control-run.md), [ADR 0016](adr/0016-coverage-gaps-shown-by-the-product.md)
 
 <!--
-The point for the panel: every choice was made by a rule written before the run, with an
-exact sign test so that noise is not declared a win. Rerunning FTS5 against itself moved
+The statistics, for a technical panelist who asks. Every choice was made by a rule written
+before the run, with an exact test so that noise is not declared a win, and each comparison
+beside a Control Run (the shipped setup run again): rerunning FTS5 against itself moved
 scores as much as the hybrid and the re-ranker did.
--->
 
+Retrieval: dense embeddings, a hybrid and a cross-encoder re-ranker all reach hit@10 0.88,
+the same as FTS5, on the same cases (McNemar's exact test, p = 1.000). None was ahead on Fact
+Recall, and FTS5 adds no model, no embedding call and no 300 MB matrix. On the new retrieval,
+decided fact by fact: `hybrid-local` reaches more evidence (820 of 939 facts against 797), and
+its answers state 235 of 316 must-state facts against 227 in each of two runs, all of the gain
+from evidence only it reached. That is not ahead (p = 0.180 and 0.189, against 0.10), so no
+local model ships.
+
+Generator: `gpt-6.1-sol`, Claude Sonnet and Claude Opus state more Required Facts (0.73 to
+0.75 against 0.62), but on too few cases (sign test, p = 0.062), at $0.049, $0.081 and $0.164
+per answer against $0.0025. On version 2's 60 dev cases, one-sided p < 0.10 to be ahead,
+Claude Haiku 5.5 was behind (0.38 against 0.72), with 27 of 60 answers cut off at its token
+cap.
+
+Settings: a 48k budget reaches more evidence (830 of 939 facts at 600-token chunks), but its
+answers state 233 must-state facts against 227 (p = 0.195); 800- and 450-token chunks at 48k
+state 225 and 229.
+
+Prompt: from v1 to v7, Fact Recall 0.45 to 0.65, Coverage Gaps stated 0.67 to 1.00, citations
+valid 0.75 to 0.90. v11 to v14 tried to keep comparisons within 600 words: the structure was
+followed by 0.79 of dev answers against v7's 0.80, so v7 stayed.
+-->
 ---
 
 # Risks and limits
 
 - **Small evaluation.** 20 holdout cases in version 2, 10 in version 1: one case moves a share by 0.05. The numbers show the system works, not its exact rate.
 - **Answers miss facts.** Fact Recall 0.78 on the version 2 holdout, on the new retrieval: the answers miss 24 of 106 must-state facts, 9 of them because their evidence never reaches the prompt and 15 although it does.
-- **The brief's questions fail the Brief Suite.** 1 of 15 cases pass on version 2. The new retrieval gets the evidence of 80 of the 108 must-state facts into the Answer Call, against 53, but 44 are still missed: 23 never reach it, and 21 reach it in every run yet are stated in fewer than 4 of 5. The gap is now the generator as much as retrieval.
 - **Follow-ups that change topic without naming a Company** inherit the earlier Companies. The Query Scope chips, at the top of each answer's "Sources", show it; the Golden Set measures it.
 - **Computed figures.** The model sometimes computes a growth rate rather than quoting the Filing; it labels it as derived.
 - **Thin coverage.** Trends only for 13 Companies; Financial Facts only revenue, net income and segment revenue; guidance mostly sits outside the Filings.
 - **No human in the loop.** Claude drafted the evaluation's labels and labelled the judge study, with no human review. Accepted for a demo; production would use hand-labelled data.
 - **Our own inputs and a hosted model.** The Sector table and the list of missing Companies are curated and disclosed, not yet confirmed by the Client. The Answer Call goes to a hosted API, behind one interface a local model can replace.
 
-> Sources: [the holdout run](evaluation.md#the-holdout-run), [the version 2 holdout run](evaluation.md#the-version-2-holdout-run), [the holdout on the new retrieval](evaluation.md#the-holdout-on-the-new-retrieval-130-2026-10-18), [the Brief Suite](evaluation.md#the-brief-suite), [the new round on the new retrieval](evaluation.md#a-new-round-on-the-new-retrieval-126-2026-10-18), [ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md), [assumptions 4, 5, 9 and 10](assumptions.md), [EDA findings](findings.md), [ADR 0013](adr/0013-jev-stays-the-judge-checked-by-a-judge-study.md)
+> Sources: [the holdout run](evaluation.md#the-holdout-run), [the version 2 holdout run](evaluation.md#the-version-2-holdout-run), [the holdout on the new retrieval](evaluation.md#the-holdout-on-the-new-retrieval-130-2026-10-18), [ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md), [assumptions 4, 5, 9 and 10](assumptions.md), [EDA findings](findings.md), [ADR 0013](adr/0013-jev-stays-the-judge-checked-by-a-judge-study.md)
 
 <!--
 Lead with the limits before the panel finds them. Each one is either measured (the
@@ -175,11 +198,13 @@ holdout misses, the follow-up case) or stated in every answer (coverage, guidanc
 - **Live EDGAR ingestion, to fill the Coverage Gaps.** The gaps are public: FY2025 10-Ks filed after the Corpus (Pfizer, AbbVie), NVIDIA's FY2026 10-K, earlier JPMorgan Filings, and Companies such as Wells Fargo and Citigroup. Added Filings would be a labelled supplement beside the Corpus.
 - **Alerts on new Filings.** The index already finds text that is new between periods; run it as each Filing lands and send the new risk factors and MD&A changes for the Companies a deal team follows.
 - **Earnings-call transcripts for guidance.** Guidance is published in earnings releases and calls, not in 10-Ks and 10-Qs, so outlook questions could quote it instead of stating the gap.
+- **Passage-level citations.** A citation names a Section of a Filing today; pointing it at the passage that states the claim makes every check one click.
+- **Financial Facts for every Company.** Exact figures are extracted only for the 13 Tracked Companies; the 41 Snapshot Companies' are read from the text. Extend the extraction, checked against the SEC reference as before.
 - **Private-company data rooms.** The same pipeline over a target's CIM, management accounts and contracts, with the same citations and gaps. A local model can take the Answer Call when the documents cannot leave the firm.
 
 Every one keeps the rule the Client confirmed: one generative LLM call per question.
 
-> Sources: [assumptions 1, 2, 7 and 10](assumptions.md)
+> Sources: [assumptions 1, 2, 4, 7 and 10](assumptions.md), [ADR 0001](adr/0001-sqlite-financial-facts-store.md)
 
 <!--
 Lead with EDGAR ingestion: the Client suggested proposing it as the way to fill the gaps

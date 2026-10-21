@@ -503,6 +503,14 @@ describe('the "How it works" overview', () => {
       expect(section(name).textContent).not.toMatch(JARGON)
     }
   })
+
+  it('leaves the Brief Suite out of the overview', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    for (const name of [...OVERVIEW, 'What’s covered']) {
+      expect(section(name).textContent).not.toMatch(/brief suite/i)
+    }
+  })
 })
 
 describe('the "How it works" technical details', () => {

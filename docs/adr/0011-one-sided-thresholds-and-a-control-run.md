@@ -31,7 +31,7 @@ Simulated at 60 dev cases, the size ADR 0012 sets, the new rule finds a real gai
 
 - The thresholds of ADRs 0008, 0009 and 0010 are superseded for comparisons on Golden Set version 2. Their choices (FTS5, `gpt-6-luna`, 600-token chunks and the 32k budget) stand until a version 2 comparison says otherwise, and their version 1 verdicts stay as recorded.
 - The selection rules and the sign test change in `edgar_eval`, with the thresholds stated once.
-- The deck and the documents call version 2 results directional: "one-sided p < 0.10, fixed before running", with the Control Run shown.
+- The deck and the documents call version 2 results directional: "one-sided p < 0.10, fixed before running", with the Control Run shown. From 2026-10-20 (spec #136) the deck's choices slide says this in plain language, with the thresholds and the Control Run in its speaker notes; the evaluation notes still show them.
 - **Revisit when** the system moves past the demo stage. Then return to two-sided p < 0.05 and a Golden Set large enough for it.
 
 ## Built (2026-10-17)
