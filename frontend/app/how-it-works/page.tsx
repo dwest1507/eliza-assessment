@@ -6,7 +6,7 @@ import type { EvalExport } from '@/lib/evalExport'
 export const metadata: Metadata = {
   title: 'How it works · SEC Filings Research',
   description:
-    'How the research workspace answers, what it covers and how far to trust it, with the architecture, evaluation scoreboard and Corpus coverage behind it.',
+    'How the research workspace answers, what it covers and how far to trust it, with the architecture, the latest evaluation scoreboard and the holdout run behind it.',
 }
 
 // Written by `make eval-export`; typed here so a change to its shape fails the type check.

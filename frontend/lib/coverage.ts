@@ -1,4 +1,4 @@
-import type { CompanyCalendar, EvalExport, MissingCompany } from '@/lib/evalExport'
+import type { CompanyCalendar, MissingCompany } from '@/lib/evalExport'
 
 /** One covered Company, as the "What's covered" list names it. */
 export interface CoveredCompany {
@@ -10,8 +10,8 @@ export interface CoveredCompany {
 
 /**
  * The Corpus coverage summary: how many Companies are covered, how many are Tracked
- * Companies, and the Companies. Built from the evaluation export's coverage grid, the
- * data "How it works" reads, so the workspace's line and that page never disagree.
+ * Companies, and the Companies. Built from the evaluation export's Company Calendars, the
+ * data "What's covered" reads, so the workspace's line and that page never disagree.
  */
 export interface CoverageSummary {
   companies: CoveredCompany[]
@@ -21,8 +21,8 @@ export interface CoverageSummary {
 /** The anchor of "How it works"'s "What's covered" list. */
 export const WHATS_COVERED_ID = 'whats-covered'
 
-export function coverageSummary(coverage: EvalExport['coverage']): CoverageSummary {
-  const companies = coverage.companies.map((c) => ({
+export function coverageSummary(calendars: CompanyCalendar[]): CoverageSummary {
+  const companies = calendars.map((c) => ({
     ticker: c.ticker,
     company: c.company,
     tracked: c.coverage === 'tracked',

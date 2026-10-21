@@ -1,5 +1,5 @@
-"""The evaluation export: the harnesses' latest reports and the Corpus coverage, written
-as one JSON file for the front-end's "How it works" page.
+"""The evaluation export: the harnesses' latest reports and the Company Calendars, written
+as one JSON file for the front-end's "How it works" page and Calendar tab.
 
 The reports are written by the harnesses' own command lines (with fake Arms, a fake
 answer model and a fake judge), so the export is tested against the JSON they really
@@ -8,6 +8,7 @@ write.
 
 import io
 import json
+import os
 import re
 from datetime import date
 from types import SimpleNamespace
@@ -15,7 +16,7 @@ from types import SimpleNamespace
 import pytest
 
 from edgar_eval import generation, retrieval, selection
-from edgar_eval.export import company_calendars, coverage_grid, main
+from edgar_eval.export import company_calendars, main
 from edgar_eval.judge import JEV_MODEL
 from edgar_eval.retrieval import Arm
 from edgar_rag._query_scope import ScopeCompany, find_companies
@@ -353,8 +354,47 @@ def test_generation_is_left_empty_until_its_harness_has_run(tmp_path, eval_dir, 
 
     assert data["generation"] == []
     assert data["generatorChoice"] is None
-    assert data["briefSuite"] is None
     assert data["holdout"] is None
+
+
+def test_the_export_carries_no_brief_suite_no_retrieval_comparisons_and_no_coverage_grid(
+    tmp_path, eval_dir, indexed_filings
+):
+    """Technical details show only the latest scoreboard and holdout run: the Brief Suite,
+    the Arm and settings comparisons of earlier rounds and the Corpus coverage grid (now
+    "What's covered", from the Company Calendars) are not exported, even when their
+    reports are there."""
+    _write_retrieval_report(eval_dir)
+    for name in ("brief-suite.json", "arm-choice-dev.json", "settings-choice-dev.json"):
+        (eval_dir / name).write_text("{}")
+
+    data = _export(tmp_path, eval_dir, indexed_filings)
+
+    for key in ("briefSuite", "armChoice", "settingsChoice", "coverage"):
+        assert key not in data, key
+    assert {c["ticker"] for c in data["companies"]} == {f.ticker for f in indexed_filings}
+
+
+def _rewrite(path, **fields):
+    """Records other values in a written report, as a report of another round would."""
+    report = json.loads(path.read_text())
+    report.update(fields)
+    path.write_text(json.dumps(report))
+
+
+def test_a_control_run_of_an_earlier_round_is_left_out(tmp_path, eval_dir, index, indexed_filings):
+    """The round is the shipped run's code, prompt and Golden Set version (ADR 0011): a
+    Control Run left from an earlier round is not shown beside a new round's shipped run."""
+    _write_retrieval_report(eval_dir)
+    _write_generation_report(eval_dir, index, tmp_path, "gpt-6-luna")
+    control = _write_generation_report(
+        eval_dir, index, tmp_path, "gpt-6-luna", name="generation-control-dev.json"
+    )
+    _rewrite(control, prompt_version="v7")
+
+    data = _export(tmp_path, eval_dir, indexed_filings)
+
+    assert [run["report"] for run in data["generation"]] == ["generation-dev.json"]
 
 
 def test_the_export_carries_the_generator_comparison_with_its_control_run_and_intervals(
@@ -408,116 +448,34 @@ def test_the_export_carries_the_generator_comparison_with_its_control_run_and_in
         assert recall["difference"] == {"mean": 0.0, "low": 0.0, "high": 0.0, "confidence": 0.95}
 
 
-def _write_retrieval_choice(eval_dir, index, tmp_path, rule):
-    """The Arm (or settings) comparison's choice file, as `selection compare` writes it: a
-    challenger and the Control Run against the shipped run."""
+def test_a_generator_comparison_of_an_earlier_round_is_left_out(
+    tmp_path, eval_dir, index, indexed_filings
+):
+    """A new round's shipped run (new code) is shown alone until its own comparison runs:
+    the earlier round's Control Run, challengers and choice are not exported."""
+    _write_retrieval_report(eval_dir)
     shipped = _write_generation_report(eval_dir, index, tmp_path, "gpt-6-luna")
     control = _write_generation_report(
         eval_dir, index, tmp_path, "gpt-6-luna", name="generation-control-dev.json"
     )
     challenger = _write_generation_report(
-        eval_dir, index, tmp_path, "gpt-6-luna", name="generation-arms-dev-rerank.json"
+        eval_dir, index, tmp_path, "claude-haiku-5-5", "-claude-haiku-5-5"
     )
-    path = eval_dir / f"{selection.RULES[rule].choice_file}-dev.json"
     assert (
         selection.main(
-            ["compare", str(shipped), str(challenger), "--rule", rule]
-            + ["--control", str(control), "--json", str(path)],
+            ["compare", str(shipped), str(challenger), "--rule", "generators"]
+            + ["--control", str(control)]
+            + ["--json", str(eval_dir / "generator-choice-dev.json")],
             out=io.StringIO(),
         )
         == 0
     )
-    return path
-
-
-def _camel(key):
-    head, *rest = key.split("_")
-    return head + "".join(word.title() for word in rest)
-
-
-@pytest.mark.parametrize(("rule", "key"), [("arms", "armChoice"), ("settings", "settingsChoice")])
-def test_the_export_carries_a_retrieval_comparison_fact_by_fact(
-    tmp_path, eval_dir, index, indexed_filings, rule, key
-):
-    _write_retrieval_report(eval_dir)
-    recorded = json.loads(_write_retrieval_choice(eval_dir, index, tmp_path, rule).read_text())
-
-    choice = _export(tmp_path, eval_dir, indexed_filings)[key]
-
-    assert choice["rule"] == rule
-    assert (choice["shipped"], choice["chosen"]) == (recorded["shipped"], recorded["chosen"])
-    assert choice["inconclusive"] is False and choice["reason"] is None
-    [comparison] = choice["comparisons"]
-    [(name, written)] = recorded["comparisons"].items()
-    assert comparison["name"] == name
-    assert (comparison["qualifies"], comparison["shippable"]) == (False, True)
-    assert comparison["cases"] == 1
-    assert comparison["factRecall"]["verdict"] == "indistinguishable"
-    for exported, source in ((comparison, written), (choice["control"], recorded["control"])):
-        facts, stated = exported["statedFacts"], source["stated_facts"]
-        # The difference, the one-sided p-values and the verdict, as the choice file has them.
-        for field in (
-            "paired",
-            "left_out",
-            "facts",
-            "challenger_stated",
-            "shipped_stated",
-            "total_difference",
-            "p_ahead",
-            "p_behind",
-            "verdict",
-            "resamples",
-            "seed",
-        ):
-            assert facts[_camel(field)] == stated[field], field
-        assert facts["difference"] == {
-            k: stated["difference"][k] for k in ("mean", "low", "high", "confidence")
-        }
-        # Each paired fact once, by where its evidence reached, in the rule's order.
-        assert [g["status"] for g in exported["byEvidence"]] == list(selection.EVIDENCE_STATUSES)
-        for group in exported["byEvidence"]:
-            source_group = stated["by_evidence"][group["status"]]
-            assert (group["facts"], group["challengerStated"], group["shippedStated"]) == (
-                source_group["facts"],
-                source_group["challenger_stated"],
-                source_group["shipped_stated"],
-            )
-        assert sum(g["facts"] for g in exported["byEvidence"]) == facts["facts"] > 0
-    # The Control Run's fact-level verdict: the same reports, so indistinguishable.
-    assert choice["control"]["name"] == "Control Run"
-    assert choice["control"]["statedFacts"]["verdict"] == "indistinguishable"
-
-
-@pytest.mark.parametrize(("rule", "key"), [("arms", "armChoice"), ("settings", "settingsChoice")])
-def test_a_retrieval_comparison_made_before_the_fact_level_test_exports_as_before(
-    tmp_path, eval_dir, index, indexed_filings, rule, key
-):
-    """A choice file written under ADR 0011's per-case rule (#73's) records no
-    `stated_facts`: it still exports, with the fact-level fields null."""
-    _write_retrieval_report(eval_dir)
-    path = _write_retrieval_choice(eval_dir, index, tmp_path, rule)
-    recorded = json.loads(path.read_text())
-    for comparison in (*recorded["comparisons"].values(), recorded["control"]):
-        del comparison["stated_facts"]
-    path.write_text(json.dumps(recorded))
-
-    choice = _export(tmp_path, eval_dir, indexed_filings)[key]
-
-    for comparison in (*choice["comparisons"], choice["control"]):
-        assert comparison["statedFacts"] is None and comparison["byEvidence"] is None
-        assert comparison["factRecall"]["verdict"] == "indistinguishable"
-        assert comparison["faithfulness"]["paired"] == 1
-    assert choice["chosen"] == recorded["chosen"]
-
-
-def test_the_retrieval_comparisons_are_left_out_until_they_have_run(
-    tmp_path, eval_dir, indexed_filings
-):
-    _write_retrieval_report(eval_dir)
+    _rewrite(shipped, code_version="0123456789abcdef")
 
     data = _export(tmp_path, eval_dir, indexed_filings)
 
-    assert data["armChoice"] is None and data["settingsChoice"] is None
+    assert [run["report"] for run in data["generation"]] == ["generation-dev.json"]
+    assert data["generatorChoice"] is None
 
 
 def test_a_version_1_generator_comparison_still_exports(tmp_path, eval_dir, index, indexed_filings):
@@ -548,38 +506,18 @@ def test_a_version_1_generator_comparison_still_exports(tmp_path, eval_dir, inde
     assert comparison["factRecall"]["verdict"] == "indistinguishable"
 
 
-def test_the_export_carries_the_brief_suite_verdict_case_by_case(
+def _age(path, seconds):
+    """Dates the report's file `seconds` into the past."""
+    stamp = path.stat().st_mtime - seconds
+    os.utime(path, (stamp, stamp))
+
+
+def test_the_export_carries_only_the_latest_holdout_run_beside_the_dev_reports(
     tmp_path, eval_dir, index, indexed_filings
 ):
-    _write_retrieval_report(eval_dir)
-    path = eval_dir / "brief-suite.json"
-    generation.main(
-        ["--brief-suite", "--case", "brief-risk-aapl-tsla-jpm", "--runs", "2"]
-        + ["--index", str(index), "--log", str(tmp_path / "log"), "--json", str(path)],
-        model=FakeModel("gpt-6-luna", ANSWER),
-        judge=FakeJudge(),
-        fact_values=lambda tickers: [],
-        out=io.StringIO(),
-    )
-
-    brief = _export(tmp_path, eval_dir, indexed_filings)["briefSuite"]
-
-    assert (brief["model"], brief["runs"], brief["passRuns"]) == ("gpt-6-luna", 2, 2)
-    assert brief["judgeModel"] == JEV_MODEL
-    [case] = brief["cases"]
-    assert case["caseId"] == "brief-risk-aapl-tsla-jpm"
-    assert case["briefQuestion"] is True  # the brief's own question, not a variant
-    must_state = json.loads(path.read_text())["cases"][0]["facts"]
-    assert case["mustState"] == sum(1 for f in must_state if f["tier"] == "must_state")
-    # FakeJudge states every fact and supports every claim.
-    assert case["passed"] is True and brief["casesPassed"] == 1
-    assert case["missed"] == [] and case["contradictedRuns"] == []
-    assert case["truncatedRuns"] == [] and case["failedRuns"] == []
-
-
-def test_the_export_carries_every_holdout_run_beside_the_dev_reports(
-    tmp_path, eval_dir, index, indexed_filings
-):
+    """A later holdout run is kept as `generation-holdout-<suffix>.json` beside the first
+    run's `generation-holdout.json`: the export shows only the latest, the suffixed report
+    written last."""
     _write_retrieval_report(eval_dir)
     _write_generation_report(eval_dir, index, tmp_path, "gpt-6-luna")
     _write_retrieval_report(eval_dir, split="holdout")
@@ -587,6 +525,8 @@ def test_the_export_carries_every_holdout_run_beside_the_dev_reports(
     _write_generation_report(
         eval_dir, index, tmp_path, "gpt-6-luna", "-second", "holdout", "Apple relies on Asia [S1]."
     )
+    earlier = _write_generation_report(eval_dir, index, tmp_path, "gpt-6-luna", "-a", "holdout")
+    _age(earlier, 3600)
 
     data = _export(tmp_path, eval_dir, indexed_filings)
 
@@ -596,11 +536,21 @@ def test_the_export_carries_every_holdout_run_beside_the_dev_reports(
     assert holdout["splitCases"] == len(_version_2().split("holdout"))
     assert [arm["name"] for arm in holdout["retrieval"]["arms"]] == ["fts5", "nothing", "hosted"]
     assert holdout["retrieval"]["gatingMetric"] == "evidence reached"
-    first, second = holdout["generation"]
-    assert first["report"] == "generation-holdout.json"
-    assert second["report"] == "generation-holdout-second.json"
-    assert first["overall"]["citationsValid"] == 0  # cites [S99]
-    assert second["overall"]["citationsValid"] == 1
+    run = holdout["generation"]
+    assert run["report"] == "generation-holdout-second.json"
+    assert run["overall"]["citationsValid"] == 1
+
+
+def test_the_first_holdout_run_is_the_latest_until_another_is_kept(
+    tmp_path, eval_dir, index, indexed_filings
+):
+    _write_retrieval_report(eval_dir)
+    _write_generation_report(eval_dir, index, tmp_path, "gpt-6-luna", split="holdout")
+
+    holdout = _export(tmp_path, eval_dir, indexed_filings)["holdout"]
+
+    assert holdout["generation"]["report"] == "generation-holdout.json"
+    assert holdout["generation"]["overall"]["citationsValid"] == 0  # cites [S99]
 
 
 def test_a_holdout_scored_without_its_retrieval_report_still_shows_its_answers(
@@ -612,7 +562,7 @@ def test_a_holdout_scored_without_its_retrieval_report_still_shows_its_answers(
     holdout = _export(tmp_path, eval_dir, indexed_filings)["holdout"]
 
     assert holdout["retrieval"] is None
-    assert [run["model"] for run in holdout["generation"]] == ["gpt-6-luna"]
+    assert holdout["generation"]["model"] == "gpt-6-luna"
 
 
 def test_the_export_reads_the_chosen_splits_reports(tmp_path, eval_dir, indexed_filings):
@@ -622,7 +572,6 @@ def test_the_export_reads_the_chosen_splits_reports(tmp_path, eval_dir, indexed_
 
     assert data["split"] == "holdout"
     assert data["holdout"] is None  # the holdout is the split itself
-    assert data["briefSuite"] is None  # outside the split
     assert data["retrieval"]["scoredCases"] + len(data["retrieval"]["unscored"]) == len(
         _version_2().split("holdout")
     )
@@ -672,7 +621,7 @@ def test_the_export_refuses_a_holdout_retrieval_report_of_another_golden_set_ver
         _run_export(tmp_path, eval_dir, *V1)
 
 
-def test_the_export_refuses_any_holdout_generation_report_of_another_golden_set_version(
+def test_the_export_refuses_a_holdout_generation_report_of_another_golden_set_version(
     tmp_path, eval_dir, index
 ):
     _write_retrieval_report(eval_dir)
@@ -688,40 +637,6 @@ def test_the_export_refuses_any_holdout_generation_report_of_another_golden_set_
 def test_a_missing_retrieval_report_names_the_command_that_writes_it(tmp_path, eval_dir):
     with pytest.raises(SystemExit, match="make eval-retrieval"):
         _run_export(tmp_path, eval_dir)
-
-
-# --- The Corpus coverage grid -------------------------------------------------------------
-
-
-def test_the_coverage_grid_places_each_filing_under_its_report_periods_quarter(indexed_filings):
-    grid = coverage_grid(indexed_filings)
-
-    companies = {c["ticker"]: c for c in grid["companies"]}
-    assert set(companies) == {f.ticker for f in indexed_filings}
-    assert companies["AAPL"]["coverage"] == "tracked"
-    assert companies["JPM"]["coverage"] == "snapshot"
-    assert companies["AAPL"]["sector"] == "Information Technology"
-    # Apple's fiscal year ends on the last Saturday of September.
-    assert {
-        "period": "2025Q3",
-        "filingId": "AAPL_10-K_2025-09-27",
-        "formType": "10-K",
-        "reportPeriod": "2025-09-27",
-        "fiscalPeriod": "FY2025",
-    } in companies["AAPL"]["filings"]
-    # Every Filing appears once, under a period the grid has a column for.
-    cells = [f for c in grid["companies"] for f in c["filings"]]
-    assert sorted(f["filingId"] for f in cells) == sorted(f.filing_id for f in indexed_filings)
-    assert {f["period"] for f in cells} == set(grid["periods"])
-    assert grid["periods"] == sorted(grid["periods"])
-
-
-def test_the_coverage_grid_lists_tracked_companies_before_snapshot_companies(indexed_filings):
-    grid = coverage_grid(indexed_filings)
-
-    classes = [c["coverage"] for c in grid["companies"]]
-    assert classes == sorted(classes, key=["tracked", "snapshot"].index)
-    assert "snapshot" in classes and "tracked" in classes
 
 
 # --- The Company Calendars ----------------------------------------------------------------

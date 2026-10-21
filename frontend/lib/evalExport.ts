@@ -1,7 +1,8 @@
 /**
  * The evaluation export (`data/eval-export.json`), written by `make eval-export` from
- * the harnesses' latest reports and the Corpus: what the "How it works" page shows.
- * Its shape is `backend/src/edgar_eval/export.py`'s.
+ * the harnesses' latest reports and the Corpus: what the "How it works" page and the
+ * Calendar tab show. Its results are the latest round's only; `docs/evaluation.md` keeps
+ * the history. Its shape is `backend/src/edgar_eval/export.py`'s.
  */
 
 /** One retrieval Arm's mean scores over a group of cases. Keys of `hitAt` and `recallAt` are k. */
@@ -122,7 +123,8 @@ export interface GenerationRun {
   model: string
   judgeModel: string
   promptVersion: string
-  /** True for the round's Control Run: the shipped choice run again (ADR 0011). */
+  /** True for the round's Control Run: the shipped run's setup run again in the same
+   * round (ADR 0011). */
   controlRun: boolean
   /** The probability at which Jev's verdict counts a Required Fact stated. */
   factCutoff: number | null
@@ -179,67 +181,6 @@ export interface GeneratorComparison extends RuleScores {
   model: string
 }
 
-/**
- * Fact Recall fact by fact (ADR 0015): the must-state Required Facts each side's answers
- * state, summed over the cases both scored, and the one-sided case-cluster bootstrap's
- * verdict on the difference.
- */
-export interface FactTest {
-  /** The cases both sides scored, and those only one side scored, left out. */
-  paired: number
-  leftOut: number
-  /** The must-state facts of the paired cases. */
-  facts: number
-  challengerStated: number
-  shippedStated: number
-  /** The statistic: challengerStated minus shippedStated. */
-  totalDifference: number
-  pAhead: number
-  pBehind: number
-  /** `ahead`, `behind` or `indistinguishable`. */
-  verdict: string
-  /** The mean difference in facts stated per paired case; shown, never decided on. */
-  difference: Difference | null
-  /** The bootstrap's resamples of whole cases, and its fixed seed. */
-  resamples: number
-  seed: number
-}
-
-/** The paired must-state facts of one evidence status, and how many each side stated. */
-export interface EvidenceGroup {
-  /** `challenger_only`, `shipped_only`, `both`, `neither` or `unrecorded`: whose Answer
-   * Context the fact's evidence reached. */
-  status: string
-  facts: number
-  challengerStated: number
-  shippedStated: number
-}
-
-/** A challenger Arm or setting (or the Control Run) against the shipped choice. */
-export interface RetrievalChoiceComparison extends RuleScores {
-  /** The Arm, the setting (`chunks-600-budget-48000`) or `Control Run`. */
-  name: string
-  /** False for an Arm that makes an API call at query time: never chosen. */
-  shippable: boolean
-  /** Null in a choice file made before ADR 0015, decided case by case. */
-  statedFacts: FactTest | null
-  /** The paired facts by evidence status, each counted once; null with `statedFacts`. */
-  byEvidence: EvidenceGroup[] | null
-}
-
-/** The Arm comparison (`make eval-arms`) or the settings comparison (`make eval-settings`). */
-export interface RetrievalChoice {
-  /** `arms` or `settings`. */
-  rule: string
-  shipped: string
-  chosen: string
-  /** True when the Control Run came out ahead of the shipped run: the shipped choice stands. */
-  inconclusive: boolean
-  reason: string | null
-  control: RetrievalChoiceComparison | null
-  comparisons: RetrievalChoiceComparison[]
-}
-
 /** The generator comparison (`make eval-generators`) and the generator the rule chose. */
 export interface GeneratorChoice {
   shipped: string
@@ -252,65 +193,13 @@ export interface GeneratorChoice {
   comparisons: GeneratorComparison[]
 }
 
-/** A must-state Required Fact a Brief Suite case missed: stated in too few runs. */
-export interface BriefMissedFact {
-  fact: string
-  statedRuns: number
-  /** Runs whose Answer Context held the fact's evidence; 0 means a retrieval miss. */
-  evidenceReachedRuns: number
-}
-
-export interface BriefCase {
-  caseId: string
-  question: string
-  /** One of the brief's own three questions, rather than a variant of one. */
-  briefQuestion: boolean
-  passed: boolean
-  mustState: number
-  missed: BriefMissedFact[]
-  contradictedRuns: number[]
-  truncatedRuns: number[]
-  failedRuns: number[]
-}
-
-/** The Brief Suite run (`make eval-brief`): a verdict per case, never averaged. */
-export interface BriefSuiteResults {
-  model: string
-  judgeModel: string
-  promptVersion: string
-  settings: string | null
-  runs: number
-  /** A must-state fact must be stated in at least this many runs. */
-  passRuns: number
-  casesPassed: number
-  cases: BriefCase[]
-}
-
-/** The holdout's reports, shown beside a dev export. */
+/** The holdout's latest run, shown beside a dev export. */
 export interface HoldoutResults {
   splitCases: number
   /** Null when only answers were scored on the holdout. */
   retrieval: RetrievalResults | null
-  /** Every holdout generation run, the first first. */
-  generation: GenerationRun[]
-}
-
-export interface CoverageFiling {
-  /** The calendar quarter whose end the Report Period stands for, e.g. `2025Q3`. */
-  period: string
-  filingId: string
-  formType: string
-  reportPeriod: string
-  fiscalPeriod: string | null
-}
-
-export interface CoverageCompany {
-  ticker: string
-  company: string
-  sector: string | null
-  /** `tracked` or `snapshot`. */
-  coverage: string | null
-  filings: CoverageFiling[]
+  /** The latest holdout generation run; null when only retrieval was scored. */
+  generation: GenerationRun | null
 }
 
 /** A revenue Financial Fact in a Company Calendar: reported by one Filing, or derived. */
@@ -378,20 +267,13 @@ export interface EvalExport {
    * 1, which decided at two-sided p < 0.05. */
   thresholds: { aheadP: number; behindP: number } | null
   retrieval: RetrievalResults
-  /** The round's shipped run, its Control Run and each challenger generator's run; empty
-   * until `make eval-generation` has run. */
+  /** The latest round's shipped run, its Control Run and each challenger generator's run,
+   * those of the shipped run's round; empty until `make eval-generation` has run. */
   generation: GenerationRun[]
-  /** Null until `make eval-generators` has run on the split. */
+  /** Null until `make eval-generators` has run in the shipped run's round. */
   generatorChoice: GeneratorChoice | null
-  /** Null until `make eval-arms` has run on the split. */
-  armChoice: RetrievalChoice | null
-  /** Null until `make eval-settings` has run on the split. */
-  settingsChoice: RetrievalChoice | null
-  /** Null until `make eval-brief` has run, and for a holdout export. */
-  briefSuite: BriefSuiteResults | null
   /** Null until the holdout is scored, and for a holdout export itself. */
   holdout: HoldoutResults | null
-  coverage: { periods: string[]; companies: CoverageCompany[] }
   /** Every Company's Company Calendar, by ticker. */
   companies: CompanyCalendar[]
   /** The notable Companies not in the Corpus. */
@@ -428,11 +310,6 @@ export function difference(d: Difference): string {
   return `${signed(d.mean)} [${signed(d.low)}, ${signed(d.high)}]`
 }
 
-/** A signed whole number, e.g. `+7`, `−4` or `+0`. */
-export function signed(value: number): string {
-  return `${value < 0 ? '−' : '+'}${Math.abs(value)}`
-}
-
 /** A cost in US dollars to four decimals, or a dash when unknown. */
 export function usd(value: number | null): string {
   return value === null ? '–' : `$${value.toFixed(4)}`
@@ -441,12 +318,6 @@ export function usd(value: number | null): string {
 /** A duration in seconds to one decimal, or a dash when unknown. */
 export function seconds(value: number | null): string {
   return value === null ? '–' : `${value.toFixed(1)} s`
-}
-
-/** `2025Q3` as `Q3 2025`. */
-export function quarterLabel(period: string): string {
-  const [year, quarter] = period.split('Q')
-  return `Q${quarter} ${year}`
 }
 
 /** A question type such as `figure_trend` as `figure trend`. */

@@ -9,13 +9,7 @@ import fixture from './fixtures/eval-export.json'
 
 const EXPORT: EvalExport = fixture
 
-const TECHNICAL_SECTIONS = [
-  'Architecture',
-  'Evaluation scoreboard',
-  'The Brief Suite',
-  'The holdout run',
-  'Corpus coverage',
-]
+const TECHNICAL_SECTIONS = ['Architecture', 'Evaluation scoreboard', 'The holdout run']
 
 function section(name: string) {
   return screen.getByRole('region', { name })
@@ -183,10 +177,8 @@ describe('the "How it works" page', () => {
     expect(control).toHaveTextContent('−0.005 [−0.058, +0.039]')
     expect(scoreboard).toHaveTextContent('These verdicts are directional')
     expect(scoreboard).toHaveTextContent('Chosen: gpt-6-luna')
-    // The comparison predates the measurement fixes that re-scored the shipped run above.
-    expect(scoreboard).toHaveTextContent(
-      'This comparison was scored on the earlier measurement and stands as recorded'
-    )
+    // The export holds the latest round's comparison only, so no note dates it.
+    expect(scoreboard).not.toHaveTextContent('stands as recorded')
   })
 
   it('leaves the generator comparison out when it has not run', async () => {
@@ -196,93 +188,17 @@ describe('the "How it works" page', () => {
     expect(screen.queryByRole('table', { name: /Choosing the generator/ })).not.toBeInTheDocument()
   })
 
-  it('shows the Arm comparison fact by fact, beside its Control Run', async () => {
+  it('shows no Arm or settings comparison, only the latest scoreboard', async () => {
     render(<HowItWorks data={EXPORT} />)
     await openSection('Evaluation scoreboard')
 
     const scoreboard = section('Evaluation scoreboard')
-    const table = within(scoreboard).getByRole('table', { name: /Choosing the Arm/ })
-    const rerank = within(table).getByRole('row', { name: /rerank/ })
-    // Fact by fact: the must-state facts stated, the difference and its one-sided p-values.
-    expect(rerank).toHaveTextContent(
-      'indistinguishable (+7: 228 against 221 of 316 must-state facts, p ahead = 0.189, p behind = 0.836)'
-    )
-    expect(rerank).toHaveTextContent('+0.123 [−0.123, +0.368]') // per case, with its interval
-    // Case by case, the guardrail, beside it.
-    expect(rerank).toHaveTextContent('indistinguishable (15 higher, 10 lower')
-    expect(rerank).toHaveTextContent('no')
-    // The Control Run's fact-level verdict.
-    const control = within(table).getByRole('row', { name: /Control Run/ })
-    expect(control).toHaveTextContent('indistinguishable (+1: 222 against 221 of 316')
-    expect(scoreboard).toHaveTextContent('one-sided case-cluster bootstrap')
-    expect(scoreboard).toHaveTextContent('Chosen: fts5.')
+    expect(within(scoreboard).queryByRole('table', { name: /Choosing the Arm/ })).toBeNull()
+    expect(within(scoreboard).queryByRole('table', { name: /Choosing the chunk size/ })).toBeNull()
+    expect(within(scoreboard).queryByRole('table', { name: /facts stated by where/ })).toBeNull()
   })
 
-  it('splits the facts each Arm states by where their evidence reached', async () => {
-    render(<HowItWorks data={EXPORT} />)
-    await openSection('Evaluation scoreboard')
-
-    const table = within(section('Evaluation scoreboard')).getByRole('table', {
-      name: /Arm comparison: facts stated by where their evidence reached/,
-    })
-    const local = within(table).getByRole('row', { name: /hybrid-local/ })
-    expect(local).toHaveTextContent('12 / 3 of 20') // reached by the challenger only
-    expect(local).toHaveTextContent('187 / 195 of 243') // reached by both
-    // The Control Run reaches what the shipped run reaches, so it has no one-sided group.
-    const control = within(table).getByRole('row', { name: /Control Run/ })
-    expect(control).toHaveTextContent('–201 / 199 of 248')
-  })
-
-  it('shows a comparison made before the fact-level test case by case, as recorded', async () => {
-    render(<HowItWorks data={EXPORT} />)
-    await openSection('Evaluation scoreboard')
-
-    const scoreboard = section('Evaluation scoreboard')
-    const table = within(scoreboard).getByRole('table', { name: /Choosing the chunk size/ })
-    const setting = within(table).getByRole('row', { name: /chunks-600-budget-48000/ })
-    expect(setting).toHaveTextContent('–indistinguishable (12 higher, 9 lower')
-    expect(scoreboard).toHaveTextContent(
-      'Decided under ADR 0011’s per-case rule, before the fact-level test, and stands as recorded'
-    )
-    expect(scoreboard).toHaveTextContent('Chosen: chunks-600-budget-32000.')
-    expect(
-      within(scoreboard).queryByRole('table', { name: /Settings comparison: facts stated/ })
-    ).not.toBeInTheDocument()
-  })
-
-  it('leaves the Arm and settings comparisons out when they have not run', async () => {
-    render(<HowItWorks data={{ ...EXPORT, armChoice: null, settingsChoice: null }} />)
-    await openSection('Evaluation scoreboard')
-
-    expect(screen.queryByRole('table', { name: /Choosing the Arm/ })).not.toBeInTheDocument()
-    expect(screen.queryByRole('table', { name: /Choosing the chunk size/ })).not.toBeInTheDocument()
-  })
-
-  it('shows the Brief Suite’s verdict case by case', async () => {
-    render(<HowItWorks data={EXPORT} />)
-    await openSection('The Brief Suite')
-
-    const brief = section('The Brief Suite')
-    expect(brief).toHaveTextContent('1 of 3 cases pass')
-    expect(brief).toHaveTextContent('at least 4 of 5 runs')
-    const table = within(brief).getByRole('table', { name: /Brief Suite/ })
-    const first = within(table).getByRole('row', { name: /brief-risk-aapl-tsla-jpm/ })
-    expect(first).toHaveTextContent('brief')
-    expect(first).toHaveTextContent('fail')
-    const pharma = within(table).getByRole('row', { name: /brief-sector-pharma-regulatory/ })
-    expect(pharma).toHaveTextContent('fail' + '9' + '8' + '8')
-    const variant = within(table).getByRole('row', { name: /brief-followup-nvda-net-income/ })
-    expect(variant).toHaveTextContent('pass')
-    expect(variant).not.toHaveTextContent('brief ')
-  })
-
-  it('leaves the Brief Suite out until it has run', () => {
-    render(<HowItWorks data={{ ...EXPORT, briefSuite: null }} />)
-
-    expect(screen.queryByRole('region', { name: 'The Brief Suite' })).not.toBeInTheDocument()
-  })
-
-  it('shows the holdout run beside dev, with its small-sample caveat', async () => {
+  it('shows the latest holdout run beside dev, with its small-sample caveat', async () => {
     render(<HowItWorks data={EXPORT} />)
     await openSection('The holdout run')
 
@@ -297,7 +213,9 @@ describe('the "How it works" page', () => {
     )
     expect(holdout).toHaveTextContent('19 of 20 holdout cases')
     const answers = within(holdout).getByRole('table', { name: /Answers/ })
-    const luna = within(answers).getByRole('row', { name: /gpt-6-luna/ })
+    // Only the latest holdout run: one row of answers, beside dev's.
+    const [luna] = within(answers).getAllByRole('row', { name: /gpt-6-luna/ })
+    expect(within(answers).getAllByRole('row', { name: /gpt-6-luna/ })).toHaveLength(1)
     expect(luna).toHaveTextContent('0.74') // Fact Recall
     expect(luna).toHaveTextContent('0.95') // Faithfulness
     expect(luna).toHaveTextContent('prompt v7')
@@ -318,37 +236,6 @@ describe('the "How it works" page', () => {
     const scoreboard = section('Evaluation scoreboard')
     expect(scoreboard).toHaveTextContent('make eval-generation')
     expect(within(scoreboard).queryByRole('table', { name: /Answers/ })).not.toBeInTheDocument()
-  })
-
-  it('shows the Corpus coverage grid: each Company’s Filings by Report Period', async () => {
-    render(<HowItWorks data={EXPORT} />)
-    await openSection('Corpus coverage')
-
-    const grid = within(section('Corpus coverage')).getByRole('table')
-    expect(within(grid).getByRole('columnheader', { name: /Q3 2025/ })).toBeInTheDocument()
-    const apple = within(grid).getByRole('row', { name: /AAPL/ })
-    expect(apple).toHaveTextContent('Tracked')
-    expect(within(apple).getByTitle(/AAPL_10-K_2025-09-27.*FY2025/)).toHaveTextContent('K')
-    expect(within(apple).getByTitle(/AAPL_10-Q_2025-12-27.*Q1 FY2026/)).toHaveTextContent('Q')
-    const jpm = within(grid).getByRole('row', { name: /JPM/ })
-    expect(jpm).toHaveTextContent('Snapshot')
-    expect(
-      within(jpm)
-        .getAllByRole('cell')
-        .filter((c) => c.textContent === '')
-    ).toHaveLength(1)
-  })
-
-  it('scrolls the coverage grid in its own area, which the keyboard can reach', async () => {
-    render(<HowItWorks data={EXPORT} />)
-    await openSection('Corpus coverage')
-
-    const area = within(section('Corpus coverage')).getByRole('region', {
-      name: 'Filings by Company and Report Period',
-    })
-    expect(within(area).getByRole('table')).toBeInTheDocument()
-    area.focus()
-    expect(area).toHaveFocus()
   })
 
   it('links back to the workspace', () => {
@@ -485,6 +372,19 @@ describe('the "How it works" overview', () => {
 })
 
 describe('the "How it works" technical details', () => {
+  it('shows exactly the architecture, the evaluation scoreboard and the holdout run', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    // Each section's heading is its toggle, after a hidden ▸.
+    const headings = screen
+      .getAllByRole('heading', { level: 2 })
+      .map((h) => h.textContent?.replace('▸', ''))
+    expect(headings.slice(headings.indexOf('Technical details') + 1)).toEqual(TECHNICAL_SECTIONS)
+    expect(screen.queryByRole('region', { name: 'The Brief Suite' })).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Corpus coverage' })).toBeNull()
+    expect(document.body).not.toHaveTextContent(/brief suite/i)
+  })
+
   it('puts every technical section under "Technical details", each collapsed by default', () => {
     render(<HowItWorks data={EXPORT} />)
 
@@ -503,18 +403,18 @@ describe('the "How it works" technical details', () => {
     const user = userEvent.setup()
     render(<HowItWorks data={EXPORT} />)
 
-    const heading = within(section('Corpus coverage')).getByRole('button', {
-      name: 'Corpus coverage',
+    const heading = within(section('The holdout run')).getByRole('button', {
+      name: 'The holdout run',
     })
     await user.click(heading)
     expect(heading).toHaveAttribute('aria-expanded', 'true')
-    expect(within(section('Corpus coverage')).getByRole('table')).toBeVisible()
+    expect(within(section('The holdout run')).getAllByRole('table')[0]).toBeVisible()
     // The other sections stay closed.
     expect(within(section('Evaluation scoreboard')).queryByRole('table')).not.toBeInTheDocument()
 
     await user.click(heading)
     expect(heading).toHaveAttribute('aria-expanded', 'false')
-    expect(within(section('Corpus coverage')).queryByRole('table')).not.toBeInTheDocument()
+    expect(within(section('The holdout run')).queryByRole('table')).not.toBeInTheDocument()
   })
 
   it('opens every section with "Expand all" and closes them with "Collapse all"', async () => {
@@ -547,13 +447,13 @@ describe('the "How it works" technical details', () => {
     expect(
       within(section('Evaluation scoreboard')).getByRole('table', { name: /Retrieval/ })
     ).toBeVisible()
-    expect(within(section('Corpus coverage')).queryByRole('table')).not.toBeInTheDocument()
+    expect(within(section('The holdout run')).queryByRole('table')).not.toBeInTheDocument()
 
     act(() => {
-      window.history.replaceState(null, '', '/how-it-works#coverage')
+      window.history.replaceState(null, '', '/how-it-works#holdout')
       window.dispatchEvent(new HashChangeEvent('hashchange'))
     })
-    expect(within(section('Corpus coverage')).getByRole('table')).toBeVisible()
+    expect(within(section('The holdout run')).getAllByRole('table')[0]).toBeVisible()
     // Following a link opens its section without closing the one already open.
     expect(
       within(section('Evaluation scoreboard')).getByRole('table', { name: /Retrieval/ })
@@ -569,11 +469,11 @@ describe('the "How it works" technical details', () => {
       scrolled.push(this)
     }
     try {
-      window.history.replaceState(null, '', '/how-it-works#coverage')
+      window.history.replaceState(null, '', '/how-it-works#holdout')
       render(<HowItWorks data={EXPORT} />)
 
       await waitFor(() =>
-        expect(scrolled).toContain(screen.getByRole('heading', { name: 'Corpus coverage' }))
+        expect(scrolled).toContain(screen.getByRole('heading', { name: 'The holdout run' }))
       )
     } finally {
       HTMLElement.prototype.scrollIntoView = original
@@ -742,11 +642,11 @@ describe('the workspace', () => {
   })
 
   it('says on the empty screen how many Companies are covered, linking to the list', () => {
-    render(<Workspace coverage={coverageSummary(EXPORT.coverage)} />)
+    render(<Workspace coverage={coverageSummary(EXPORT.companies)} />)
 
     const line = screen.getByText(/companies covered/)
     expect(line).toHaveTextContent(
-      '2 companies covered · 1 with two or more years of quarterly filings'
+      '4 companies covered · 3 with two or more years of quarterly filings'
     )
     expect(within(line).getByRole('link')).toHaveAttribute('href', '/how-it-works#whats-covered')
   })

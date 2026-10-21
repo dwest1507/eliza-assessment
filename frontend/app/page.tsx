@@ -7,5 +7,5 @@ import type { EvalExport } from '@/lib/evalExport'
 const data: EvalExport = evalExport
 
 export default function Home() {
-  return <Workspace coverage={coverageSummary(data.coverage)} calendars={data.companies} />
+  return <Workspace coverage={coverageSummary(data.companies)} calendars={data.companies} />
 }

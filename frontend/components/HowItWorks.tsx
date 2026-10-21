@@ -4,29 +4,22 @@ import { HeadlineNumbers, HowAnswersAreMade, KnownLimits } from '@/components/Ov
 import TechnicalDetails, { TechnicalSection } from '@/components/TechnicalDetails'
 import WhatsCovered from '@/components/WhatsCovered'
 import {
-  type BriefSuiteResults,
-  type CoverageCompany,
   type EvalExport,
-  type FactTest,
   type GenerationRun,
   type GenerationSummary,
   type GeneratorChoice,
   type GeneratorComparison,
   type HoldoutResults,
-  type RetrievalChoice,
-  type RetrievalChoiceComparison,
   type RetrievalResults,
   type RetrievalSummary,
   type Screen,
   type SignTest,
   difference,
   pValue,
-  quarterLabel,
   questionType,
   score,
   seconds,
   shippedRun,
-  signed,
   usd,
 } from '@/lib/evalExport'
 
@@ -34,11 +27,12 @@ type Thresholds = EvalExport['thresholds']
 
 /**
  * The "How it works" page: a plain overview first (how an answer is made, "What's
- * covered", the shipped run's headline numbers and the known limits), then the sections
- * under "Technical details", each collapsed by default: the architecture, the evaluation scoreboard (the shipped run
- * beside its Control Run, the retrieval Arms and their screen, the Arm and settings
- * comparisons fact by fact, and the generator comparison), the Brief Suite's verdicts, the holdout run beside dev and the Corpus
- * coverage grid, all read from the evaluation export so the evidence sits in the product.
+ * covered", the shipped run's headline numbers and the known limits), then three sections
+ * under "Technical details", each collapsed by default: the architecture, the evaluation
+ * scoreboard (the retrieval Arms and their screen, the latest round's shipped run beside its
+ * Control Run, and that round's generator comparison) and the latest holdout run beside dev.
+ * All are read from the evaluation export, which holds the latest results only, so the
+ * evidence sits in the product; `docs/evaluation.md` keeps the history.
  */
 export default function HowItWorks({ data }: { data: EvalExport }) {
   const shipped = shippedRun(data)
@@ -73,17 +67,15 @@ export default function HowItWorks({ data }: { data: EvalExport }) {
                 Technical details
               </h2>
               <p className="mt-2 max-w-3xl text-[14px] leading-relaxed text-muted">
-                The architecture, the evaluation scores and the Filings behind every answer. Open a
-                section by its heading, or all of them at once.
+                The architecture, the latest evaluation scores and the holdout run. Open a section
+                by its heading, or all of them at once.
               </p>
             </div>
           }
         >
           <Architecture data={data} />
           <Scoreboard data={data} />
-          {data.briefSuite && <BriefSuite brief={data.briefSuite} />}
           {data.holdout && <Holdout holdout={data.holdout} dev={data} />}
-          <CoverageGrid data={data} />
         </TechnicalDetails>
       </main>
     </div>
@@ -102,12 +94,14 @@ function Architecture({ data }: { data: EvalExport }) {
   const generator =
     data.generation.find((run) => run.model === data.generatorChoice?.chosen && !run.controlRun) ??
     data.generation[0]
-  const filings = data.coverage.companies.reduce((n, c) => n + c.filings.length, 0)
+  const filings = new Set(
+    data.companies.flatMap((c) => c.periods.flatMap((p) => (p.filing ? [p.filing.filingId] : [])))
+  ).size
 
   const builtOnce: Stage[] = [
     {
       name: 'Corpus',
-      text: `${filings} cleaned 10-K and 10-Q Filings of ${data.coverage.companies.length} Companies, split into Sections at their Item headings.`,
+      text: `${filings} cleaned 10-K and 10-Q Filings of ${data.companies.length} Companies, split into Sections at their Item headings.`,
     },
     {
       name: 'Index',
@@ -160,14 +154,6 @@ function Architecture({ data }: { data: EvalExport }) {
       name: 'Golden Set',
       text: `${data.goldenSet.cases} labelled questions (version ${data.goldenSet.version}) with expected Sources, Required Facts and Coverage Gaps, split into dev and holdout by a hash rule${data.goldenSet.version >= 2 ? ' and frozen, each case recording its split' : ''}.`,
     },
-    ...(data.briefSuite
-      ? [
-          {
-            name: 'Brief Suite',
-            text: `The brief’s three example questions and variants of each, ${data.briefSuite.cases.length} cases outside the split, each answered ${data.briefSuite.runs} times and passed or failed on its own.`,
-          },
-        ]
-      : []),
     {
       name: 'Harnesses',
       text: evidence
@@ -229,10 +215,8 @@ function Lane({
 
 // --- Evaluation scoreboard ----------------------------------------------------------------
 
-/** A header cell without its background, for the coverage grid's fixed header, which sets an opaque one. */
-const thBare =
-  'border-b border-line px-3 py-1.5 text-left font-mono text-[12px] font-medium tracking-wide whitespace-nowrap text-muted'
-const th = `${thBare} bg-raised`
+const th =
+  'border-b border-line bg-raised px-3 py-1.5 text-left font-mono text-[12px] font-medium tracking-wide whitespace-nowrap text-muted'
 const td = 'border-b border-line px-3 py-1.5 whitespace-nowrap tabular-nums'
 const caption = 'mb-3 text-left text-[14px] font-semibold text-white'
 const note = 'mt-2 text-[12.5px] leading-relaxed text-muted'
@@ -257,9 +241,10 @@ function Scoreboard({ data }: { data: EvalExport }) {
       intro={
         <>
           The harnesses’ latest results on Golden Set version {goldenSet.version}’s {split} split,
-          exported on {data.exportedOn}. Choices are tuned on dev; the holdout is scored once per
-          final setup, never to choose{data.holdout ? ', and its run follows' : ''}. Scores are
-          shares from 0 to 1. {verdictRule(thresholds)}.
+          exported on {data.exportedOn}: retrieval on the current code, and the latest round’s
+          answers. Choices are tuned on dev; the holdout is scored once per final setup, never to
+          choose{data.holdout ? ', and its run follows' : ''}. Scores are shares from 0 to 1.{' '}
+          {verdictRule(thresholds)}.
         </>
       }
     >
@@ -284,76 +269,9 @@ function Scoreboard({ data }: { data: EvalExport }) {
           <code className="font-mono text-[13px]">make eval-export</code>.
         </p>
       )}
-      {data.armChoice && <RetrievalChoiceTables choice={data.armChoice} thresholds={thresholds} />}
-      {data.settingsChoice && (
-        <RetrievalChoiceTables choice={data.settingsChoice} thresholds={thresholds} />
-      )}
       {data.generatorChoice && (
         <GeneratorChoiceTable choice={data.generatorChoice} thresholds={thresholds} />
       )}
-    </TechnicalSection>
-  )
-}
-
-function BriefSuite({ brief }: { brief: BriefSuiteResults }) {
-  const failing = brief.cases.filter((c) => !c.passed)
-  const missed = failing.flatMap((c) => c.missed)
-  const notReached = missed.filter((f) => f.evidenceReachedRuns === 0).length
-  return (
-    <TechnicalSection
-      id="brief-suite"
-      title="The Brief Suite"
-      intro={
-        <>
-          The brief’s three example questions and variants of each, outside the dev/holdout split,
-          each answered {brief.runs} times by <code className="font-mono">{brief.model}</code>{' '}
-          (prompt {brief.promptVersion}). A case passes when every must-state Required Fact is
-          stated in at least {brief.passRuns} of {brief.runs} runs and no run has a Contradicted
-          Claim. Verdicts are reported case by case, never averaged:{' '}
-          <span className="font-medium text-accent-strong">
-            {brief.casesPassed} of {brief.cases.length} cases pass.
-          </span>
-        </>
-      }
-    >
-      <div className="card overflow-x-auto p-3">
-        <table className="min-w-full border-collapse text-[13px]">
-          <caption className={caption}>Brief Suite: does each brief question pass?</caption>
-          <thead>
-            <tr>
-              <th className={th}>Case</th>
-              <th className={th}>Verdict</th>
-              <th className={th}>Must-state facts</th>
-              <th className={th}>Missed</th>
-              <th className={th}>Of them, evidence never reached</th>
-              <th className={th}>Runs with a Contradicted Claim</th>
-            </tr>
-          </thead>
-          <tbody>
-            {brief.cases.map((c) => (
-              <tr key={c.caseId}>
-                <th scope="row" className={`${td} text-left font-medium`} title={c.question}>
-                  <code className="font-mono">{c.caseId}</code>
-                  {c.briefQuestion && <span className={badge}>brief</span>}
-                </th>
-                <td className={`${td} ${c.passed ? 'font-semibold text-accent-strong' : ''}`}>
-                  {c.passed ? 'pass' : 'fail'}
-                </td>
-                <td className={td}>{c.mustState}</td>
-                <td className={td}>{c.missed.length}</td>
-                <td className={td}>{c.missed.filter((f) => f.evidenceReachedRuns === 0).length}</td>
-                <td className={td}>{c.contradictedRuns.length}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <p className={note}>
-          A missed fact is stated in fewer than {brief.passRuns} runs. Of the {missed.length}{' '}
-          must-state facts the {failing.length} failing cases miss, {notReached} have evidence that
-          never reached the Answer Context in any run: retrieval misses, which no generator could
-          state from the Sources. Hover a case for its question.
-        </p>
-      </div>
     </TechnicalSection>
   )
 }
@@ -371,11 +289,12 @@ function Holdout({ holdout, dev }: { holdout: HoldoutResults; dev: EvalExport })
       title="The holdout run"
       intro={
         <>
-          The shipped setup, scored on Golden Set version {dev.goldenSet.version}’s {splitCases}{' '}
-          holdout cases after every choice above was made on dev, shown beside dev. The holdout is
-          scored once per final setup and never used to choose: nothing was changed after it. On{' '}
-          {splitCases} cases one case moves a share by {(1 / splitCases).toFixed(2)}, so it shows
-          whether the dev choices overfitted badly, not that one split scores better than the other.
+          The shipped setup’s latest holdout run, on Golden Set version {dev.goldenSet.version}’s{' '}
+          {splitCases} holdout cases, scored after the choices were made on dev and shown beside
+          dev. The holdout is scored once per final setup and never used to choose: nothing was
+          changed after it. On {splitCases} cases one case moves a share by{' '}
+          {(1 / splitCases).toFixed(2)}, so it shows whether the dev choices overfitted badly, not
+          that one split scores better than the other.
         </>
       }
     >
@@ -390,9 +309,9 @@ function Holdout({ holdout, dev }: { holdout: HoldoutResults; dev: EvalExport })
           }
         />
       )}
-      {holdout.generation.length > 0 && (
+      {holdout.generation && (
         <GenerationTable
-          runs={holdout.generation}
+          runs={[holdout.generation]}
           split="holdout"
           beside={devRuns.map((run) => ({
             label: `${dev.split}, ${run.controlRun ? 'Control Run' : 'shipped run'}`,
@@ -796,199 +715,6 @@ function signTest(test: SignTest | null): ReactNode {
   )
 }
 
-function factTest(test: FactTest | null): ReactNode {
-  if (!test) return '–'
-  return (
-    <>
-      {test.verdict} ({signed(test.totalDifference)}: {test.challengerStated} against{' '}
-      {test.shippedStated} of {test.facts} must-state facts, p ahead = {pValue(test.pAhead)}, p
-      behind = {pValue(test.pBehind)})
-      {test.difference && (
-        <span className="block text-[12px] text-muted">per case {difference(test.difference)}</span>
-      )}
-    </>
-  )
-}
-
-/** How each comparison's facts are split by where their evidence reached, in the export's order. */
-const EVIDENCE_LABELS: Record<string, string> = {
-  challenger_only: 'Reached by the challenger only',
-  shipped_only: 'By the shipped choice only',
-  both: 'By both',
-  neither: 'By neither',
-  unrecorded: 'Not recorded',
-}
-
-const RETRIEVAL_RULES: Record<string, { what: string; caption: string; label: string }> = {
-  arms: {
-    what: 'Arm',
-    caption: 'Choosing the Arm: do a challenger’s answers state more facts?',
-    label: 'Arm comparison',
-  },
-  settings: {
-    what: 'setting',
-    caption: 'Choosing the chunk size and context budget: do a setting’s answers state more facts?',
-    label: 'Settings comparison',
-  },
-}
-
-/** The Arm or settings comparison: each challenger and the Control Run against the shipped
- * choice, fact by fact (ADR 0015) beside the per-case sign tests, then the facts stated split
- * by where their evidence reached. A choice file made before the fact-level test shows its
- * per-case verdicts only, as recorded. */
-function RetrievalChoiceTables({
-  choice,
-  thresholds,
-}: {
-  choice: RetrievalChoice
-  thresholds: Thresholds
-}) {
-  const rule = RETRIEVAL_RULES[choice.rule] ?? RETRIEVAL_RULES.arms
-  const rows = [
-    ...(choice.control ? [{ label: 'Control Run', c: choice.control }] : []),
-    ...choice.comparisons.map((c) => ({ label: c.name, c })),
-  ]
-  const factLevel = rows.some(({ c }) => c.statedFacts !== null)
-  const resamples = rows.find(({ c }) => c.statedFacts)?.c.statedFacts?.resamples
-  const unshippable = choice.comparisons.some((c) => !c.shippable)
-  const ahead = thresholds ? ` (p < ${thresholds.aheadP.toFixed(2)})` : ''
-  const behind = thresholds ? ` (p < ${thresholds.behindP.toFixed(2)})` : ''
-  const name = (label: string, c: RetrievalChoiceComparison) =>
-    c === choice.control ? (
-      <>
-        Control Run
-        <span className="ml-2 text-[12px] text-muted">{choice.shipped} again</span>
-      </>
-    ) : (
-      <>
-        <code className="font-mono">{label}</code>
-        {!c.shippable && <span className={quietBadge}>API call: can’t ship</span>}
-      </>
-    )
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="card overflow-x-auto p-3">
-        <table className="min-w-full border-collapse text-[13px]">
-          <caption className={caption}>{rule.caption}</caption>
-          <thead>
-            <tr>
-              <th className={th}>Against {choice.shipped}</th>
-              <th className={th}>Cases</th>
-              <th className={th}>Fact Recall fact by fact</th>
-              <th className={th}>Fact Recall case by case</th>
-              <th className={th}>Faithfulness</th>
-              <th className={th}>Coverage Gaps</th>
-              <th className={th}>No Contradicted Claim</th>
-              <th className={th}>Qualifies</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map(({ label, c }) => (
-              <tr key={label}>
-                <th scope="row" className={`${td} text-left font-medium`}>
-                  {name(label, c)}
-                </th>
-                <td className={td}>{c.cases}</td>
-                <td className={td}>{factTest(c.statedFacts)}</td>
-                <td className={td}>{signTest(c.factRecall)}</td>
-                <td className={td}>{signTest(c.faithfulness)}</td>
-                <td className={td}>{signTest(c.coverageGaps)}</td>
-                <td className={td}>{signTest(c.contradictedClaims)}</td>
-                <td className={td}>{c === choice.control ? '–' : c.qualifies ? 'yes' : 'no'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-        <p className={note}>
-          {factLevel ? (
-            <>
-              Each challenger {rule.what} is compared with {choice.shipped} on the cases both
-              scored. It qualifies only if ahead on Fact Recall fact by fact{ahead}: the must-state
-              facts its answers state, summed over the paired cases, tested by a one-sided
-              case-cluster bootstrap
-              {resamples
-                ? ` (whole cases resampled ${resamples.toLocaleString('en-US')} times from a fixed seed)`
-                : ''}
-              . It must also be behind on none of Fact Recall case by case (an exact sign test),
-              Faithfulness, Coverage Gaps and Contradicted Claims{behind}; the cheapest qualifier
-              wins. Under each fact-level verdict, the mean difference in facts stated per case and
-              its 95% bootstrap interval, shown and not decided on. If the Control Run came out
-              ahead of the shipped run fact by fact, the comparison would be inconclusive and{' '}
-              {choice.shipped} would stand.
-            </>
-          ) : (
-            <>
-              Decided under ADR 0011’s per-case rule, before the fact-level test, and stands as
-              recorded: a challenger {rule.what} qualifies only if ahead on Fact Recall case by case
-              {ahead} and behind on none of Fact Recall, Faithfulness, Coverage Gaps and
-              Contradicted Claims{behind}, each by an exact sign test, one-sided. Its choice file
-              records no fact-level result.
-            </>
-          )}
-          {unshippable &&
-            ' A challenger whose Arm makes an API call at query time is compared but never chosen.'}{' '}
-          {choice.inconclusive && <>Inconclusive: {choice.reason}. </>}
-          <span className="font-medium text-accent-strong">Chosen: {choice.chosen}.</span>
-        </p>
-      </div>
-      {factLevel && <EvidenceTable label={rule.label} rows={rows} />}
-    </div>
-  )
-}
-
-function EvidenceTable({
-  label,
-  rows,
-}: {
-  label: string
-  rows: { label: string; c: RetrievalChoiceComparison }[]
-}) {
-  const statuses = Object.keys(EVIDENCE_LABELS).filter((status) =>
-    rows.some(({ c }) => c.byEvidence?.some((g) => g.status === status && g.facts > 0))
-  )
-  return (
-    <div className="card overflow-x-auto p-3">
-      <table className="min-w-full border-collapse text-[13px]">
-        <caption className={caption}>{label}: facts stated by where their evidence reached</caption>
-        <thead>
-          <tr>
-            <th className={th}>Stated, challenger / shipped</th>
-            {statuses.map((status) => (
-              <th key={status} className={th}>
-                {EVIDENCE_LABELS[status]}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map(({ label: name, c }) => (
-            <tr key={name}>
-              <th scope="row" className={`${td} text-left font-medium`}>
-                {name === 'Control Run' ? name : <code className="font-mono">{name}</code>}
-              </th>
-              {statuses.map((status) => {
-                const group = c.byEvidence?.find((g) => g.status === status)
-                return (
-                  <td key={status} className={td}>
-                    {group && group.facts > 0
-                      ? `${group.challengerStated} / ${group.shippedStated} of ${group.facts}`
-                      : '–'}
-                  </td>
-                )
-              })}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      <p className={note}>
-        Each paired must-state fact once, by whose Answer Context its evidence quote reached, with
-        how many each side’s answers state. A fact only the challenger reached is a retrieval gain;
-        one both reached measures how each side’s generator used the same evidence.
-      </p>
-    </div>
-  )
-}
-
 function GeneratorChoiceRow({ c }: { c: GeneratorComparison }) {
   return (
     <>
@@ -1058,10 +784,7 @@ function GeneratorChoiceTable({
             directional: one-sided, at thresholds fixed before running. Under each verdict, the mean
             paired difference (challenger minus shipped) and its 95% bootstrap interval, shown and
             not decided on. If the Control Run came out ahead of the shipped run, the comparison
-            would be inconclusive and the shipped generator would stand. This comparison was scored
-            on the earlier measurement and stands as recorded: it set the challenger’s run against a
-            shipped run and Control Run scored before the measurement fixes, not against the newer
-            ones in the answers table.
+            would be inconclusive and the shipped generator would stand.
           </>
         ) : (
           <>
@@ -1075,146 +798,5 @@ function GeneratorChoiceTable({
         <span className="font-medium text-accent-strong">Chosen: {choice.chosen}.</span>
       </p>
     </div>
-  )
-}
-
-// --- Corpus coverage grid -----------------------------------------------------------------
-
-/** Whether `period` directly follows `previous` (`2025Q4` after `2025Q3`, `2026Q1` after `2025Q4`). */
-function follows(previous: string, period: string): boolean {
-  const index = (p: string) => {
-    const [year, quarter] = p.split('Q').map(Number)
-    return year * 4 + quarter
-  }
-  return index(period) === index(previous) + 1
-}
-
-/** The grid's fixed header cells: the other headers' raised shade made opaque, so the cells
-    scrolling beneath them stay readable. */
-const fixedHeader = `${thBare} sticky top-0 bg-[color-mix(in_srgb,white_6%,var(--color-elevated))]`
-/** The Company column, fixed at a set width (padding included) so the coverage column can sit beside it. */
-const companyColumn = 'sticky left-0 w-20 min-w-20 lg:w-64 lg:min-w-64'
-const coverageColumn = 'sticky left-20 lg:left-64'
-
-function CoverageGrid({ data }: { data: EvalExport }) {
-  const { periods, companies } = data.coverage
-  const tracked = companies.filter((c) => c.coverage === 'tracked').length
-  const skipped = periods.map((p, i) => i > 0 && !follows(periods[i - 1], p))
-  return (
-    <TechnicalSection
-      id="coverage"
-      title="Corpus coverage"
-      intro={
-        <>
-          Every Filing in the Corpus, by the calendar quarter its Report Period ends in. {tracked}{' '}
-          Tracked Companies have at least two years of consecutive quarters, so trend questions can
-          be answered; the other {companies.length - tracked} are Snapshot Companies, and a trend
-          asked of one is stated as a Coverage Gap.
-        </>
-      }
-    >
-      <div className="card p-3">
-        {/* Its own scroll area, no taller than the screen, so both scrollbars stay in reach;
-            the header row and the Company and coverage columns stay fixed while it scrolls. */}
-        <div
-          role="region"
-          aria-labelledby="coverage-grid"
-          tabIndex={0}
-          className="max-h-[70dvh] overflow-auto rounded-lg focus-visible:outline-2 focus-visible:outline-accent"
-        >
-          <table className="border-separate border-spacing-0 text-[12px]">
-            <caption id="coverage-grid" className={caption}>
-              Filings by Company and Report Period
-            </caption>
-            <thead>
-              <tr>
-                <th className={`${fixedHeader} ${companyColumn} z-30`}>Company</th>
-                <th className={`${fixedHeader} ${coverageColumn} z-30`}>Coverage</th>
-                {periods.map((period, i) => (
-                  <th
-                    key={period}
-                    className={`${fixedHeader} z-20 px-1 text-center font-medium ${skipped[i] ? 'border-l-2 border-l-muted/40' : ''}`}
-                  >
-                    <span className="block text-[12px] text-muted">{period.slice(0, 4)}</span>
-                    {`Q${period.slice(5)}`}
-                    <span className="sr-only"> {quarterLabel(period)}</span>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {companies.map((company) => (
-                <CoverageRow
-                  key={company.ticker}
-                  company={company}
-                  periods={periods}
-                  skipped={skipped}
-                />
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="mt-2 text-[12.5px] leading-relaxed text-muted">
-          <span className="font-mono font-semibold text-accent">K</span> a 10-K,{' '}
-          <span className="font-mono text-accent">Q</span> a 10-Q; hover a cell for its Filing ID
-          and Fiscal Period. Quarters with no Filing are left out, and a thicker line marks the
-          skip.
-        </p>
-      </div>
-    </TechnicalSection>
-  )
-}
-
-function CoverageRow({
-  company,
-  periods,
-  skipped,
-}: {
-  company: CoverageCompany
-  periods: string[]
-  skipped: boolean[]
-}) {
-  const snapshot = company.coverage !== 'tracked'
-  return (
-    <tr className={snapshot ? 'bg-white/[0.015]' : undefined}>
-      <th
-        scope="row"
-        className={`${companyColumn} z-10 border-b border-line bg-elevated px-3 py-1 text-left font-medium whitespace-nowrap`}
-        title={`${company.company}${company.sector ? `, ${company.sector}` : ''}`}
-      >
-        <div className="w-14 truncate lg:w-58">
-          <span className="font-mono">{company.ticker}</span>
-          <span className="ml-2 hidden font-normal text-muted lg:inline">{company.company}</span>
-        </div>
-      </th>
-      <td
-        className={`${coverageColumn} z-10 border-b border-line bg-elevated px-3 py-1 whitespace-nowrap text-muted`}
-      >
-        {snapshot ? 'Snapshot' : 'Tracked'}
-      </td>
-      {periods.map((period, i) => {
-        const filings = company.filings.filter((f) => f.period === period)
-        return (
-          <td
-            key={period}
-            className={`border-b border-line px-1 py-1 text-center ${skipped[i] ? 'border-l-2 border-l-muted/40' : ''}`}
-          >
-            {filings.map((f) => (
-              <abbr
-                key={f.filingId}
-                title={`${f.filingId}${f.fiscalPeriod ? `, ${f.fiscalPeriod}` : ''}`}
-                className={`inline-block w-5 rounded font-mono no-underline ${
-                  f.formType === '10-K'
-                    ? 'bg-accent font-semibold text-on-accent'
-                    : 'bg-accent/15 text-accent-strong'
-                }`}
-              >
-                {f.formType === '10-K' ? 'K' : 'Q'}
-              </abbr>
-            ))}
-          </td>
-        )
-      })}
-    </tr>
   )
 }
