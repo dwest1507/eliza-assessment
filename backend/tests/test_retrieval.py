@@ -15,6 +15,7 @@ from edgar_rag.retrieval import (
     PROMPT_VERSION,
     STUB_TOKENS,
     Message,
+    answer_words,
     build_index,
     count_tokens,
     index_chunk_tokens,
@@ -330,7 +331,7 @@ def test_a_source_carries_its_citation_metadata_and_passage(index):
 def test_the_prompt_renders_rules_sources_and_question(index):
     context = _ask(index, BRIEF_QUESTION)
 
-    assert context.prompt_version == PROMPT_VERSION == "v15"
+    assert context.prompt_version == PROMPT_VERSION == "v19"
     system, user = context.messages
     assert system.role == "system"
     assert "[S3]" in system.content and "general knowledge" in system.content
@@ -2254,6 +2255,112 @@ def test_the_prompt_asks_for_a_comparison_table_whenever_companies_are_compared(
         "comparison table first"
     ) in rules
     assert "then each Company's detail under its own heading" in rules
+
+
+def _text_companies(context):
+    return {s.ticker for s in context.sources if s.kind == "text"}
+
+
+@pytest.mark.parametrize(
+    ("fixture", "question", "companies", "words"),
+    [
+        ("index", "What are Apple's main risk factors?", 1, "300 to 600"),
+        ("index", "Compare the risk factors of Apple and Tesla.", 2, "300 to 600"),
+        ("index", BRIEF_QUESTION, 3, "300 to 750"),
+        (
+            "index",
+            "Compare the risk factors of Apple, Tesla, Target and NVIDIA.",
+            4,
+            "300 to 900",
+        ),
+        (
+            "sector_index",
+            "What are the main risks facing pharmaceutical companies?",
+            5,
+            "300 to 1,000",
+        ),
+        (
+            "big_tech_index",
+            "What are the main risks facing big tech companies?",
+            7,
+            "300 to 1,000",
+        ),
+    ],
+)
+def test_the_length_block_scales_the_word_range_to_the_companies_with_text_sources(
+    request, fixture, question, companies, words
+):
+    """Prompt v17: the ceiling is 600 words for one or two Companies with text Sources,
+    150 more for each further Company, to at most 1,000; the system rules refer to it."""
+    context = _ask(request.getfixturevalue(fixture), question)
+    system, user = (m.content for m in context.messages)
+
+    assert len(_text_companies(context)) == companies
+    noun = "Company" if companies == 1 else "Companies"
+    assert _section(user, "Length").strip() == (
+        f"Write {words} words: the Sources cover {companies} {noun}."
+    )
+    rules = " ".join(system.split())
+    assert 'Write the number of words given under "Length"' in rules
+    assert "keep the most material points" in rules
+    assert "Write 300 to 600 words" not in rules
+
+
+def test_an_answer_with_no_text_sources_gets_no_length_block(index):
+    context = _ask(index, "What are Wells Fargo's main risk factors?")
+
+    assert not _text_companies(context)
+    assert "# Length" not in context.messages[1].content
+
+
+@pytest.mark.parametrize(
+    ("companies", "words"),
+    [
+        (0, (300, 600)),
+        (1, (300, 600)),
+        (2, (300, 600)),
+        (3, (300, 750)),
+        (4, (300, 900)),
+        (5, (300, 1000)),
+        (9, (300, 1000)),
+    ],
+)
+def test_the_answer_word_range_rises_150_a_company_after_the_second(companies, words):
+    assert answer_words(companies) == words
+
+
+def test_the_prompt_asks_for_each_point_in_full(index):
+    """Prompt v16 (#161): rule 8 asks for the Company's own claim, then the particulars
+    its Source names, in the Source's tense, attributed to one Company, with every text
+    Source cited at least once; the ban on broad categories no longer bans the claim."""
+    context = _ask(index, BRIEF_QUESTION)
+    rules = " ".join(context.messages[0].content.split())
+
+    assert PROMPT_VERSION == "v19"
+    assert "8. State each point in full." in rules
+    # The Company's own claim first, its own assessment included.
+    assert "first the Company's own claim as its Source states it" in rules
+    assert "including its own assessment of how material the matter is, or of its outlook" in (
+        rules
+    )
+    # Then the particulars, courts, counts and words of scale among them.
+    assert (
+        "then the particulars the Source names: the laws and programs, products, people, "
+        "places, courts, counts, dates, amounts and percentages"
+    ) in rules
+    assert '"a substantial number", "large numbers", "very few"' in rules
+    # The tense, stated outright.
+    assert (
+        "When a Source says something has happened, is happening, or has happened in the "
+        'past and may again, say that it has; never reduce it to "could" or "may".'
+    ) in rules
+    # One Company per claim, and every text Source drawn on.
+    assert "Attribute each claim to the one Company whose Source states it" in rules
+    assert "never pool Companies in one claim" in rules
+    assert "Give each text Source at least one cited point." in rules
+    # The ban on broad categories, kept without banning the Company's headline.
+    assert "Never replace the particulars with a category that would fit any company" in rules
+    assert "Never reduce them to broad categories" not in rules
 
 
 def test_coverage_gaps_are_worded_the_same_way_every_time(index, gap_index):

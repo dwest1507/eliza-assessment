@@ -36,6 +36,10 @@ def _facts_section(context):
     return prompt[prompt.index("# Financial Facts") : prompt.index("# Sources")]
 
 
+def _rules(context):
+    return " ".join(context.messages[0].content.split())
+
+
 def _source(context, tag):
     return next(s for s in context.sources if s.tag == tag)
 
@@ -314,9 +318,8 @@ def test_a_snapshot_company_falls_back_to_the_filing_text_and_the_answer_says_so
     assert note.text in facts
     assert "read from the Filing text" in note.text
     assert [s for s in context.sources if s.kind == "text"]  # the text is still retrieved
-    assert "read it from a Source's text instead, say it was read from the Filing text" in (
-        context.messages[0].content.replace("\n", " ")
-    )
+    assert "Quote any other figure as a Source's text states it" in _rules(context)
+    assert "say it was read from the Filing text" in _rules(context)
 
 
 def test_a_company_whose_segments_were_not_extracted_falls_back_to_text(index):
@@ -347,3 +350,40 @@ def test_a_facts_sources_text_holds_the_figures_derived_from_it(index):
     assert "+62.5%" in by_filing["NVDA_10-Q_2025-10-26"].text
     # The 10-Qs a fourth quarter subtracts state only what they report.
     assert "derived" not in by_filing["NVDA_10-Q_2023-04-30"].text
+
+
+def test_the_prompt_asks_the_answer_to_quote_figures_and_never_compute_them(index):
+    """Prompt v18 (#163): rule 5 takes the table's metrics and quotes every other figure
+    as the Filing text states it, computes no growth rate, difference, share or sum, gives
+    each year's stated change (an older Filing's included) and a stated period total, and
+    quotes the table's derived rows labelled as derived."""
+    rules = _rules(_ask(index, NVDA_TWO_YEARS))
+
+    assert (
+        "5. Quote figures; never compute them. Take revenue, net income and segment revenue "
+        "from the Financial Facts table when it has them, cite the row's Source tags, and "
+        "quote them exactly with their units and periods."
+    ) in rules
+    assert (
+        "Quote any other figure as a Source's text states it, with its tag, and say it was "
+        "read from the Filing text."
+    ) in rules
+    assert "Never compute a growth rate, difference, share or sum yourself" in rules
+    assert (
+        "When a Source states a change or what drove it, including a prior year's change in "
+        "an older Filing, give it in its words with its tag"
+    ) in rules
+    assert (
+        "when the question asks about two or more years, give each year's change the Sources "
+        "state, citing the older Filing for the earlier one"
+    ) in rules
+    assert (
+        "Quote a period total the Source states (nine months, a year) rather than only its parts."
+    ) in rules
+    assert (
+        "A value the Financial Facts table marks as derived (a fourth quarter, a change from "
+        "a year earlier) may be quoted, labelled as derived"
+    ) in rules
+    # v15's invitation to compute and label a figure is gone.
+    assert "any figure you compute yourself" not in rules
+    assert "Label a derived figure as derived: a fourth quarter computed" not in rules

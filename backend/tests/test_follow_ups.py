@@ -2,6 +2,8 @@
 user message does not name is inherited from the most recent earlier user message that
 named it, and a part it names replaces the inherited one (ADR 0003)."""
 
+import re
+
 import pytest
 
 from edgar_rag.corpus import load_corpus
@@ -164,9 +166,8 @@ def test_a_change_of_topic_that_names_no_company_still_inherits_the_companies(in
 def _earlier(context):
     """The earlier-conversation block of the prompt."""
     user = context.messages[1].content
-    return user.split("# Earlier conversation (context only, not evidence)\n\n")[1].split(
-        "\n\n# Question"
-    )[0]
+    earlier = user.split("# Earlier conversation (context only, not evidence)\n\n")[1]
+    return re.split(r"\n\n# (?:Length|Question)\n", earlier)[0]
 
 
 def test_earlier_source_tags_are_rewritten_as_the_filing_ids_they_cited(index):

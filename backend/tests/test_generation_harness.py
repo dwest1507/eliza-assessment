@@ -1148,6 +1148,42 @@ def test_rescoring_redoes_the_figure_check_from_the_saved_answers_alone(index, t
     assert "1.00 → 0.00" in out.getvalue()
 
 
+def test_rescoring_redoes_the_structure_check_with_the_word_range_of_its_source_companies(
+    index, tmp_path
+):
+    """Prompt v17's structure check, applied to a report saved under v15's 300 to 600
+    words: the answer's three Source Companies allow it 750, so a 700-word answer now
+    follows the structure."""
+    import io
+    import json
+
+    from edgar_eval.rescore import main
+
+    sections = "\n\n".join(
+        f"## {name}\n\n" + " ".join([f"{name} names a risk [S1]."] * 55)
+        for name in ("Apple", "Tesla", "JPMorgan")
+    )
+    answer = f"Apple, Tesla and JPMorgan each name risks [S1]. They differ [S1].\n\n{sections}"
+    path, saved = _saved_report(index, tmp_path, answer, lambda filing_id: [])
+    [case] = saved["cases"]
+    words = case["structure"]["words"]
+    assert 600 < words <= 750
+    # As v15's check scored it.
+    case["structure"]["problems"] = [f"{words} words, over 600"]
+    saved["overall"]["structure_followed"] = 0.0
+    saved["by_type"]["risk"]["structure_followed"] = 0.0
+    path.write_text(json.dumps(saved))
+
+    out = io.StringIO()
+    assert main([str(path), "--index", str(index)], fact_values=lambda f: [], out=out) == 0
+
+    after = json.loads(path.read_text())
+    assert after["cases"][0]["structure"] == {"words": words, "problems": []}
+    assert after["overall"]["structure_followed"] == 1.0
+    assert after["by_type"]["risk"]["structure_followed"] == 1.0
+    assert "structure followed 0.00 → 1.00" in out.getvalue()
+
+
 TESLA_GAP = "Tesla's own guidance for 2026 is not in the Filings provided."
 TESLA_GAP_ANSWER = f"Tesla depends on Elon Musk [S1]. {TESLA_GAP} [S1] [S2]"
 """An answer to outlook-tsla-2026, which expects a "no guidance" Coverage Gap, stating it
