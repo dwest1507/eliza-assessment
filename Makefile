@@ -46,7 +46,7 @@ for key in $(1); do \
 	done
 endef
 
-.PHONY: help install test lint format eda sec-facts index embeddings local-embeddings ask api eval-retrieval eval-generation eval-brief eval-rescore eval-arms eval-generators eval-settings eval-export judge-study-sample judge-study-judge judge-study-score deck dev frontend-deps \
+.PHONY: help install test lint format eda sec-facts index embeddings local-embeddings ask api eval-retrieval eval-generation eval-brief eval-rescore eval-arms eval-generators eval-settings eval-export judge-study-sample judge-study-judge judge-study-score human-check-sample human-check-score deck dev frontend-deps \
 	ci-cd backend-lint backend-test eval-gate eval-floors frontend-quality frontend-test frontend-build security-audit lighthouse
 
 help: ## List targets
@@ -177,6 +177,12 @@ judge-study-judge: ## Judge every sampled item: Jev twice, the reference judge (
 
 judge-study-score: ## Score the stored verdicts against the sheet's labels (no provider call); refuses while items are unlabelled unless PARTIAL=1 or the stopping rule is met [PARTIAL=1]
 	$(UV) python -m edgar_eval.judge_study score $(if $(PARTIAL),--partial)
+
+human-check-sample: ## Draw the human check's 30 items (15 fact, 15 claim) from the judge study's sample and write its blind sheet to data/eval/judge_study/human_check.md (no provider call) [SEED=...]
+	$(UV) python -m edgar_eval.human_check sample $(if $(SEED),--seed $(SEED))
+
+human-check-score: ## Score the human check's labels against Claude's labels and Jev's verdicts (no provider call); refuses while items are unlabelled
+	$(UV) python -m edgar_eval.human_check score
 
 # The slide deck is Markdown for Marp (docs/deck.md); npx fetches the pinned Marp CLI.
 MARP := npx --yes @marp-team/marp-cli@4.5.1

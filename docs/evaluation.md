@@ -10,7 +10,7 @@
 - **What they mean.** An answer states about three in four of the facts it must, and about 19 in 20 of its cited claims are backed by the passage they cite. Of the 106 must-state holdout facts the answers miss 24: 9 whose evidence never reached the prompt and 15 whose evidence did, so the misses are now as much the generator's as retrieval's. The holdout is in line with dev, so the dev choices did not overfit. No other retriever, generator, chunk size or context budget beat the simple setup ([The version 2 comparisons on dev](#the-version-2-comparisons-on-dev), [the Arm comparison](#the-arm-comparison-on-the-new-retrieval-127-2026-10-18) and [the settings comparison](#the-settings-comparison-on-the-new-retrieval-129-2026-10-18) on the new retrieval).
 - **The main limits.**
   - Small samples: on 20 cases one case moves a share by 0.05, so the numbers are directional, not exact rates.
-  - No human labels: Claude drafted the Golden Set's facts and labelled the judge study, so Jev is checked against Claude, not a person ([The judge study's results](#the-judge-studys-results)).
+  - No human labels: Claude drafted the Golden Set's facts and labelled the judge study, so Jev is checked against Claude, not a person ([The judge study's results](#the-judge-studys-results)). A blind 30-item [human check](#the-human-check) is drawn and waits for the developer's labels.
   - Prompt v15 ([ADR 0016](adr/0016-coverage-gaps-shown-by-the-product.md)) is not scored yet: these numbers are prompt v7's until the final round, and Coverage Gaps stated is measured differently from v15.
   - A computed figure fails the figure check by design, and a follow-up that changes topic without naming a Company inherits the earlier one ([ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md)).
 
@@ -801,9 +801,24 @@ The LLM split agrees on 4 more answers (McNemar p = 0.388, shown, not decided on
 - the split model and the labeller are both Claude, which may favour it;
 - some of the sentence split's false alarms come from a fault in code that is free to fix. The sentence split breaks after "U.S." when a capital letter follows, so 6 of the 200 claim items are fragments such as "Apple also points to the U.S." That fix was a follow-up issue (#83), not this study's, and is now built ([Method](#method-1), step 3).
 
-**What the study does not show.** With Claude's labels it says nothing about whether Jev agrees with a human. A human-labelled sample would be needed to check that, and the committed sheet (with its labels cleared, or a fresh seed) is ready for one.
+**What the study does not show.** With Claude's labels it says nothing about whether Jev agrees with a human. A human-labelled sample is needed to check that: [the human check](#the-human-check) draws one.
 
 **No human is in the loop.** Claude labelled the judge study, and the developer did not review the drafted Golden Set and Brief Suite labels ([the review waiver](golden-set.md#what-is-decided)). The developer accepted this as a limitation of the demo (decided 2026-10-17, recorded on #43). In production, hand-labelled data would ideally be used.
+
+#### The human check
+
+Built for spec #136 (issue #144), in `backend/src/edgar_eval/human_check.py`, so that a person can check Claude's labels and Jev's verdicts on a small blind sample of the judge study's items. Neither command calls a provider.
+
+```sh
+make human-check-sample   # draw the 30 items and write the blind sheet (SEED=... draws others)
+make human-check-score    # once every item is labelled: agreement with Claude and with Jev
+```
+
+- **The draw.** `make human-check-sample` draws 15 fact items and 15 claim items from the judge study's sample (`data/eval/judge_study/sample.json`), with a fixed seed (20261020, `SEED` in the module; `SEED=` changes it), among the items Claude labelled on the study's sheet. Each kind is spread across Claude's labels as evenly as they allow, one item of each label in turn until the kind's 15 are drawn, a label with too few items giving all it has. On the committed study that gives 8 facts Claude labelled stated and 7 not stated, and 5 claims each supported, unsupported and contradicted, so the check sees as many bad claims as good ones.
+- **The sheet.** It writes them, fact items first and then claim items, each in shuffled order, to `data/eval/judge_study/human_check.md`, committed beside the study's sheet: the same item format and `LABEL` lines as the study's sheet, through the same writer, with no Claude label, no Jev verdict, no probability and no reason an item was drawn. Its opening asks the labeller not to open the study's sheet, `label-reasons.md`, `sample.json`, verdicts or score until every item is labelled, since the items keep their study ids. Drawing again keeps every label entered, and refuses, writing nothing, if the new draw would drop a labelled item.
+- **The score.** `make human-check-score` reads the developer's labels, Claude's labels from the study's sheet and Jev's first run from the study's verdicts (`data/derived/judge_study/verdicts.json`, the study's measure), and reports the developer's agreement with Claude's labels and with Jev's verdicts: for the fact items and the claim items, the count, the share and Cohen's kappa, and over all 30 items the count and share. A fact's Jev verdict is taken at the fact cut-off (0.6) from its stored probability; an item whose Jev judgment failed is left out of Jev's agreement and counted. It prints the score and writes it to `data/derived/judge_study/human_check_score.json` (gitignored), and refuses while any item is unlabelled.
+
+The labelling is the developer's own: an agent never fills in this sheet. Until it is labelled, every label in the evaluation is still Claude's.
 
 ### The version 2 comparisons on dev
 

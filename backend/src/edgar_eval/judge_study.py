@@ -523,10 +523,12 @@ def read_labels(path: str | Path) -> dict[str, str | None]:
     return labels
 
 
-def write_sheet(sample: Sample, path: str | Path) -> int:
+def write_sheet(sample: Sample, path: str | Path, preamble: Sequence[str] | None = None) -> int:
     """Write the sample's labelling sheet, keeping every label of a sheet already at
     `path`, and return how many were kept. Raises ValueError, writing nothing, when that
-    sheet labels an item this sample does not draw, or holds a label that is not one."""
+    sheet labels an item this sample does not draw, or holds a label that is not one.
+    `preamble` replaces the study sheet's title and opening lines (the human check's
+    sheet has its own); the items and their label lines are the same."""
     path = Path(path)
     existing = read_labels(path) if path.exists() else {}
     ids = {item.id for item in sample.items}
@@ -540,35 +542,42 @@ def write_sheet(sample: Sample, path: str | Path) -> int:
     kept = {i: label for i, label in existing.items() if label}
     path.parent.mkdir(parents=True, exist_ok=True)
     partial = path.with_name(path.name + ".partial")
-    partial.write_text(_render(sample, kept), encoding="utf-8")
+    text = _render(sample, kept, _study_preamble(sample) if preamble is None else preamble)
+    partial.write_text(text, encoding="utf-8")
     partial.replace(path)
     return len(kept)
 
 
-def _render(sample: Sample, labels: Mapping[str, str]) -> str:
-    facts = [i for i in sample.items if i.kind == "fact"]
-    claims = [i for i in sample.items if i.kind == "claim"]
-    lines = [
+LABELLING = (
+    "Label each item on its `LABEL` line, after the colon. A fact item is `stated` or "
+    "`not stated`: does the answer state the Required Fact, in any wording? A claim "
+    "item is `supported`, `unsupported` or `contradicted`: how do the cited Sources "
+    "relate to the claim? Its context (heading, table header) is there to read the "
+    "claim by, not to be judged. Label every fact item, then the claim items in "
+    "order. Leave a label blank to come back to it; drawing the sheet again keeps "
+    "every label written here."
+)
+"""How to label, the same on the study's sheet and the human check's."""
+
+
+def _study_preamble(sample: Sample) -> list[str]:
+    facts = sum(i.kind == "fact" for i in sample.items)
+    return [
         "# Judge study labelling sheet",
         "",
         (
             f"Seed: {sample.seed}. Drawn from {len(sample.reports)} saved report(s): "
-            f"{len(facts)} fact items and {len(claims)} claim items."
+            f"{facts} fact items and {len(sample.items) - facts} claim items."
         ),
         "",
-        (
-            "Label each item on its `LABEL` line, after the colon. A fact item is `stated` or "
-            "`not stated`: does the answer state the Required Fact, in any wording? A claim "
-            "item is `supported`, `unsupported` or `contradicted`: how do the cited Sources "
-            "relate to the claim? Its context (heading, table header) is there to read the "
-            "claim by, not to be judged. Label every fact item, then the claim items in "
-            "order. Leave a label blank to come back to it; drawing the sheet again keeps "
-            "every label written here."
-        ),
-        "",
-        "## Fact items",
-        "",
+        LABELLING,
     ]
+
+
+def _render(sample: Sample, labels: Mapping[str, str], preamble: Sequence[str]) -> str:
+    facts = [i for i in sample.items if i.kind == "fact"]
+    claims = [i for i in sample.items if i.kind == "claim"]
+    lines = [*preamble, "", "## Fact items", ""]
     for n, item in enumerate(facts, 1):
         lines += [
             f"### {n}. {item.id}",
