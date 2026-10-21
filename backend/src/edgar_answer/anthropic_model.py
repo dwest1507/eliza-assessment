@@ -1,7 +1,7 @@
 """The Anthropic implementation of the answer model (ADR 0004), over the official SDK.
 
 Streams a Message with adaptive thinking at every provider's settings
-(`edgar_answer.generators`): effort `medium` and a token cap of 32,000, which covers the
+(`edgar_answer.generators`): effort `low` and a token cap of 32,000, which covers the
 thinking and the answer, the same as the OpenAI implementation's reasoning effort and
 completion-token cap, so the generator comparison measures the models rather than their
 settings. The thinking is not shown

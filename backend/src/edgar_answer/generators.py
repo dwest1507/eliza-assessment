@@ -44,7 +44,7 @@ __all__ = [
 ANSWER_MODEL_ENV_VAR = "ANSWER_MODEL"
 """The environment variable that names the answer model, a row of `GENERATORS`."""
 
-REASONING_EFFORT = "medium"
+REASONING_EFFORT = "low"
 """Every provider's reasoning effort: OpenAI's `reasoning_effort`, Anthropic's adaptive
 thinking `effort`."""
 

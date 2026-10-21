@@ -8,6 +8,7 @@ from types import SimpleNamespace
 import pytest
 
 from edgar_answer import ask
+from edgar_answer.generators import ANTHROPIC, GENERATORS, OPENAI, require
 from edgar_answer.openai_model import OpenAIAnswerModel
 from edgar_rag.answer_model import AnswerCall, AnswerCallRecord, Usage
 from edgar_rag.retrieval import Message, PromptMessage, prepare_answer_context
@@ -139,7 +140,7 @@ class FakeOpenAIClient:
         )
 
 
-def test_openai_model_defaults_to_gpt_6_luna_with_medium_reasoning_and_a_32k_cap():
+def test_openai_model_defaults_to_gpt_6_luna_with_low_reasoning_and_a_32k_cap():
     client = FakeOpenAIClient()
     model = OpenAIAnswerModel(client=client)
 
@@ -150,7 +151,7 @@ def test_openai_model_defaults_to_gpt_6_luna_with_medium_reasoning_and_a_32k_cap
     assert client.request == {
         "model": "gpt-6-luna",
         "messages": [{"role": "system", "content": "rules"}, {"role": "user", "content": "q"}],
-        "reasoning_effort": "medium",
+        "reasoning_effort": "low",
         "max_completion_tokens": 32000,
         "stream": True,
         "stream_options": {"include_usage": True},
@@ -219,7 +220,7 @@ class FakeAnthropicClient:
         return Stream()
 
 
-def test_anthropic_model_streams_with_the_same_medium_effort_and_32k_cap_as_openai():
+def test_anthropic_model_streams_with_the_same_low_effort_and_32k_cap_as_openai():
     from edgar_answer.anthropic_model import AnthropicAnswerModel
 
     client = FakeAnthropicClient()
@@ -234,9 +235,31 @@ def test_anthropic_model_streams_with_the_same_medium_effort_and_32k_cap_as_open
         "system": "rules",
         "messages": [{"role": "user", "content": "q"}],
         "thinking": {"type": "adaptive"},
-        "output_config": {"effort": "medium"},
+        "output_config": {"effort": "low"},
         "max_tokens": 32000,
     }
+
+
+@pytest.mark.parametrize("model", [g.model for g in GENERATORS])
+def test_every_generator_of_both_providers_answers_at_low_effort_with_a_32k_cap(model):
+    from edgar_answer.anthropic_model import AnthropicAnswerModel
+
+    row = require(model)
+    if row.provider is OPENAI:
+        client = FakeOpenAIClient()
+        list(OpenAIAnswerModel(model, client=client).stream([PromptMessage("user", "q")]))
+        settings = (client.request["reasoning_effort"], client.request["max_completion_tokens"])
+    else:
+        client = FakeAnthropicClient()
+        list(AnthropicAnswerModel(model, client=client).stream([PromptMessage("user", "q")]))
+        settings = (client.request["output_config"]["effort"], client.request["max_tokens"])
+
+    assert client.request["model"] == model
+    assert settings == ("low", 32000)
+
+
+def test_the_generator_table_spans_both_providers():
+    assert {g.provider for g in GENERATORS} == {OPENAI, ANTHROPIC}
 
 
 @pytest.mark.parametrize(

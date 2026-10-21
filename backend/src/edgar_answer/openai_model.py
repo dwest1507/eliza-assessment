@@ -1,7 +1,7 @@
 """The OpenAI implementation of the answer model (ADR 0004), over the official SDK.
 
 Streams a Chat Completion at every provider's settings (`edgar_answer.generators`):
-reasoning effort `medium` and a completion-token cap of 32,000, which covers the
+reasoning effort `low` and a completion-token cap of 32,000, which covers the
 reasoning tokens and the answer. Its `finish_reason` becomes the Answer Call's stop
 reason: `length`, the cap, is `token_cap`. The model is the one it is built with,
 `gpt-6-luna` by default; the product picks it by `ANSWER_MODEL`
