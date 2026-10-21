@@ -707,19 +707,16 @@ def _section_tokens(index, filing_id, section):
     return sum(c["tokens"] for c in _chunks(index, filing_id=filing_id, section=section))
 
 
-def test_a_legal_proceedings_question_also_searches_the_financial_statements(index):
+def test_a_legal_proceedings_question_reads_only_a_legal_proceedings_section_with_text(index):
     context = _ask(index, "What legal proceedings does Apple disclose in its latest Filings?")
 
     assert context.query_scope.sections == LEGAL_PROCEEDINGS
+    # Apple's Item 3 states its cases, so its Financial Statements are not searched.
     assert _searched(context) == [
         ("AAPL", "AAPL_10-K_2025-09-27", "Legal Proceedings"),
-        ("AAPL", "AAPL_10-K_2025-09-27", "Financial Statements"),
         ("AAPL", "AAPL_10-Q_2025-12-27", "Legal Proceedings"),
-        ("AAPL", "AAPL_10-Q_2025-12-27", "Financial Statements"),
     ]
-    sections = {s.section for s in context.sources}
-    assert "Legal Proceedings" in sections  # Apple's Item 3 states its cases
-    assert sections <= set(LEGAL_PROCEEDINGS)
+    assert {s.section for s in context.sources} == {"Legal Proceedings"}
 
 
 @pytest.mark.parametrize(
@@ -739,29 +736,6 @@ def test_a_legal_proceedings_question_orders_each_companys_legal_proceedings_fir
         # Every Legal Proceedings Source of the Company, from each of its Filings,
         # before any of its Financial Statements Sources.
         assert sections == sorted(sections, key=lambda s: s != "Legal Proceedings")
-
-
-def test_a_legal_proceedings_question_ranks_the_legal_proceedings_into_the_budget_first(index):
-    question = "What legal proceedings does Apple disclose in its latest Filings?"
-    planned = [
-        _section_tokens(index, f, "Legal Proceedings")
-        for f in ("AAPL_10-K_2025-09-27", "AAPL_10-Q_2025-12-27")
-    ]
-
-    def legal_text(context):
-        return [s.text for s in context.sources if s.section == "Legal Proceedings"]
-
-    full = _ask(index, question)
-    tight = prepare_answer_context(
-        [Message("user", question)], index, context_budget=sum(planned) + 100
-    )
-
-    # A budget that holds Apple's Legal Proceedings takes all of it before any of the
-    # Financial Statements, which only fill what is left.
-    assert legal_text(tight) == legal_text(full)
-    assert sum(count_tokens(s.text) for s in tight.sources if s.section != "Legal Proceedings") < (
-        sum(count_tokens(s.text) for s in full.sources if s.section != "Legal Proceedings")
-    )
 
 
 def test_a_stub_legal_proceedings_is_answered_from_the_financial_statements(index):

@@ -127,9 +127,7 @@ def test_the_query_scope_carries_the_sections_searched(client):
 
     assert scope["searched"] == [
         {"ticker": "AAPL", "filingId": "AAPL_10-K_2025-09-27", "section": "Legal Proceedings"},
-        {"ticker": "AAPL", "filingId": "AAPL_10-K_2025-09-27", "section": "Financial Statements"},
         {"ticker": "AAPL", "filingId": "AAPL_10-Q_2025-12-27", "section": "Legal Proceedings"},
-        {"ticker": "AAPL", "filingId": "AAPL_10-Q_2025-12-27", "section": "Financial Statements"},
     ]
 
 
