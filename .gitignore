@@ -22,6 +22,9 @@ data/derived/
 # Draft email to the Client, kept local
 docs/client-email.md
 
+# Interview prep notes, kept local
+docs/prep/
+
 # Local environment, one per app (copy the app's .env.example)
 .env
 .env.*
