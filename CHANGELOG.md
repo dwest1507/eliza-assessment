@@ -1,5 +1,39 @@
 # Changelog
 
+## [0.5.0](https://github.com/dwest1507/eliza-assessment/compare/eliza-assessment-v0.4.0...eliza-assessment-v0.5.0) (2026-10-22)
+
+
+### Features
+
+* **answer:** every answer model answers at reasoning effort low ([a0a6d3e](https://github.com/dwest1507/eliza-assessment/commit/a0a6d3eb2993cf87298521056987ae2920d2a6ea)), closes [#156](https://github.com/dwest1507/eliza-assessment/issues/156)
+* demo readiness: the Company Calendar, the evidence-to-answer work and the final all-model round ([9f1bf9c](https://github.com/dwest1507/eliza-assessment/commit/9f1bf9c08721ee328e389a82d9519f2f54e9b2e1))
+* **eval:** a blind 30-item human check of the judge study's labels ([13d877e](https://github.com/dwest1507/eliza-assessment/commit/13d877e51bc3be826f90062a5173cdcc3fda3229)), closes [#144](https://github.com/dwest1507/eliza-assessment/issues/144)
+* **eval:** prompt candidates run under their own name and are decided by ADR 0017 ([fa67cf3](https://github.com/dwest1507/eliza-assessment/commit/fa67cf3cfa4fa964cef2ee3d2b899880b8817f48)), closes [#157](https://github.com/dwest1507/eliza-assessment/issues/157)
+* **eval:** read spec [#132](https://github.com/dwest1507/eliza-assessment/issues/132)'s round two runs a side ([797c427](https://github.com/dwest1507/eliza-assessment/commit/797c427b7e985a9023971cc3168a0a06c6b67b5c)), closes [#160](https://github.com/dwest1507/eliza-assessment/issues/160)
+* **eval:** score the human check's fact items, the claim items left unlabelled ([0df46db](https://github.com/dwest1507/eliza-assessment/commit/0df46dbafd9ca9c722474ad8e3e06726b9e33ad3)), closes [#152](https://github.com/dwest1507/eliza-assessment/issues/152)
+* **eval:** Technical details show only the latest numbers ([5f0b0ba](https://github.com/dwest1507/eliza-assessment/commit/5f0b0baf4aa5625b8efc67a3347edc7d92013e76)), closes [#151](https://github.com/dwest1507/eliza-assessment/issues/151)
+* **eval:** the Generation Miss report, make eval-misses ([b62dbe0](https://github.com/dwest1507/eliza-assessment/commit/b62dbe02e61ea845c2f94b08a4a2496d385ecb90)), closes [#158](https://github.com/dwest1507/eliza-assessment/issues/158)
+* **facts:** Financial Facts for the Snapshot Companies, checked against the SEC ([c5cec27](https://github.com/dwest1507/eliza-assessment/commit/c5cec27a7733f672eaaf22c06022ca2c98de5b4a)), closes [#153](https://github.com/dwest1507/eliza-assessment/issues/153)
+* **frontend:** a searchable "What's covered" ([503a986](https://github.com/dwest1507/eliza-assessment/commit/503a986c6ec9e9c3f9e9d17cffa9d920daeb1717)), closes [#150](https://github.com/dwest1507/eliza-assessment/issues/150)
+* **frontend:** Calendar before Sources in the side panel's tabs and toolbar ([81d2f58](https://github.com/dwest1507/eliza-assessment/commit/81d2f586fb62090301fcdcdc153d645d33974ca3)), closes [#153](https://github.com/dwest1507/eliza-assessment/issues/153)
+* **frontend:** follow-up suggestions skip what has been asked ([627112f](https://github.com/dwest1507/eliza-assessment/commit/627112fdc3b774a59f6806e0acb2c1783fb1e07a)), closes [#141](https://github.com/dwest1507/eliza-assessment/issues/141)
+* **frontend:** one right-hand side panel with a toolbar, starting with Sources ([6ddb196](https://github.com/dwest1507/eliza-assessment/commit/6ddb19644f51fc8281c7272f8ee2dda9c259f59d)), closes [#140](https://github.com/dwest1507/eliza-assessment/issues/140)
+* **frontend:** the Calendar follows the conversation ([c3161c6](https://github.com/dwest1507/eliza-assessment/commit/c3161c6f56a5fb02554a893fdca14fa580c06b30)), closes [#149](https://github.com/dwest1507/eliza-assessment/issues/149)
+* **frontend:** the Company Calendar tab ([81f8fc7](https://github.com/dwest1507/eliza-assessment/commit/81f8fc7fe289c568c5b0c8698e72bd57453a2950)), closes [#148](https://github.com/dwest1507/eliza-assessment/issues/148)
+* **frontend:** the developer's rehearsal notes on the panel, calendar and page ([7ef9c60](https://github.com/dwest1507/eliza-assessment/commit/7ef9c607da6765ec21db5f15bb6adef8f1722607)), closes [#153](https://github.com/dwest1507/eliza-assessment/issues/153)
+* give every fiscal period its calendar months (prompt v15) ([f2594ec](https://github.com/dwest1507/eliza-assessment/commit/f2594ec3a568262320dbf88b172139a0aa26717b)), closes [#147](https://github.com/dwest1507/eliza-assessment/issues/147)
+* pick the answer model by ANSWER_MODEL, at medium effort with a 32k cap ([854cdcb](https://github.com/dwest1507/eliza-assessment/commit/854cdcb364716bc449e510b529fc3279f67e5122)), closes [#138](https://github.com/dwest1507/eliza-assessment/issues/138)
+* **prompt:** v19 candidate, v16, v17 and v18 combined ([4033a0e](https://github.com/dwest1507/eliza-assessment/commit/4033a0e4c6f97c94a838a7b532aa8421a1735084)), closes [#165](https://github.com/dwest1507/eliza-assessment/issues/165)
+* **retrieval:** join adjacent chunks into one passage, marking only skipped text ([6adf961](https://github.com/dwest1507/eliza-assessment/commit/6adf9611c419c4230d8a90963be0873039d6e1b3)), closes [#137](https://github.com/dwest1507/eliza-assessment/issues/137)
+* **retrieval:** the "big tech" Company Group ([309de1b](https://github.com/dwest1507/eliza-assessment/commit/309de1b170220e59ea3c1d9bcdbedcbc42affe9b)), closes [#146](https://github.com/dwest1507/eliza-assessment/issues/146)
+* **retrieval:** the Overview route, the document-order fill and "latest" for open questions ([bcd886f](https://github.com/dwest1507/eliza-assessment/commit/bcd886fd2baef783e4326bd3380ffdd8b643d04f)), closes [#145](https://github.com/dwest1507/eliza-assessment/issues/145) [#133](https://github.com/dwest1507/eliza-assessment/issues/133)
+* show Coverage Gaps as Coverage notes below the answer (prompt v15, ADR 0016) ([61755c7](https://github.com/dwest1507/eliza-assessment/commit/61755c702b1520990f4d289de1366b57f3c28bb1)), closes [#139](https://github.com/dwest1507/eliza-assessment/issues/139)
+
+
+### Bug Fixes
+
+* **eval:** the figure check accepts the Financial Facts table's derived rows ([c38b81f](https://github.com/dwest1507/eliza-assessment/commit/c38b81fee78abc0bab248a7531e793c355c70a6c)), closes [#159](https://github.com/dwest1507/eliza-assessment/issues/159) [#132](https://github.com/dwest1507/eliza-assessment/issues/132)
+
 ## [0.4.0](https://github.com/dwest1507/eliza-assessment/compare/eliza-assessment-v0.3.1...eliza-assessment-v0.4.0) (2026-10-19)
 
 
