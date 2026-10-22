@@ -279,64 +279,71 @@ describe('the "How it works" overview', () => {
     ])
   })
 
-  it('gives the shipped run’s headline numbers, each with a plain meaning', () => {
-    // The Control Run listed first must not be taken for the shipped run.
-    const [shipped, control, haiku] = EXPORT.generation
-    render(<HowItWorks data={{ ...EXPORT, generation: [control, haiku, shipped] }} />)
-
-    const numbers = section('How well it answers')
-    const facts = within(numbers).getByRole('listitem', { name: /key facts/i })
-    expect(facts).toHaveTextContent('About 72%') // Fact Recall 0.717
-    expect(within(facts).getByTitle('Fact Recall')).toBeInTheDocument()
-    const claims = within(numbers).getByRole('listitem', { name: /claims backed/i })
-    expect(claims).toHaveTextContent('About 93%') // Faithfulness 0.928
-    expect(within(claims).getByTitle('Faithfulness')).toBeInTheDocument()
-    const gaps = within(numbers).getByRole('listitem', { name: /missing information/i })
-    expect(gaps).toHaveTextContent('100%') // Coverage Gaps stated 1.0
-    expect(within(gaps).getByTitle('Coverage Gaps stated')).toBeInTheDocument()
-    for (const item of [facts, claims, gaps]) {
-      expect(within(item).getByRole('paragraph')).toHaveTextContent(/\w+.*\./)
-    }
-    expect(numbers).not.toHaveTextContent('71%') // the Control Run's Fact Recall
-  })
-
-  it('words the headline numbers as directional, on the questions they were measured on', () => {
+  it('gives the holdout run’s headline numbers, each with a plain meaning', () => {
     render(<HowItWorks data={EXPORT} />)
 
     const numbers = section('How well it answers')
-    expect(numbers).toHaveTextContent('60 test questions')
+    const facts = within(numbers).getByRole('listitem', { name: /key facts/i })
+    expect(facts).toHaveTextContent('About 74%') // the holdout's Fact Recall 0.741
+    expect(within(facts).getByTitle('Fact Recall')).toBeInTheDocument()
+    const claims = within(numbers).getByRole('listitem', { name: /claims backed/i })
+    expect(claims).toHaveTextContent('About 95%') // the holdout's Faithfulness 0.952
+    expect(within(claims).getByTitle('Faithfulness')).toBeInTheDocument()
+    for (const item of [facts, claims]) {
+      expect(within(item).getByRole('paragraph')).toHaveTextContent(/\w+.*\./)
+    }
+    // The shipped run on dev, which "Technical details" shows, stays out of the headline.
+    expect(numbers).not.toHaveTextContent('72%')
+    expect(numbers).not.toHaveTextContent('93%')
+  })
+
+  it('says what’s missing in words, with no rate, since few questions turn on it', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const numbers = section('How well it answers')
+    const gaps = within(numbers).getByRole('listitem', { name: /information is missing/i })
+    expect(within(gaps).getByTitle('Coverage Gaps')).toBeInTheDocument()
+    expect(gaps).toHaveTextContent('the answer says so instead of filling it in')
+    expect(gaps).not.toHaveTextContent('%')
+  })
+
+  it('words the headline numbers as directional, on the questions kept apart', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const numbers = section('How well it answers')
+    expect(numbers).toHaveTextContent('20 test questions kept apart until the end')
     expect(numbers).toHaveTextContent('a rough guide')
+    expect(numbers).not.toHaveTextContent(/points?\b/)
+    expect(within(numbers).getByRole('link', { name: /full results/i })).toHaveAttribute(
+      'href',
+      '#holdout'
+    )
+  })
+
+  it('gives the shipped run’s numbers on dev when there is no holdout run', () => {
+    // The Control Run listed first must not be taken for the shipped run.
+    const [shipped, control, haiku] = EXPORT.generation
+    render(
+      <HowItWorks data={{ ...EXPORT, generation: [control, haiku, shipped], holdout: null }} />
+    )
+
+    const numbers = section('How well it answers')
+    expect(within(numbers).getByRole('listitem', { name: /key facts/i })).toHaveTextContent(
+      'About 72%' // Fact Recall 0.717
+    )
+    expect(within(numbers).getByRole('listitem', { name: /claims backed/i })).toHaveTextContent(
+      'About 93%' // Faithfulness 0.928
+    )
+    expect(numbers).not.toHaveTextContent('71%') // the Control Run's Fact Recall
+    expect(numbers).toHaveTextContent('60 test questions written in advance')
     expect(within(numbers).getByRole('link', { name: /full scoreboard/i })).toHaveAttribute(
       'href',
       '#scoreboard'
     )
   })
 
-  it('claims no per-question precision, since the gaps number rests on only some questions', () => {
-    render(<HowItWorks data={EXPORT} />)
-
-    const numbers = section('How well it answers')
-    // Fact Recall and Faithfulness average every question, but Coverage Gaps stated is a
-    // share of only the questions with a Coverage Gap, so no one step size holds for all.
-    expect(numbers).not.toHaveTextContent(/points?\b/)
-    expect(numbers).toHaveTextContent(
-      'The share of missing information flagged is the roughest: it counts only the questions where the filings lack part of the answer, just some of the 60.'
-    )
-  })
-
-  it('leaves the gaps caveat out when the gaps number is not shown', () => {
-    const [shipped, ...rest] = EXPORT.generation
-    const noGaps = { ...shipped, overall: { ...shipped.overall, coverageGapsStated: null } }
-    render(<HowItWorks data={{ ...EXPORT, generation: [noGaps, ...rest] }} />)
-
-    const numbers = section('How well it answers')
-    expect(within(numbers).queryByRole('listitem', { name: /missing information/i })).toBeNull()
-    expect(numbers).not.toHaveTextContent('missing information')
-    expect(numbers).toHaveTextContent('a rough guide')
-  })
-
   it('leaves the headline numbers out until answers have been scored', () => {
-    render(<HowItWorks data={{ ...EXPORT, generation: [] }} />)
+    render(<HowItWorks data={{ ...EXPORT, generation: [], holdout: null }} />)
 
     expect(screen.queryByRole('region', { name: 'How well it answers' })).not.toBeInTheDocument()
     expect(section('Known limits')).toBeInTheDocument()

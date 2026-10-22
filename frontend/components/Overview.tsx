@@ -95,47 +95,40 @@ const HEADLINES: Headline[] = [
     meaning: (v) =>
       `A separate AI checker compared each claim with the passage it cites and found about ${Math.round(v * 100)} of every 100 supported by it.`,
   },
-  {
-    label: 'of missing information flagged',
-    term: 'Coverage Gaps stated',
-    value: (s) => s.coverageGapsStated,
-    meaning: (v) =>
-      `When the filings can’t answer part of a question, such as a forecast they don’t contain, the answer said so ${v === 1 ? 'every time' : `about ${Math.round(v * 100)} times in 100`}.`,
-  },
 ]
 
 /**
- * The headline quality numbers of the round's shipped run, each with one plain sentence,
- * worded as directional: a rough guide on a few dozen test questions, not an exact rate.
+ * The headline quality numbers, each with one plain sentence, worded as directional: a
+ * rough guide on a few dozen test questions, not an exact rate. They are the holdout run's
+ * when there is one, the questions kept apart from every choice, the numbers the slide deck
+ * and `docs/evaluation.md`'s "At a glance" quote; else the round's shipped run on dev.
  *
- * The caveat makes no per-question claim. Fact Recall and Faithfulness average every
- * question, but Coverage Gaps stated is a share of only the questions that have a Coverage
- * Gap, a count the export doesn't record, so one question moves it by more; the caveat
- * says so whenever that number is shown.
+ * Saying what's missing is shown in words, with no rate: only a few of the holdout's
+ * questions have a Coverage Gap (two in the final round), too few for a share to mean much.
  */
-export function HeadlineNumbers({ run }: { run: GenerationRun }) {
+export function HeadlineNumbers({ run, heldOut }: { run: GenerationRun; heldOut: boolean }) {
   const { cases } = run.overall
   const headlines = HEADLINES.flatMap((h) => {
     const value = h.value(run.overall)
     return value === null ? [] : [{ ...h, value }]
   })
-  const showsGaps = headlines.some((h) => h.term === 'Coverage Gaps stated')
   return (
     <OverviewSection
       id="how-well-it-answers"
       title="How well it answers"
       intro={
-        <>
-          Measured on {cases} test questions written in advance, answered by the setup you are
-          using. With that few questions, read each number as a rough guide, not an exact rate.
-          {showsGaps && (
-            <>
-              {' '}
-              The share of missing information flagged is the roughest: it counts only the questions
-              where the filings lack part of the answer, just some of the {cases}.
-            </>
-          )}
-        </>
+        heldOut ? (
+          <>
+            Measured on {cases} test questions kept apart until the end, never used to build or tune
+            it, answered once by the setup you are using. With that few questions, read each number
+            as a rough guide, not an exact rate.
+          </>
+        ) : (
+          <>
+            Measured on {cases} test questions written in advance, answered by the setup you are
+            using. With that few questions, read each number as a rough guide, not an exact rate.
+          </>
+        )
       }
     >
       <ul className="grid gap-3 md:grid-cols-3">
@@ -155,13 +148,26 @@ export function HeadlineNumbers({ run }: { run: GenerationRun }) {
             </li>
           )
         })}
+        <li aria-labelledby="headline-coverage-gaps" className="card flex flex-col gap-2 p-4">
+          <div id="headline-coverage-gaps" className="flex flex-col gap-0.5">
+            <span className="headline text-3xl font-semibold text-white">Says so</span>
+            <span title="Coverage Gaps" className="cursor-help text-[14px] text-ink">
+              when information is missing
+            </span>
+          </div>
+          <p className="text-[15px] leading-relaxed text-muted">
+            When the filings can’t answer part of a question, such as a forecast they don’t contain
+            or a company they don’t cover, the answer says so instead of filling it in. Too few test
+            questions turn on this to give it a reliable rate.
+          </p>
+        </li>
       </ul>
       <p className="text-[14px] text-muted">
         <a
-          href="#scoreboard"
+          href={heldOut ? '#holdout' : '#scoreboard'}
           className="text-accent-strong underline-offset-4 transition-colors duration-200 hover:underline"
         >
-          See the full scoreboard
+          {heldOut ? 'See these questions’ full results' : 'See the full scoreboard'}
         </a>{' '}
         under Technical details for how each number is measured.
       </p>

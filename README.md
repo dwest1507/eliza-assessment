@@ -231,7 +231,7 @@ collects the harnesses' latest results on Golden Set version 2's dev split, the 
 
 ### The slide deck
 
-The presentation around the demo is [`docs/deck.md`](docs/deck.md), Markdown for [Marp](https://marp.app/): one slide per `---`, with speaker notes in HTML comments. It speaks to the Client in plain language: the choices slide says what was tried and what stayed, with its p-values and Control Runs in the speaker notes, and the value slide carries the illustrative value model of [assumption 12](docs/assumptions.md#12-an-illustrative-value-model), not confirmed. It reads as plain Markdown on GitHub, and `make deck` renders it to `data/derived/deck/deck.html` (it needs Node.js and network access the first time, for `npx` to fetch the pinned Marp CLI; open the HTML in a browser and press `p` for presenter view). Every slide ends with links to the documents its numbers come from, and `backend/tests/test_deck.py` checks that every figure on a slide, speaker notes included, is found word for word in one of them, so a changed evaluation number fails the test until the slide is updated.
+The presentation around the demo is [`docs/deck.md`](docs/deck.md), Markdown for [Marp](https://marp.app/): one slide per `---`, with speaker notes in HTML comments. It speaks to a private equity Client unsure about AI, in plain language and with business value first: eight slides that close on a proposed pilot, then one appendix slide on how it is built and the choices tested, whose p-values and Control Runs stay in the speaker notes. The value slide carries the illustrative value model of [assumption 12](docs/assumptions.md#12-an-illustrative-value-model) and the illustrative running cost of [assumption 13](docs/assumptions.md#13-an-illustrative-running-cost), both not confirmed, and the few outside figures it quotes are checked at their primary sources in [`docs/market-context.md`](docs/market-context.md). It reads as plain Markdown on GitHub, and `make deck` renders it to `data/derived/deck/deck.html` (it needs Node.js and network access the first time, for `npx` to fetch the pinned Marp CLI; open the HTML in a browser and press `p` for presenter view). Every slide ends with links to the documents its numbers come from, and `backend/tests/test_deck.py` checks that every figure on a slide, speaker notes included, is found word for word in one of them, so a changed evaluation number fails the test until the slide is updated.
 
 ### Running the EDA
 
@@ -318,6 +318,7 @@ context.messages  # the rendered prompt for the Answer Call
 │   ├── evaluation.md          how quality is measured, and the scores
 │   ├── prompt-iterations.md   every version of the Answer Call's prompt template
 │   ├── deck.md                the slide deck (Marp Markdown; `make deck` renders it)
+│   ├── market-context.md      the outside figures the deck quotes, checked at their sources
 │   └── adr/                   architecture decision records
 ├── scripts/                   the CI checks, run by GitHub Actions and `make ci-cd`
 ├── .github/                   the GitHub Actions workflows, Dependabot and CODEOWNERS
