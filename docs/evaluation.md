@@ -3,17 +3,16 @@
 ## At a glance
 
 - **What was measured.** Whether the passages that state the answer reach the one Answer Call (the [retrieval harness](#retrieval-harness), no LLM), and whether the answers are right (the [generation harness](#generation-harness)): the share of the facts a good answer must state that it states (Fact Recall), the share of cited claims their cited passage supports (Faithfulness, both judged by a pinned Jev), and, in code, valid citations, exact figures and gaps acknowledged. On [Golden Set](golden-set.md) version 2: 83 labelled questions, 63 dev for every choice and 20 holdout kept for the final check.
-- **The headline numbers**, the shipped setup (`fts5`, `gpt-6-luna`, prompt v7) on the 20 holdout cases ([The holdout on the new retrieval](#the-holdout-on-the-new-retrieval-130-2026-10-18)):
-  - Fact Recall 0.78 and Faithfulness 0.94 (0.72 and 0.95 on the 60 dev cases);
-  - citations valid 0.95, figures exact 0.90, Coverage Gaps stated 1.00;
-  - $0.0028 and 8.1 seconds per answer.
-- **What they mean.** An answer states about three in four of the facts it must, and about 19 in 20 of its cited claims are backed by the passage they cite. Of the 106 must-state holdout facts the answers miss 24: 9 whose evidence never reached the prompt and 15 whose evidence did, so the misses are now as much the generator's as retrieval's. The holdout is in line with dev, so the dev choices did not overfit. No other retriever, generator, chunk size or context budget beat the simple setup ([The version 2 comparisons on dev](#the-version-2-comparisons-on-dev), [the Arm comparison](#the-arm-comparison-on-the-new-retrieval-127-2026-10-18) and [the settings comparison](#the-settings-comparison-on-the-new-retrieval-129-2026-10-18) on the new retrieval).
+- **The headline numbers**, the shipped setup (`fts5`, `gpt-6-luna` at reasoning effort low, prompt v19, the frozen code) on the 20 holdout cases, scored once at the end ([The final all-model round](#the-final-all-model-round-154-2026-10-21)):
+  - Fact Recall 0.76 and Faithfulness 0.93 (0.74 and 0.97 on the 63 dev cases);
+  - citations valid 0.95, figures exact 1.00, Coverage Gaps stated 1.00;
+  - $0.0028 per answer, the first text after 1.9 seconds and the full answer after 7.0 on average.
+- **What they mean.** An answer states about three in four of the facts it must, and about 19 in 20 of its cited claims are backed by the passage they cite. Of the 106 must-state holdout facts the answers miss 28: 9 whose evidence never reached the prompt and 19 whose evidence did, so the misses are now mostly the generator's. The holdout is in line with dev, so the dev choices did not overfit. No other retriever, chunk size or context budget beat the simple setup ([the Arm comparison](#the-arm-comparison-on-the-new-retrieval-127-2026-10-18) and [the settings comparison](#the-settings-comparison-on-the-new-retrieval-129-2026-10-18)). In the final round of six generators, four stated more facts than `gpt-6-luna` (Claude Sonnet 5.5 the most, 286 of 334 against 245), but every one was less faithful or had more Contradicted Claims, so `gpt-6-luna` stays, at a twentieth or less of their cost per answer.
 - **The main limits.**
-  - Small samples: on 20 cases one case moves a share by 0.05, so the numbers are directional, not exact rates.
+  - Small samples: on 20 cases one case moves a share by 0.05, so the numbers are directional, not exact rates. On dev, `gpt-6-luna` run twice stated 245 and 259 must-state facts.
   - A small human check: Claude drafted the Golden Set's facts and labelled the judge study, so Jev is checked against Claude ([The judge study's results](#the-judge-studys-results)). In a blind [human check](#the-human-check) the developer labelled 15 fact items: agreement 80% with Claude's labels and 87% with Jev's verdicts. The claim labels, which Faithfulness and Contradicted Claims rest on, are still Claude's alone.
-  - These numbers are prompt v7's, at reasoning effort low, until the final round. The prompt that freezes for it is v19 ([v19](#v19-the-combination-that-freezes-165-2026-10-21)): v15 ([ADR 0016](adr/0016-coverage-gaps-shown-by-the-product.md)), on #136's finished answer path, with spec #132's three qualifying changes combined (each point stated in full, more words for more Companies, figures quoted and never computed). Run twice on the 63 dev cases, it states 242 of the 334 must-state facts a run against v15's 232 (p ahead = 0.085, read two runs a side, since four runs of v15 alone state 229 to 241), with Fact Recall 0.73 and 0.72 and Faithfulness 0.95 and 0.97, and fails the figure check in 0.5 cases a run against 2.5. It is behind v15 on structure followed by a margin inside the one v15 shows against itself, which the developer treated as noise. Coverage Gaps stated is measured differently from v15.
-  - Speed at effort low: in v19's two dev runs, made with no other run beside them, the first text comes after 2.4 to 2.6 seconds on average and 5.8 at most, and the full answer after 8.0 to 8.6 seconds on average and 17.2 at most, so every dev answer is within the demo's ceilings (10 seconds to the first text, 30 to the full answer). At effort medium ([#138's run](#luna-at-medium-effort-prompt-v15-138-2026-10-20)) the first text took more than 10 seconds for 21 of 60 answers, so every model answers at low.
-  - A computed figure fails the figure check by design (from v19 the answer is told never to compute one), and a follow-up that changes topic without naming a Company inherits the earlier one ([ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md)).
+  - Speed at effort low: every answer in the final round's `gpt-6-luna` runs was within the demo's ceilings (10 seconds to the first text, 30 to the full answer); the slowest dev answer took 14.7 seconds. At effort medium ([#138's run](#luna-at-medium-effort-prompt-v15-138-2026-10-20)) the first text took more than 10 seconds for 21 of 60 answers, so every model answers at low.
+  - A follow-up that changes topic without naming a Company inherits the earlier one ([ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md)), and an answer quotes figures but never computes them, from prompt v19 ([v19](#v19-the-combination-that-freezes-165-2026-10-21)).
 
 The rest of these notes is the full history: each harness's method, then every run in the order it was made.
 
@@ -555,7 +554,7 @@ The holdout run above came before two tickets that could change what ships, [the
 - **The holdout is scored once more, only on the final setup** (spec #136, 2026-10-20). Spec #136 changes the answer path again (prompt v15, the Overview route, the answer model's settings) and ends with a final round of comparisons on dev, after which the answer path is frozen. The holdout is not rescored after each of those changes, and not before the final round: it is scored once, on the setup the final round leaves shipping. Every look at the holdout is a chance to tune on it, and a score of a setup that is replaced the next day describes nothing that is demoed, so one run at the end keeps it unused for choosing and makes its number the shipped setup's.
 - **It is read with the 10-case caveat.** On 10 cases one case moves a share by 0.10, so two holdout runs that differ by a case or two do not show that the setup got better or worse.
 - Rescoring a saved holdout report offline with a corrected check ([Rescoring a fixed check](#generation-harness)) is not a run: it makes no Answer Call and changes no choice.
-- **The rule applies per Golden Set version.** Version 2 brings 20 new holdout cases, scored once on the final version 2 setup ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). That run has been made ([The version 2 holdout run](#the-version-2-holdout-run)), and, after spec #116's retrieval rules changed what ships, made once more on the new setup ([The holdout on the new retrieval](#the-holdout-on-the-new-retrieval-130-2026-10-18)). Since version 2 is the harnesses' default, `SPLIT=holdout` now means version 2's holdout: score it again only if a later dev choice changes what ships, and never to tune a choice. The version 1 holdout run below stands as recorded, and version 1's 10 holdout cases, scored once and never tuned on, join version 2's dev split.
+- **The rule applies per Golden Set version.** Version 2 brings 20 new holdout cases, scored once on the final version 2 setup ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). That run has been made ([The version 2 holdout run](#the-version-2-holdout-run)), and, after spec #116's retrieval rules changed what ships, made once more on the new setup ([The holdout on the new retrieval](#the-holdout-on-the-new-retrieval-130-2026-10-18)). Under spec #136's bullet above it was then scored once more, on the final setup, after the final all-model round ([The final all-model round](#the-final-all-model-round-154-2026-10-21)). Since version 2 is the harnesses' default, `SPLIT=holdout` now means version 2's holdout: score it again only if a later dev choice changes what ships, and never to tune a choice. The version 1 holdout run below stands as recorded, and version 1's 10 holdout cases, scored once and never tuned on, join version 2's dev split.
 
 **The setup a second run would measure** is the one that ships: the `fts5` Arm with prose chunks of about 600 tokens and a 32,000-token per-Company context budget, `gpt-6-luna` at reasoning effort `low`, prompt v7, judged by `jev-1.13.0`.
 
@@ -2414,6 +2413,84 @@ Read with the two-run caveat: three cases, a direction rather than a rate. The f
   The Wells Fargo answer's odd sentence did not recur.
 
 **Sign-off.** The developer signs the rehearsal off on #153 before the final round starts. **Spend:** the first rehearsal's 18 Answer Calls, $0.06; the three cases twice, $0.03 with Jev; the second rehearsal's 9 Answer Calls, $0.03.
+
+### The final all-model round (#154, 2026-10-21)
+
+Spec #136's last paid step, on the frozen answer path: six generators on the 63 dev cases under [ADR 0011](adr/0011-one-sided-thresholds-and-a-control-run.md)'s generator rule, where "Coverage Gaps" means what [ADR 0016](adr/0016-coverage-gaps-shown-by-the-product.md) says, then the Brief Suite for the winner and the holdout, once. **`gpt-6-luna` stays the generator**: four challengers are ahead of it on Fact Recall, and every one of them is behind on a guardrail.
+
+**The setup.** Every report records **code version `d3399a87683a17a4`**, the frozen one ([The freeze and the dress rehearsal](#the-freeze-and-the-dress-rehearsal-153-2026-10-21)), with prompt v19 and Golden Set version 2, on `fts5`, 600-token chunks and the 32k budget, judged by `jev-1.13.0` at the fact cut-off 0.6. Every model answers at reasoning effort low with a 32,000-token cap ([Luna at low effort](#luna-at-low-effort-prompt-v15-156-2026-10-20)). The retrieval harness was run again on the frozen code first, free: its dev report is identical to the rehearsal's, and the holdout's is new.
+
+```sh
+make eval-retrieval SPLIT=dev && make eval-retrieval SPLIT=holdout   # free
+# the round's shipped run and Control Run, then each challenger, one run at a time
+python -m edgar_eval.generation --split dev --model gpt-6-luna --json ../data/derived/eval/generation-dev.json
+python -m edgar_eval.generation --split dev --model gpt-6-luna --json ../data/derived/eval/generation-control-dev.json
+make eval-generation MODEL=<challenger>                                # five times
+python -m edgar_eval.selection generators --split dev --all --reuse    # the rule, free
+make eval-brief                                                        # the winner's Brief Suite
+python -m edgar_eval.generation --split holdout --model gpt-6-luna --json ../data/derived/eval/generation-holdout-final-round.json
+```
+
+The runs were made one at a time rather than by one `make eval-generators MODELS=`, so that each run's Jev cost and cap hits could be checked before the next was paid for; `selection generators --all --reuse` then reused all seven reports (the shipped run and Control Run by round) and applied the rule, as `make eval-generators MODELS=` would have, writing `generator-choice-dev.json`.
+
+**The runs on dev:**
+
+| Run | Fact Recall | must-state facts stated (of 334) | Faithfulness | answers with a Contradicted Claim | gaps stated (15 cases) | citations valid | structure followed | words | $ per answer | full answer, mean / max s | first text, mean / max s | most output tokens |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **`gpt-6-luna`, shipped run** | 0.74 | 245 | 0.97 | 2 | 0.80 | 0.90 | 0.78 | 513 | 0.0030 | 7.5 / 14.7 | 1.9 / 5.0 | 1,656 |
+| `gpt-6-luna`, Control Run | 0.77 | 259 | 0.96 | 5 | 0.93 | 0.97 | 0.76 | 518 | 0.0030 | 7.8 / 13.8 | 2.1 / 5.0 | 1,568 |
+| `gpt-6.1-sol` | 0.80 | 264 | 0.96 | 7 | 0.93 | 0.94 | 1.00 | 526 | 0.0592 | 17.8 / **33.6** | 2.1 / 5.7 | 1,573 |
+| `gpt-5.6-terra` | 0.81 | 269 | 0.95 | 4 | 0.60 | 0.98 | 0.71 | 564 | 0.0622 | 9.6 / 18.7 | 2.1 / 4.2 | 2,014 |
+| `claude-haiku-5-5` | 0.75 | 246 | 0.90 | 16 | 0.93 | 0.70 | 0.59 | 512 | 0.0050 | 10.3 / 22.4 | 5.7 / **13.8** | 5,531 |
+| `claude-sonnet-5-5` | 0.85 | 286 | 0.89 | 9 | 1.00 | 0.57 | 0.33 | 629 | 0.0934 | 11.1 / 16.6 | 1.9 / 3.8 | 2,587 |
+| `claude-opus-5-5` | 0.82 | 271 | 0.81 | 12 | 1.00 | 0.37 | 0.37 | 623 | 0.1925 | 17.6 / 27.6 | 4.1 / 8.2 | 3,127 |
+
+**No answer reached the token cap** in any run, the Brief Suite and the holdout included: the most output any answer used was 5,531 tokens (Claude Haiku 5.5's, thinking included), against the 32,000 cap. The judgments that failed (1 in the shipped run, 2 in the Control Run, 2 for `gpt-6.1-sol`, 1 for terra, 2 for Opus) are all Jev's own `max_tokens_exceeded` on one long claim, as in earlier rounds, and are left out of Faithfulness; none is a credit or account error.
+
+**The rule, each challenger against the shipped run** (`generator-choice-dev.json`; ahead at one-sided p < 0.10, behind at p < 0.20; a challenger qualifies when ahead on Fact Recall or Coverage Gaps, case by case, and behind on none of Fact Recall, Faithfulness, Coverage Gaps and Contradicted Claims):
+
+| Challenger | Fact Recall, cases higher / lower (p ahead) | Faithfulness (p behind) | Coverage Gaps (p behind) | No Contradicted Claim (p behind) | Qualifies |
+|---|---|---|---|---|---|
+| `gpt-6.1-sol` | 19 / 8, **ahead** (0.026) | 19 / 14 (0.852) | 2 / 0 (1.000) | 1 / 5, **behind** (0.109) | no |
+| `gpt-5.6-terra` | 20 / 3, **ahead** (< 0.001) | 13 / 21, **behind** (0.115) | 1 / 4, **behind** (0.188) | 1 / 3 (0.312) | no |
+| `claude-haiku-5-5` | 17 / 12 (0.229) | 8 / 40, **behind** (< 0.001) | 2 / 0 (1.000) | 2 / 16, **behind** (0.001) | no |
+| `claude-sonnet-5-5` | 24 / 3, **ahead** (< 0.001) | 11 / 35, **behind** (< 0.001) | 3 / 0 (1.000) | 1 / 8, **behind** (0.020) | no |
+| `claude-opus-5-5` | 26 / 7, **ahead** (0.001) | 7 / 46, **behind** (< 0.001) | 3 / 0 (1.000) | 2 / 12, **behind** (0.006) | no |
+
+- **The Control Run is not ahead** on the rule's ahead metrics, Fact Recall case by case (17 higher, 10 lower, p ahead = 0.124) and Coverage Gaps (2 and 0, p ahead = 0.250), so the comparison is conclusive. Fact by fact, though, it states 259 must-state facts against 245 (p ahead = 0.066), so on this round a gain of about 14 facts is within the noise of one run. The generator rule decides Fact Recall case by case (ADR 0011), and `gpt-6.1-sol`'s +19 is only a little beyond it.
+- **The closest is `gpt-6.1-sol`:** ahead on Fact Recall and on structure followed (14 cases higher, none lower), level on Faithfulness, and blocked by Contradicted Claims alone: 7 answers with one against 2. The Control Run itself has 5 (2 cases higher, 5 lower, p behind = 0.227), so the margin is near the noise, but it is outside it under the rule. It also costs 20 times as much per answer, and its slowest answer took 33.6 seconds, over the demo's 30-second ceiling.
+- **Terra states the most facts of the OpenAI models** (269), but is behind on Faithfulness and on Coverage Gaps: it acknowledges 9 of the 15 cases' gaps, missing the trend asked of a Snapshot Company (`trend-jpm-revenue-snapshot`, `gap-cat-sales-snapshot`), the missing guidance (`outlook-tsla-2026`, `outlook-intc-2026`) and the stale Filing (`stale-gecc-eni-2014`, `followup-ge-to-honeywell`).
+- **The Claude models state the most facts** (Sonnet 286, Opus 271) **and are the least faithful**, as on version 1 ([Generator comparison](#generator-comparison)): their answers run longer (623 to 629 words, over v19's range in two thirds of the cases), cite less validly (0.57 and 0.37) and add claims their Sources don't support. A Claude model would need its own prompt pass before it could qualify. Claude Haiku 5.5, which stopped at the old 2,500-token cap in 27 of 60 answers on #73's run, now finishes every answer under the 32k cap but is behind on everything the rule guards.
+- **`ANSWER_MODEL`'s default stays `gpt-6-luna`**, so no code changes, and [ADR 0009](adr/0009-gpt-6-luna-stays-the-generator.md) gets a note.
+
+**The Brief Suite, for `gpt-6-luna`** (`brief-suite.json`, 15 cases, 5 runs each, 75 Answer Calls): **2 of 15 cases pass**, `brief-followup-aapl-tsla-jpm-cybersecurity` and `brief-followup-nvda-net-income`, against 1 of 15 on #126's round. It is a strict must-pass check (every must-state fact in 4 of 5 runs and no Contradicted Claim in any), and no answer reached the cap.
+
+**The holdout, once, on the final setup** (`generation-holdout-final-round.json` and `retrieval-holdout.json`), by [the holdout rule](#the-holdout-rule): it reports and decides nothing, and nothing changed after it. The 20 holdout cases had last been scored on #130's setup (prompt v7, before #137 to #165), whose run stays beside it as `generation-holdout-new-retrieval.json`.
+
+| Run | hit@10 | must-state reached | Fact Recall | must-state facts stated (of 106) | Faithfulness | citations valid | figures exact | gaps stated | structure followed | words | answers with a Contradicted Claim | $ per answer | full answer, mean / max s | first text s |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| **Holdout, final setup** | 0.89 | 93 of 106 | **0.76** | 78 | **0.93** | 0.95 | 1.00 | 1.00 | 0.65 | 463 | 2 | 0.0028 | 7.0 / 10.9 | 1.9 |
+| Dev, shipped run | 0.97 | 289 of 334 | 0.74 | 245 | 0.97 | 0.90 | 1.00 | 0.80 | 0.78 | 513 | 2 | 0.0030 | 7.5 / 14.7 | 1.9 |
+
+- **In line with dev,** with the 20-case caveat: one case moves a share by 0.05. 17 of the 20 answers pass, against 53 of 63 on dev.
+- **The misses are mostly generation's:** of the 28 must-state facts missed, 9 never reached the Answer Context and 19 did. By question type, Fact Recall is 0.90 on figure trends, 0.66 on risk questions, 0.73 on sector questions and 1.00 on the one outlook. The lowest are `followup-topic-change-stock-splits` (0.00, [ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md)'s known weakness, as in every holdout run), `followup-cmcsa-to-telecom-competition` (0.29), `risk-v-ma-cybersecurity` (0.30) and `risk-cvx-xom-commodity-prices` (0.33).
+- **Every figure is exact,** where #130's run failed two cases on figures the answer computed: v19 quotes figures and never computes them.
+- **Against #130's run** it states 78 must-state facts against 82, with the same 93 reached; on 20 cases and one run a side that is within noise, and it is not a comparison.
+
+**Spend.** Each run printed its estimate first (up to $30.84 for the seven dev runs, $0.47 for the Brief Suite and $0.13 for the holdout). The round cost **$27.75 of its $75 ceiling**: $26.67 in Answer Calls and $1.08 in Jev judging.
+
+| Run | Answer Calls | Jev | Total |
+|---|---|---|---|
+| `gpt-6-luna`, shipped run and Control Run | $0.37 | $0.21 | $0.59 |
+| `gpt-6.1-sol` | $3.73 | $0.13 | $3.85 |
+| `gpt-5.6-terra` | $3.92 | $0.12 | $4.04 |
+| `claude-haiku-5-5` | $0.32 | $0.12 | $0.44 |
+| `claude-sonnet-5-5` | $5.89 | $0.13 | $6.01 |
+| `claude-opus-5-5` | $12.12 | $0.16 | $12.28 |
+| The Brief Suite (`gpt-6-luna`) | $0.26 | $0.19 | $0.45 |
+| The holdout (`gpt-6-luna`) | $0.06 | $0.03 | $0.09 |
+
+**Reports**, in `data/derived/eval/` and kept in `data/derived/eval-issue154/`: `generation-dev.json`, `generation-control-dev.json`, `generation-dev-<model>.json` for each challenger, `generator-choice-dev.json`, `brief-suite.json`, `generation-holdout-final-round.json`, `retrieval-dev.json` and `retrieval-holdout.json`. After this round only the front-end, docs, the deck and the export and rescore code may change; the comparison stands as recorded, at code version `d3399a87683a17a4`.
 
 ### Order and cost
 
