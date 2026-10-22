@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.6.0](https://github.com/dwest1507/eliza-assessment/compare/eliza-assessment-v0.5.0...eliza-assessment-v0.6.0) (2026-10-22)
+
+
+### Features
+
+* rewrite the deck for a PE client and align its numbers with the workspace ([ee384be](https://github.com/dwest1507/eliza-assessment/commit/ee384be0a343a97384fa6c3dd3d7f443c8c0330c))
+* rewrite the deck for a PE client and align its numbers with the workspace ([229da05](https://github.com/dwest1507/eliza-assessment/commit/229da05f5c1a6e77e239db03fa38f5cc9bdd9898))
+
 ## [0.5.0](https://github.com/dwest1507/eliza-assessment/compare/eliza-assessment-v0.4.0...eliza-assessment-v0.5.0) (2026-10-22)
 
 
