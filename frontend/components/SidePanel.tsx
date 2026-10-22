@@ -6,8 +6,8 @@ import { useId, type ReactNode } from 'react'
 export type PanelTab = 'sources' | 'calendar'
 
 const TABS: { tab: PanelTab; name: string; icon: ReactNode }[] = [
-  { tab: 'sources', name: 'Sources', icon: <DocumentIcon /> },
   { tab: 'calendar', name: 'Calendar', icon: <CalendarIcon /> },
+  { tab: 'sources', name: 'Sources', icon: <DocumentIcon /> },
 ]
 
 interface SidePanelProps {

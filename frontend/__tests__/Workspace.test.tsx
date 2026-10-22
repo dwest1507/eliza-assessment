@@ -1155,6 +1155,26 @@ describe('The side panel', () => {
     return screen.getAllByRole('article', { name: 'Answer' })
   }
 
+  it('puts Calendar before Sources, in the panel tabs and in the toolbar', async () => {
+    const user = userEvent.setup()
+    render(<Workspace />)
+    const names = (group: HTMLElement, role: 'button' | 'tab') =>
+      within(group)
+        .getAllByRole(role)
+        .map((element) => element.getAttribute('aria-label') ?? element.textContent)
+
+    expect(names(rail(), 'button')).toEqual(['Calendar', 'Sources'])
+    expect(names(screen.getByRole('group', { name: 'Panel buttons' }), 'button')).toEqual([
+      'Calendar',
+      'Sources',
+    ])
+    await user.click(railSources())
+    expect(names(screen.getByRole('tablist', { name: 'Panel tabs' }), 'tab')).toEqual([
+      'Calendar',
+      'Sources',
+    ])
+  })
+
   it('keeps the toolbar visible, its Sources icon opening and closing the panel', async () => {
     const user = userEvent.setup()
     render(<Workspace />)
