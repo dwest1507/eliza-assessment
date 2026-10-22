@@ -12,6 +12,7 @@ style: |
   table { font-size: 19px; }
   blockquote { position: absolute; bottom: 28px; left: 64px; right: 64px; font-size: 14px; border: none; padding: 0; color: #666; }
   section.lead { justify-content: center; }
+  section.dense { font-size: 21px; }
   section.lead h1 { font-size: 52px; }
 ---
 
@@ -78,6 +79,7 @@ Calls.
 ---
 
 # Demo hand-off: one question, end to end
+<!-- _class: dense -->
 
 question → **rules** resolve the Query Scope (Companies, Sector phrase, time window, Section, metric) → **FTS5 retrieval** of deduplicated passages per Company → **Financial Facts** for exact figures → **one Answer Call**
 
@@ -131,16 +133,16 @@ quotes figures and never computes them.
 -->
 ---
 
-# How the choices were made: nothing beat the simple setup
+# The choices: nothing beat the simple setup
 
 Every choice was tried against alternatives, on test questions kept apart from the final check, with the rule for a win written down before each run.
 
 - **Retrieval: plain keyword search stays.** Embedding search, a hybrid of the two, a re-ranking model and two local embedding models were tried. None got the answers to state more of the key facts, and keyword search needs no extra model and no extra API call.
-- **The model: `gpt-6-luna` stays.** In a final round, five other OpenAI and Anthropic models answered the same questions. Four stated more of the key facts, but each made more claims its sources don't back or contradict, at 20 times the cost or more. A smaller Claude model stated no more.
+- **The model: `gpt-6-luna` stays,** the most faithful of the six models tried, and the cheapest. The larger models stated more of the key facts but backed fewer of their claims (next slide).
 - **Passage size and how much text each answer reads: unchanged.** Smaller and larger passages, and a larger reading budget, reached more of the evidence but got no more of it into the answers than 600-token passages with a 32k budget.
-- **The prompt: each version kept only if it fixed named failures or stated more of the key facts, without harming the rest.** v7 held through v14; v15 moves the Coverage Gaps out of the answer, into Coverage notes below it. v19, the final prompt, states each point in full, gives more room when more Companies are asked about, and quotes figures rather than computing them.
+- **The prompt: a version was kept only if it stated more of the key facts or fixed named failures.** The final one, v19, states each point in full, gives more room when more Companies are asked about, and quotes figures rather than computing them.
 
-> Sources: [Arm comparison](evaluation.md#arm-comparison), [the final round of model comparisons](evaluation.md#the-final-all-model-round-154-2026-10-21), [prompt log](prompt-iterations.md), [version 2 comparisons](evaluation.md#the-version-2-comparisons-on-dev), [the Arm comparison on the new retrieval](evaluation.md#the-arm-comparison-on-the-new-retrieval-127-2026-10-18), [the settings comparison on the new retrieval](evaluation.md#the-settings-comparison-on-the-new-retrieval-129-2026-10-18), [ADR 0008](adr/0008-fts5-stays-the-shipped-arm.md), [ADR 0009](adr/0009-gpt-6-luna-stays-the-generator.md), [ADR 0011](adr/0011-one-sided-thresholds-and-a-control-run.md), [ADR 0016](adr/0016-coverage-gaps-shown-by-the-product.md)
+> Sources: [the Arm comparison](evaluation.md#the-arm-comparison-on-the-new-retrieval-127-2026-10-18), [the settings comparison](evaluation.md#the-settings-comparison-on-the-new-retrieval-129-2026-10-18), [prompt log](prompt-iterations.md), [ADR 0008](adr/0008-fts5-stays-the-shipped-arm.md), [ADR 0011](adr/0011-one-sided-thresholds-and-a-control-run.md)
 
 <!--
 The statistics, for a technical panelist who asks. Every choice was made by a rule written
@@ -153,31 +155,61 @@ other passage sizes and a 48k budget were each compared fact by fact on the dev 
 got the answers to state more must-state facts by enough to pass the rule, so keyword search,
 600-token passages and the 32k budget stay.
 
-Generator, the final round on the frozen code (63 dev questions, every model at reasoning
-effort low): the Control Run, `gpt-6-luna` again, was not ahead (p = 0.124). `gpt-6.1-sol` was
-ahead on Fact Recall (19 questions higher, 8 lower, p = 0.026) but behind on Contradicted
-Claims (7 answers with one against 2, p = 0.109); terra was ahead (20 and 3) but behind on
-Faithfulness (p = 0.115) and on the gaps it acknowledged (p = 0.188); Claude Sonnet 5.5 and
-Opus 5.5 were ahead (24 and 3; 26 and 7) and behind on Faithfulness and Contradicted Claims;
-Claude Haiku 5.5 was not ahead (p = 0.229). Per answer they cost $0.0592, $0.0622, $0.0934,
-$0.1925 and $0.0050, against $0.0030.
+The generator's statistics are in the next slide's notes.
 
 Prompt: v19, read over two runs a side: its answers state 242 of 334 must-state facts a run
 against v15's 232 (p = 0.085), and fail the figure check in 0.5 cases a run against 2.5.
 -->
 ---
 
+# The model: more facts, or more faithful answers
+
+Six models answered the same 63 test questions with the same Sources and the same prompt, and the rule for a win was written down first: state more of the key facts without backing fewer of the claims.
+
+| Model | Key facts stated (of 334) | Claims backed by their citation | $ per answer |
+|---|---|---|---|
+| **`gpt-6-luna`** (shipped) | 245 | **0.97** | **0.0030** |
+| `gpt-6.1-sol` | 264 | 0.96 | 0.0592 |
+| `gpt-5.6-terra` | 269 | 0.95 | 0.0622 |
+| Claude Haiku 5.5 | 246 | 0.90 | 0.0050 |
+| Claude Sonnet 5.5 | **286** | 0.89 | 0.0934 |
+| Claude Opus 5.5 | 271 | 0.81 | 0.1925 |
+
+- **The larger models found more, and cited less faithfully,** at 20 times the cost or more.
+- **An analyst has to trust every citation, so `gpt-6-luna` stays.** If completeness matters more, Claude Sonnet 5.5 is the alternative, after a prompt tuned for it.
+
+> Sources: [the final round of model comparisons](evaluation.md#the-final-all-model-round-154-2026-10-21), [ADR 0009](adr/0009-gpt-6-luna-stays-the-generator.md), [ADR 0011](adr/0011-one-sided-thresholds-and-a-control-run.md)
+
+<!--
+The round on the frozen code, every model at reasoning effort low, one run each. Under the
+rule a challenger must be ahead on Fact Recall and behind on none of Faithfulness, Coverage
+Gaps and Contradicted Claims. The Control Run, `gpt-6-luna` again, was not ahead (p = 0.124).
+`gpt-6.1-sol` was ahead on Fact Recall (19 questions higher, 8 lower, p = 0.026) but behind on
+Contradicted Claims (7 answers with one against 2, p = 0.109); terra was ahead (20 and 3) but
+behind on Faithfulness (p = 0.115) and on the gaps it acknowledged (p = 0.188); Claude Sonnet
+5.5 and Opus 5.5 were ahead (24 and 3; 26 and 7) and behind on Faithfulness and Contradicted
+Claims; Claude Haiku 5.5 was not ahead (p = 0.229).
+
+If asked "so Luna is the best model?": no, it is the best balance. Say what favours it. The
+prompt was tuned on Luna's answers, and the Claude models run it unchanged, writing 623 to 629
+words where Luna writes 513. Each model ran once, and the Control Run alone moved by 14 facts
+(259 against 245), so `gpt-6.1-sol` is close to a tie, blocked only by Contradicted Claims, and
+its slowest answer took 33.6 s, over the 30-second ceiling.
+-->
+---
+
 # Risks and limits
+<!-- _class: dense -->
 
-- **Small evaluation.** 20 holdout questions: one moves a share by 0.05. The numbers show the system works, not its exact rate.
-- **Answers miss facts.** Fact Recall 0.76 on the holdout: the answers miss 28 of 106 must-state facts, 9 of them because their evidence never reaches the prompt and 19 although it does.
-- **Follow-ups that change topic without naming a Company** inherit the earlier Companies. The Query Scope chips, at the top of each answer's "Sources", show it; the Golden Set measures it.
-- **Figures are quoted, not computed.** From prompt v19 the answer quotes each figure as the Filing or the table states it, so a change the Filings don't state is left out; in the final round every figure checked was exact, on dev and on the holdout.
+- **Small evaluation.** 20 holdout questions: one moves a share by 0.05, so the numbers show the system works, not its exact rate.
+- **Answers miss facts.** Fact Recall 0.76 on the holdout: 28 of 106 must-state facts missed, 19 of them although their evidence reached the prompt.
+- **Follow-ups that change topic without naming a Company** inherit the earlier Companies; the Query Scope chips show it.
+- **Figures are quoted, not computed,** so a change the Filings don't state is left out; every figure checked in the final round was exact.
 - **Thin coverage.** Trends only for 13 Companies; Financial Facts only revenue, net income and segment revenue; guidance mostly sits outside the Filings.
-- **A small human check.** Claude drafted the evaluation's labels and labelled the judge study. The developer checked 15 fact labels blind: agreement 80% with Claude's labels and 87% with Jev's verdicts. The claim labels (Faithfulness, Contradicted Claims) are still Claude's alone. Accepted for a demo; production would use more hand-labelled data.
-- **Our own inputs and a hosted model.** The Sector table and the list of missing Companies are curated and disclosed, not yet confirmed by the Client. The Answer Call goes to a hosted API, behind one interface a local model can replace.
+- **A small human check.** Claude drafted the labels. The developer checked 15 fact labels blind: 80% agreement with Claude's labels, 87% with Jev's verdicts. The claim labels (Faithfulness, Contradicted Claims) are still Claude's alone.
+- **Our own inputs and a hosted model.** The Sector table and the missing-Company list are curated, not yet confirmed by the Client; the Answer Call goes to a hosted API that a local model can replace.
 
-> Sources: [the final round and its holdout run](evaluation.md#the-final-all-model-round-154-2026-10-21), [prompt v19](evaluation.md#v19-the-combination-that-freezes-165-2026-10-21), [ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md), [assumptions 4, 5, 9 and 10](assumptions.md), [EDA findings](findings.md), [ADR 0013](adr/0013-jev-stays-the-judge-checked-by-a-judge-study.md), [the human check](evaluation.md#the-human-check)
+> Sources: [the final round and its holdout run](evaluation.md#the-final-all-model-round-154-2026-10-21), [the human check](evaluation.md#the-human-check), [assumptions](assumptions.md), [EDA findings](findings.md), [ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md), [ADR 0013](adr/0013-jev-stays-the-judge-checked-by-a-judge-study.md)
 
 <!--
 Lead with the limits before the panel finds them. Each one is either measured (the
