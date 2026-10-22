@@ -245,7 +245,8 @@ def test_each_case_is_answered_checked_judged_and_priced(index, tmp_path):
     # Checks in code.
     assert result.citations.unknown_tags == ("S99",)  # not among this turn's Sources
     assert result.figures.passed  # matches the revenue Financial Fact of a cited 10-K
-    assert result.coverage_gaps.stated == ("periods_differ",)
+    # "Periods differ" is shown by the product, not checked in the answer (ADR 0016).
+    assert result.coverage_gaps.stated == ()
     assert result.coverage_gaps.missing == ("no_guidance",)
     # Its structure, against the Companies its Sources come from (Apple and Tesla).
     assert not result.structure.passed
@@ -392,10 +393,12 @@ def test_an_answer_cut_off_at_the_token_cap_fails_with_no_fact_recall(index):
     assert (report.overall.truncated, report.overall.fact_recall) == (1, 0.0)
     data = report.to_dict()["cases"][0]
     assert (data["truncated"], data["passed"], data["fact_recall"]) == (True, False, 0.0)
+    assert report.to_dict()["capped"] == ["cut-off"]  # the report lists every capped answer
     # The same answer, finished, passes with its Fact Recall.
     [done] = finished.cases
     assert (done.truncated, done.passed, done.fact_recall) == (False, True, 1.0)
     assert finished.overall.truncated == 0
+    assert finished.to_dict()["capped"] == []
 
 
 def test_a_cut_off_answer_whose_fact_judgment_failed_scores_0_and_is_paired(index):
@@ -485,7 +488,7 @@ def test_a_jev_failure_on_one_fact_keeps_the_cases_checks_and_other_judgments(in
     # The code checks are kept.
     assert result.citations.unknown_tags == ("S99",)
     assert result.figures.passed
-    assert result.coverage_gaps.stated == ("periods_differ",)
+    assert result.coverage_gaps is None  # "periods differ" alone is not checked
     assert result.structure.words > 0
     # So are the other judgments: Faithfulness, one claim judged, one citing no Source
     # of the turn and one uncited.
@@ -584,6 +587,32 @@ def test_a_score_with_nothing_to_score_is_none_not_zero(index, tmp_path):
     assert report.overall.coverage_gaps_stated is None
     assert report.overall.fact_recall is None
     assert report.overall.faithfulness == 1.0
+
+
+def test_a_case_whose_only_gap_is_periods_differ_has_no_coverage_gap_score(index, tmp_path):
+    """ADR 0016: the answer is not asked to state "periods differ", so a case expecting
+    only that gap is not scored on Coverage Gaps, rather than passing for free."""
+    from edgar_eval.generation import evaluate
+
+    report = evaluate(
+        [
+            _case(
+                "apple-tesla",
+                "What are the primary risk factors facing Apple and Tesla?",
+                gaps=[("periods_differ", ("AAPL", "TSLA"))],
+            )
+        ],
+        FakeModel("Apple outsources manufacturing [S1]."),
+        FakeJudge(),
+        index,
+        names={"AAPL": ("AAPL", "Apple"), "TSLA": ("TSLA", "Tesla")},
+        fact_values=lambda filing_id: [],
+        log_path=None,
+    )
+
+    [result] = report.cases
+    assert result.coverage_gaps is None
+    assert report.overall.coverage_gaps_stated is None
 
 
 CONTRADICTING_JEV = {"Tesla depends on its CEO.": "contradicted"}
@@ -882,7 +911,7 @@ def test_the_command_line_prints_scores_with_cost_and_latency_and_writes_json(in
     printed = out.getvalue()
     assert "gpt-6-luna" in printed and JEV_MODEL in printed
     assert "$/answer" in printed and "latency s" in printed
-    assert "Truncated at the token cap: none" in printed
+    assert "Capped (stopped at the token cap, scored as truncated): none" in printed
     data = json.loads(path.read_text())
     assert data["split"] == "dev"
     [case] = data["cases"]
@@ -916,6 +945,78 @@ def test_a_report_records_the_round_it_was_run_in(index, tmp_path):
     assert {k: data[k] for k in now} == now
     assert now["prompt_version"] == PROMPT_VERSION
     assert now["golden_set_version"] == data["golden_set_version"] == 2
+
+
+def test_a_named_run_records_its_name_and_an_unnamed_one_none(index, tmp_path):
+    """`--name` labels a candidate's report (a prompt version or a retrieval change), the
+    name the prompt rules compare it by (ADR 0017)."""
+    import io
+    import json
+
+    from edgar_eval.generation import main
+
+    for name in ("v16", None):
+        path = tmp_path / f"generation-dev-{name}.json"
+        main(
+            ["--case", "risk-unh-cybersecurity", "--index", str(index)]
+            + ["--log", str(tmp_path / "l"), "--json", str(path)]
+            + (["--name", name] if name else []),
+            model=FakeModel(ANSWER),
+            judge=FakeJudge(),
+            fact_values=lambda tickers: [],
+            out=io.StringIO(),
+        )
+
+        assert json.loads(path.read_text())["name"] == name
+
+
+def _make_dry_run(*argv: str) -> list[str]:
+    """The commands `make` would run for `argv`, without running them."""
+    import os
+    import subprocess
+    from pathlib import Path
+
+    repo = Path(__file__).resolve().parents[2]
+    unset = {"NAME", "MODEL", "ARM", "CHUNK_TOKENS", "CONTEXT_BUDGET", "MAKEFLAGS", "MFLAGS"}
+    env = {k: v for k, v in os.environ.items() if k not in unset}
+    index = "data/derived/edgar_rag.sqlite"  # treated as built, so nothing is rebuilt
+    return (
+        subprocess.run(
+            ["make", "--no-print-directory", "-n", "-o", index, *argv],
+            cwd=repo,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        .stdout.replace("\\\n", " ")
+        .splitlines()
+    )  # each command on one line
+
+
+@pytest.mark.parametrize(
+    ("assignments", "report", "name"),
+    [
+        (("NAME=x",), "generation-dev-x.json", "--name x"),
+        (
+            ("NAME=legal-route", "SPLIT=all"),
+            "generation-all-legal-route.json",
+            "--name legal-route",
+        ),
+        ((), "generation-dev.json", None),
+        (("MODEL=claude-haiku-5-5",), "generation-dev-claude-haiku-5-5.json", None),
+    ],
+)
+def test_make_eval_generation_names_a_candidates_report_by_name(assignments, report, name):
+    import shutil
+
+    if shutil.which("make") is None:
+        pytest.skip("needs make")
+    lines = _make_dry_run("eval-generation", *assignments)
+    [line] = [x for x in lines if "edgar_eval.generation " in x]
+
+    assert line.rstrip().endswith(f"--json ../data/derived/eval/{report}")
+    assert (name in line) if name else ("--name" not in line)
 
 
 def test_the_code_version_changes_with_any_source_file(tmp_path):
@@ -1045,6 +1146,42 @@ def test_rescoring_redoes_the_figure_check_from_the_saved_answers_alone(index, t
             summary.pop("figures_exact")
     assert after == before
     assert "1.00 → 0.00" in out.getvalue()
+
+
+def test_rescoring_redoes_the_structure_check_with_the_word_range_of_its_source_companies(
+    index, tmp_path
+):
+    """Prompt v17's structure check, applied to a report saved under v15's 300 to 600
+    words: the answer's three Source Companies allow it 750, so a 700-word answer now
+    follows the structure."""
+    import io
+    import json
+
+    from edgar_eval.rescore import main
+
+    sections = "\n\n".join(
+        f"## {name}\n\n" + " ".join([f"{name} names a risk [S1]."] * 55)
+        for name in ("Apple", "Tesla", "JPMorgan")
+    )
+    answer = f"Apple, Tesla and JPMorgan each name risks [S1]. They differ [S1].\n\n{sections}"
+    path, saved = _saved_report(index, tmp_path, answer, lambda filing_id: [])
+    [case] = saved["cases"]
+    words = case["structure"]["words"]
+    assert 600 < words <= 750
+    # As v15's check scored it.
+    case["structure"]["problems"] = [f"{words} words, over 600"]
+    saved["overall"]["structure_followed"] = 0.0
+    saved["by_type"]["risk"]["structure_followed"] = 0.0
+    path.write_text(json.dumps(saved))
+
+    out = io.StringIO()
+    assert main([str(path), "--index", str(index)], fact_values=lambda f: [], out=out) == 0
+
+    after = json.loads(path.read_text())
+    assert after["cases"][0]["structure"] == {"words": words, "problems": []}
+    assert after["overall"]["structure_followed"] == 1.0
+    assert after["by_type"]["risk"]["structure_followed"] == 1.0
+    assert "structure followed 0.00 → 1.00" in out.getvalue()
 
 
 TESLA_GAP = "Tesla's own guidance for 2026 is not in the Filings provided."

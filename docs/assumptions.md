@@ -22,6 +22,7 @@ Status:
 | 9 | Companies missing from the Corpus are named as missing, never answered | No | not confirmed |
 | 10 | A mainstream hosted LLM API is acceptable for the demo | No | not confirmed |
 | 11 | Questions are asked in a chat, and follow-ups build on earlier ones | No | not confirmed |
+| 12 | An illustrative value model: about $720k a year of analyst time saved | No | not confirmed |
 
 ## 1. One API call per question
 
@@ -78,19 +79,20 @@ Status:
 
 ## 5. A curated Sector table is acceptable
 
-- **Assumption:** No Filing carries a sector, but questions like "the major pharmaceutical companies" need one. We curate a GICS-style Company-to-Sector table (`data/reference/sectors.csv`), state its source, cross-check it against SEC SIC codes, and disclose it. Sector phrases resolve only through it.
+- **Assumption:** No Filing carries a sector, but questions like "the major pharmaceutical companies" need one. We curate a GICS-style Company-to-Sector table (`data/reference/sectors.csv`), state its source, cross-check it against SEC SIC codes, and disclose it. Sector phrases, and the curated Company Groups it also holds ("big tech"), resolve only through it.
   - The table maps the 54 Companies to 8 sectors: Information Technology (10), Financials (10), Health Care (7), Communication Services (7), Consumer Discretionary (6), Consumer Staples (6), Industrials (6), Energy (2).
   - SEC SIC codes disagree with the GICS-style label for 14 Companies, each explained in the table. The ones that change answers: UnitedHealth is a health insurer by SIC but Health Care here; Thermo Fisher is an instrument maker by SIC but Health Care (Life Sciences Tools) here; Alphabet, Meta, Disney and Netflix are Communication Services here; Visa and Mastercard are Financials; Walmart, Costco and Target are Consumer Staples.
   - "The major pharmaceutical companies" is **JNJ, LLY, MRK, PFE and ABBV** (all SIC 2834; GICS puts AbbVie in Biotechnology). UnitedHealth and Thermo Fisher are excluded. Only JNJ and PFE have more than one Filing.
   - The GE Filing is GE Capital's FY2014 report (assumption 3), so it is classed as Financials rather than as General Electric's Industrials.
   - Other sector phrases resolve the same way, on the industry column. "The major banks" is **Bank of America and JPMorgan** (Banks); Goldman Sachs and Morgan Stanley are Capital Markets and are left out. "The oil majors" is **Chevron and ExxonMobil**.
+  - The table also holds one curated **Company Group**, a named set of Companies that no Sector captures, in its `group` column, resolved the same way and disclosed with it: "big tech" (or "megacap tech") is **Apple, Microsoft, Alphabet, Amazon, Meta, NVIDIA and Tesla**, the group the phrase means in the industry, not the Information Technology Sector, which would leave out Alphabet and Meta (Communication Services) and Amazon and Tesla (Consumer Discretionary) and bring in Adobe, Cisco, IBM and the other software and chip makers. "Tech companies" alone is still the Sector. The answer says the group comes from the curated table, as it does for a Sector phrase.
 - **Why it matters:** Without it, sector-scoped questions rely on retrieval guessing which Companies are relevant, and a disputed mapping changes which Companies an answer covers.
 - **Asked in email:** No.
 - **Status:** not confirmed
 
 ## 6. "Latest" and "the last two years" are measured from each Company's latest Filing
 
-- **Assumption:** Time phrases are anchored on each Company's latest Filing in the Corpus, not on today's date. "The last two years" is the eight quarter-ends up to that Filing, and "latest" is the latest 10-K plus any 10-Qs after it. A question with no time phrase searches every Filing, except a risk question, which gets "latest" (finding 16). Every answer states each Company's Report Period and Fiscal Period, and says when the periods it compares differ.
+- **Assumption:** Time phrases are anchored on each Company's latest Filing in the Corpus, not on today's date. "The last two years" is the eight quarter-ends up to that Filing, and "latest" is the latest 10-K plus any 10-Qs after it. A question with no time phrase gets "latest" too, unless it asks how something changed: a risk, cybersecurity, dependence or outlook question (finding 16), a question naming no Company ("Which companies are most exposed to tariffs?"), and a broad question naming Companies and no topic ("Compare Coke and Pepsi"), which reads each one's latest Business, MD&A and Risk Factors (the Overview route, #145). Any other question with no time phrase about named Companies, and a change question, searches every Filing. A named time phrase, or a Fiscal Period a Filing covers, keeps its own window. Every answer states each Company's Report Period and Fiscal Period, and says when the periods it compares differ.
 - **Evidence:** The Corpus stops at Filings made by 19 February 2026, and not every Company's latest annual report covers the same year.
   - Anchored on each Company's latest Filing, every one of the 13 Tracked Companies has eight quarterly Filings in "the last two years". For NVIDIA that is Q4 FY2024 to Q3 FY2026 (Report Periods 28 January 2024 to 26 October 2025). Anchored on today, each has only four or five.
   - "Latest" differs by Company: 12 December year-end Companies, including AbbVie, Merck, Pfizer, Bank of America and Chevron, have no FY2025 10-K in the Corpus, so their latest annual report is FY2024 while J&J's, Lilly's and JPMorgan's is FY2025. NVIDIA's FY2026 10-K is not in the Corpus either.
@@ -108,7 +110,7 @@ Status:
 
 ## 8. Answers are written for a PE analyst
 
-- **Assumption:** The brief asks for "a well-structured answer grounded in the filing data". The reader is a PE analyst. An answer opens with a two- or three-sentence direct answer, then gives the points per Company (or a comparison table when several Companies are compared), and ends with a short coverage note listing the gaps. Every claim cites its Filing ID, Section and Report Period, and figures come from extracted Financial Facts where they exist. It runs to about 300–600 words. With no reference answers from the Client, we judge quality on our own test set, built from the example and variant questions traced in the EDA: are the right Filings retrieved, is every claim cited and supported by its source, are the figures exact, and is every gap stated.
+- **Assumption:** The brief asks for "a well-structured answer grounded in the filing data". The reader is a PE analyst. An answer opens with a two- or three-sentence direct answer, then gives the points per Company (or a comparison table when several Companies are compared), and the product shows every gap below it as a Coverage note, in its fixed wording; the answer says, in its own words, only where a gap leaves part of the question unanswered ([ADR 0016](adr/0016-coverage-gaps-shown-by-the-product.md)). Every claim cites its Filing ID, Section and Report Period, and figures come from extracted Financial Facts where they exist. It runs to about 300–600 words, up to 1,000 when its Sources cover more than two Companies (from prompt v19, the word range of v17). With no reference answers from the Client, we judge quality on our own test set, built from the example and variant questions traced in the EDA: are the right Filings retrieved, is every claim cited and supported by its source, are the figures exact, and is every gap that leaves part of the question unanswered acknowledged.
 - **Why it matters:** It sets the Answer Call's prompt template and output format, and what we measure when we evaluate quality (one of the deliverables).
 - **Asked in email:** No.
 - **Status:** not confirmed
@@ -133,4 +135,15 @@ Status:
 - **Assumption:** The Client asks questions in a conversation, not one at a time: an analyst asks about Apple, Tesla and JPMorgan's risks, then "Which of them has the most regulatory exposure?". Each user message is a question and gets exactly one Answer Call, which sees the last 10 turns of the conversation. Earlier answers help the model understand the question but are never evidence: every claim cites a Source retrieved for the current message. A follow-up that leaves out the Companies, time window, Section or metric inherits them from earlier messages by rules ([ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md)), and each answer shows the Query Scope it used.
 - **Why it matters:** The brief asks for "a natural-language business question as input", which reads as one question at a time. A chat is closer to how an analyst works, but it makes follow-up handling part of retrieval and of what we evaluate.
 - **Asked in email:** No.
+- **Status:** not confirmed
+
+## 12. An illustrative value model
+
+- **Assumption:** An illustrative model of what the workspace is worth to a deal team, with inputs we chose and the Client has not given us. None of them is measured. They are there so the Client can replace them with their own.
+  - **Inputs:** 10 analysts, each asking 5 questions a week, each question saving 2 hours of reading, at $150 an hour, over 48 working weeks a year.
+  - **Formula:** analysts × questions a week × hours saved per question × hourly rate × working weeks = value a year.
+  - **Result:** 10 × 5 × 2 × $150 × 48 = $720,000, **about $720k a year**: 50 questions a week, 2,400 a year, 4,800 analyst hours saved.
+  - **Against the cost of the Answer Calls:** 50 Answer Calls a week. At the shipped `gpt-6-luna`'s $0.0030 per answer, at reasoning effort low, that is $0.15 a week. Even at the most expensive model compared, `claude-opus-5-5` at $0.1925 per answer, it is $9.63 a week, about $462 a year: under $10 a week. Both prices are the final round's, on the dev split ([The final all-model round](evaluation.md#the-final-all-model-round-154-2026-10-21)). The cost of hosting, maintenance and the analysts' time checking the cited Sources is left out.
+- **Why it matters:** The brief's value case rests on analyst time, which we cannot measure without the Client. A worked figure lets the Client weigh the investment, as long as it is read as illustrative: the answer is fast and cheap (measured), and the time it saves is the Client's to confirm.
+- **Asked in email:** No. To agree with the Client: how many analysts, how many questions each asks a week, and how long one takes to answer by hand today.
 - **Status:** not confirmed

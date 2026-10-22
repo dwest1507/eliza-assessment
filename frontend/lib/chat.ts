@@ -31,6 +31,9 @@ export interface Source {
   formType: string
   reportPeriod: string
   fiscalPeriod: string | null
+  /** The calendar months its Filing reports on ("May–Jul 2025"); absent from a Source
+   * saved before the API sent them. */
+  calendarMonths?: string | null
   section: string
   item: string | null
   label: string
@@ -39,10 +42,11 @@ export interface Source {
   rows?: FactRow[]
 }
 
-/** A Sector phrase in the question and the Sector table rows it resolved to. */
+/** A Sector phrase or Company Group in the question and the Sector table rows it resolved to. */
 export interface SectorPhrase {
   phrase: string
-  column: 'sector' | 'industry'
+  /** The Sector table column the phrase was read against: `group` for a Company Group. */
+  column: 'sector' | 'industry' | 'group'
   values: string[]
   tickers: string[]
 }
@@ -203,7 +207,7 @@ export function rejectionReason(error: unknown): string | null {
   }
 }
 
-/** A gap's wording without its leading label, which the callout shows as a heading. */
+/** A gap's wording without its leading label, which the Coverage notes show as a heading. */
 export function gapWording(gap: CoverageGap): string {
   const prefix = `${gap.label}: `
   return gap.text.startsWith(prefix) ? gap.text.slice(prefix.length) : gap.text

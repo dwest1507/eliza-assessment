@@ -18,7 +18,7 @@ from decimal import Decimal
 from functools import cache
 
 from edgar_rag.golden_set import CoverageGapLabel
-from edgar_rag.retrieval import load_missing_companies
+from edgar_rag.retrieval import FactRow, Source, answer_words, load_missing_companies
 
 __all__ = [
     "CitationCheck",
@@ -31,6 +31,7 @@ __all__ = [
     "check_citations",
     "check_coverage_gaps",
     "check_figures",
+    "table_figures",
     "check_structure",
     "claims",
     "figures",
@@ -416,26 +417,32 @@ def figures(text: str) -> list[Figure]:
 
 
 def check_figures(
-    answer: str, passages: Mapping[int, str], fact_values: Mapping[int, Iterable[int]]
+    answer: str,
+    passages: Mapping[int, str],
+    fact_values: Mapping[int, Iterable[int]],
+    table: Mapping[int, Iterable[str]] | None = None,
 ) -> FigureCheck:
     """Every figure in the answer matches a Financial Fact of a Filing the answer cites,
-    or appears in a passage the answer cites.
+    or appears in a passage the answer cites, or is a figure the Financial Facts table
+    renders for a Filing the answer cites.
 
     `passages` maps each of this turn's Source numbers to its text, and `fact_values`
     maps each to the values, in whole US dollars, of the Financial Facts its Filing
-    reports. Only the Sources the answer cites count, so a figure for another Report
-    Period, or from a Filing the answer never cites, does not pass.
+    reports. `table` maps each to the figures the Financial Facts table renders for its
+    Filing, as rendered ("$7,610 million", "-14.6%"), its derived rows included: a
+    fourth quarter derived from a 10-K less its three 10-Qs, and a change from a year
+    earlier (`table_figures`). Only the Sources the answer cites count, so a figure for
+    another Report Period, or from a Filing the answer never cites, does not pass.
 
     A figure may be rounded and rescaled: "$416.2 billion" appears in a passage that
     reads "416,161" in a table in millions, and matches a revenue fact of
-    416,161,000,000. A percentage must appear in a passage as written.
+    416,161,000,000. A percentage must appear in a passage, or in the table, as written.
     """
     cited = source_numbers_cited(answer)
+    texts = [text for number, text in passages.items() if number in cited]
+    texts += [f for number, rendered in (table or {}).items() if number in cited for f in rendered]
     numbers = {
-        abs(Decimal(n.replace(",", "")))
-        for number, text in passages.items()
-        if number in cited
-        for n in _PASSAGE_NUMBER.findall(text)
+        abs(Decimal(n.replace(",", ""))) for text in texts for n in _PASSAGE_NUMBER.findall(text)
     }
     facts = [
         abs(Decimal(v)) for number, values in fact_values.items() if number in cited for v in values
@@ -445,6 +452,23 @@ def check_figures(
         f.text for f in stated if not (_in_passages(f, numbers) or _is_fact(f, facts))
     )
     return FigureCheck(figures=len(stated), unmatched=unmatched)
+
+
+def table_figures(sources: Sequence[Source], table: Sequence[FactRow]) -> dict[int, list[str]]:
+    """The figures the Financial Facts table renders for each Source's Filing, keyed by
+    Source number, as `check_figures` reads them: each row's value counts for every
+    Filing the row cites, and its change from a year earlier for every Filing the change
+    cites. So a derived fourth quarter counts for the 10-K and the three 10-Qs it comes
+    from, whichever of their Sources, Facts or text, the answer cites."""
+    filing_of = {s.tag: s.filing_id for s in sources}
+    by_filing: dict[str, list[str]] = {}
+    for row in table:
+        for tag in row.sources:
+            by_filing.setdefault(filing_of[tag], []).append(row.value_text)
+        if row.year_on_year_text is not None:
+            for tag in row.year_on_year_sources:
+                by_filing.setdefault(filing_of[tag], []).append(row.year_on_year_text)
+    return {s.number: by_filing[s.filing_id] for s in sources if s.filing_id in by_filing}
 
 
 def _in_passages(figure: Figure, numbers: set[Decimal]) -> bool:
@@ -480,8 +504,14 @@ _GAP_MARKERS: dict[str, re.Pattern[str]] = {
     ),
     # A named Company is not in the Corpus.
     "missing_company": re.compile(
-        r"\bnot\b[^.;]{0,30}\b(?:in|included|part of|covered|among|available|present|found)"
+        r"(?:\bnot\b|n['’]t\b)[^.;]{0,30}"
+        r"\b(?:in|included|part of|covered|among|available|present|found)"
         r"\b[^.;]{0,20}\b(?:corpus|filings|sources|data|documents|dataset)"
+        r"|\b(?:absent|missing) from\b"
+        r"|\boutside\b[^.;]{0,20}\b(?:corpus|filings|sources|data|documents|dataset)"
+        r"|\b(?:filings|sources|data|documents)\b[^.;]{0,10}"
+        r"(?:\bare not\b|\baren['’]t\b|\bis not\b|\bisn['’]t\b)[^.;]{0,10}"
+        r"\b(?:available|included|provided|here)\b"
         r"|\bno (?:filings?|sources?|data|documents?|10-[KQ]s?)\b"
         r"[^.;]{0,20}\b(?:for|from|on|by|of)\b"
         r"|\b(?:corpus|filings|sources|data|dataset|excerpts)\b[^.;]{0,30}"
@@ -524,6 +554,10 @@ the fixed wordings of EDA notebook section 8.6 and the plain variants a model wr
 _COMPANY_FREE_GAPS = {_PERIODS_DIFFER}
 """Gaps about the comparison as a whole: stated once, not once per Company."""
 
+_UNCHECKED_GAPS = {_PERIODS_DIFFER}
+"""Coverage Gap kinds the answer is not asked to state (ADR 0016): "periods differ" leaves
+no part of the question unanswered, and the product shows it as a Coverage note."""
+
 _SENTENCE_END = re.compile(r"(?<=[.!?])\s+(?=[\[(*\"“A-Z])")
 
 _ABBREVIATION_END = re.compile(
@@ -546,12 +580,23 @@ class CoverageGapCheck:
         return not self.missing
 
 
+def checked_gaps(expected: Sequence[CoverageGapLabel]) -> list[CoverageGapLabel]:
+    """The expected Coverage Gaps the answer is asked to acknowledge, in order: those
+    that leave part of the question unanswered (a Company not in the Corpus, a trend
+    asked of a Snapshot Company, the stale Filing, guidance the Filings don't contain).
+    Not "periods differ", which the product alone shows (ADR 0016)."""
+    return [g for g in expected if g.kind not in _UNCHECKED_GAPS]
+
+
 def check_coverage_gaps(
     answer: str,
     expected: Sequence[CoverageGapLabel],
     names: Mapping[str, Sequence[str]],
 ) -> CoverageGapCheck:
-    """Every expected Coverage Gap is stated in the answer.
+    """Every expected Coverage Gap that leaves part of the question unanswered
+    (`checked_gaps`) is acknowledged in the answer, in any wording, anywhere in it. A
+    "periods differ" gap is neither stated nor missing: the product shows it, and prompt
+    v15 no longer asks the answer to (ADR 0016).
 
     A gap is stated for a Company when a sentence says what the gap's kind says
     (`_GAP_MARKERS`) and either names the Company, or names no Company and sits in a
@@ -568,7 +613,7 @@ def check_coverage_gaps(
     marked = [(unit.text, s) for unit in units(answer) for s in _sentences(unit.text)]
     stated: list[str] = []
     missing: list[str] = []
-    for label in expected:
+    for label in checked_gaps(expected):
         marker = _GAP_MARKERS[label.kind]
         hits = [(unit, s) for unit, s in marked if marker.search(s)]
         if label.kind in _COMPANY_FREE_GAPS:
@@ -725,9 +770,6 @@ def _missing_company_names() -> tuple[tuple[str, ...], ...]:
 
 # --- Answer structure -------------------------------------------------------------------
 
-MIN_WORDS = 300
-MAX_WORDS = 600
-
 
 @dataclass(frozen=True)
 class StructureCheck:
@@ -745,19 +787,22 @@ class StructureCheck:
 
 def check_structure(answer: str, companies: Mapping[str, Sequence[str]]) -> StructureCheck:
     """The structure of assumption 8: a direct answer of two or three sentences first,
-    then the points per Company under a heading each, or a comparison table, then a
-    closing Coverage note, in 300 to 600 words. `companies` are the Companies the
-    answer's Sources come from, each with the names an answer may call it by. An answer
-    with no Sources is its Coverage Gaps alone, so it need only open with its direct
-    answer."""
+    then the points per Company under a heading each, or a comparison table, within the
+    word range the prompt gives (`edgar_rag.retrieval.answer_words`, from prompt v17: 300
+    to 600 words for one or two Companies, the ceiling rising 150 for each further one,
+    to at most 1,000). `companies` are the Companies the answer's Sources come from, each
+    with the names an answer may call it by. An answer with no Sources is its Coverage Gaps
+    alone, so it need only open with its direct answer. No closing Coverage note is
+    required: from prompt v15 the product shows the Coverage Gaps below the answer
+    (ADR 0016)."""
     words = _words(answer)
     found = [_opening_problem(answer)]
     if companies:
+        low, high = answer_words(len(companies))
         found += [
             _per_company_problem(answer, companies),
-            _coverage_note_problem(answer),
-            f"{words} words, under {MIN_WORDS}" if words < MIN_WORDS else None,
-            f"{words} words, over {MAX_WORDS}" if words > MAX_WORDS else None,
+            f"{words} words, under {low}" if words < low else None,
+            f"{words} words, over {high}" if words > high else None,
         ]
     return StructureCheck(words=words, problems=tuple(p for p in found if p))
 
@@ -790,20 +835,6 @@ def _per_company_problem(answer: str, companies: Mapping[str, Sequence[str]]) ->
     ]
     if unheaded:
         return f"no points per Company (no heading for {', '.join(unheaded)}) or comparison table"
-    return None
-
-
-def _coverage_note_problem(answer: str) -> str | None:
-    """Why the answer does not end with a Coverage note: it has none, or a heading of
-    another part follows it."""
-    lines = [line.strip() for line in answer.splitlines() if line.strip()]
-    starts = [
-        n for n, line in enumerate(lines) if _COVERAGE.match(line) or _COVERAGE_IN_LINE.search(line)
-    ]
-    if not starts:
-        return "no closing Coverage note"
-    if any(_HEADING.match(line) for line in lines[starts[-1] + 1 :]):
-        return "the Coverage note is not at the end"
     return None
 
 

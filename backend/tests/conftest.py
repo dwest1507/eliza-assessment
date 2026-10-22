@@ -7,6 +7,14 @@ import pytest
 from edgar_rag.corpus import load_corpus
 from edgar_rag.retrieval import build_index
 
+
+@pytest.fixture(autouse=True)
+def _default_answer_model(monkeypatch):
+    """Every test starts on the default answer model, whatever `ANSWER_MODEL` a developer's
+    shell or `backend/.env` (which the Makefile exports) sets; a test sets it itself."""
+    monkeypatch.delenv("ANSWER_MODEL", raising=False)
+
+
 # The brief's first example names Apple, Tesla and JPMorgan (a Snapshot Company).
 # Target is a Company whose name is also an everyday word. NVIDIA's fiscal year ends in
 # January, and its 10-Qs state risk text rather than pointing back to the 10-K.
@@ -39,6 +47,37 @@ def sector_index(tmp_path_factory):
     since = date(2024, 6, 30)
     filings = [f for f in load_corpus() if f.ticker in SECTOR_TICKERS and f.report_period >= since]
     return build_index(filings, tmp_path_factory.mktemp("sector_index") / "edgar_rag.sqlite")
+
+
+# The "big tech" Company Group (assumption 5), beside three Information Technology
+# Companies it leaves out (Adobe, Cisco and IBM), which "tech companies" still covers.
+# Only Filings from December 2024 on, which hold every Company's latest 10-K.
+BIG_TECH = ("AAPL", "AMZN", "GOOG", "META", "MSFT", "NVDA", "TSLA")
+BIG_TECH_TICKERS = {*BIG_TECH, "ADBE", "CSCO", "IBM"}
+
+
+@pytest.fixture(scope="session")
+def big_tech_index(tmp_path_factory):
+    since = date(2024, 12, 1)
+    filings = [
+        f for f in load_corpus() if f.ticker in BIG_TECH_TICKERS and f.report_period >= since
+    ]
+    return build_index(filings, tmp_path_factory.mktemp("big_tech_index") / "edgar_rag.sqlite")
+
+
+# The Companies of "Compare Coke and Pepsi", an Overview route question: Coca-Cola, whose
+# latest MD&A is in a 10-Q after its latest 10-K, and PepsiCo, whose latest Filing is its
+# 10-K. Only Filings from mid-2024 on, which hold both latest 10-Ks.
+OVERVIEW_TICKERS = {"KO", "PEP"}
+
+
+@pytest.fixture(scope="session")
+def overview_index(tmp_path_factory):
+    since = date(2024, 6, 30)
+    filings = [
+        f for f in load_corpus() if f.ticker in OVERVIEW_TICKERS and f.report_period >= since
+    ]
+    return build_index(filings, tmp_path_factory.mktemp("overview_index") / "edgar_rag.sqlite")
 
 
 # The Coverage Gap Companies the shared index leaves out: General Electric, whose only

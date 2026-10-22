@@ -27,3 +27,28 @@ export function saveConversation(messages: ResearchMessage[]): void {
     // Storage is unavailable; the conversation lives only as long as the page.
   }
 }
+
+/**
+ * Whether the side panel may still open on the Calendar by itself. Closing the panel
+ * turns that off for the rest of the browser session, so it is kept in session storage
+ * apart from the conversation: "New conversation" and a refresh leave it off.
+ */
+const CALENDAR_AUTO_OPEN_OFF_KEY = 'sec-filings-research:calendar-auto-open-off'
+
+/** True once the panel has been closed in this browser session. */
+export function calendarAutoOpenOff(): boolean {
+  try {
+    return sessionStorage.getItem(CALENDAR_AUTO_OPEN_OFF_KEY) !== null
+  } catch {
+    return false
+  }
+}
+
+/** Turns the Calendar's auto-open off for the rest of this browser session. */
+export function turnCalendarAutoOpenOff(): void {
+  try {
+    sessionStorage.setItem(CALENDAR_AUTO_OPEN_OFF_KEY, '1')
+  } catch {
+    // Storage is unavailable; the workspace remembers it as long as the page lasts.
+  }
+}

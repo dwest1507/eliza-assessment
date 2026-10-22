@@ -1,7 +1,7 @@
 """The Financial Facts store and its lookup, internal to the retrieval seam (ADR 0001).
 
-At index time the Tracked Companies' Financial Facts (revenue, net income and segment
-revenue) are read from each Filing by the Financial Facts seam and written to the
+At index time every Company's Financial Facts (revenue, net income and segment revenue)
+are read from each Filing by the Financial Facts seam and written to the
 `financial_facts` table of the index. Nothing else is loaded into it: SEC XBRL data is
 an evaluation reference, never a source of facts.
 
@@ -16,8 +16,8 @@ window). Then:
   the table, and labelled as derived.
 - A segment series stops at a segment reorganisation: the latest run of Filings that
   report the same set of segments is kept, and a note says where the set changed.
-- A Company and metric the store can't answer (a Snapshot Company, a metric or segment
-  not extracted) gets a note that any figure for it must be read from the Filing text,
+- A Company and metric the store can't answer (a metric or segment not extracted from
+  its Filings) gets a note that any figure for it must be read from the Filing text,
   and that the answer must say so.
 
 Each Filing whose rows are used becomes one Facts Source, numbered before the text
@@ -64,10 +64,8 @@ FACTS_SECTION = "Financial Facts"
 
 
 def store_rows(filing: Filing) -> list[tuple]:
-    """The `financial_facts` rows of one Filing: its extracted facts if its Company is
-    Tracked, else none (ADR 0001: Snapshot Companies stay out until measured)."""
-    if filing.coverage != "tracked":
-        return []
+    """The `financial_facts` rows of one Filing: its extracted facts, a Snapshot
+    Company's included since every one was checked against the SEC reference (#153)."""
     return [
         (
             fact.filing_id,
@@ -136,6 +134,12 @@ class FactRow:
     def value_text(self) -> str:
         """The value in millions of dollars, e.g. "$57,006 million"."""
         return money(self.value)
+
+    @property
+    def year_on_year_text(self) -> str | None:
+        """The derived change from a year earlier as the table renders it, e.g. "-14.6%",
+        or None when the table derives none."""
+        return None if self.year_on_year is None else percent(self.year_on_year)
 
     @property
     def metric_name(self) -> str:
@@ -217,19 +221,6 @@ def _company_metric(
     if metric == "segment_revenue" and segments:
         what = f"segment revenue ({', '.join(segments)})"
     name = f"{company.name} ({company.ticker})"
-    if company.coverage != "tracked":
-        return (
-            [],
-            [],
-            [
-                _fallback(
-                    company,
-                    metric,
-                    f"{name} is a Snapshot Company, so no Financial Facts are extracted for it. "
-                    f"Any {what} figure for it must be read from the Sources' text.",
-                )
-            ],
-        )
     stored = db.execute(
         "SELECT * FROM financial_facts WHERE ticker = ? AND metric = ? "
         "ORDER BY report_period, segment",

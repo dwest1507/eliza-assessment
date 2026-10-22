@@ -1,9 +1,10 @@
 """The Anthropic implementation of the answer model (ADR 0004), over the official SDK.
 
-Streams a Message with adaptive thinking at effort `low` and a token cap of 2,500, which
-covers the thinking and a 300–600 word answer: the same settings as the OpenAI
-implementation's reasoning effort `low` and completion-token cap, so the generator
-comparison measures the models rather than their settings. The thinking is not shown
+Streams a Message with adaptive thinking at every provider's settings
+(`edgar_answer.generators`): effort `low` and a token cap of 32,000, which covers the
+thinking and the answer, the same as the OpenAI implementation's reasoning effort and
+completion-token cap, so the generator comparison measures the models rather than their
+settings. The thinking is not shown
 (the API's default display omits it) and counts in the output tokens. Its `stop_reason`
 becomes the Answer Call's stop reason: `max_tokens`, the cap, is `token_cap`. The SDK
 reads the key from `ANTHROPIC_API_KEY`.
@@ -20,13 +21,11 @@ from __future__ import annotations
 from collections.abc import Iterator, Sequence
 from typing import Any
 
+from edgar_answer.generators import REASONING_EFFORT, TOKEN_CAP
 from edgar_rag.answer_model import StopReason, Usage
 from edgar_rag.retrieval import PromptMessage
 
-__all__ = ["EFFORT", "MAX_TOKENS", "AnswerRefused", "AnthropicAnswerModel"]
-
-EFFORT = "low"
-MAX_TOKENS = 2_500
+__all__ = ["AnswerRefused", "AnthropicAnswerModel"]
 
 _STOP_REASONS: dict[str, StopReason] = {
     "end_turn": "complete",
@@ -56,9 +55,9 @@ class AnthropicAnswerModel:
         system = "\n\n".join(m.content for m in messages if m.role == "system")
         request: dict[str, Any] = {
             "model": self.model,
-            "max_tokens": MAX_TOKENS,
+            "max_tokens": TOKEN_CAP,
             "thinking": {"type": "adaptive"},
-            "output_config": {"effort": EFFORT},
+            "output_config": {"effort": REASONING_EFFORT},
             "messages": [
                 {"role": m.role, "content": m.content} for m in messages if m.role != "system"
             ],

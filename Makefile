@@ -30,8 +30,8 @@ ENV_FILE := $(BACKEND)/.env
 export $(shell sed -n 's/^\([A-Za-z_][A-Za-z0-9_]*\)=.*/\1/p' $(ENV_FILE) 2>/dev/null)
 
 # The API key variables a generator's provider needs, read from the table of compared
-# generators (edgar_eval.generators.GENERATORS): `$(GENERATOR_KEYS) MODEL...` for the
-# models named (none for the default generator), `$(GENERATOR_KEYS) --comparison` for the
+# generators (edgar_answer.generators.GENERATORS): `$(GENERATOR_KEYS) MODEL...` for the
+# models named (none for ANSWER_MODEL, else the default generator), `$(GENERATOR_KEYS) --comparison` for the
 # default comparison's, `$(GENERATOR_KEYS) --all` for every one.
 GENERATOR_KEYS = $(UV) python -m edgar_eval.generators keys
 
@@ -46,7 +46,7 @@ for key in $(1); do \
 	done
 endef
 
-.PHONY: help install test lint format eda sec-facts index embeddings local-embeddings ask api eval-retrieval eval-generation eval-brief eval-rescore eval-arms eval-generators eval-settings eval-export judge-study-sample judge-study-judge judge-study-score deck dev frontend-deps \
+.PHONY: help install test lint format eda sec-facts index embeddings local-embeddings ask api eval-retrieval eval-generation eval-brief eval-rescore eval-misses eval-arms eval-generators eval-settings eval-export judge-study-sample judge-study-judge judge-study-score human-check-sample human-check-score deck dev frontend-deps \
 	ci-cd backend-lint backend-test eval-gate eval-floors frontend-quality frontend-test frontend-build security-audit lighthouse
 
 help: ## List targets
@@ -76,7 +76,7 @@ format: frontend-deps ## Auto-fix lint issues and format the backend and front-e
 eda: $(SEC_FACTS_INDEX) ## Execute the EDA notebook from its script source and write the paired .ipynb
 	$(UV) env JUPYTER_PREFER_ENV_PATH=1 jupytext --to ipynb --set-kernel python3 --execute notebooks/eda.py
 
-sec-facts: ## Fetch SEC XBRL company-facts for Tracked Companies (evaluation only; needs SEC_USER_AGENT)
+sec-facts: ## Fetch SEC XBRL company-facts for every Company in the Corpus (evaluation only; needs SEC_USER_AGENT)
 	@if [ -z "$$SEC_USER_AGENT" ]; then \
 		echo 'error: SEC_USER_AGENT is not set. The SEC requires every request to carry a' >&2; \
 		echo 'User-Agent naming you and a contact email. Copy backend/.env.example to' >&2; \
@@ -99,16 +99,13 @@ embeddings: $(INDEX) ## Embed every chunk with OpenAI for the dense and hybrid A
 local-embeddings: $(INDEX) ## Embed every chunk locally for the dense-local and hybrid-local Arms (evaluation only; no API call, no cost; downloads the pinned model once and takes about 30 minutes)
 	$(UV) python -m edgar_eval.embeddings --local
 
-ask: $(INDEX) ## Answer a question from the command line: make ask Q="..." (needs OPENAI_API_KEY)
+ask: $(INDEX) ## Answer a question from the command line: make ask Q="..." (with ANSWER_MODEL, needs its provider's key)
 	@if [ -z "$$Q" ]; then echo 'usage: make ask Q="your question"' >&2; exit 1; fi
-	@if [ -z "$$OPENAI_API_KEY" ]; then \
-		echo 'error: OPENAI_API_KEY is not set. Copy backend/.env.example to backend/.env' >&2; \
-		echo 'and fill it in.' >&2; \
-		exit 1; \
-	fi
+	@keys=$$($(GENERATOR_KEYS)) || exit 1; \
+	$(call require_keys,$$keys)
 	$(UV) python -m edgar_answer.ask "$$Q"
 
-api: $(INDEX) ## Run the chat API on http://localhost:8000, or API_PORT (answers need OPENAI_API_KEY)
+api: $(INDEX) ## Run the chat API on http://localhost:8000, or API_PORT (answers with ANSWER_MODEL, which needs its provider's key)
 	$(UV) uvicorn edgar_api.app:create_app --factory --host 127.0.0.1 --port $(API_PORT)
 
 eval-retrieval: $(EVAL_INDEX) $(if $(filter dense hybrid,$(or $(ARMS),dense)),$(EMBEDDINGS)) $(if $(filter dense-local hybrid-local,$(or $(ARMS),dense-local)),$(LOCAL_EMBEDDINGS)) ## Score retrieval Arms on the Golden Set (version 2 unless GOLDEN_SET= names a file): make eval-retrieval [SPLIT=dev|holdout|all] [ARMS="fts5 ..."] [CHUNK_TOKENS=...] [CONTEXT_BUDGET=...] [GOLDEN_SET=data/eval/golden_set.json]
@@ -116,12 +113,16 @@ eval-retrieval: $(EVAL_INDEX) $(if $(filter dense hybrid,$(or $(ARMS),dense)),$(
 		$(SETTINGS_ARGS) $(if $(GOLDEN_SET),--golden-set ../$(GOLDEN_SET)) \
 		--json ../data/derived/eval/retrieval-$(SPLIT)$(SETTINGS).json
 
-eval-generation: $(EVAL_INDEX) $(if $(filter dense hybrid,$(ARM)),$(EMBEDDINGS)) $(if $(filter dense-local hybrid-local,$(ARM)),$(LOCAL_EMBEDDINGS)) ## Score answers on the Golden Set: make eval-generation [SPLIT=...] [MODEL=...] [ARM=...] [CHUNK_TOKENS=...] [CONTEXT_BUDGET=...] (costs money)
+# NAME names a candidate's report (a prompt version or a retrieval change, ADR 0017):
+# generation-<split>-<NAME>.json, so it never overwrites the round's shipped run.
+GENERATION_REPORT = $(if $(NAME),$(SPLIT)-$(NAME),$(if $(ARM),arms-$(SPLIT)-$(ARM),$(SPLIT)$(if $(MODEL),-$(MODEL)))$(SETTINGS))
+
+eval-generation: $(EVAL_INDEX) $(if $(filter dense hybrid,$(ARM)),$(EMBEDDINGS)) $(if $(filter dense-local hybrid-local,$(ARM)),$(LOCAL_EMBEDDINGS)) ## Score answers on the Golden Set: make eval-generation [SPLIT=...] [MODEL=...] [ARM=...] [CHUNK_TOKENS=...] [CONTEXT_BUDGET=...] [NAME=...] (costs money)
 	@keys=$$($(GENERATOR_KEYS) $(MODEL)) || exit 1; \
 	$(call require_keys,$$keys JEV_API_KEY)
 	$(UV) python -m edgar_eval.generation --split $(SPLIT) $(if $(MODEL),--model $(MODEL)) \
-		$(if $(ARM),--arm $(ARM)) $(SETTINGS_ARGS) \
-		--json ../data/derived/eval/generation-$(if $(ARM),arms-$(SPLIT)-$(ARM),$(SPLIT)$(if $(MODEL),-$(MODEL)))$(SETTINGS).json
+		$(if $(ARM),--arm $(ARM)) $(SETTINGS_ARGS) $(if $(NAME),--name $(NAME)) \
+		--json ../data/derived/eval/generation-$(GENERATION_REPORT).json
 
 eval-brief: $(EVAL_INDEX) $(if $(filter dense hybrid,$(ARM)),$(EMBEDDINGS)) $(if $(filter dense-local hybrid-local,$(ARM)),$(LOCAL_EMBEDDINGS)) ## Run the Brief Suite, 5 runs a case, a verdict per case: make eval-brief [RUNS=...] [MODEL=...] [ARM=...] [CHUNK_TOKENS=...] [CONTEXT_BUDGET=...] (costs money)
 	@keys=$$($(GENERATOR_KEYS) $(MODEL)) || exit 1; \
@@ -135,6 +136,12 @@ eval-brief: $(EVAL_INDEX) $(if $(filter dense hybrid,$(ARM)),$(EMBEDDINGS)) $(if
 # and REPORTS=all means every saved generation and Brief Suite report.
 eval-rescore: $(INDEX) ## Re-score saved reports from their stored answers, in place, with no Answer Call and no Jev call. By default it re-scores the current round's shipped run, Control Run and Brief Suite; REPORTS="..." names other reports, and REPORTS=all re-scores every saved one
 	$(UV) python -m edgar_eval.rescore --split $(SPLIT) $(if $(filter all,$(REPORTS)),--all,$(REPORTS))
+
+# REPORTS picks the reports eval-misses reads: unset, the round's shipped run
+# (generation-<split>.json); paths, or names in data/derived/eval/. With several, such as
+# the shipped run and the Control Run, their summaries are also printed pooled.
+eval-misses: $(INDEX) ## List the Generation Misses of a saved generation or Brief Suite report (must-state facts reached but not stated), with each one's Source, offset, crowding and citation, and write them beside it as misses-<report>.json; free, no Answer Call and no Jev call: make eval-misses [REPORTS="..."] [SPLIT=...]
+	$(UV) python -m edgar_eval.misses --split $(SPLIT) $(REPORTS)
 
 # The comparison commands share a round's shipped run (generation-<split>.json) and Control
 # Run (generation-control-<split>.json), reusing them while the code, prompt and Golden Set
@@ -180,6 +187,12 @@ judge-study-judge: ## Judge every sampled item: Jev twice, the reference judge (
 
 judge-study-score: ## Score the stored verdicts against the sheet's labels (no provider call); refuses while items are unlabelled unless PARTIAL=1 or the stopping rule is met [PARTIAL=1]
 	$(UV) python -m edgar_eval.judge_study score $(if $(PARTIAL),--partial)
+
+human-check-sample: ## Draw the human check's 30 items (15 fact, 15 claim) from the judge study's sample and write its blind sheet to data/eval/judge_study/human_check.md (no provider call) [SEED=...]
+	$(UV) python -m edgar_eval.human_check sample $(if $(SEED),--seed $(SEED))
+
+human-check-score: ## Score the human check's labels against Claude's labels and Jev's verdicts, for each kind whose items are all labelled (no provider call); refuses while no kind is fully labelled
+	$(UV) python -m edgar_eval.human_check score
 
 # The slide deck is Markdown for Marp (docs/deck.md); npx fetches the pinned Marp CLI.
 MARP := npx --yes @marp-team/marp-cli@4.5.1

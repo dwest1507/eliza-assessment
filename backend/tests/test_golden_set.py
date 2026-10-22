@@ -111,8 +111,10 @@ def test_every_case_has_a_question_a_known_type_and_its_labels(golden_set):
         assert case.expected_sources or case.expected_coverage_gaps, case.id
 
 
-def test_cases_cover_every_question_type(golden_set):
-    assert {case.question_type for case in golden_set.cases} == set(QUESTION_TYPES)
+def test_cases_cover_every_question_type(golden_set, golden_set_v2):
+    # `overview` came with the Overview route (#145), after version 1.
+    assert {case.question_type for case in golden_set.cases} == set(QUESTION_TYPES) - {"overview"}
+    assert {case.question_type for case in golden_set_v2.cases} == set(QUESTION_TYPES)
 
 
 def test_the_loader_rejects_an_unknown_question_type(tmp_path):
@@ -972,15 +974,36 @@ def test_new_slice_6_holds_three_follow_ups_of_different_kinds(
             assert len(periods) >= 3, case_id
 
 
+ADDED_LATER = ("overview-ko-pep-compare", "overview-jpm-doing", "group-big-tech-ai-risks")
+"""Cases added after the split was frozen, each `dev` by the split rule: the Overview
+route's two questions (#145) and the "big tech" Company Group's question (#146)."""
+
+
+def test_the_big_tech_case_covers_exactly_the_company_groups_companies(
+    golden_set_v2, filings_by_id
+):
+    [case] = [c for c in golden_set_v2.cases if c.id == "group-big-tech-ai-risks"]
+    group = {row.ticker for row in load_sector_table() if row.group == "Big Tech"}
+
+    assert "big tech" in case.question and case.split == "dev"
+    for tier in ("must_state", "detail"):
+        tickers = {filings_by_id[f.filing_id].ticker for f in case.required_facts if f.tier == tier}
+        assert tickers == group, tier
+
+
 def test_version_2_holds_all_53_new_cases(golden_set, golden_set_v2):
     """The six slices complete the 53 new cases ADR 0012 sets, beside the 27 rewrites: 80
-    cases, so the split can be frozen."""
+    cases, so the split can be frozen. The cases added later come on top."""
     version_1 = {case.id for case in golden_set.cases}
 
-    new = [case for case in golden_set_v2.cases if case.id not in version_1]
+    new = [
+        case
+        for case in golden_set_v2.cases
+        if case.id not in version_1 and case.id not in ADDED_LATER
+    ]
 
     assert len(new) == 53
-    assert len(golden_set_v2.cases) == 80
+    assert len(golden_set_v2.cases) == 80 + len(ADDED_LATER)
 
 
 NEW_CASES = {
@@ -1006,7 +1029,9 @@ def _lowest_digests(case_ids, n):
 def test_version_2s_split_is_frozen_with_60_dev_and_20_holdout_cases(golden_set_v2):
     golden_set_v2.require_frozen()
 
-    assert len(golden_set_v2.split("dev")) == 60
+    dev = {c.id for c in golden_set_v2.split("dev")}
+    assert len(dev - set(ADDED_LATER)) == 60
+    assert set(ADDED_LATER) <= dev
     assert len(golden_set_v2.split("holdout")) == 20
     assert golden_set_v2.split("pending") == []
 
@@ -1300,7 +1325,9 @@ def _question_kind(case):
         or _GAP_TAGS & set(case.tags)
     ):
         return "coverage_gap"
-    return {"risk": "risk", "sector": "sector"}.get(case.question_type, "trend")
+    return {"risk": "risk", "sector": "sector", "overview": "overview"}.get(
+        case.question_type, "trend"
+    )
 
 
 def _question_mix(cases):
@@ -1346,13 +1373,16 @@ def test_the_mix_counts_each_case_once_by_its_kind_of_question(tmp_path):
 FROZEN_MIX = {
     "risk": {"dev": 14, "holdout": 6},
     "trend": {"dev": 12, "holdout": 4},
-    "sector": {"dev": 13, "holdout": 3},
+    "sector": {"dev": 14, "holdout": 3},
     "coverage_gap": {"dev": 15, "holdout": 2},
     "follow_up": {"dev": 6, "holdout": 5},
+    "overview": {"dev": 2},
 }
-"""Version 2's mix once its split was frozen (issue #72), as `docs/golden-set.md` records
-it. The hash decided the holdout's, so it is reported against `MIX_TARGET`, not adjusted
-to it."""
+"""Version 2's mix once its split was frozen (issue #72), with the cases added later, as
+`docs/golden-set.md` records it. The hash decided the holdout's, so it is reported against
+`MIX_TARGET`, not adjusted to it. The Overview route's questions (#145), a kind ADR 0012's
+table has no row for, are dev, as every case added later is; so is the "big tech" Company
+Group's question (#146), a sector question."""
 
 
 def test_the_version_2_mix_is_reported_against_adr_0012s_table(golden_set_v2, capsys):
@@ -1361,10 +1391,11 @@ def test_the_version_2_mix_is_reported_against_adr_0012s_table(golden_set_v2, ca
     mix = _question_mix(golden_set_v2.cases)
 
     assert mix == FROZEN_MIX
-    assert set(MIX_TARGET) == set(FROZEN_MIX)
+    assert set(FROZEN_MIX) - set(MIX_TARGET) == {"overview"}
     with capsys.disabled():
         print(f"\nGolden Set version 2 mix ({len(golden_set_v2.cases)} cases), against ADR 0012:")
-        for kind, (dev, holdout) in MIX_TARGET.items():
+        for kind in FROZEN_MIX:
+            dev, holdout = MIX_TARGET.get(kind, (0, 0))
             counts = mix.get(kind, {})
             print(
                 f"  {kind:<13} dev {counts.get('dev', 0)}/~{dev}, "

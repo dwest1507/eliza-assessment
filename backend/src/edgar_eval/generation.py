@@ -24,17 +24,22 @@ Call to the generator under test. The answer is then scored three ways:
 
 An answer the model stopped at the Answer Call's token cap (its stop reason is
 `token_cap`) is truncated: it fails, its Fact Recall is 0, its Faithfulness is still
-judged on what it wrote, and the run counts it.
+judged on what it wrote, and the run counts it, lists it in the report (`capped`) and
+prints it.
 
 `make eval-generation` runs it on the dev split with the default generator, prints the
 scores and writes them, with every answer, as JSON under `data/derived/eval/`:
 
     python -m edgar_eval.generation [--split dev|holdout|all] [--model MODEL] [--arm ARM]
-        [--index PATH] [--context-budget TOKENS] [--json PATH]
+        [--index PATH] [--context-budget TOKENS] [--name NAME] [--json PATH]
 
 `--index` chooses the index, and so the chunk size, and `--context-budget` the tokens of
 Sources per Answer Call (ADR 0010); the report records both, and names the setting
-(`chunks-600-budget-32000`) for the selection rule.
+(`chunks-600-budget-32000`) for the selection rule. `--name` names a candidate, a prompt
+version or a retrieval change (`v16`, `legal-route`), which the report records (`name`,
+None without it) and the prompt rules compare it by (ADR 0017); `make eval-generation
+NAME=...` passes it and writes the report as `generation-<split>-<NAME>.json`, so a
+candidate never overwrites the round's shipped run.
 
 `--brief-suite` answers the Brief Suite instead of a Golden Set split, each case
 `--runs` times (5 by default), and gives each case a pass/fail verdict
@@ -85,8 +90,10 @@ from edgar_eval.answer_checks import (
     check_coverage_gaps,
     check_figures,
     check_structure,
+    checked_gaps,
     claims,
     split_gap_claims,
+    table_figures,
 )
 from edgar_eval.generators import answer_cost, answer_model
 from edgar_eval.judge import FACT_CUTOFF, Evidence, Judgments
@@ -108,6 +115,7 @@ from edgar_rag.retrieval import (
     CONTEXT_BUDGET_TOKENS,
     DEFAULT_INDEX,
     PROMPT_VERSION,
+    FactRow,
     Source,
     index_chunk_tokens,
     prepare_answer_context,
@@ -359,9 +367,14 @@ class GenerationReport:
         """The chunk size and context budget, as the selection rule names a setting."""
         return f"chunks-{self.chunk_tokens or 'unknown'}-budget-{self.context_budget}"
 
+    @property
+    def capped(self) -> list[str]:
+        """The cases whose answer stopped at the token cap, each scored as truncated."""
+        return [r.case_id for r in self.cases if r.truncated]
+
     def to_dict(self) -> dict:
         """The report as plain JSON-ready data, with each case's derived scores."""
-        data = asdict(self) | {"settings": self.settings}
+        data = asdict(self) | {"settings": self.settings, "capped": self.capped}
         for case, result in zip(data["cases"], self.cases, strict=True):
             case["fact_recall"] = result.fact_recall
             case["detail_recall"] = result.detail_recall
@@ -477,8 +490,8 @@ def _run_case(
         first_token_s=record.first_token_s,
         cost_usd=answer_cost(record.model, record.input_tokens, record.output_tokens),
         citations=check_citations(answer, passages),
-        figures=check_answer_figures(answer, context.sources, fact_values),
-        coverage_gaps=check_coverage_gaps(answer, gaps, names) if gaps else None,
+        figures=check_answer_figures(answer, context.sources, fact_values, context.financial_facts),
+        coverage_gaps=check_coverage_gaps(answer, gaps, names) if checked_gaps(gaps) else None,
         judgments=judge.judge(answer, [f.fact for f in case.required_facts], judged, evidence),
         structure=check_structure(answer, covered),
         fact_tiers=tuple(f.tier for f in case.required_facts),
@@ -490,14 +503,20 @@ def _run_case(
 
 
 def check_answer_figures(
-    answer: str, sources: Sequence[Source], fact_values: FactValues
+    answer: str,
+    sources: Sequence[Source],
+    fact_values: FactValues,
+    table: Sequence[FactRow] = (),
 ) -> FigureCheck:
-    """The figure check against the turn's Sources: their passages, and the Financial
-    Facts of each one's Filing. The harness and the offline re-score both run it."""
+    """The figure check against the turn's Sources: their passages, the Financial Facts
+    of each one's Filing, and the figures the turn's Financial Facts table (`table`, the
+    Answer Context's `financial_facts`) renders for it, derived rows included. The
+    harness and the offline re-score both run it."""
     return check_figures(
         answer,
         {s.number: s.text for s in sources},
         {s.number: fact_values(s.filing_id) for s in sources},
+        table_figures(sources, table),
     )
 
 
@@ -579,15 +598,14 @@ def _all_fact_values() -> dict[str, tuple[int, ...]]:
 
     values: dict[str, list[int]] = {}
     for filing in load_corpus():
-        if filing.coverage == "tracked":
-            for fact in extract_financial_facts(filing):
-                values.setdefault(fact.filing_id, []).append(fact.value)
+        for fact in extract_financial_facts(filing):
+            values.setdefault(fact.filing_id, []).append(fact.value)
     return {filing_id: tuple(v) for filing_id, v in values.items()}
 
 
 def corpus_fact_values(filing_id: str) -> tuple[int, ...]:
-    """The values of every Financial Fact the Corpus yields for the Filing. Financial
-    Facts are extracted for Tracked Companies only (ADR 0001)."""
+    """The values of every Financial Fact the Corpus yields for the Filing, a Snapshot
+    Company's included (#153)."""
     return _all_fact_values().get(filing_id, ())
 
 
@@ -641,7 +659,7 @@ def main(
     )
     parser.add_argument("--split", choices=("dev", "holdout", "all"), default="dev")
     parser.add_argument(
-        "--model", help="a model in GENERATORS (default: OPENAI_MODEL, else the shipped one)"
+        "--model", help="a model in GENERATORS (default: ANSWER_MODEL, else the shipped one)"
     )
     parser.add_argument("--arm", help="the retrieval Arm (default: the Shipped Arm)")
     parser.add_argument("--case", action="append", metavar="ID", help="only these cases")
@@ -677,6 +695,10 @@ def main(
     )
     parser.add_argument("--log", type=Path, default=DEFAULT_ANSWER_LOG, help="Answer Call log")
     parser.add_argument("--json", type=Path, help="also write the report as JSON here")
+    parser.add_argument(
+        "--name",
+        help="a candidate's name (v16, legal-route), recorded in the report (ADR 0017)",
+    )
     args = parser.parse_args(argv)
 
     if arms is None:
@@ -749,7 +771,7 @@ def main(
     if args.json:
         args.json.parent.mkdir(parents=True, exist_ok=True)
         data = {"split": args.split} | current_round(args.golden_set) | report.to_dict()
-        data |= one_call
+        data |= one_call | {"name": args.name}
         args.json.write_text(json.dumps(data, indent=2) + "\n", encoding="utf-8")
         print(f"\nWritten to {args.json.resolve()}", file=out)
     return 1 if report.errors else 0
@@ -810,7 +832,7 @@ def _print_report(report: GenerationReport, split: str, out: TextIO) -> None:
                 file=out,
             )
     for label, failing in (
-        ("Truncated at the token cap", [r.case_id for r in report.cases if r.truncated]),
+        ("Capped (stopped at the token cap, scored as truncated)", report.capped),
         ("Citations invalid", [r.case_id for r in report.cases if not r.citations.passed]),
         ("Figures not exact", [r.case_id for r in report.cases if not r.figures.passed]),
         (

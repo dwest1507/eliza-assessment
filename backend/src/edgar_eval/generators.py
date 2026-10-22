@@ -1,31 +1,37 @@
-"""The compared generators: one table (`GENERATORS`) of every model the generator
-comparison measures, with its provider and its list price. Adding or repricing a
-generator is one edit to that table.
+"""The compared generators, for the evaluation: the table of generators
+(`edgar_answer.generators.GENERATORS`, each model with its provider and its list price),
+read from where the product reads it, and what the harnesses add to it.
 
 Everything that depends on a generator reads the table: the answer cost
 (`answer_cost`), the implementation the generation harness answers with
 (`answer_model`), the generators `make eval-generators` runs by default (`COMPARISON`,
-beside the table), and the API key the Makefile checks for before a paid run:
+here), and the API key the Makefile checks for before a paid run:
 
     python -m edgar_eval.generators keys [MODEL...]     # the keys those models' providers need
     python -m edgar_eval.generators keys --comparison   # the default comparison's keys
     python -m edgar_eval.generators keys --all          # every compared generator's keys
 
-With no MODEL, the default generator is `OPENAI_MODEL`, else the shipped one (the
-table's first row). A model not in the table is refused: it has no provider and no
-price.
+With no MODEL, the default generator is `ANSWER_MODEL`, else the shipped one (the
+table's first row), as for the product. A model not in the table is refused: it has no
+provider and no price.
 """
 
 from __future__ import annotations
 
 import argparse
-import os
 import sys
-from collections.abc import Callable
-from dataclasses import dataclass
 from typing import TextIO
 
-from edgar_answer.openai_model import MODEL_ENV_VAR
+from edgar_answer import generators as _table
+from edgar_answer.generators import (
+    ANTHROPIC,
+    GENERATORS,
+    OPENAI,
+    Generator,
+    Price,
+    Provider,
+    UnknownAnswerModel,
+)
 from edgar_rag.answer_model import AnswerModel
 
 __all__ = [
@@ -42,69 +48,6 @@ __all__ = [
     "main",
 ]
 
-
-@dataclass(frozen=True)
-class Price:
-    """A model's list price in US dollars per million tokens."""
-
-    input: float
-    output: float
-
-
-def _openai(model: str) -> AnswerModel:
-    from edgar_answer.openai_model import OpenAIAnswerModel
-
-    return OpenAIAnswerModel(model)
-
-
-def _anthropic(model: str) -> AnswerModel:
-    from edgar_answer.anthropic_model import AnthropicAnswerModel
-
-    return AnthropicAnswerModel(model)
-
-
-@dataclass(frozen=True)
-class Provider:
-    """A generator's provider: the environment variable its SDK reads the key from, and
-    the answer model implementation over that SDK (imported only when built)."""
-
-    name: str
-    key_env_var: str
-    build: Callable[[str], AnswerModel]
-
-
-OPENAI = Provider("OpenAI", "OPENAI_API_KEY", _openai)
-ANTHROPIC = Provider("Anthropic", "ANTHROPIC_API_KEY", _anthropic)
-
-
-@dataclass(frozen=True)
-class Generator:
-    model: str
-    provider: Provider
-    price: Price
-
-
-GENERATORS: tuple[Generator, ...] = (
-    Generator("gpt-6-luna", OPENAI, Price(input=0.10, output=0.50)),
-    Generator("gpt-6.1-sol", OPENAI, Price(input=2.00, output=10.00)),
-    Generator("claude-sonnet-5-5", ANTHROPIC, Price(input=2.00, output=10.00)),
-    Generator("claude-opus-5-5", ANTHROPIC, Price(input=4.00, output=20.00)),
-    Generator("claude-haiku-5-5", ANTHROPIC, Price(input=0.10, output=0.50)),
-)
-"""The generators the comparison measures, the shipped default first.
-
-Prices are list prices per million tokens: OpenAI's standard tier
-(developers.openai.com/api/docs/pricing) and Anthropic's first-party API
-(platform.claude.com/docs/en/about-claude/pricing), listed on 2026-10-16, and
-`claude-haiku-5-5` on 2026-10-17 at its rate for prompts under 100k tokens (an Answer
-Context stays within the 32k context budget). Reasoning and thinking tokens are billed as
-output and are already counted in the output tokens. Every input token is priced at the
-full rate, ignoring cached input, so a cost is an upper bound.
-
-Golden Set version 1 compared the first four; version 2 compares the rows in
-`COMPARISON`. The version 1 rows stay at their prices, so a version 1 run is still
-accepted and priced as its saved reports were."""
-
 COMPARISON: tuple[str, ...] = ("gpt-6-luna", "claude-haiku-5-5")
 """The generators the comparison runs by default, the shipped one first: Golden Set
 version 2's, `gpt-6-luna` against `claude-haiku-5-5`. `python -m edgar_eval.selection
@@ -116,8 +59,7 @@ always runs, as the shipped run and the Control Run."""
 def generator(model: str | None = None) -> Generator | None:
     """The table's row for a model id, or for the default generator when None; None when
     the model is not in the table."""
-    model = model or os.environ.get(MODEL_ENV_VAR) or GENERATORS[0].model
-    return next((g for g in GENERATORS if g.model == model), None)
+    return _table.generator(model)
 
 
 def answer_cost(model: str, input_tokens: int | None, output_tokens: int | None) -> float | None:
@@ -130,15 +72,10 @@ def answer_cost(model: str, input_tokens: int | None, output_tokens: int | None)
 
 
 def _require(model: str | None) -> Generator:
-    row = generator(model)
-    if row is None:
-        listed = ", ".join(g.model for g in GENERATORS)
-        name = model or os.environ.get(MODEL_ENV_VAR)
-        raise SystemExit(
-            f"error: {name!r} is not a compared generator (one of {listed}); "
-            "add it to GENERATORS in edgar_eval/generators.py"
-        )
-    return row
+    try:
+        return _table.require(model)
+    except UnknownAnswerModel as error:
+        raise SystemExit(f"error: {error}") from None
 
 
 def answer_model(model: str | None) -> AnswerModel:

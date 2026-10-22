@@ -1,5 +1,7 @@
 """The generation harness's checks in code, on hand-written answers."""
 
+from collections.abc import Mapping, Sequence
+
 import pytest
 
 from edgar_eval.answer_checks import (
@@ -10,7 +12,9 @@ from edgar_eval.answer_checks import (
     claims,
     figures,
 )
+from edgar_eval.generation import check_answer_figures
 from edgar_rag.golden_set import CoverageGapLabel
+from edgar_rag.retrieval import FactRow, Source, answer_words
 
 # --- Citation validity --------------------------------------------------------------------
 
@@ -180,6 +184,86 @@ def test_a_percentage_must_appear_as_written_not_rescaled():
     assert not check_figures("Margin was 0.0469% [S1].", PASSAGES, fact_values={}).passed
 
 
+# The Financial Facts table's derived rows: ExxonMobil's FY2025 10-K (S1, its Facts
+# Source; S3, its MD&A) and its Q3 10-Q (S2, a Facts Source). The table derives the
+# fourth quarter as the 10-K's year less the three 10-Qs, and its change from a year
+# earlier; neither is a value any Filing reports.
+K, Q3 = "XOM_10-K_2025-12-31", "XOM_10-Q_2025-09-30"
+
+
+def _xom_source(number: int, filing_id: str, kind: str, text: str) -> Source:
+    return Source(
+        number=number,
+        filing_id=filing_id,
+        ticker="XOM",
+        company="Exxon Mobil Corporation",
+        form_type="10-K" if filing_id == K else "10-Q",
+        report_period=filing_id.rsplit("_", 1)[-1],
+        fiscal_period="FY2025" if filing_id == K else "Q3 FY2025",
+        section="Financial Facts" if kind == "facts" else "MD&A",
+        item=None if kind == "facts" else "7",
+        text=text,
+        kind=kind,  # type: ignore[arg-type]
+    )
+
+
+XOM_SOURCES = (
+    _xom_source(1, K, "facts", "Net income, FY2025: $28,844 million"),
+    _xom_source(2, Q3, "facts", "Net income, Q3 FY2025: $7,548 million"),
+    _xom_source(3, K, "text", "Earnings were lower on weaker crude realizations."),
+)
+XOM_TABLE = (
+    FactRow(
+        ticker="XOM",
+        company="Exxon Mobil Corporation",
+        metric="net_income",
+        segment=None,
+        fiscal_period="Q4 FY2025",
+        report_period="2025-12-31",
+        months=3,
+        value=7_610_000_000,
+        filing_id=None,
+        derived="FY2025 less Q1–Q3 FY2025",
+        sources=("S1", "S2"),
+        year_on_year=-0.1463,
+        year_on_year_sources=("S1", "S2"),
+    ),
+)
+XOM_FACTS = {K: (28_844_000_000,), Q3: (7_548_000_000,)}
+
+
+def xom_fact_values(filing_id: str) -> tuple[int, ...]:
+    return XOM_FACTS.get(filing_id, ())
+
+
+def test_a_figure_matching_a_derived_row_the_table_renders_for_a_cited_filing_is_exact():
+    # S3 is the 10-K's text, S2 the Q3 10-Q's Facts: each is a Filing the derived row cites.
+    for tag in ("S3", "S2"):
+        answer = f"Fourth-quarter net income was $7.61 billion (derived), down 14.6% [{tag}]."
+
+        check = check_answer_figures(answer, XOM_SOURCES, xom_fact_values, XOM_TABLE)
+
+        assert check.passed, check.unmatched
+
+
+def test_a_computed_figure_the_table_does_not_render_is_not_exact():
+    # The FY2025 decline from FY2024, computed by the answer: no row renders it.
+    answer = "Net income fell $4,836 million, or 14.4%, to $28,844 million [S1] [S3]."
+
+    check = check_answer_figures(answer, XOM_SOURCES, xom_fact_values, XOM_TABLE)
+
+    assert check.unmatched == ("$4,836 million", "14.4%")
+
+
+def test_a_derived_row_counts_only_for_the_filings_it_cites():
+    other = _xom_source(4, "XOM_10-Q_2025-06-30", "text", "Upstream volumes rose.")
+    answer = "Fourth-quarter net income was $7,610 million (derived) [S4]."
+
+    check = check_answer_figures(answer, (*XOM_SOURCES, other), xom_fact_values, XOM_TABLE)
+
+    assert check.unmatched == ("$7,610 million",)
+
+
 # --- Coverage Gaps ------------------------------------------------------------------------
 
 NAMES = {
@@ -266,15 +350,6 @@ def gap(kind, *companies):
             gap("no_guidance", "NVDA"),
             "The filings do not include forward revenue guidance from NVIDIA.",
         ),
-        (
-            gap("periods_differ", "AAPL", "JPM"),
-            "Note that the periods differ: Apple's fiscal year ended 27 September 2025, "
-            "JPMorgan's on 31 December 2025.",
-        ),
-        (
-            gap("periods_differ", "AAPL", "JPM"),
-            "These filings cover different fiscal periods.",
-        ),
     ],
 )
 def test_a_coverage_gap_stated_in_the_answer_is_found(label, statement):
@@ -296,7 +371,6 @@ def test_a_coverage_gap_stated_in_the_answer_is_found(label, statement):
         (gap("stale_filing", "GE"), "GE Capital reported net earnings in 2014 [S1]."),
         # Outlook words without saying guidance is missing.
         (gap("no_guidance", "NVDA"), "NVIDIA's outlook depends on data center demand [S1]."),
-        (gap("periods_differ", "AAPL", "JPM"), "Apple and JPMorgan both list risks [S1]."),
     ],
 )
 def test_a_coverage_gap_left_unstated_is_missing(label, answer):
@@ -304,6 +378,72 @@ def test_a_coverage_gap_left_unstated_is_missing(label, answer):
 
     assert not check.passed
     assert check.missing == (label.kind,)
+
+
+@pytest.mark.parametrize(
+    "acknowledgement",
+    [
+        "Wells Fargo isn't in the filings I was given, so this covers JPMorgan alone.",
+        "I don't have Wells Fargo's filings, so I can't compare its risks.",
+        "Wells Fargo is absent from the filings provided.",
+        "Wells Fargo falls outside the filings I can draw on.",
+        "There are no Wells Fargo filings here to compare against.",
+        "Wells Fargo's filings aren't available, so only JPMorgan is covered.",
+    ],
+)
+def test_a_missing_company_acknowledged_in_the_answers_own_words_anywhere_passes(
+    acknowledgement,
+):
+    """ADR 0016: the answer says so in its own words, where it matters, not in the fixed
+    wording near its start or in a closing Coverage note."""
+    answer = (
+        "JPMorgan's risk factors centre on credit and market risk [S1].\n\n"
+        "## JPMorgan Chase (JPM)\n\n"
+        f"JPMorgan names cybersecurity among its operational risks [S2]. {acknowledgement}"
+    )
+
+    check = check_coverage_gaps(answer, [gap("missing_company", "Wells Fargo")], NAMES)
+
+    assert check.passed
+    assert check.stated == ("missing_company",)
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        "Apple and JPMorgan both list risks [S1].",
+        "Note that the periods differ: Apple's fiscal year ended 27 September 2025 [S1].",
+    ],
+)
+def test_periods_differ_is_not_checked(answer):
+    """ADR 0016: "periods differ" is shown by the product as a Coverage note, and the
+    answer is not asked to state it, so it is neither stated nor missing."""
+    check = check_coverage_gaps(
+        answer, [gap("periods_differ", "AAPL", "JPM"), gap("no_guidance", "AAPL")], NAMES
+    )
+
+    assert check.stated == ()
+    assert check.missing == ("no_guidance",)
+
+
+def test_the_checked_gaps_are_those_that_leave_part_of_the_question_unanswered():
+    from edgar_eval.answer_checks import checked_gaps
+
+    expected = [
+        gap("periods_differ", "AAPL", "JPM"),
+        gap("missing_company", "Wells Fargo"),
+        gap("snapshot_trend", "JPM"),
+        gap("stale_filing", "GE"),
+        gap("no_guidance", "NVDA"),
+    ]
+
+    assert [g.kind for g in checked_gaps(expected)] == [
+        "missing_company",
+        "snapshot_trend",
+        "stale_filing",
+        "no_guidance",
+    ]
+    assert checked_gaps([gap("periods_differ", "AAPL", "JPM")]) == []
 
 
 def test_a_gap_about_several_companies_must_be_stated_for_each():
@@ -906,10 +1046,12 @@ def test_a_closing_coverage_note_may_be_a_heading_or_a_bold_label(coverage):
         ),
     ],
 )
-def test_an_answer_that_does_not_end_with_a_coverage_note_fails(coverage):
+def test_an_answer_needs_no_closing_coverage_note(coverage):
+    """ADR 0016: the product shows the Coverage Gaps as Coverage notes below the answer,
+    so prompt v15 no longer asks the answer to end with one."""
     check = check_structure(structured(coverage=coverage), COMPANIES)
 
-    assert any("Coverage note" in p for p in check.problems)
+    assert check.passed, check.problems
 
 
 @pytest.mark.parametrize(("repeats", "verdict"), [(4, "under 300"), (110, "over 600")])
@@ -920,6 +1062,49 @@ def test_an_answer_outside_300_to_600_words_fails(repeats, verdict):
     )
 
     assert [p for p in check.problems if "words" in p] == [f"{check.words} words, {verdict}"]
+
+
+FOUR_COMPANIES = {
+    "AAPL": ("Apple Inc", "Apple"),
+    "TSLA": ("Tesla Inc", "Tesla"),
+    "TGT": ("Target Corp", "Target"),
+    "NVDA": ("NVIDIA Corp", "NVIDIA"),
+}
+
+
+def _answer_of(words: int, companies: Mapping[str, Sequence[str]]) -> str:
+    """An answer in the structure, a heading per Company, padded to `words` words."""
+    opening = "The four Companies face distinct risks [S1]. Each one is set out below [S2]."
+    headings = "\n\n".join(
+        f"## {names[-1]}\n\n{names[-1]} has risks [S1]." for names in companies.values()
+    )
+    answer = f"{opening}\n\n{headings}"
+    pad = words - check_structure(answer, companies).words
+    return f"{answer}\n\n" + " ".join(["risk"] * pad) + " [S1]."
+
+
+def test_the_structure_check_allows_more_words_for_more_source_companies():
+    """Prompt v17: the check's word range comes from the prompt's `answer_words`, applied
+    to the answer's Source Companies, so 900 words pass with four and fail with two."""
+    four = check_structure(_answer_of(900, FOUR_COMPANIES), FOUR_COMPANIES)
+    assert four.words == 900
+    assert four.passed, four.problems
+
+    two = {t: FOUR_COMPANIES[t] for t in ("AAPL", "TSLA")}
+    check = check_structure(_answer_of(900, two), two)
+    assert check.words == 900
+    assert check.problems == ("900 words, over 600",)
+
+
+@pytest.mark.parametrize("companies", [1, 2, 3, 4, 5, 7])
+def test_the_structure_checks_word_range_is_the_prompts(companies):
+    tickers = {f"T{i}": (f"Company {i}",) for i in range(companies)}
+    low, high = answer_words(companies)
+
+    for words, passed in ((low - 1, False), (low, True), (high, True), (high + 1, False)):
+        check = check_structure(_answer_of(words, tickers), tickers)
+        assert check.words == words
+        assert check.passed is passed, check.problems
 
 
 def test_an_answer_with_no_sources_need_only_open_with_its_direct_answer():

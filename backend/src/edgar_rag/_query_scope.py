@@ -11,7 +11,9 @@ Rule-based, with no LLM (ADR 0003). It recognises:
 - Sector phrases ("the major pharmaceutical companies", "the major banks", "the oil
   majors"), resolved only through the sector and industry columns of the curated Sector
   table (assumption 5). Each phrase names table values, never Companies, so the Companies
-  it covers are whatever the table says.
+  it covers are whatever the table says. A Company Group phrase ("big tech", "megacap
+  tech") is read the same way, against the table's group column: a curated, named set of
+  Companies that no Sector captures.
 - Section hints: risk factors, legal proceedings, MD&A, market risk (its own name, or
   a kind of market risk with "risk", "exposure" or "sensitivity": "interest rate and
   foreign exchange risk", "FX exposure"), business, and cybersecurity, which plans the
@@ -32,6 +34,12 @@ Rule-based, with no LLM (ADR 0003). It recognises:
   "forecast", "going forward", "next year", or "for" a year later than the latest Fiscal
   Period of the Companies named, set an MD&A hint. Guidance itself stays a Coverage Gap
   (`_coverage`): the route changes where retrieval looks, not what the answer may claim.
+- The Overview route (`InheritedScope.overview`): a question naming Companies and no
+  topic word ("Compare Coke and Pepsi", "How is JP Morgan doing?"), once stopwords,
+  Company names and generic words are set aside, with no Section hint, no change and no
+  time phrase but "latest", plans each Company's latest Business, MD&A and Risk Factors
+  (`OVERVIEW_SECTIONS`). A follow-up with no topic of its own takes it only when no
+  earlier message it inherits a topic from named one.
 - Named periods: "FY2024", "fiscal 2024", "Q2 FY2025", or a bare year ("in 2023"), read
   as Fiscal Periods. A named period decides which copy of a repeated passage is cited.
 - Change questions: "how has it changed", "how did that change", "what is new", "how
@@ -76,6 +84,9 @@ class ScopeCompany:
     latest_fiscal_year: int | None = None
     """The fiscal year of the Company's latest Filing, which a year named in a question
     is measured against: a later one is a future year, which no Filing covers."""
+    group: str | None = None
+    """The curated Company Group the Sector table puts the Company in ("Big Tech"), or
+    None."""
 
 
 # Aliases the Filing names don't yield by dropping a suffix.
@@ -181,13 +192,18 @@ def short_name(name: str) -> str:
     return _THE.sub("", _SUFFIX.sub("", name.strip())).strip() or name
 
 
+def common_names(ticker: str, name: str) -> tuple[str, ...]:
+    """The names besides the one in its Filings that a question names a Company by: the
+    name without its legal suffix, without ".com", then its aliases, in that order and
+    each once: "Alphabet Inc" (GOOG) → ("Alphabet", "Google")."""
+    short = short_name(name.strip())
+    names = [short, short.removesuffix(".com"), *_ALIASES.get(ticker, ())]
+    return tuple(n for n in dict.fromkeys(names) if n and n != name.strip())
+
+
 def _names(company: ScopeCompany) -> set[str]:
     full = company.name.strip()
-    short = short_name(full)
-    names = {full, short, *_ALIASES.get(company.ticker, ())}
-    if short.endswith(".com"):
-        names.add(short.removesuffix(".com"))
-    return {n for n in names if n}
+    return {n for n in (full, *common_names(company.ticker, full)) if n}
 
 
 # --- Sector phrases ----------------------------------------------------------------------
@@ -195,17 +211,24 @@ def _names(company: ScopeCompany) -> set[str]:
 
 @dataclass(frozen=True)
 class SectorPhrase:
-    """A phrase naming a group of Companies, and the Sector table rows it resolved to."""
+    """A phrase naming a group of Companies, and the Sector table rows it resolved to. A
+    phrase read against the group column names a Company Group ("big tech")."""
 
     phrase: str
     """The phrase as the question writes it, e.g. "pharmaceutical companies"."""
-    column: Literal["sector", "industry"]
+    column: Literal["sector", "industry", "group"]
     """The Sector table column the phrase is read against."""
     values: tuple[str, ...]
     """The values of that column the phrase covers, e.g. ("Pharmaceuticals",
     "Biotechnology")."""
     tickers: tuple[str, ...]
     """The Companies whose row holds one of the values, by value and then ticker."""
+
+    @property
+    def is_company_group(self) -> bool:
+        """Whether the phrase names a curated Company Group rather than a Sector or an
+        industry."""
+        return self.column == "group"
 
 
 # A word that makes a sector or industry word a group of Companies: "software companies",
@@ -218,10 +241,18 @@ _GROUP = (
 # Each phrase is read against one column of the Sector table, in this order; text matched
 # by an earlier phrase is not read again. The table, not this list, decides which
 # Companies a phrase covers, so a disputed mapping is fixed in `sectors.csv`.
-_SectorRule = tuple[re.Pattern[str], Literal["sector", "industry"], tuple[str, ...]]
+_SectorRule = tuple[re.Pattern[str], Literal["sector", "industry", "group"], tuple[str, ...]]
 _SECTOR_PHRASES: tuple[_SectorRule, ...] = tuple(
     (re.compile(pattern, re.I), column, values)
     for pattern, column, values in (
+        (
+            # A Company Group, read first so "big tech companies" is never the
+            # Information Technology Sector's "tech companies", which would leave out
+            # Alphabet, Amazon and Meta and bring in Adobe, Cisco and IBM.
+            rf"\b(?:big|mega[\s-]?cap)\s+tech(?:nology)?(?:\s+{_GROUP})?\b|\bbig\s+techs\b",
+            "group",
+            ("Big Tech",),
+        ),
         (
             # AbbVie is Biotechnology in the GICS-style label but a drug maker by SIC
             # (2834), so it counts as a pharmaceutical company (assumption 5).
@@ -492,6 +523,10 @@ def _cut(m: re.Match[str]) -> list[tuple[int, int]]:
 
 
 RISK_FACTORS = "Risk Factors"
+
+OVERVIEW_SECTIONS = ("Business", "MD&A", RISK_FACTORS)
+"""The Sections the Overview route plans: a question naming Companies and no topic is
+answered from each one's latest Business, MD&A and Risk Factors."""
 
 # Asking what Companies do about their risks: the answer is in Business (risk management,
 # compliance, strategy) and the MD&A, not only in Risk Factors.
@@ -843,6 +878,19 @@ class InheritedScope:
         if self.topic_from is self.latest:
             return (self.latest,)
         return (self.topic_from, self.latest)
+
+    @property
+    def overview(self) -> bool:
+        """Whether the question takes the Overview route: no message retrieval reads
+        names a topic word (once generic words are set aside, as Company names and
+        stopwords already are), no Section hint applies, it asks for no change, and it
+        names no time phrase but "latest" and no Fiscal Period ("Compare Coke and Pepsi",
+        "How is JP Morgan doing?")."""
+        if any(_names_topic(w for w in n.words if w not in _GENERIC) for n in self.asked):
+            return False
+        if self.sections_from.sections or any(is_change_question(n.text) for n in self.asked):
+            return False
+        return not self.period_from.periods and self.period_from.window in (None, LATEST)
 
     def metrics(self, segment_names: Iterable[str]) -> tuple[tuple[str, ...], tuple[str, ...]]:
         """The metrics and segments of the most recent message naming a metric (see

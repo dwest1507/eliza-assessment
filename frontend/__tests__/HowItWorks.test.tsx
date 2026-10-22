@@ -9,13 +9,7 @@ import fixture from './fixtures/eval-export.json'
 
 const EXPORT: EvalExport = fixture
 
-const TECHNICAL_SECTIONS = [
-  'Architecture',
-  'Evaluation scoreboard',
-  'The Brief Suite',
-  'The holdout run',
-  'Corpus coverage',
-]
+const TECHNICAL_SECTIONS = ['Architecture', 'Evaluation scoreboard', 'The holdout run']
 
 function section(name: string) {
   return screen.getByRole('region', { name })
@@ -81,21 +75,21 @@ describe('the "How it works" page', () => {
     expect(section('Evaluation scoreboard')).toHaveTextContent('The gate is Evidence Reached')
   })
 
-  it('shows the screen: which challengers went on, and why each was kept or dropped', async () => {
+  it('marks in the retrieval table which challengers went on to paid answer runs, with no separate screen table', async () => {
     render(<HowItWorks data={EXPORT} />)
     await openSection('Evaluation scoreboard')
 
-    const table = within(section('Evaluation scoreboard')).getByRole('table', {
-      name: /The screen/,
-    })
-    const hosted = within(table).getByRole('row', { name: /^hybrid/ })
-    expect(hosted).toHaveTextContent('no: API call at query time')
-    expect(hosted).toHaveTextContent('available if the one-call limit is lifted')
-    expect(within(table).getByRole('row', { name: /dense-local/ })).toHaveTextContent(
-      'dropped: behind on Evidence Reached'
+    const scoreboard = section('Evaluation scoreboard')
+    expect(within(scoreboard).queryByRole('table', { name: /The screen/ })).not.toBeInTheDocument()
+    const table = within(scoreboard).getByRole('table', { name: /Retrieval/ })
+    expect(within(table).getByRole('columnheader', { name: 'Paid run' })).toBeInTheDocument()
+    expect(within(table).getByRole('row', { name: /^hybrid/ })).toHaveTextContent(
+      'no: needs a second API call'
     )
-    expect(within(table).getByRole('row', { name: /rerank/ })).toHaveTextContent('kept')
-    expect(section('Evaluation scoreboard')).toHaveTextContent('Go on: hybrid-local, rerank.')
+    expect(within(table).getByRole('row', { name: /dense-local/ })).toHaveTextContent('no: behind')
+    expect(within(table).getByRole('row', { name: /rerank/ })).toHaveTextContent(/yes$/)
+    expect(scoreboard).toHaveTextContent('Went on to paid answer runs: hybrid-local, rerank.')
+    expect(scoreboard).toHaveTextContent('fts5 still ships')
   })
 
   it('shows a version 1 export as version 1 gated it, with its two-sided rule', async () => {
@@ -183,10 +177,8 @@ describe('the "How it works" page', () => {
     expect(control).toHaveTextContent('−0.005 [−0.058, +0.039]')
     expect(scoreboard).toHaveTextContent('These verdicts are directional')
     expect(scoreboard).toHaveTextContent('Chosen: gpt-6-luna')
-    // The comparison predates the measurement fixes that re-scored the shipped run above.
-    expect(scoreboard).toHaveTextContent(
-      'This comparison was scored on the earlier measurement and stands as recorded'
-    )
+    // The export holds the latest round's comparison only, so no note dates it.
+    expect(scoreboard).not.toHaveTextContent('stands as recorded')
   })
 
   it('leaves the generator comparison out when it has not run', async () => {
@@ -196,93 +188,17 @@ describe('the "How it works" page', () => {
     expect(screen.queryByRole('table', { name: /Choosing the generator/ })).not.toBeInTheDocument()
   })
 
-  it('shows the Arm comparison fact by fact, beside its Control Run', async () => {
+  it('shows no Arm or settings comparison, only the latest scoreboard', async () => {
     render(<HowItWorks data={EXPORT} />)
     await openSection('Evaluation scoreboard')
 
     const scoreboard = section('Evaluation scoreboard')
-    const table = within(scoreboard).getByRole('table', { name: /Choosing the Arm/ })
-    const rerank = within(table).getByRole('row', { name: /rerank/ })
-    // Fact by fact: the must-state facts stated, the difference and its one-sided p-values.
-    expect(rerank).toHaveTextContent(
-      'indistinguishable (+7: 228 against 221 of 316 must-state facts, p ahead = 0.189, p behind = 0.836)'
-    )
-    expect(rerank).toHaveTextContent('+0.123 [−0.123, +0.368]') // per case, with its interval
-    // Case by case, the guardrail, beside it.
-    expect(rerank).toHaveTextContent('indistinguishable (15 higher, 10 lower')
-    expect(rerank).toHaveTextContent('no')
-    // The Control Run's fact-level verdict.
-    const control = within(table).getByRole('row', { name: /Control Run/ })
-    expect(control).toHaveTextContent('indistinguishable (+1: 222 against 221 of 316')
-    expect(scoreboard).toHaveTextContent('one-sided case-cluster bootstrap')
-    expect(scoreboard).toHaveTextContent('Chosen: fts5.')
+    expect(within(scoreboard).queryByRole('table', { name: /Choosing the Arm/ })).toBeNull()
+    expect(within(scoreboard).queryByRole('table', { name: /Choosing the chunk size/ })).toBeNull()
+    expect(within(scoreboard).queryByRole('table', { name: /facts stated by where/ })).toBeNull()
   })
 
-  it('splits the facts each Arm states by where their evidence reached', async () => {
-    render(<HowItWorks data={EXPORT} />)
-    await openSection('Evaluation scoreboard')
-
-    const table = within(section('Evaluation scoreboard')).getByRole('table', {
-      name: /Arm comparison: facts stated by where their evidence reached/,
-    })
-    const local = within(table).getByRole('row', { name: /hybrid-local/ })
-    expect(local).toHaveTextContent('12 / 3 of 20') // reached by the challenger only
-    expect(local).toHaveTextContent('187 / 195 of 243') // reached by both
-    // The Control Run reaches what the shipped run reaches, so it has no one-sided group.
-    const control = within(table).getByRole('row', { name: /Control Run/ })
-    expect(control).toHaveTextContent('–201 / 199 of 248')
-  })
-
-  it('shows a comparison made before the fact-level test case by case, as recorded', async () => {
-    render(<HowItWorks data={EXPORT} />)
-    await openSection('Evaluation scoreboard')
-
-    const scoreboard = section('Evaluation scoreboard')
-    const table = within(scoreboard).getByRole('table', { name: /Choosing the chunk size/ })
-    const setting = within(table).getByRole('row', { name: /chunks-600-budget-48000/ })
-    expect(setting).toHaveTextContent('–indistinguishable (12 higher, 9 lower')
-    expect(scoreboard).toHaveTextContent(
-      'Decided under ADR 0011’s per-case rule, before the fact-level test, and stands as recorded'
-    )
-    expect(scoreboard).toHaveTextContent('Chosen: chunks-600-budget-32000.')
-    expect(
-      within(scoreboard).queryByRole('table', { name: /Settings comparison: facts stated/ })
-    ).not.toBeInTheDocument()
-  })
-
-  it('leaves the Arm and settings comparisons out when they have not run', async () => {
-    render(<HowItWorks data={{ ...EXPORT, armChoice: null, settingsChoice: null }} />)
-    await openSection('Evaluation scoreboard')
-
-    expect(screen.queryByRole('table', { name: /Choosing the Arm/ })).not.toBeInTheDocument()
-    expect(screen.queryByRole('table', { name: /Choosing the chunk size/ })).not.toBeInTheDocument()
-  })
-
-  it('shows the Brief Suite’s verdict case by case', async () => {
-    render(<HowItWorks data={EXPORT} />)
-    await openSection('The Brief Suite')
-
-    const brief = section('The Brief Suite')
-    expect(brief).toHaveTextContent('1 of 3 cases pass')
-    expect(brief).toHaveTextContent('at least 4 of 5 runs')
-    const table = within(brief).getByRole('table', { name: /Brief Suite/ })
-    const first = within(table).getByRole('row', { name: /brief-risk-aapl-tsla-jpm/ })
-    expect(first).toHaveTextContent('brief')
-    expect(first).toHaveTextContent('fail')
-    const pharma = within(table).getByRole('row', { name: /brief-sector-pharma-regulatory/ })
-    expect(pharma).toHaveTextContent('fail' + '9' + '8' + '8')
-    const variant = within(table).getByRole('row', { name: /brief-followup-nvda-net-income/ })
-    expect(variant).toHaveTextContent('pass')
-    expect(variant).not.toHaveTextContent('brief ')
-  })
-
-  it('leaves the Brief Suite out until it has run', () => {
-    render(<HowItWorks data={{ ...EXPORT, briefSuite: null }} />)
-
-    expect(screen.queryByRole('region', { name: 'The Brief Suite' })).not.toBeInTheDocument()
-  })
-
-  it('shows the holdout run beside dev, with its small-sample caveat', async () => {
+  it('shows the latest holdout run beside dev, with its small-sample caveat', async () => {
     render(<HowItWorks data={EXPORT} />)
     await openSection('The holdout run')
 
@@ -297,7 +213,9 @@ describe('the "How it works" page', () => {
     )
     expect(holdout).toHaveTextContent('19 of 20 holdout cases')
     const answers = within(holdout).getByRole('table', { name: /Answers/ })
-    const luna = within(answers).getByRole('row', { name: /gpt-6-luna/ })
+    // Only the latest holdout run: one row of answers, beside dev's.
+    const [luna] = within(answers).getAllByRole('row', { name: /gpt-6-luna/ })
+    expect(within(answers).getAllByRole('row', { name: /gpt-6-luna/ })).toHaveLength(1)
     expect(luna).toHaveTextContent('0.74') // Fact Recall
     expect(luna).toHaveTextContent('0.95') // Faithfulness
     expect(luna).toHaveTextContent('prompt v7')
@@ -318,66 +236,6 @@ describe('the "How it works" page', () => {
     const scoreboard = section('Evaluation scoreboard')
     expect(scoreboard).toHaveTextContent('make eval-generation')
     expect(within(scoreboard).queryByRole('table', { name: /Answers/ })).not.toBeInTheDocument()
-  })
-
-  it('shows the Corpus coverage grid: each Company’s Filings by Report Period', async () => {
-    render(<HowItWorks data={EXPORT} />)
-    await openSection('Corpus coverage')
-
-    const grid = within(section('Corpus coverage')).getByRole('table')
-    expect(within(grid).getByRole('columnheader', { name: /Q3 2025/ })).toBeInTheDocument()
-    const apple = within(grid).getByRole('row', { name: /AAPL/ })
-    expect(apple).toHaveTextContent('Tracked')
-    expect(within(apple).getByTitle(/AAPL_10-K_2025-09-27.*FY2025/)).toHaveTextContent('K')
-    expect(within(apple).getByTitle(/AAPL_10-Q_2025-12-27.*Q1 FY2026/)).toHaveTextContent('Q')
-    const jpm = within(grid).getByRole('row', { name: /JPM/ })
-    expect(jpm).toHaveTextContent('Snapshot')
-    expect(
-      within(jpm)
-        .getAllByRole('cell')
-        .filter((c) => c.textContent === '')
-    ).toHaveLength(1)
-  })
-
-  it('lists what’s covered, grouped by how much history each Company has', () => {
-    render(<HowItWorks data={EXPORT} />)
-
-    const covered = section('What’s covered')
-    expect(covered).toHaveAttribute('id', 'whats-covered')
-    const tracked = within(covered).getByRole('list', { name: /two or more years/i })
-    expect(
-      within(tracked)
-        .getAllByRole('listitem')
-        .map((li) => li.textContent)
-    ).toEqual(['Apple Inc. (AAPL)'])
-    const snapshot = within(covered).getByRole('list', { name: /only a few filings/i })
-    expect(
-      within(snapshot)
-        .getAllByRole('listitem')
-        .map((li) => li.textContent)
-    ).toEqual(['JPMorgan Chase & Co. (JPM)'])
-    // Plain words by default, the domain terms on hover.
-    expect(within(covered).getByTitle('Tracked Companies')).toBeInTheDocument()
-    expect(within(covered).getByTitle('Snapshot Companies')).toBeInTheDocument()
-  })
-
-  it('lists every Company of the export in what’s covered', () => {
-    render(<HowItWorks data={EXPORT} />)
-
-    const covered = section('What’s covered')
-    expect(within(covered).getAllByRole('listitem')).toHaveLength(EXPORT.coverage.companies.length)
-  })
-
-  it('scrolls the coverage grid in its own area, which the keyboard can reach', async () => {
-    render(<HowItWorks data={EXPORT} />)
-    await openSection('Corpus coverage')
-
-    const area = within(section('Corpus coverage')).getByRole('region', {
-      name: 'Filings by Company and Report Period',
-    })
-    expect(within(area).getByRole('table')).toBeInTheDocument()
-    area.focus()
-    expect(area).toHaveFocus()
   })
 
   it('links back to the workspace', () => {
@@ -496,6 +354,13 @@ describe('the "How it works" overview', () => {
     expect(text).toMatch(/one AI call/i)
   })
 
+  it('leaves the human check of the grading out of the known limits', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    expect(section('Known limits')).not.toHaveTextContent(/checked by a person/i)
+    expect(section('Known limits')).not.toHaveTextContent(/a person checked/i)
+  })
+
   it('keeps domain terms out of the overview’s text', () => {
     render(<HowItWorks data={EXPORT} />)
 
@@ -503,9 +368,30 @@ describe('the "How it works" overview', () => {
       expect(section(name).textContent).not.toMatch(JARGON)
     }
   })
+
+  it('leaves the Brief Suite out of the overview', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    for (const name of [...OVERVIEW, 'What’s covered']) {
+      expect(section(name).textContent).not.toMatch(/brief suite/i)
+    }
+  })
 })
 
 describe('the "How it works" technical details', () => {
+  it('shows exactly the architecture, the evaluation scoreboard and the holdout run', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    // Each section's heading is its toggle, after a hidden ▸.
+    const headings = screen
+      .getAllByRole('heading', { level: 2 })
+      .map((h) => h.textContent?.replace('▸', ''))
+    expect(headings.slice(headings.indexOf('Technical details') + 1)).toEqual(TECHNICAL_SECTIONS)
+    expect(screen.queryByRole('region', { name: 'The Brief Suite' })).toBeNull()
+    expect(screen.queryByRole('region', { name: 'Corpus coverage' })).toBeNull()
+    expect(document.body).not.toHaveTextContent(/brief suite/i)
+  })
+
   it('puts every technical section under "Technical details", each collapsed by default', () => {
     render(<HowItWorks data={EXPORT} />)
 
@@ -524,18 +410,18 @@ describe('the "How it works" technical details', () => {
     const user = userEvent.setup()
     render(<HowItWorks data={EXPORT} />)
 
-    const heading = within(section('Corpus coverage')).getByRole('button', {
-      name: 'Corpus coverage',
+    const heading = within(section('The holdout run')).getByRole('button', {
+      name: 'The holdout run',
     })
     await user.click(heading)
     expect(heading).toHaveAttribute('aria-expanded', 'true')
-    expect(within(section('Corpus coverage')).getByRole('table')).toBeVisible()
+    expect(within(section('The holdout run')).getAllByRole('table')[0]).toBeVisible()
     // The other sections stay closed.
     expect(within(section('Evaluation scoreboard')).queryByRole('table')).not.toBeInTheDocument()
 
     await user.click(heading)
     expect(heading).toHaveAttribute('aria-expanded', 'false')
-    expect(within(section('Corpus coverage')).queryByRole('table')).not.toBeInTheDocument()
+    expect(within(section('The holdout run')).queryByRole('table')).not.toBeInTheDocument()
   })
 
   it('opens every section with "Expand all" and closes them with "Collapse all"', async () => {
@@ -568,13 +454,13 @@ describe('the "How it works" technical details', () => {
     expect(
       within(section('Evaluation scoreboard')).getByRole('table', { name: /Retrieval/ })
     ).toBeVisible()
-    expect(within(section('Corpus coverage')).queryByRole('table')).not.toBeInTheDocument()
+    expect(within(section('The holdout run')).queryByRole('table')).not.toBeInTheDocument()
 
     act(() => {
-      window.history.replaceState(null, '', '/how-it-works#coverage')
+      window.history.replaceState(null, '', '/how-it-works#holdout')
       window.dispatchEvent(new HashChangeEvent('hashchange'))
     })
-    expect(within(section('Corpus coverage')).getByRole('table')).toBeVisible()
+    expect(within(section('The holdout run')).getAllByRole('table')[0]).toBeVisible()
     // Following a link opens its section without closing the one already open.
     expect(
       within(section('Evaluation scoreboard')).getByRole('table', { name: /Retrieval/ })
@@ -590,15 +476,165 @@ describe('the "How it works" technical details', () => {
       scrolled.push(this)
     }
     try {
-      window.history.replaceState(null, '', '/how-it-works#coverage')
+      window.history.replaceState(null, '', '/how-it-works#holdout')
       render(<HowItWorks data={EXPORT} />)
 
       await waitFor(() =>
-        expect(scrolled).toContain(screen.getByRole('heading', { name: 'Corpus coverage' }))
+        expect(scrolled).toContain(screen.getByRole('heading', { name: 'The holdout run' }))
       )
     } finally {
       HTMLElement.prototype.scrollIntoView = original
     }
+  })
+})
+
+/** Types a search into "What's covered", replacing what was there, and returns the section. */
+async function searchCovered(query: string) {
+  const covered = section('What’s covered')
+  const box = within(covered).getByRole('searchbox', { name: /search companies/i })
+  const user = userEvent.setup()
+  await user.clear(box)
+  await user.type(box, query)
+  return covered
+}
+
+describe('the "How it works" "What’s covered"', () => {
+  it('opens with the summary line, at the anchor the workspace links to', () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const covered = section('What’s covered')
+    expect(covered).toHaveAttribute('id', 'whats-covered')
+    expect(covered).toHaveTextContent(
+      '4 companies · 3 with two or more years of quarterly filings · 1 with a few filings'
+    )
+  })
+
+  it.each([
+    ['NVDA', 'NVIDIA Corporation'],
+    ['nvidia', 'NVIDIA Corporation'],
+    ['Google', 'Alphabet Inc'],
+    ['jp morgan', 'JPMorgan Chase & Co'],
+  ])('opens the right card on searching “%s”', async (query, company) => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const covered = await searchCovered(query)
+
+    const cards = within(covered).getAllByRole('article')
+    expect(cards).toHaveLength(1)
+    expect(cards[0]).toHaveAccessibleName(
+      new RegExp(company.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+    )
+  })
+
+  it('shows the card’s Sector, coverage badge and the shared Company Calendar', async () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const card = within(await searchCovered('NVDA')).getByRole('article')
+    expect(card).toHaveTextContent('Information Technology')
+    expect(within(card).getByText('Two or more years')).toHaveAttribute('title', 'Tracked Company')
+    // The Company Calendar the workspace's Calendar tab shows.
+    const calendar = within(card).getByRole('table', { name: 'NVDA fiscal calendar' })
+    expect(within(calendar).getByRole('rowheader', { name: 'Q3 FY2026' })).toBeInTheDocument()
+    expect(card).toHaveTextContent('Fiscal year ends late January')
+
+    const snapshot = within(await searchCovered('JPM')).getByRole('article')
+    expect(within(snapshot).getByText('A few filings')).toHaveAttribute('title', 'Snapshot Company')
+  })
+
+  it('asks about the Company in the workspace, filling the question in without sending it', async () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const card = within(await searchCovered('Google')).getByRole('article')
+    const ask = within(card).getByRole('link', { name: 'Ask about this company' })
+    expect(ask).toHaveAttribute(
+      'href',
+      `/?ask=${encodeURIComponent("What are Alphabet's main risk factors?")}`
+    )
+  })
+
+  it('says plainly that a Company missing from the Corpus isn’t in the filings', async () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const covered = await searchCovered('Wells Fargo')
+
+    expect(within(covered).queryByRole('article')).not.toBeInTheDocument()
+    expect(within(covered).getByRole('status')).toHaveTextContent(
+      'Wells Fargo isn’t in the filings'
+    )
+    // Its aliases and ticker find it too.
+    expect(within(await searchCovered('Citi')).getByRole('status')).toHaveTextContent(
+      'Citigroup isn’t in the filings'
+    )
+  })
+
+  it('shows no match for a nonsense query', async () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    const covered = await searchCovered('zzqx')
+
+    expect(within(covered).queryByRole('article')).not.toBeInTheDocument()
+    expect(within(covered).getByRole('status')).toHaveTextContent('No company matches “zzqx”')
+  })
+
+  it('lists the other Companies a search matches, each opening its card', async () => {
+    render(<HowItWorks data={EXPORT} />)
+
+    // "a" starts Alphabet and Apple, which tie, so the first alphabetically opens.
+    const covered = await searchCovered('a')
+    expect(within(covered).getByRole('article')).toHaveAccessibleName(/Alphabet/)
+    const others = within(covered).getByRole('list', { name: 'Also matching' })
+
+    await userEvent.setup().click(within(others).getByRole('button', { name: 'Apple Inc (AAPL)' }))
+
+    expect(within(covered).getByRole('article')).toHaveAccessibleName(/Apple/)
+  })
+
+  it('shows all companies grouped by coverage, each row opening its card', async () => {
+    render(<HowItWorks data={EXPORT} />)
+    const user = userEvent.setup()
+    const covered = section('What’s covered')
+    expect(within(covered).queryByRole('list', { name: /two or more years/i })).toBeNull()
+
+    await user.click(within(covered).getByRole('button', { name: 'Show all companies' }))
+
+    const tracked = within(covered).getByRole('list', { name: /two or more years/i })
+    expect(
+      within(tracked)
+        .getAllByRole('button')
+        .map((b) => b.textContent)
+    ).toEqual(['Alphabet Inc (GOOG)', 'Apple Inc (AAPL)', 'NVIDIA Corporation (NVDA)'])
+    const snapshot = within(covered).getByRole('list', { name: /a few filings/i })
+    expect(
+      within(snapshot)
+        .getAllByRole('button')
+        .map((b) => b.textContent)
+    ).toEqual(['JPMorgan Chase & Co (JPM)'])
+    // Plain words, the domain terms on hover.
+    expect(within(covered).getByTitle('Tracked Companies')).toBeInTheDocument()
+    expect(within(covered).getByTitle('Snapshot Companies')).toBeInTheDocument()
+
+    await user.click(within(snapshot).getByRole('button', { name: /JPM/ }))
+    expect(within(covered).getByRole('article')).toHaveAccessibleName(/JPMorgan Chase/)
+  })
+
+  it('filters all companies by Sector', async () => {
+    render(<HowItWorks data={EXPORT} />)
+    const user = userEvent.setup()
+    const covered = section('What’s covered')
+    await user.click(within(covered).getByRole('button', { name: 'Show all companies' }))
+
+    await user.selectOptions(
+      within(covered).getByRole('combobox', { name: 'Sector' }),
+      'Information Technology'
+    )
+
+    const tracked = within(covered).getByRole('list', { name: /two or more years/i })
+    expect(
+      within(tracked)
+        .getAllByRole('button')
+        .map((b) => b.textContent)
+    ).toEqual(['Apple Inc (AAPL)', 'NVIDIA Corporation (NVDA)'])
+    expect(within(covered).queryByRole('list', { name: /a few filings/i })).toBeNull()
   })
 })
 
@@ -613,13 +649,31 @@ describe('the workspace', () => {
   })
 
   it('says on the empty screen how many Companies are covered, linking to the list', () => {
-    render(<Workspace coverage={coverageSummary(EXPORT.coverage)} />)
+    render(<Workspace coverage={coverageSummary(EXPORT.companies)} />)
 
     const line = screen.getByText(/companies covered/)
     expect(line).toHaveTextContent(
-      '2 companies covered · 1 with two or more years of quarterly filings'
+      '4 companies covered · 3 with two or more years of quarterly filings'
     )
     expect(within(line).getByRole('link')).toHaveAttribute('href', '/how-it-works#whats-covered')
+  })
+
+  it('fills in the question “Ask about this company” links with, without sending it', () => {
+    window.history.replaceState(
+      null,
+      '',
+      `/?ask=${encodeURIComponent("What are Alphabet's main risk factors?")}`
+    )
+
+    render(<Workspace />)
+
+    expect(screen.getByRole('textbox', { name: 'Question' })).toHaveValue(
+      "What are Alphabet's main risk factors?"
+    )
+    // Nothing was sent: the empty screen's starter prompts still show.
+    expect(screen.getByRole('list', { name: 'Starter prompts' })).toBeInTheDocument()
+    // The question leaves the address, so a refresh doesn't fill it in again.
+    expect(window.location.search).toBe('')
   })
 
   it('shows no coverage line without the coverage summary', () => {

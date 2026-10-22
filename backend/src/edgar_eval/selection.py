@@ -1,11 +1,15 @@
-"""The selection rules: which retrieval Arm, and which generator, ships, decided by the
-generation harness's scores on paired cases.
+"""The selection rules: which retrieval Arm, which generator, which chunk size and
+context budget, and which prompt candidate ships, decided by the generation harness's
+scores on paired cases.
 
 Each score is compared case by case with the one-sided exact sign test, under one pair
 of thresholds for every rule (ADR 0011): a challenger is **ahead** on a score at
 one-sided p < `AHEAD_P` (0.10) and **behind** at one-sided p < `BEHIND_P` (0.20). The
-scores are Fact Recall, Faithfulness, Coverage Gaps and Contradicted Claims, the last
-paired per case on "has no Contradicted Claim"; the last three are the guardrails.
+scores are Fact Recall, Faithfulness, Coverage Gaps, Contradicted Claims (paired per case
+on "has no Contradicted Claim") and structure followed (the structure check, per case);
+Faithfulness, Coverage Gaps and Contradicted Claims are every rule's guardrails, and
+structure the prompt rules' only. Each comparison also counts the cases failing the
+figure check on each side (`figures`), the `prompt-fix` rule's ahead metric.
 
 Each score pairs only the cases both sides scored: a case one side could not score (its
 judgment failed, or it was not answered) is left out of that score's test, never counted
@@ -34,6 +38,20 @@ evidence reached (challenger only, shipped only, both, neither).
 - **Settings** (ADR 0010): a chunk size and context budget replace the shipped ones under
   the Arm rule, fact by fact as well. Each setting's report is named by its setting
   (`chunks-600-budget-32000`).
+- **Prompts** (ADR 0017), for a change meant to raise the facts stated (a prompt version,
+  a retrieval change such as the legal proceedings route): the Arm rule, **ahead on Fact
+  Recall fact by fact** and **behind on no guardrail**, with structure followed added to
+  the guardrails.
+- **Prompt-fix** (ADR 0017), for a correctness change (the figures prompt): it qualifies
+  when **fewer cases fail the figure check** than in the shipped run, a count, not a
+  test, and it is **behind on none** of the prompt rule's guardrails nor on Fact Recall
+  fact by fact.
+
+The prompt rules have no command of their own: `compare --rule prompts|prompt-fix`
+applies them offline to the round's shipped run, a candidate's report (written by `make
+eval-generation NAME=...`, which records `name`) and the Control Run. A candidate is
+named by its report's `name`, else its prompt version; a challenger whose name another
+already has takes its report's file name beside it (`v7 (generation-dev-x)`).
 
 Under any rule, when several challengers qualify, the **cheapest** wins: the lowest
 mean answer cost, then the earliest listed.
@@ -68,7 +86,28 @@ the shipped setup and of this round, and otherwise runs them again first.
     python -m edgar_eval.selection generators [--split dev] [--reuse] [--model MODEL... | --all]
     python -m edgar_eval.selection settings [--split dev] [--reuse] --setting CHUNKS:BUDGET...
     python -m edgar_eval.selection compare SHIPPED.json CHALLENGER.json...
-        [--control CONTROL.json] [--rule arms|generators|settings] [--json PATH]
+        [--control CONTROL.json] [--rule arms|generators|settings|prompts|prompt-fix]
+        [--json PATH]
+
+**Several runs a side** (ADR 0017's note of 2026-10-21). One run of a setup can differ
+from another by more than the thresholds assume (#160's Control Run stated 12 more
+must-state facts than its shipped run), so `compare` also reads a side answered by
+several runs of one setup, its reports joined by `+`:
+
+    python -m edgar_eval.selection compare generation-dev.json+generation-dev-run2.json \
+        generation-dev-v16.json+generation-dev-v16-run2.json \
+        --control generation-control-dev.json+generation-control-dev-run2.json --rule prompts
+
+Each case's score on a side is then the mean over the runs that scored it (a pass/fail
+score the share of runs passing), each must-state fact is stated by the share of the
+side's runs stating it, so facts stated and figure failures are a mean per run, and the
+cost is the runs' mean (`Candidate.from_reports`). The tests, thresholds and rules are
+unchanged: the sign test pairs the per-case means, the fact-level test resamples whole
+cases of mean differences, and the Control Check compares the Control Run's runs with
+the shipped run's. The runs of one side must record one setup (`_SETUP`); a second run
+may carry its own `name` (`NAME=v16-run2`), the side taking its first run's. The choice
+file records each side's run count (`runs`, `control_runs`) and reports
+(`run_reports`), and `capped` names each run (`v15 (shipped run 2)`, `v16 (run 2)`).
 
 **The screen** (ADR 0011): before any paid Answer Call, the `arms` and `settings`
 commands score every candidate with the retrieval harness, which is free, and answer only
@@ -98,8 +137,11 @@ reused by round, with or without it. All three call the
 generators and Jev, so they cost money. `compare` applies a rule to generation reports
 already written, the first being the shipped choice, with `--control` the Control Run's
 (without one, as for version 1's reports, it says the noise is not shown). All print the
-comparison and write it, with the choice, to `--json` (by default
-`data/derived/eval/<arm|generator|settings>-choice-<split>.json`).
+comparison and every answer of each run that stopped at the token cap (`capped`), and
+write them, with the choice and the prompt and code versions each side's report records
+(`versions`), to `--json` (by default
+`data/derived/eval/<arm|generator|settings>-choice-<split>.json`; `compare` writes only
+when `--json` names a file).
 """
 
 from __future__ import annotations
@@ -108,7 +150,9 @@ import argparse
 import json
 import sys
 from collections.abc import Callable, Mapping, Sequence
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass, field, replace
+from fractions import Fraction
+from math import lcm
 from pathlib import Path
 from statistics import fmean
 from typing import Any, Literal, TextIO
@@ -133,11 +177,13 @@ __all__ = [
     "Comparison",
     "EvidenceGroup",
     "FactComparison",
+    "FigureComparison",
     "FactOutcome",
     "Rule",
     "RuleName",
     "ScoreComparison",
     "choose",
+    "compare",
     "main",
     "one_sided_verdict",
     "sign_test",
@@ -148,9 +194,15 @@ _INDEX_DIR = DERIVED_DIR
 """Where an index of another chunk size is, or is built: `edgar_rag-chunks<N>.sqlite`,
 the name `make eval-generation CHUNK_TOKENS=<N>` uses."""
 
-RuleName = Literal["arms", "generators", "settings"]
+RuleName = Literal["arms", "generators", "settings", "prompts", "prompt-fix"]
 Score = Literal[
-    "fact_recall", "stated_facts", "faithfulness", "coverage_gaps", "contradicted_claims"
+    "fact_recall",
+    "stated_facts",
+    "faithfulness",
+    "coverage_gaps",
+    "contradicted_claims",
+    "structure",
+    "figures",
 ]
 
 UNCONSTRAINED = "available if the one-call limit is lifted"
@@ -350,18 +402,32 @@ class Rule:
     ahead_on_any: tuple[Score, ...]
     behind_on_none: tuple[Score, ...]
     named_by: str
-    """The generation report field that names a candidate (falling back to its model)."""
-    run: Callable[..., tuple[list[Path], dict | None]]
+    """The generation report field that names a candidate (falling back to `fallback`,
+    then to its model)."""
+    run: Callable[..., tuple[list[Path], dict | None]] | None
     """Runs the generation harness once per challenger on a split (reusing reports
     already written when asked) and returns their reports, with the screen that chose
     the challengers (None for a rule that does not screen); the shipped run and Control
     Run come from the round (`_round_runs`). The Arm and settings rules' screen every
     candidate on Evidence Reached first (ADR 0011) and answer only through the ones it
     keeps. The generator rule's also takes `only`, the models to limit the run to; the
-    settings rule's `settings`, the (chunk size, context budget) pairs to compare."""
+    settings rule's `settings`, the (chunk size, context budget) pairs to compare. None
+    for a rule that `compare` alone applies: the prompt rules, whose candidates are run
+    by `make eval-generation NAME=...`."""
     choice_file: str
     """The default file the choice is written to, before `-<split>.json`."""
+    fallback: str = "model"
+    """The report field that names a candidate whose report has no `named_by` field."""
 
+
+_PROMPT_GUARDRAILS: tuple[Score, ...] = (
+    "fact_recall",
+    "faithfulness",
+    "coverage_gaps",
+    "contradicted_claims",
+    "structure",
+)
+"""The guardrails of both prompt rules (ADR 0017): the Arm rule's, and structure."""
 
 RULES: dict[RuleName, Rule] = {
     "arms": Rule(
@@ -385,10 +451,30 @@ RULES: dict[RuleName, Rule] = {
         run=_run_settings,
         choice_file="settings-choice",
     ),
+    "prompts": Rule(
+        ahead_on_any=("stated_facts",),
+        behind_on_none=_PROMPT_GUARDRAILS,
+        named_by="name",
+        fallback="prompt_version",
+        run=None,
+        choice_file="prompt-choice",
+    ),
+    "prompt-fix": Rule(
+        ahead_on_any=("figures",),
+        behind_on_none=(*_PROMPT_GUARDRAILS, "stated_facts"),
+        named_by="name",
+        fallback="prompt_version",
+        run=None,
+        choice_file="prompt-fix-choice",
+    ),
 }
 """The only place the rules differ. Under the Arm and settings rules Fact Recall is
 ahead by the fact-level test (`stated_facts`, ADR 0015) and the per-case sign test on it
-is a guardrail; the generator rule decides Fact Recall per case, as ADR 0011 states."""
+is a guardrail; the generator rule decides Fact Recall per case, as ADR 0011 states.
+The prompt rules (ADR 0017) have no command of their own: `compare` applies them to a
+candidate's report written by `make eval-generation NAME=...`. `prompts` is the Arm
+rule with structure followed added to the guardrails; `prompt-fix` is ahead when fewer
+cases fail the figure check (`figures`), and adds facts stated to the guardrails."""
 
 _UNRECORDED_CUTOFF = 0.5
 """The fact cut-off of a generation report saved before it recorded one
@@ -399,9 +485,10 @@ _UNRECORDED_CUTOFF = 0.5
 class FactOutcome:
     """One must-state Required Fact in one answer."""
 
-    stated: bool
+    stated: bool | Fraction
     """Whether the answer counts as stating it: Jev's probability at least the report's
-    fact cut-off, and never in a truncated answer."""
+    fact cut-off, and never in a truncated answer. For a side of several runs
+    (`Candidate.from_reports`), the share of its runs that state it."""
     reached: bool | None
     """Evidence Reached: whether its evidence quote was in the Answer Context; None in a
     report saved before it was recorded."""
@@ -428,6 +515,16 @@ class Candidate:
     """Each case's must-state Required Facts, in the case's order; None when the case
     has none or its Fact Recall judgment failed, so it is left out of the fact-level
     test as it is of the per-case one."""
+    structure: Mapping[str, bool | None] = field(default_factory=dict)
+    """Whether each case's answer follows the structure (assumption 8, the structure
+    check); None for a report that does not record it."""
+    figures: Mapping[str, bool | None] = field(default_factory=dict)
+    """Whether each case's answer passes the figure check; None when unrecorded."""
+    prompt_version: str | None = None
+    code_version: str | None = None
+    """The prompt and code versions the report records, which a choice file records."""
+    runs: int = 1
+    """The runs this side's scores are the mean of (`from_reports`)."""
 
     @classmethod
     def from_report(cls, report: Mapping[str, Any], rule: RuleName = "arms") -> Candidate:
@@ -435,7 +532,8 @@ class Candidate:
         names candidates: by its Arm or by its model."""
         cases = report["cases"]
         costs = [c.get("cost_usd") for c in cases]
-        name = report.get(RULES[rule].named_by) or report["model"]
+        spec = RULES[rule]
+        name = report.get(spec.named_by) or report.get(spec.fallback) or report["model"]
         return cls(
             name=name,
             fact_recall={c["case_id"]: c.get("fact_recall") for c in cases},
@@ -453,7 +551,122 @@ class Candidate:
                 c["case_id"]: _must_state_facts(c, report.get("fact_cutoff", _UNRECORDED_CUTOFF))
                 for c in cases
             },
+            structure={c["case_id"]: _passed(c, "structure", "problems") for c in cases},
+            figures={c["case_id"]: _passed(c, "figures", "unmatched") for c in cases},
+            prompt_version=report.get("prompt_version"),
+            code_version=report.get("code_version"),
         )
+
+    @classmethod
+    def from_reports(
+        cls, reports: Sequence[Mapping[str, Any]], rule: RuleName = "arms"
+    ) -> Candidate:
+        """One side of a comparison answered by several runs of one setup (ADR 0017's note
+        of 2026-10-21): each case's score is the mean over the runs that scored it (a
+        pass/fail score as the share of runs passing), each must-state fact is stated by
+        the share of the runs that state it, and the cost is the runs' mean. The side is
+        named by its first run, so a second run may carry a name of its own. The runs
+        must record one setup (`_SETUP`), or this refuses them. One report reads as
+        `from_report` reads it."""
+        if not reports:
+            raise ValueError("a side needs at least one run")
+        runs = [cls.from_report(r, rule) for r in reports]
+        if len(runs) == 1:
+            return runs[0]
+        for key in _SETUP:
+            recorded = {json.dumps(r.get(key)) for r in reports}
+            if len(recorded) > 1:
+                raise ValueError(
+                    f"the runs of one side must be of one setup, but they record different "
+                    f"{key}: {', '.join(sorted(recorded))}"
+                )
+        costs = [r.cost_usd for r in runs]
+        codes = dict.fromkeys(r.code_version for r in runs)
+        return replace(
+            runs[0],
+            fact_recall=_mean_scores([r.fact_recall for r in runs]),
+            faithfulness=_mean_scores([r.faithfulness for r in runs]),
+            coverage_gaps=_mean_scores([r.coverage_gaps for r in runs]),
+            cost_usd=None if None in costs else fmean(costs),  # type: ignore[arg-type]
+            contradicted_claims=_mean_scores([r.contradicted_claims for r in runs]),
+            query_api_call=any(r.query_api_call for r in runs),
+            facts=_mean_facts([r.facts for r in runs]),
+            structure=_mean_scores([r.structure for r in runs]),
+            figures=_mean_scores([r.figures for r in runs]),
+            code_version=next(iter(codes))
+            if len(codes) == 1
+            else "+".join(c or "unrecorded" for c in codes),
+            runs=len(runs),
+        )
+
+
+_SETUP = (
+    "split",
+    "model",
+    "arm",
+    "settings",
+    "prompt_version",
+    "golden_set_version",
+    "judge_model",
+    "fact_cutoff",
+)
+"""What the runs of one side must record alike: one setup answering the same split,
+judged alike. The code version may differ (a harness change between runs), and is
+recorded."""
+
+
+def _mean_scores(
+    runs: Sequence[Mapping[str, float | bool | None]],
+) -> dict[str, float | Fraction | None]:
+    """Each case's mean over the runs that scored it, None when none did; a pass/fail
+    score's mean is the exact share of runs passing."""
+    means: dict[str, float | Fraction | None] = {}
+    for case in dict.fromkeys(c for run in runs for c in run):
+        values = [v for run in runs if (v := run.get(case)) is not None]
+        if not values:
+            means[case] = None
+        elif all(isinstance(v, bool) for v in values):
+            means[case] = Fraction(sum(values), len(values))
+        else:
+            means[case] = fmean(values)
+    return means
+
+
+def _mean_facts(
+    runs: Sequence[Mapping[str, tuple[FactOutcome, ...] | None]],
+) -> dict[str, tuple[FactOutcome, ...] | None]:
+    """Each case's must-state facts, each stated by the share of the runs that scored the
+    case and state it; reached as the runs record it, None where they differ."""
+    means: dict[str, tuple[FactOutcome, ...] | None] = {}
+    for case in dict.fromkeys(c for run in runs for c in run):
+        scored = [facts for run in runs if (facts := run.get(case)) is not None]
+        if not scored:
+            means[case] = None
+            continue
+        if len({len(facts) for facts in scored}) > 1:
+            raise ValueError(f"{case}: the runs of one side have different must-state facts")
+        means[case] = tuple(
+            FactOutcome(
+                stated=Fraction(sum(f.stated for f in column), len(column)),
+                reached=column[0].reached if len({f.reached for f in column}) == 1 else None,
+            )
+            for column in zip(*scored, strict=True)
+        )
+    return means
+
+
+def _number(value: int | Fraction) -> int | float:
+    """A count as a choice file records it: whole, or a mean of several runs a side."""
+    value = Fraction(value)
+    return int(value) if value.denominator == 1 else float(value)
+
+
+def _passed(case: Mapping[str, Any], check: str, failures: str) -> bool | None:
+    """Whether a report's case passes a check in code that records what failed it (the
+    structure check's problems, the figure check's unmatched figures), or None when the
+    case records no such check."""
+    record = case.get(check)
+    return None if record is None else not record[failures]
 
 
 def _must_state_facts(case: Mapping[str, Any], cutoff: float) -> tuple[FactOutcome, ...] | None:
@@ -532,8 +745,9 @@ class EvidenceGroup:
     stated."""
 
     facts: int
-    challenger_stated: int
-    shipped_stated: int
+    challenger_stated: int | float
+    shipped_stated: int | float
+    """Each side's facts stated: a mean over its runs with several runs a side."""
 
 
 EVIDENCE_STATUSES = ("challenger_only", "shipped_only", "both", "neither", "unrecorded")
@@ -555,9 +769,10 @@ class FactComparison:
     answer), left out."""
     facts: int
     """The must-state facts of the paired cases."""
-    challenger_stated: int
-    shipped_stated: int
-    total_difference: int
+    challenger_stated: int | float
+    shipped_stated: int | float
+    """Each side's facts stated: a mean over its runs with several runs a side."""
+    total_difference: int | float
     """The statistic: challenger_stated minus shipped_stated."""
     p_ahead: float
     """One-sided bootstrap p-value that the challenger is ahead."""
@@ -577,6 +792,27 @@ class FactComparison:
 
 
 @dataclass(frozen=True)
+class FigureComparison:
+    """The figure check, case by case: how many of the cases both sides recorded each
+    side's answer fails. `prompt-fix`'s ahead metric (ADR 0017)."""
+
+    paired: int
+    """The cases both sides recorded a figure check for."""
+    challenger_failed: int | float
+    shipped_failed: int | float
+    """Each side's cases failing: a mean over its runs with several runs a side."""
+    fixed: int | float
+    """Paired cases the shipped choice failed and the challenger passed (with several runs
+    a side, the share of runs passing gained, summed)."""
+    broken: int | float
+    """Paired cases the challenger failed and the shipped choice passed (likewise)."""
+    verdict: Verdict
+    """`ahead` when fewer paired cases fail for the challenger, `behind` when more, else
+    `indistinguishable`: a count, as the prompt log's rule for a correctness fix is, not a
+    test."""
+
+
+@dataclass(frozen=True)
 class Comparison:
     """A challenger against the shipped choice, case by case."""
 
@@ -590,6 +826,10 @@ class Comparison:
     coverage_gaps: ScoreComparison
     contradicted_claims: ScoreComparison
     """Paired per case on "has no Contradicted Claim"."""
+    structure: ScoreComparison
+    """Structure followed, paired per case: a guardrail of the prompt rules only."""
+    figures: FigureComparison
+    """The figure check's failures: `prompt-fix`'s ahead metric."""
     qualifies: bool
     """Whether the challenger qualifies under the rule it was compared by, on its scores
     alone: unconstrained by the one-call rule."""
@@ -614,9 +854,13 @@ class Choice:
     choice stands whatever its challengers scored."""
     reason: str | None = None
     """Why the choice is inconclusive; None when it is not."""
+    runs: dict[str, int] = field(default_factory=dict)
+    """The runs each side's scores are the mean of, named as `costs` names them."""
+    control_runs: int | None = None
+    """The Control Run's runs; None without a Control Run."""
 
 
-_SCORES = ("fact_recall", "faithfulness", "coverage_gaps", "contradicted_claims")
+_SCORES = ("fact_recall", "faithfulness", "coverage_gaps", "contradicted_claims", "structure")
 """The scores compared case by case with the sign test."""
 
 
@@ -650,8 +894,8 @@ def _compare_facts(
     scored_a = {c for c, v in challenger.items() if v is not None}
     scored_b = {c for c, v in shipped.items() if v is not None}
     both = sorted(scored_a & scored_b)
-    groups = {status: [0, 0, 0] for status in EVIDENCE_STATUSES}
-    differences = []
+    groups: dict[str, list[Any]] = {status: [0, 0, 0] for status in EVIDENCE_STATUSES}
+    differences: list[Fraction] = []
     for case in both:
         mine, theirs = challenger[case], shipped[case]
         assert mine is not None and theirs is not None
@@ -662,8 +906,14 @@ def _compare_facts(
             group[0] += 1
             group[1] += a.stated
             group[2] += b.stated
-        differences.append(sum(a.stated for a in mine) - sum(b.stated for b in theirs))
-    test = cluster_bootstrap_test(differences)
+        differences.append(
+            Fraction(sum(a.stated for a in mine)) - Fraction(sum(b.stated for b in theirs))
+        )
+    # A mean over several runs a side need not be whole: the test runs on the differences
+    # scaled to whole numbers, which leaves its p-values unchanged (the resampled cases
+    # are drawn alike whatever their values), and the total is scaled back.
+    scale = lcm(*(d.denominator for d in differences)) if differences else 1
+    test = cluster_bootstrap_test([int(d * scale) for d in differences])
     verdict: Verdict = "indistinguishable"
     if test.p_ahead < AHEAD_P:
         verdict = "ahead"
@@ -673,16 +923,44 @@ def _compare_facts(
         paired=len(both),
         left_out=len(scored_a ^ scored_b),
         facts=sum(g[0] for g in groups.values()),
-        challenger_stated=sum(g[1] for g in groups.values()),
-        shipped_stated=sum(g[2] for g in groups.values()),
-        total_difference=test.total,
+        challenger_stated=_number(sum(g[1] for g in groups.values())),
+        shipped_stated=_number(sum(g[2] for g in groups.values())),
+        total_difference=_number(Fraction(test.total, scale)),
         p_ahead=test.p_ahead,
         p_behind=test.p_behind,
         verdict=verdict,
         difference=bootstrap_interval([float(d) for d in differences]),
-        by_evidence={s: EvidenceGroup(*g) for s, g in groups.items()},
+        by_evidence={
+            s: EvidenceGroup(g[0], _number(g[1]), _number(g[2])) for s, g in groups.items()
+        },
         resamples=test.resamples,
         seed=test.seed,
+    )
+
+
+def _compare_figures(
+    challenger: Mapping[str, bool | Fraction | None], shipped: Mapping[str, bool | Fraction | None]
+) -> FigureComparison:
+    both = sorted(
+        c for c in challenger.keys() & shipped.keys() if None not in (challenger[c], shipped[c])
+    )
+    # Each case's share of runs passing (1 or 0 for one run a side).
+    mine = {c: Fraction(challenger[c]) for c in both}  # type: ignore[arg-type]
+    theirs = {c: Fraction(shipped[c]) for c in both}  # type: ignore[arg-type]
+    failed = sum(1 - mine[c] for c in both)
+    shipped_failed = sum(1 - theirs[c] for c in both)
+    verdict: Verdict = "indistinguishable"
+    if failed < shipped_failed:
+        verdict = "ahead"
+    elif failed > shipped_failed:
+        verdict = "behind"
+    return FigureComparison(
+        paired=len(both),
+        challenger_failed=_number(failed),
+        shipped_failed=_number(shipped_failed),
+        fixed=_number(sum(max(mine[c] - theirs[c], 0) for c in both)),
+        broken=_number(sum(max(theirs[c] - mine[c], 0) for c in both)),
+        verdict=verdict,
     )
 
 
@@ -701,6 +979,7 @@ def compare(challenger: Candidate, shipped: Candidate, rule: RuleName = "arms") 
         f: _compare_score(getattr(challenger, f), getattr(shipped, f)) for f in _SCORES
     }
     scores["stated_facts"] = _compare_facts(challenger.facts, shipped.facts)
+    scores["figures"] = _compare_figures(challenger.figures, shipped.figures)
     spec = RULES[rule]
     return Comparison(
         cases=len(set(challenger.fact_recall) & set(shipped.fact_recall)),
@@ -717,6 +996,8 @@ _LABELS: dict[Score, str] = {
     "faithfulness": "Faithfulness",
     "coverage_gaps": "Coverage Gaps",
     "contradicted_claims": "No Contradicted Claim",
+    "structure": "Structure followed",
+    "figures": "Figures exact",
 }
 
 
@@ -759,6 +1040,8 @@ def choose(
         control=checked,
         inconclusive=bool(noisy),
         reason=reason,
+        runs={c.name: c.runs for c in (shipped, *challengers)},
+        control_runs=control.runs if control is not None else None,
     )
 
 
@@ -795,16 +1078,25 @@ def main(argv: list[str] | None = None, *, out: TextIO | None = None) -> int:
         help="a chunk size and context budget to compare, such as 450:32000 (repeatable)",
     )
     reports = commands.add_parser("compare", help="compare generation reports")
-    reports.add_argument("reports", type=Path, nargs="+", help="the shipped choice's first")
-    reports.add_argument("--control", type=Path, help="the Control Run's report")
+    reports.add_argument(
+        "reports",
+        type=_side,
+        nargs="+",
+        help="the shipped choice's first; several runs of one side joined by +",
+    )
+    reports.add_argument(
+        "--control", type=_side, help="the Control Run's report (several runs joined by +)"
+    )
     reports.add_argument("--rule", choices=tuple(RULES), default="arms")
     reports.add_argument("--json", type=Path)
     args = parser.parse_args(argv)
 
     rule: RuleName
     screen: dict | None = None
+    sides: list[tuple[Path, ...]]
+    control: tuple[Path, ...] | None
     if args.command == "compare":
-        rule, paths, control, target = args.rule, args.reports, args.control, args.json
+        rule, sides, control, target = args.rule, args.reports, args.control, args.json
     else:
         rule = args.command
         options: dict[str, Any] = {}
@@ -818,31 +1110,113 @@ def main(argv: list[str] | None = None, *, out: TextIO | None = None) -> int:
             if not args.setting:
                 parser.error("name each setting to compare: --setting CHUNKS:BUDGET")
             options = {"settings": args.setting}
-        shipped_path, control = _round_runs(args.split, out)
-        challengers, screen = RULES[rule].run(args.split, args.reuse, out, **options)
-        paths = [shipped_path, *challengers]
+        shipped_path, control_path = _round_runs(args.split, out)
+        run = RULES[rule].run
+        assert run is not None  # every command's rule runs its challengers
+        challengers, screen = run(args.split, args.reuse, out, **options)
+        sides = [(shipped_path,), *((c,) for c in challengers)]
+        control = (control_path,)
         target = args.json or _EVAL_DIR / f"{RULES[rule].choice_file}-{args.split}.json"
-    data = [json.loads(Path(p).read_text(encoding="utf-8")) for p in paths]
-    candidates = [Candidate.from_report(d, rule) for d in data]
-    control_candidate = (
-        Candidate.from_report(json.loads(control.read_text(encoding="utf-8")), rule)
-        if control
-        else None
+    data = [[_load(p) for p in side] for side in sides]
+    candidates = _distinct(
+        [Candidate.from_reports(d, rule) for d in data], [side[0] for side in sides]
     )
+    control_data = [_load(p) for p in control] if control else []
+    control_candidate = Candidate.from_reports(control_data, rule) if control_data else None
     choice = choose(candidates[0], candidates[1:], rule, control=control_candidate)
     _print(choice, out)
+    # Each side as `capped` and `versions` name it, with its reports and their paths.
+    shipped = candidates[0].name
+    named = [(f"{shipped} (shipped run)", data[0], sides[0])]
+    if control:
+        named.append((f"{shipped} (Control Run)", control_data, control))
+    named += zip([c.name for c in candidates[1:]], data[1:], sides[1:], strict=True)
+    capped = {
+        _run_name(name, i, len(reports)): _capped(report)
+        for name, reports, _ in named
+        for i, report in enumerate(reports, 1)
+    }
+    _print_capped(capped, out)
     if target:
         target.parent.mkdir(parents=True, exist_ok=True)
         record = {
-            "split": data[0].get("split"),
-            "reports": [str(p) for p in paths],
-            "control_report": str(control) if control else None,
+            "split": data[0][0].get("split"),
+            "reports": [str(side[0]) for side in sides],
+            "control_report": str(control[0]) if control else None,
+            "capped": capped,
+            "versions": _versions(candidates, control_candidate),
         }
+        if any(len(paths) > 1 for _, _, paths in named):
+            record["run_reports"] = {name: [str(p) for p in paths] for name, _, paths in named}
         if screen is not None:
             record["screen"] = screen
         target.write_text(json.dumps(record | asdict(choice), indent=2) + "\n", encoding="utf-8")
         print(f"\nWritten to {target.resolve()}", file=out)
     return 0
+
+
+def _side(value: str) -> tuple[Path, ...]:
+    """A side of a comparison on the command line: one report, or several runs of one
+    setup joined by `+` (`generation-dev.json+generation-dev-run2.json`)."""
+    return tuple(Path(part) for part in value.split("+") if part)
+
+
+def _load(path: Path) -> dict[str, Any]:
+    return json.loads(Path(path).read_text(encoding="utf-8"))
+
+
+def _run_name(side: str, run: int, runs: int) -> str:
+    """How `capped` names one run of a side: the side's name alone with one run, else
+    numbered, `v15 (shipped run 2)`, `v16 (run 2)`."""
+    if runs == 1:
+        return side
+    if side.endswith(")"):
+        return f"{side[:-1]} {run})"
+    return f"{side} (run {run})"
+
+
+def _distinct(candidates: list[Candidate], paths: Sequence[Path]) -> list[Candidate]:
+    """The candidates, each challenger named apart from the shipped choice and from the
+    others: one whose name another already has (reports of one prompt version, under a
+    prompt rule) takes its report's file name beside it, `v7 (generation-dev-x)`."""
+    from dataclasses import replace
+
+    seen = {candidates[0].name}
+    named = [candidates[0]]
+    for candidate, path in zip(candidates[1:], paths[1:], strict=True):
+        if candidate.name in seen:
+            candidate = replace(candidate, name=f"{candidate.name} ({Path(path).stem})")
+        seen.add(candidate.name)
+        named.append(candidate)
+    return named
+
+
+def _versions(
+    candidates: Sequence[Candidate], control: Candidate | None
+) -> dict[str, dict[str, str | None]]:
+    """The prompt and code versions each side's report records, named as `capped` names
+    the runs: what a choice file records of both sides (ADR 0017)."""
+    runs = [(f"{candidates[0].name} (shipped run)", candidates[0])]
+    if control is not None:
+        runs.append((f"{candidates[0].name} (Control Run)", control))
+    runs += [(c.name, c) for c in candidates[1:]]
+    return {
+        name: {"prompt_version": c.prompt_version, "code_version": c.code_version}
+        for name, c in runs
+    }
+
+
+def _capped(report: Mapping[str, Any]) -> list[str]:
+    """The cases of a generation report whose answer stopped at the token cap."""
+    return [c["case_id"] for c in report["cases"] if c.get("truncated")]
+
+
+def _print_capped(capped: Mapping[str, Sequence[str]], out: TextIO) -> None:
+    """Every answer that stopped at the token cap, run by run: each is scored as
+    truncated, so none is silent."""
+    print("\nAnswers capped (stopped at the token cap, scored as truncated):", file=out)
+    for name, cases in capped.items():
+        print(f"  {name}: {', '.join(cases) or 'none'}", file=out)
 
 
 def _print_scores(c: Comparison, out: TextIO) -> None:
@@ -862,20 +1236,34 @@ def _print_scores(c: Comparison, out: TextIO) -> None:
         )
         if score == "fact_recall":
             _print_facts(c.stated_facts, out)
+    f = c.figures
+    print(
+        f"  {_LABELS['figures']}: {f.verdict} ({_show(f.challenger_failed)} of {f.paired} "
+        f"cases failing the figure check against {_show(f.shipped_failed)}; "
+        f"{_show(f.fixed)} fixed, {_show(f.broken)} broken)",
+        file=out,
+    )
+
+
+def _show(count: int | float, sign: str = "") -> str:
+    """A count as printed: whole, or a mean of several runs a side to one decimal."""
+    return f"{count:{sign}d}" if isinstance(count, int) else f"{count:{sign}.1f}"
 
 
 def _print_facts(f: FactComparison, out: TextIO) -> None:
     d = f.difference
     shift = f"; per case {d.mean:+.3f}, 95% interval [{d.low:+.3f}, {d.high:+.3f}]" if d else ""
     print(
-        f"  {_LABELS['stated_facts']}: {f.verdict} ({f.challenger_stated} of {f.facts} "
-        f"must-state facts stated against {f.shipped_stated}, {f.total_difference:+d}, "
+        f"  {_LABELS['stated_facts']}: {f.verdict} ({_show(f.challenger_stated)} of {f.facts} "
+        f"must-state facts stated against {_show(f.shipped_stated)}, "
+        f"{_show(f.total_difference, '+')}, "
         f"p ahead = {f.p_ahead:.3f}, p behind = {f.p_behind:.3f}; {f.paired} cases paired, "
         f"{f.left_out} left out{shift})",
         file=out,
     )
     groups = ", ".join(
-        f"{status.replace('_', ' ')} {g.challenger_stated} / {g.shipped_stated} of {g.facts}"
+        f"{status.replace('_', ' ')} {_show(g.challenger_stated)} / {_show(g.shipped_stated)} "
+        f"of {g.facts}"
         for status, g in f.by_evidence.items()
         if g.facts
     )
@@ -891,10 +1279,21 @@ def _print(choice: Choice, out: TextIO) -> None:
         f"{AHEAD_P:.2f}, behind at p < {BEHIND_P:.2f}; ahead on {ahead} qualifies):",
         file=out,
     )
-    if choice.control is not None:
+    runs = dict(choice.runs)
+    if choice.control_runs is not None:
+        runs["Control Run"] = choice.control_runs
+    if any(n > 1 for n in runs.values()):
+        counted = ", ".join(f"{name} {n} run{'s' if n > 1 else ''}" for name, n in runs.items())
         print(
-            f"\nControl Run ({choice.shipped} run again, {choice.control.cases} cases): "
-            "within noise unless ahead of the shipped run",
+            "Each side's per-case scores are the mean of its runs, and its counts a mean per "
+            f"run: {counted}.",
+            file=out,
+        )
+    if choice.control is not None:
+        several = f"{choice.control_runs} runs, " if (choice.control_runs or 1) > 1 else ""
+        print(
+            f"\nControl Run ({choice.shipped} run again, {several}{choice.control.cases} "
+            "cases): within noise unless ahead of the shipped run",
             file=out,
         )
         _print_scores(choice.control, out)
@@ -902,7 +1301,9 @@ def _print(choice: Choice, out: TextIO) -> None:
         print("\nNo Control Run: the noise of this comparison is not shown.", file=out)
     for name, c in choice.comparisons.items():
         cost = choice.costs[name]
-        print(f"\n{name} ({c.cases} cases, ${cost or 0:.4f} per answer)", file=out)
+        n = choice.runs.get(name, 1)
+        several = f"{n} runs, " if n > 1 else ""
+        print(f"\n{name} ({c.cases} cases, {several}${cost or 0:.4f} per answer)", file=out)
         _print_scores(c, out)
         print(f"  Qualifies: {'yes' if c.qualifies else 'no'}", file=out)
         if not c.shippable:

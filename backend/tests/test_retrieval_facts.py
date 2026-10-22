@@ -36,6 +36,10 @@ def _facts_section(context):
     return prompt[prompt.index("# Financial Facts") : prompt.index("# Sources")]
 
 
+def _rules(context):
+    return " ".join(context.messages[0].content.split())
+
+
 def _source(context, tag):
     return next(s for s in context.sources if s.tag == tag)
 
@@ -53,11 +57,10 @@ def segments_index(tmp_path_factory):
 # --- The store -------------------------------------------------------------------------
 
 
-def test_the_index_holds_the_tracked_companies_financial_facts_as_extracted(index, indexed_filings):
+def test_the_index_holds_every_companys_financial_facts_as_extracted(index, indexed_filings):
     expected = {
         (fact.filing_id, fact.metric, fact.segment, fact.value, fact.label)
         for filing in indexed_filings
-        if filing.coverage == "tracked"
         for fact in extract_financial_facts(filing)
     }
 
@@ -69,8 +72,11 @@ def test_the_index_holds_the_tracked_companies_financial_facts_as_extracted(inde
     assert ("NVDA_10-K_2025-01-26", "revenue", None, 130_497_000_000, "Revenue") in stored
 
 
-def test_snapshot_companies_have_no_financial_facts_in_the_store(index):
-    assert "JPM" not in {r["ticker"] for r in _store(index)}
+def test_snapshot_companies_financial_facts_are_in_the_store(index):
+    stored = {(r["filing_id"], r["metric"], r["value"]) for r in _store(index)}
+
+    assert ("JPM_10-K_2025-12-31", "revenue", 182_447_000_000) in stored
+    assert ("JPM_10-Q_2025-09-30", "net_income", 14_393_000_000) in stored
 
 
 def test_sec_xbrl_data_is_never_loaded_into_the_store():
@@ -125,7 +131,7 @@ def test_the_last_two_years_of_nvidia_revenue_puts_eight_quarters_in_the_prompt(
         line = next(
             line
             for line in facts.splitlines()
-            if f"| {row.fiscal_period} |" in line and "Revenue |" in line
+            if f"| {row.fiscal_period} (" in line and "Revenue |" in line
         )
         assert f"${value} million" in line
         assert all(f"[{tag}]" in line for tag in row.sources)
@@ -165,7 +171,7 @@ def test_a_derived_fourth_quarter_is_labelled_derived_and_cites_the_filings_it_c
         "NVDA_10-Q_2023-07-30",
         "NVDA_10-Q_2023-10-29",
     ]
-    line = next(line for line in _facts_section(context).splitlines() if "| Q4 FY2024 |" in line)
+    line = next(line for line in _facts_section(context).splitlines() if "| Q4 FY2024 (" in line)
     assert "derived" in line.lower()
 
 
@@ -179,7 +185,7 @@ def test_a_year_on_year_change_is_derived_from_two_rows_in_the_table(index):
         "NVDA_10-Q_2025-10-26",
         "NVDA_10-Q_2024-10-27",
     }
-    line = next(line for line in _facts_section(context).splitlines() if "| Q3 FY2026 |" in line)
+    line = next(line for line in _facts_section(context).splitlines() if "| Q3 FY2026 (" in line)
     assert "+62.5%" in line
 
 
@@ -304,19 +310,35 @@ def test_a_fourth_quarter_is_not_derived_across_a_segment_reorganisation(segment
 # --- Falling back to text --------------------------------------------------------------
 
 
-def test_a_snapshot_company_falls_back_to_the_filing_text_and_the_answer_says_so(index):
+def test_a_snapshot_companys_figures_come_from_the_table_and_its_trend_gap_stays(index):
     context = _ask(index, "How has JPMorgan's revenue changed over the last two years?")
+
+    rows = {(r.fiscal_period, r.value, r.derived is not None) for r in context.financial_facts}
+    assert rows == {
+        ("Q1 FY2025", 45_310_000_000, False),
+        ("Q2 FY2025", 44_912_000_000, False),
+        ("Q3 FY2025", 46_427_000_000, False),
+        ("FY2025", 182_447_000_000, False),
+        # The 10-K's year less its three 10-Q quarters.
+        ("Q4 FY2025", 45_798_000_000, True),
+    }
+    assert context.fact_notes == ()
+    # A year of quarters is still no trend over two years.
+    assert [g.companies for g in context.coverage_gaps if g.kind == "snapshot_trend"] == [("JPM",)]
+
+
+def test_a_company_whose_filings_yield_no_figure_falls_back_to_the_filing_text(index):
+    context = _ask(index, "What was Target's revenue in its latest filing?")
 
     assert context.financial_facts == ()
     (note,) = context.fact_notes
-    assert (note.kind, note.ticker, note.metric) == ("text_fallback", "JPM", "revenue")
+    assert (note.kind, note.ticker, note.metric) == ("text_fallback", "TGT", "revenue")
     facts = _facts_section(context)
     assert note.text in facts
     assert "read from the Filing text" in note.text
     assert [s for s in context.sources if s.kind == "text"]  # the text is still retrieved
-    assert "read it from a Source's text instead, say it was read from the Filing text" in (
-        context.messages[0].content.replace("\n", " ")
-    )
+    assert "Quote any other figure as a Source's text states it" in _rules(context)
+    assert "say it was read from the Filing text" in _rules(context)
 
 
 def test_a_company_whose_segments_were_not_extracted_falls_back_to_text(index):
@@ -327,10 +349,10 @@ def test_a_company_whose_segments_were_not_extracted_falls_back_to_text(index):
 
 
 def test_only_the_companies_the_store_can_answer_get_rows(index):
-    context = _ask(index, "Compare the revenue of NVIDIA and JPMorgan over the last year.")
+    context = _ask(index, "Compare the revenue of NVIDIA and Target over the last year.")
 
     assert {r.ticker for r in context.financial_facts} == {"NVDA"}
-    assert {n.ticker for n in context.fact_notes} == {"JPM"}
+    assert {n.ticker for n in context.fact_notes} == {"TGT"}
 
 
 def test_a_facts_sources_text_holds_the_figures_derived_from_it(index):
@@ -347,3 +369,40 @@ def test_a_facts_sources_text_holds_the_figures_derived_from_it(index):
     assert "+62.5%" in by_filing["NVDA_10-Q_2025-10-26"].text
     # The 10-Qs a fourth quarter subtracts state only what they report.
     assert "derived" not in by_filing["NVDA_10-Q_2023-04-30"].text
+
+
+def test_the_prompt_asks_the_answer_to_quote_figures_and_never_compute_them(index):
+    """Prompt v18 (#163): rule 5 takes the table's metrics and quotes every other figure
+    as the Filing text states it, computes no growth rate, difference, share or sum, gives
+    each year's stated change (an older Filing's included) and a stated period total, and
+    quotes the table's derived rows labelled as derived."""
+    rules = _rules(_ask(index, NVDA_TWO_YEARS))
+
+    assert (
+        "5. Quote figures; never compute them. Take revenue, net income and segment revenue "
+        "from the Financial Facts table when it has them, cite the row's Source tags, and "
+        "quote them exactly with their units and periods."
+    ) in rules
+    assert (
+        "Quote any other figure as a Source's text states it, with its tag, and say it was "
+        "read from the Filing text."
+    ) in rules
+    assert "Never compute a growth rate, difference, share or sum yourself" in rules
+    assert (
+        "When a Source states a change or what drove it, including a prior year's change in "
+        "an older Filing, give it in its words with its tag"
+    ) in rules
+    assert (
+        "when the question asks about two or more years, give each year's change the Sources "
+        "state, citing the older Filing for the earlier one"
+    ) in rules
+    assert (
+        "Quote a period total the Source states (nine months, a year) rather than only its parts."
+    ) in rules
+    assert (
+        "A value the Financial Facts table marks as derived (a fourth quarter, a change from "
+        "a year earlier) may be quoted, labelled as derived"
+    ) in rules
+    # v15's invitation to compute and label a figure is gone.
+    assert "any figure you compute yourself" not in rules
+    assert "Label a derived figure as derived: a fourth quarter computed" not in rules

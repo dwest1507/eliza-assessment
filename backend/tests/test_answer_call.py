@@ -8,6 +8,7 @@ from types import SimpleNamespace
 import pytest
 
 from edgar_answer import ask
+from edgar_answer.generators import ANTHROPIC, GENERATORS, OPENAI, require
 from edgar_answer.openai_model import OpenAIAnswerModel
 from edgar_rag.answer_model import AnswerCall, AnswerCallRecord, Usage
 from edgar_rag.retrieval import Message, PromptMessage, prepare_answer_context
@@ -26,6 +27,15 @@ class FakeModel:
         self.received = messages
         yield from self.parts
         yield Usage(1200, 300, 100, stop_reason="complete", raw_stop_reason="stop")
+
+
+class CappedModel(FakeModel):
+    """Stops at the token cap, as a provider reports it."""
+
+    def stream(self, messages):
+        self.received = messages
+        yield from self.parts
+        yield Usage(1200, 32000, 31000, stop_reason="token_cap", raw_stop_reason="length")
 
 
 @pytest.fixture
@@ -51,7 +61,7 @@ def test_an_answer_call_logs_model_prompt_version_usage_and_latency(context, tmp
     [line] = log.read_text().splitlines()
     record = json.loads(line)
     assert record["model"] == "fake-model"
-    assert record["prompt_version"] == "v7"
+    assert record["prompt_version"] == "v19"
     assert (record["input_tokens"], record["output_tokens"], record["reasoning_tokens"]) == (
         1200,
         300,
@@ -130,8 +140,7 @@ class FakeOpenAIClient:
         )
 
 
-def test_openai_model_defaults_to_gpt_6_luna_with_low_reasoning_and_a_token_cap(monkeypatch):
-    monkeypatch.delenv("OPENAI_MODEL", raising=False)
+def test_openai_model_defaults_to_gpt_6_luna_with_low_reasoning_and_a_32k_cap():
     client = FakeOpenAIClient()
     model = OpenAIAnswerModel(client=client)
 
@@ -143,7 +152,7 @@ def test_openai_model_defaults_to_gpt_6_luna_with_low_reasoning_and_a_token_cap(
         "model": "gpt-6-luna",
         "messages": [{"role": "system", "content": "rules"}, {"role": "user", "content": "q"}],
         "reasoning_effort": "low",
-        "max_completion_tokens": 2500,
+        "max_completion_tokens": 32000,
         "stream": True,
         "stream_options": {"include_usage": True},
     }
@@ -161,19 +170,12 @@ def test_openai_model_reports_why_the_model_stopped(finish_reason, stop_reason):
     assert (usage.stop_reason, usage.raw_stop_reason) == (stop_reason, finish_reason)
 
 
-def test_openai_model_is_overridden_by_the_environment(monkeypatch):
-    monkeypatch.setenv("OPENAI_MODEL", "gpt-6.1-sol")
+def test_openai_model_answers_with_the_model_it_is_built_with():
     client = FakeOpenAIClient()
 
-    list(OpenAIAnswerModel(client=client).stream([PromptMessage("user", "q")]))
+    list(OpenAIAnswerModel("gpt-6.1-sol", client=client).stream([PromptMessage("user", "q")]))
 
     assert client.request["model"] == "gpt-6.1-sol"
-
-
-def test_an_empty_model_variable_keeps_the_default(monkeypatch):
-    monkeypatch.setenv("OPENAI_MODEL", "")
-
-    assert OpenAIAnswerModel(client=FakeOpenAIClient()).model == "gpt-6-luna"
 
 
 # --- The Anthropic implementation -------------------------------------------------------
@@ -218,7 +220,7 @@ class FakeAnthropicClient:
         return Stream()
 
 
-def test_anthropic_model_streams_with_the_same_effort_and_token_cap_as_openai():
+def test_anthropic_model_streams_with_the_same_low_effort_and_32k_cap_as_openai():
     from edgar_answer.anthropic_model import AnthropicAnswerModel
 
     client = FakeAnthropicClient()
@@ -234,8 +236,30 @@ def test_anthropic_model_streams_with_the_same_effort_and_token_cap_as_openai():
         "messages": [{"role": "user", "content": "q"}],
         "thinking": {"type": "adaptive"},
         "output_config": {"effort": "low"},
-        "max_tokens": 2500,
+        "max_tokens": 32000,
     }
+
+
+@pytest.mark.parametrize("model", [g.model for g in GENERATORS])
+def test_every_generator_of_both_providers_answers_at_low_effort_with_a_32k_cap(model):
+    from edgar_answer.anthropic_model import AnthropicAnswerModel
+
+    row = require(model)
+    if row.provider is OPENAI:
+        client = FakeOpenAIClient()
+        list(OpenAIAnswerModel(model, client=client).stream([PromptMessage("user", "q")]))
+        settings = (client.request["reasoning_effort"], client.request["max_completion_tokens"])
+    else:
+        client = FakeAnthropicClient()
+        list(AnthropicAnswerModel(model, client=client).stream([PromptMessage("user", "q")]))
+        settings = (client.request["output_config"]["effort"], client.request["max_tokens"])
+
+    assert client.request["model"] == model
+    assert settings == ("low", 32000)
+
+
+def test_the_generator_table_spans_both_providers():
+    assert {g.provider for g in GENERATORS} == {OPENAI, ANTHROPIC}
 
 
 @pytest.mark.parametrize(
@@ -294,7 +318,35 @@ def test_ask_prints_the_query_scope_the_sources_and_the_streamed_answer(index, t
     sources, answer = rest.split("\nAnswer\n", 1)
     assert "TSLA " in sources and "JPM " in sources
     assert "Apple faces supply chain risk [S1]." in answer
-    assert "fake-model · prompt v7 · 1200 input / 300 output tokens" in answer
+    assert "fake-model · prompt v19 · 1200 input / 300 output tokens" in answer
+    assert "token cap" not in printed
+
+
+def test_ask_warns_when_the_answer_stopped_at_the_token_cap(index, tmp_path):
+    out = io.StringIO()
+
+    ask.main(
+        [QUESTION, "--index", str(index)],
+        model=CappedModel(),
+        out=out,
+        log_path=tmp_path / "calls.jsonl",
+    )
+
+    assert (
+        out.getvalue()
+        .rstrip()
+        .endswith("Warning: the answer stopped at the token cap and is cut off.")
+    )
+
+
+def test_ask_refuses_an_answer_model_not_in_the_generator_table(index, monkeypatch, capsys):
+    monkeypatch.setenv("ANSWER_MODEL", "gemini-9")
+
+    with pytest.raises(SystemExit) as stopped:
+        ask.main([QUESTION, "--index", str(index)], out=io.StringIO())
+
+    assert stopped.value.code != 0
+    assert "'gemini-9' (ANSWER_MODEL) is not in the generator table" in capsys.readouterr().err
 
 
 def test_ask_prints_a_named_period_and_the_change_route(index, tmp_path):
@@ -363,7 +415,7 @@ def test_ask_prints_the_financial_facts_and_what_falls_back_to_text(index, tmp_p
 
     ask.main(
         [
-            "Compare the revenue of NVIDIA and JPMorgan over the last year.",
+            "Compare the revenue of NVIDIA and Target over the last year.",
             "--index",
             str(index),
         ],
@@ -376,5 +428,5 @@ def test_ask_prints_the_financial_facts_and_what_falls_back_to_text(index, tmp_p
     facts = printed.split("\nFinancial Facts", 1)[1].split("\nSources", 1)[0]
     assert "NVDA Revenue Q3 FY2026 (3 months ended 2025-10-26): $57,006 million" in facts
     assert "derived" in facts
-    assert "JPMorgan Chase & Co (JPM) is a Snapshot Company" in facts
+    assert "No revenue Financial Facts were extracted from Target" in facts
     assert "Metrics: revenue" in printed

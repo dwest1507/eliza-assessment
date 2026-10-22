@@ -1,5 +1,5 @@
-"""The evaluation export: the harnesses' latest reports and the Corpus coverage, written
-as one JSON file for the front-end's "How it works" page.
+"""The evaluation export: the harnesses' latest reports and the Company Calendars, written
+as one JSON file for the front-end's "How it works" page and Calendar tab.
 
 The reports are written by the harnesses' own command lines (with fake Arms, a fake
 answer model and a fake judge), so the export is tested against the JSON they really
@@ -8,6 +8,7 @@ write.
 
 import io
 import json
+import os
 import re
 from datetime import date
 from types import SimpleNamespace
@@ -15,9 +16,11 @@ from types import SimpleNamespace
 import pytest
 
 from edgar_eval import generation, retrieval, selection
-from edgar_eval.export import coverage_grid, main
+from edgar_eval.export import company_calendars, main
 from edgar_eval.judge import JEV_MODEL
 from edgar_eval.retrieval import Arm
+from edgar_rag._query_scope import ScopeCompany, find_companies
+from edgar_rag.corpus import load_corpus
 from edgar_rag.golden_set import GOLDEN_SET_V1, GOLDEN_SET_V2, load_golden_set
 from edgar_rag.retrieval import SearchedPlace
 
@@ -351,8 +354,47 @@ def test_generation_is_left_empty_until_its_harness_has_run(tmp_path, eval_dir, 
 
     assert data["generation"] == []
     assert data["generatorChoice"] is None
-    assert data["briefSuite"] is None
     assert data["holdout"] is None
+
+
+def test_the_export_carries_no_brief_suite_no_retrieval_comparisons_and_no_coverage_grid(
+    tmp_path, eval_dir, indexed_filings
+):
+    """Technical details show only the latest scoreboard and holdout run: the Brief Suite,
+    the Arm and settings comparisons of earlier rounds and the Corpus coverage grid (now
+    "What's covered", from the Company Calendars) are not exported, even when their
+    reports are there."""
+    _write_retrieval_report(eval_dir)
+    for name in ("brief-suite.json", "arm-choice-dev.json", "settings-choice-dev.json"):
+        (eval_dir / name).write_text("{}")
+
+    data = _export(tmp_path, eval_dir, indexed_filings)
+
+    for key in ("briefSuite", "armChoice", "settingsChoice", "coverage"):
+        assert key not in data, key
+    assert {c["ticker"] for c in data["companies"]} == {f.ticker for f in indexed_filings}
+
+
+def _rewrite(path, **fields):
+    """Records other values in a written report, as a report of another round would."""
+    report = json.loads(path.read_text())
+    report.update(fields)
+    path.write_text(json.dumps(report))
+
+
+def test_a_control_run_of_an_earlier_round_is_left_out(tmp_path, eval_dir, index, indexed_filings):
+    """The round is the shipped run's code, prompt and Golden Set version (ADR 0011): a
+    Control Run left from an earlier round is not shown beside a new round's shipped run."""
+    _write_retrieval_report(eval_dir)
+    _write_generation_report(eval_dir, index, tmp_path, "gpt-6-luna")
+    control = _write_generation_report(
+        eval_dir, index, tmp_path, "gpt-6-luna", name="generation-control-dev.json"
+    )
+    _rewrite(control, prompt_version="v7")
+
+    data = _export(tmp_path, eval_dir, indexed_filings)
+
+    assert [run["report"] for run in data["generation"]] == ["generation-dev.json"]
 
 
 def test_the_export_carries_the_generator_comparison_with_its_control_run_and_intervals(
@@ -406,116 +448,34 @@ def test_the_export_carries_the_generator_comparison_with_its_control_run_and_in
         assert recall["difference"] == {"mean": 0.0, "low": 0.0, "high": 0.0, "confidence": 0.95}
 
 
-def _write_retrieval_choice(eval_dir, index, tmp_path, rule):
-    """The Arm (or settings) comparison's choice file, as `selection compare` writes it: a
-    challenger and the Control Run against the shipped run."""
+def test_a_generator_comparison_of_an_earlier_round_is_left_out(
+    tmp_path, eval_dir, index, indexed_filings
+):
+    """A new round's shipped run (new code) is shown alone until its own comparison runs:
+    the earlier round's Control Run, challengers and choice are not exported."""
+    _write_retrieval_report(eval_dir)
     shipped = _write_generation_report(eval_dir, index, tmp_path, "gpt-6-luna")
     control = _write_generation_report(
         eval_dir, index, tmp_path, "gpt-6-luna", name="generation-control-dev.json"
     )
     challenger = _write_generation_report(
-        eval_dir, index, tmp_path, "gpt-6-luna", name="generation-arms-dev-rerank.json"
+        eval_dir, index, tmp_path, "claude-haiku-5-5", "-claude-haiku-5-5"
     )
-    path = eval_dir / f"{selection.RULES[rule].choice_file}-dev.json"
     assert (
         selection.main(
-            ["compare", str(shipped), str(challenger), "--rule", rule]
-            + ["--control", str(control), "--json", str(path)],
+            ["compare", str(shipped), str(challenger), "--rule", "generators"]
+            + ["--control", str(control)]
+            + ["--json", str(eval_dir / "generator-choice-dev.json")],
             out=io.StringIO(),
         )
         == 0
     )
-    return path
-
-
-def _camel(key):
-    head, *rest = key.split("_")
-    return head + "".join(word.title() for word in rest)
-
-
-@pytest.mark.parametrize(("rule", "key"), [("arms", "armChoice"), ("settings", "settingsChoice")])
-def test_the_export_carries_a_retrieval_comparison_fact_by_fact(
-    tmp_path, eval_dir, index, indexed_filings, rule, key
-):
-    _write_retrieval_report(eval_dir)
-    recorded = json.loads(_write_retrieval_choice(eval_dir, index, tmp_path, rule).read_text())
-
-    choice = _export(tmp_path, eval_dir, indexed_filings)[key]
-
-    assert choice["rule"] == rule
-    assert (choice["shipped"], choice["chosen"]) == (recorded["shipped"], recorded["chosen"])
-    assert choice["inconclusive"] is False and choice["reason"] is None
-    [comparison] = choice["comparisons"]
-    [(name, written)] = recorded["comparisons"].items()
-    assert comparison["name"] == name
-    assert (comparison["qualifies"], comparison["shippable"]) == (False, True)
-    assert comparison["cases"] == 1
-    assert comparison["factRecall"]["verdict"] == "indistinguishable"
-    for exported, source in ((comparison, written), (choice["control"], recorded["control"])):
-        facts, stated = exported["statedFacts"], source["stated_facts"]
-        # The difference, the one-sided p-values and the verdict, as the choice file has them.
-        for field in (
-            "paired",
-            "left_out",
-            "facts",
-            "challenger_stated",
-            "shipped_stated",
-            "total_difference",
-            "p_ahead",
-            "p_behind",
-            "verdict",
-            "resamples",
-            "seed",
-        ):
-            assert facts[_camel(field)] == stated[field], field
-        assert facts["difference"] == {
-            k: stated["difference"][k] for k in ("mean", "low", "high", "confidence")
-        }
-        # Each paired fact once, by where its evidence reached, in the rule's order.
-        assert [g["status"] for g in exported["byEvidence"]] == list(selection.EVIDENCE_STATUSES)
-        for group in exported["byEvidence"]:
-            source_group = stated["by_evidence"][group["status"]]
-            assert (group["facts"], group["challengerStated"], group["shippedStated"]) == (
-                source_group["facts"],
-                source_group["challenger_stated"],
-                source_group["shipped_stated"],
-            )
-        assert sum(g["facts"] for g in exported["byEvidence"]) == facts["facts"] > 0
-    # The Control Run's fact-level verdict: the same reports, so indistinguishable.
-    assert choice["control"]["name"] == "Control Run"
-    assert choice["control"]["statedFacts"]["verdict"] == "indistinguishable"
-
-
-@pytest.mark.parametrize(("rule", "key"), [("arms", "armChoice"), ("settings", "settingsChoice")])
-def test_a_retrieval_comparison_made_before_the_fact_level_test_exports_as_before(
-    tmp_path, eval_dir, index, indexed_filings, rule, key
-):
-    """A choice file written under ADR 0011's per-case rule (#73's) records no
-    `stated_facts`: it still exports, with the fact-level fields null."""
-    _write_retrieval_report(eval_dir)
-    path = _write_retrieval_choice(eval_dir, index, tmp_path, rule)
-    recorded = json.loads(path.read_text())
-    for comparison in (*recorded["comparisons"].values(), recorded["control"]):
-        del comparison["stated_facts"]
-    path.write_text(json.dumps(recorded))
-
-    choice = _export(tmp_path, eval_dir, indexed_filings)[key]
-
-    for comparison in (*choice["comparisons"], choice["control"]):
-        assert comparison["statedFacts"] is None and comparison["byEvidence"] is None
-        assert comparison["factRecall"]["verdict"] == "indistinguishable"
-        assert comparison["faithfulness"]["paired"] == 1
-    assert choice["chosen"] == recorded["chosen"]
-
-
-def test_the_retrieval_comparisons_are_left_out_until_they_have_run(
-    tmp_path, eval_dir, indexed_filings
-):
-    _write_retrieval_report(eval_dir)
+    _rewrite(shipped, code_version="0123456789abcdef")
 
     data = _export(tmp_path, eval_dir, indexed_filings)
 
-    assert data["armChoice"] is None and data["settingsChoice"] is None
+    assert [run["report"] for run in data["generation"]] == ["generation-dev.json"]
+    assert data["generatorChoice"] is None
 
 
 def test_a_version_1_generator_comparison_still_exports(tmp_path, eval_dir, index, indexed_filings):
@@ -546,38 +506,18 @@ def test_a_version_1_generator_comparison_still_exports(tmp_path, eval_dir, inde
     assert comparison["factRecall"]["verdict"] == "indistinguishable"
 
 
-def test_the_export_carries_the_brief_suite_verdict_case_by_case(
+def _age(path, seconds):
+    """Dates the report's file `seconds` into the past."""
+    stamp = path.stat().st_mtime - seconds
+    os.utime(path, (stamp, stamp))
+
+
+def test_the_export_carries_only_the_latest_holdout_run_beside_the_dev_reports(
     tmp_path, eval_dir, index, indexed_filings
 ):
-    _write_retrieval_report(eval_dir)
-    path = eval_dir / "brief-suite.json"
-    generation.main(
-        ["--brief-suite", "--case", "brief-risk-aapl-tsla-jpm", "--runs", "2"]
-        + ["--index", str(index), "--log", str(tmp_path / "log"), "--json", str(path)],
-        model=FakeModel("gpt-6-luna", ANSWER),
-        judge=FakeJudge(),
-        fact_values=lambda tickers: [],
-        out=io.StringIO(),
-    )
-
-    brief = _export(tmp_path, eval_dir, indexed_filings)["briefSuite"]
-
-    assert (brief["model"], brief["runs"], brief["passRuns"]) == ("gpt-6-luna", 2, 2)
-    assert brief["judgeModel"] == JEV_MODEL
-    [case] = brief["cases"]
-    assert case["caseId"] == "brief-risk-aapl-tsla-jpm"
-    assert case["briefQuestion"] is True  # the brief's own question, not a variant
-    must_state = json.loads(path.read_text())["cases"][0]["facts"]
-    assert case["mustState"] == sum(1 for f in must_state if f["tier"] == "must_state")
-    # FakeJudge states every fact and supports every claim.
-    assert case["passed"] is True and brief["casesPassed"] == 1
-    assert case["missed"] == [] and case["contradictedRuns"] == []
-    assert case["truncatedRuns"] == [] and case["failedRuns"] == []
-
-
-def test_the_export_carries_every_holdout_run_beside_the_dev_reports(
-    tmp_path, eval_dir, index, indexed_filings
-):
+    """A later holdout run is kept as `generation-holdout-<suffix>.json` beside the first
+    run's `generation-holdout.json`: the export shows only the latest, the suffixed report
+    written last."""
     _write_retrieval_report(eval_dir)
     _write_generation_report(eval_dir, index, tmp_path, "gpt-6-luna")
     _write_retrieval_report(eval_dir, split="holdout")
@@ -585,6 +525,8 @@ def test_the_export_carries_every_holdout_run_beside_the_dev_reports(
     _write_generation_report(
         eval_dir, index, tmp_path, "gpt-6-luna", "-second", "holdout", "Apple relies on Asia [S1]."
     )
+    earlier = _write_generation_report(eval_dir, index, tmp_path, "gpt-6-luna", "-a", "holdout")
+    _age(earlier, 3600)
 
     data = _export(tmp_path, eval_dir, indexed_filings)
 
@@ -594,11 +536,21 @@ def test_the_export_carries_every_holdout_run_beside_the_dev_reports(
     assert holdout["splitCases"] == len(_version_2().split("holdout"))
     assert [arm["name"] for arm in holdout["retrieval"]["arms"]] == ["fts5", "nothing", "hosted"]
     assert holdout["retrieval"]["gatingMetric"] == "evidence reached"
-    first, second = holdout["generation"]
-    assert first["report"] == "generation-holdout.json"
-    assert second["report"] == "generation-holdout-second.json"
-    assert first["overall"]["citationsValid"] == 0  # cites [S99]
-    assert second["overall"]["citationsValid"] == 1
+    run = holdout["generation"]
+    assert run["report"] == "generation-holdout-second.json"
+    assert run["overall"]["citationsValid"] == 1
+
+
+def test_the_first_holdout_run_is_the_latest_until_another_is_kept(
+    tmp_path, eval_dir, index, indexed_filings
+):
+    _write_retrieval_report(eval_dir)
+    _write_generation_report(eval_dir, index, tmp_path, "gpt-6-luna", split="holdout")
+
+    holdout = _export(tmp_path, eval_dir, indexed_filings)["holdout"]
+
+    assert holdout["generation"]["report"] == "generation-holdout.json"
+    assert holdout["generation"]["overall"]["citationsValid"] == 0  # cites [S99]
 
 
 def test_a_holdout_scored_without_its_retrieval_report_still_shows_its_answers(
@@ -610,7 +562,7 @@ def test_a_holdout_scored_without_its_retrieval_report_still_shows_its_answers(
     holdout = _export(tmp_path, eval_dir, indexed_filings)["holdout"]
 
     assert holdout["retrieval"] is None
-    assert [run["model"] for run in holdout["generation"]] == ["gpt-6-luna"]
+    assert holdout["generation"]["model"] == "gpt-6-luna"
 
 
 def test_the_export_reads_the_chosen_splits_reports(tmp_path, eval_dir, indexed_filings):
@@ -620,7 +572,6 @@ def test_the_export_reads_the_chosen_splits_reports(tmp_path, eval_dir, indexed_
 
     assert data["split"] == "holdout"
     assert data["holdout"] is None  # the holdout is the split itself
-    assert data["briefSuite"] is None  # outside the split
     assert data["retrieval"]["scoredCases"] + len(data["retrieval"]["unscored"]) == len(
         _version_2().split("holdout")
     )
@@ -670,7 +621,7 @@ def test_the_export_refuses_a_holdout_retrieval_report_of_another_golden_set_ver
         _run_export(tmp_path, eval_dir, *V1)
 
 
-def test_the_export_refuses_any_holdout_generation_report_of_another_golden_set_version(
+def test_the_export_refuses_a_holdout_generation_report_of_another_golden_set_version(
     tmp_path, eval_dir, index
 ):
     _write_retrieval_report(eval_dir)
@@ -688,35 +639,185 @@ def test_a_missing_retrieval_report_names_the_command_that_writes_it(tmp_path, e
         _run_export(tmp_path, eval_dir)
 
 
-# --- The Corpus coverage grid -------------------------------------------------------------
+# --- The Company Calendars ----------------------------------------------------------------
 
 
-def test_the_coverage_grid_places_each_filing_under_its_report_periods_quarter(indexed_filings):
-    grid = coverage_grid(indexed_filings)
+MONTHS = re.compile(
+    r"^(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)(?: \d{4})?"
+    r"–(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4}$"
+)
 
-    companies = {c["ticker"]: c for c in grid["companies"]}
-    assert set(companies) == {f.ticker for f in indexed_filings}
-    assert companies["AAPL"]["coverage"] == "tracked"
-    assert companies["JPM"]["coverage"] == "snapshot"
-    assert companies["AAPL"]["sector"] == "Information Technology"
-    # Apple's fiscal year ends on the last Saturday of September.
+
+@pytest.fixture(scope="module")
+def calendars(indexed_filings):
+    return {c["ticker"]: c for c in company_calendars(indexed_filings)}
+
+
+def _period(calendar, fiscal_period):
+    return next(p for p in calendar["periods"] if p["fiscalPeriod"] == fiscal_period)
+
+
+def test_the_export_carries_every_companys_calendar_and_the_missing_companies(
+    tmp_path, eval_dir, indexed_filings
+):
+    _write_retrieval_report(eval_dir)
+
+    data = _export(tmp_path, eval_dir, indexed_filings)
+
+    assert [c["ticker"] for c in data["companies"]] == sorted({f.ticker for f in indexed_filings})
+    nvda = next(c for c in data["companies"] if c["ticker"] == "NVDA")
+    assert nvda["company"] == "NVIDIA Corporation"
+    assert nvda["sector"] == "Information Technology"
+    assert nvda["coverage"] == "tracked"
+    # The curated list of notable Companies not in the Corpus, as the Query Scope reads it.
     assert {
-        "period": "2025Q3",
-        "filingId": "AAPL_10-K_2025-09-27",
-        "formType": "10-K",
-        "reportPeriod": "2025-09-27",
-        "fiscalPeriod": "FY2025",
-    } in companies["AAPL"]["filings"]
-    # Every Filing appears once, under a period the grid has a column for.
-    cells = [f for c in grid["companies"] for f in c["filings"]]
-    assert sorted(f["filingId"] for f in cells) == sorted(f.filing_id for f in indexed_filings)
-    assert {f["period"] for f in cells} == set(grid["periods"])
-    assert grid["periods"] == sorted(grid["periods"])
+        "name": "Wells Fargo",
+        "ticker": "WFC",
+        "aliases": ["Wells Fargo & Company", "WFC"],
+        "sector": "Financials",
+    } in data["missingCompanies"]
 
 
-def test_the_coverage_grid_lists_tracked_companies_before_snapshot_companies(indexed_filings):
-    grid = coverage_grid(indexed_filings)
+def test_every_period_of_every_calendar_carries_its_calendar_months(calendars):
+    for calendar in calendars.values():
+        assert calendar["periods"], calendar["ticker"]
+        for period in calendar["periods"]:
+            assert MONTHS.match(period["months"]), (calendar["ticker"], period)
+            assert period["calendarYear"] == int(period["months"][-4:])
 
-    classes = [c["coverage"] for c in grid["companies"]]
-    assert classes == sorted(classes, key=["tracked", "snapshot"].index)
-    assert "snapshot" in classes and "tracked" in classes
+
+def test_the_fiscal_year_end_is_named_as_the_filings_date_it(calendars):
+    # NVIDIA's 52/53-week year ends on the last Sunday of January, Apple's on the last
+    # Saturday of September; Tesla's on 31 December.
+    assert calendars["NVDA"]["fiscalYearEnd"] == "late January"
+    assert calendars["AAPL"]["fiscalYearEnd"] == "late September"
+    assert calendars["TSLA"]["fiscalYearEnd"] == "December 31"
+    # Target's only 10-K ends on 1 February, which stands for the end of January.
+    assert calendars["TGT"]["fiscalYearEnd"] == "late January or early February"
+
+
+def test_nvidias_calendar_places_its_fiscal_periods_in_calendar_months(calendars):
+    nvda = calendars["NVDA"]
+
+    q3 = _period(nvda, "Q3 FY2026")
+    assert q3 | {"revenue": None} == {
+        "fiscalPeriod": "Q3 FY2026",
+        "kind": "quarter",
+        "months": "Aug–Oct 2025",
+        "calendarYear": 2025,
+        "filing": {
+            "filingId": "NVDA_10-Q_2025-10-26",
+            "formType": "10-Q",
+            "reportPeriod": "2025-10-26",
+        },
+        "revenue": None,
+    }
+    assert q3["revenue"] == {
+        "value": 57_006_000_000,
+        "filingId": "NVDA_10-Q_2025-10-26",
+        "label": "Revenue",
+        "derived": None,
+    }
+
+    fy = _period(nvda, "FY2025")
+    assert fy["kind"] == "year"
+    assert fy["months"] == "Feb 2024–Jan 2025"
+    assert fy["calendarYear"] == 2025
+    assert fy["filing"]["filingId"] == "NVDA_10-K_2025-01-26"
+    assert fy["revenue"]["value"] == 130_497_000_000
+    assert fy["revenue"]["derived"] is None
+
+
+def test_a_fourth_quarter_is_derived_from_the_year_and_marked_as_derived(calendars):
+    q4 = _period(calendars["NVDA"], "Q4 FY2025")
+
+    assert q4["months"] == "Nov 2024–Jan 2025"
+    # The 10-K's year less its three 10-Q quarters: 130,497 − 26,044 − 30,040 − 35,082.
+    assert q4["filing"]["filingId"] == "NVDA_10-K_2025-01-26"
+    assert q4["revenue"] == {
+        "value": 39_331_000_000,
+        "filingId": "NVDA_10-K_2025-01-26",
+        "label": None,
+        "derived": "FY2025 less Q1–Q3 FY2025",
+    }
+
+
+def test_a_calendar_runs_newest_first_with_each_year_beside_its_fourth_quarter(calendars):
+    periods = [p["fiscalPeriod"] for p in calendars["NVDA"]["periods"]]
+
+    # From the latest Filing (Q3 FY2026) back to the first, every quarter once.
+    assert periods[:6] == [
+        "Q3 FY2026",
+        "Q2 FY2026",
+        "Q1 FY2026",
+        "FY2025",
+        "Q4 FY2025",
+        "Q3 FY2025",
+    ]
+    quarters = [p for p in periods if p.startswith("Q")]
+    assert len(quarters) == len(set(quarters))
+    assert periods[-1] == "Q4 FY2022" or periods[-1].startswith("Q1")
+
+
+def test_tracked_companies_have_revenue_for_every_filed_quarter_and_year(calendars):
+    for ticker in ("AAPL", "NVDA", "TSLA"):
+        periods = {p["fiscalPeriod"]: p for p in calendars[ticker]["periods"]}
+        for name, period in periods.items():
+            year = name.split("FY")[1]
+            # A fourth quarter is derived only when its year's three 10-Qs are filed.
+            filed = (
+                all(periods.get(f"Q{q} FY{year}", {}).get("filing") for q in (1, 2, 3))
+                if name.startswith("Q4")
+                else period["filing"]
+            )
+            assert bool(period["revenue"]) == bool(filed), (ticker, name)
+    # Apple's Corpus starts at its second quarter of fiscal 2022, so that year's fourth
+    # quarter can't be derived.
+    assert _period(calendars["AAPL"], "Q4 FY2022")["revenue"] is None
+    assert _period(calendars["AAPL"], "Q4 FY2023")["revenue"]["derived"]
+
+
+def test_snapshot_companies_have_the_revenue_their_filings_yield(calendars):
+    jpm = calendars["JPM"]
+    assert jpm["coverage"] == "snapshot"
+    assert _period(jpm, "FY2025")["revenue"]["value"] == 182_447_000_000
+    assert _period(jpm, "Q1 FY2025")["revenue"]["value"] == 45_310_000_000
+    q4 = _period(jpm, "Q4 FY2025")["revenue"]
+    assert (q4["value"], bool(q4["derived"])) == (45_798_000_000, True)
+    # Target's one 10-K yields no revenue figure.
+    assert calendars["TGT"]["coverage"] == "snapshot"
+    assert all(p["revenue"] is None for p in calendars["TGT"]["periods"])
+
+
+def test_a_quarter_with_no_filing_is_listed_without_one_and_its_year_is_not_split(
+    indexed_filings,
+):
+    # Without NVIDIA's Q2 FY2025 10-Q, that quarter is a gap and its fourth quarter
+    # can't be derived.
+    filings = [f for f in indexed_filings if f.filing_id != "NVDA_10-Q_2024-07-28"]
+
+    nvda = next(c for c in company_calendars(filings) if c["ticker"] == "NVDA")
+
+    gap = _period(nvda, "Q2 FY2025")
+    assert gap["filing"] is None and gap["revenue"] is None
+    assert gap["months"] == "May–Jul 2024"
+    assert _period(nvda, "Q4 FY2025")["revenue"] is None
+    assert _period(nvda, "FY2025")["revenue"]["value"] == 130_497_000_000
+
+
+def test_each_calendar_carries_the_common_names_questions_match_it_by():
+    filings = [f for f in load_corpus() if f.ticker in {"GOOG", "KO", "META", "NVDA"}]
+
+    calendars = {c["ticker"]: c for c in company_calendars(filings)}
+
+    assert calendars["GOOG"]["commonNames"] == ["Alphabet", "Google"]
+    assert calendars["KO"]["commonNames"] == ["Coca-Cola", "Coca Cola", "Coke"]
+    assert calendars["META"]["commonNames"] == ["Meta Platforms", "Meta", "Facebook"]
+    assert calendars["NVDA"]["commonNames"] == ["NVIDIA"]
+    # Taken from the Query Scope parser's alias table, so each is a name a question is
+    # matched by: the search on "What's covered" can't drift from what questions understand.
+    companies = [ScopeCompany(c["ticker"], c["company"], c["coverage"]) for c in calendars.values()]
+    for calendar in calendars.values():
+        for name in calendar["commonNames"]:
+            named, _ = find_companies(f"What does {name} say?", companies)
+            assert [c.ticker for c in named] == [calendar["ticker"]], name

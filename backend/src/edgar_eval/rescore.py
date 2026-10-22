@@ -3,10 +3,13 @@
 A saved generation report (`edgar_eval.generation.GenerationReport.to_dict`) stores each
 answer and Jev's verdicts on its claims, so a corrected measurement is applied to it
 offline, in place, with no Answer Call and no Jev call. A re-score fixes a measurement
-and changes no choice, so it is allowed on the holdout. It does three things:
+and changes no choice, so it is allowed on the holdout. It does four things:
 
 - **The figure check** (`rescore_figures`), redone against each case's Answer Context,
   prepared again through the report's Arm at the setting it records.
+- **The structure check** (`rescore_structure`), redone against the Companies that
+  Answer Context's Sources come from, so a report answered under an earlier prompt is
+  scored by the current word range (from prompt v17, `edgar_rag.retrieval.answer_words`).
 - **The Coverage Gap claims** (`rescore_gap_claims`): Jev's stored verdicts on cited
   sentences stating one of the case's expected Coverage Gaps are dropped, as the harness
   now keeps those sentences from Jev (`edgar_eval.answer_checks.split_gap_claims`).
@@ -41,7 +44,7 @@ import argparse
 import json
 import sys
 from collections import Counter
-from collections.abc import Iterable, Sequence
+from collections.abc import Iterable, Iterator, Mapping, Sequence
 from dataclasses import asdict
 from pathlib import Path
 from statistics import fmean
@@ -51,6 +54,7 @@ from edgar_eval.answer_checks import (
     CitationCheck,
     Claim,
     CoverageGapCheck,
+    check_structure,
     claims,
     split_gap_claims,
 )
@@ -60,6 +64,7 @@ from edgar_eval.generation import (
     FactValues,
     answer_passes,
     check_answer_figures,
+    company_names,
     corpus_fact_values,
     mean_score,
 )
@@ -79,16 +84,20 @@ from edgar_rag.paths import DERIVED_DIR, REPO_ROOT
 from edgar_rag.retrieval import (
     CONTEXT_BUDGET_TOKENS,
     DEFAULT_INDEX,
+    AnswerContext,
     index_chunk_tokens,
     prepare_answer_context,
 )
 
 __all__ = [
     "DEFAULT_EVAL_DIR",
+    "index_for",
     "main",
+    "named_report",
     "rescore_brief_suite",
     "rescore_figures",
     "rescore_gap_claims",
+    "rescore_structure",
     "rescore_uncited_claims",
     "round_reports",
     "saved_reports",
@@ -120,23 +129,13 @@ def rescore_figures(
     an index of another chunk size, or when a case's Sources no longer number what they
     did, since its answer then cites Sources it was never given.
     """
-    chunk_tokens = report.get("chunk_tokens")
-    if chunk_tokens is not None and chunk_tokens != index_chunk_tokens(index):
-        raise ValueError(
-            f"the report was answered from {chunk_tokens}-token chunks, and {index} holds "
-            f"{index_chunk_tokens(index)}-token chunks"
-        )
-    budget = report.get("context_budget", CONTEXT_BUDGET_TOKENS)
-    by_id = {c.id: c for c in cases}
     rescored = json.loads(json.dumps(report))
-    for case in rescored["cases"]:
-        context = prepare(conversation(by_id[case["case_id"]]), Path(index), context_budget=budget)
-        if len(context.sources) != case["sources"]:
-            raise ValueError(
-                f"{case['case_id']}: the Answer Context now has {len(context.sources)} "
-                f"Sources, not the {case['sources']} the answer was given"
+    for case, context in _contexts(rescored, cases, index, prepare):
+        case["figures"] = asdict(
+            check_answer_figures(
+                case["answer"], context.sources, fact_values, context.financial_facts
             )
-        case["figures"] = asdict(check_answer_figures(case["answer"], context.sources, fact_values))
+        )
 
     def figures_exact(group: Iterable[dict]) -> float:
         return fmean(not c["figures"]["unmatched"] for c in group)
@@ -147,6 +146,62 @@ def rescore_figures(
             c for c in rescored["cases"] if c["question_type"] == kind
         )
     return rescored
+
+
+def rescore_structure(
+    report: dict,
+    cases: Iterable[GoldenCase],
+    index: str | Path,
+    *,
+    names: Mapping[str, Sequence[str]],
+    prepare: Prepare = prepare_answer_context,
+) -> dict:
+    """A saved generation report with its structure check redone from its stored answers
+    (`edgar_eval.answer_checks.check_structure`), against the Companies each case's
+    Answer Context, prepared again as `rescore_figures` prepares it, takes its Sources
+    from, each with the `names` an answer may call it by, as the harness checks it. Its
+    structure-followed scores are recomputed; nothing else changes. So a report answered
+    under an earlier prompt is scored by the current word range, and a comparison of two
+    prompts compares like with like."""
+    rescored = json.loads(json.dumps(report))
+    for case, context in _contexts(rescored, cases, index, prepare):
+        covered = {s.ticker: tuple(names.get(s.ticker, (s.ticker,))) for s in context.sources}
+        case["structure"] = asdict(check_structure(case["answer"], covered))
+
+    def followed(group: Iterable[dict]) -> float:
+        return mean_score(not c["structure"]["problems"] for c in group) or 0.0
+
+    rescored["overall"]["structure_followed"] = followed(rescored["cases"])
+    for kind, summary in rescored["by_type"].items():
+        summary["structure_followed"] = followed(
+            c for c in rescored["cases"] if c["question_type"] == kind
+        )
+    return rescored
+
+
+def _contexts(
+    report: dict, cases: Iterable[GoldenCase], index: str | Path, prepare: Prepare
+) -> Iterator[tuple[dict, AnswerContext]]:
+    """Each saved case of `report` beside its Answer Context, prepared again through
+    `prepare` at the context budget the report records. Raises ValueError when the report
+    was answered from an index of another chunk size, or when a case's Sources no longer
+    number what they did, since its answer then cites Sources it was never given."""
+    chunk_tokens = report.get("chunk_tokens")
+    if chunk_tokens is not None and chunk_tokens != index_chunk_tokens(index):
+        raise ValueError(
+            f"the report was answered from {chunk_tokens}-token chunks, and {index} holds "
+            f"{index_chunk_tokens(index)}-token chunks"
+        )
+    budget = report.get("context_budget", CONTEXT_BUDGET_TOKENS)
+    by_id = {c.id: c for c in cases}
+    for case in report["cases"]:
+        context = prepare(conversation(by_id[case["case_id"]]), Path(index), context_budget=budget)
+        if len(context.sources) != case["sources"]:
+            raise ValueError(
+                f"{case['case_id']}: the Answer Context now has {len(context.sources)} "
+                f"Sources, not the {case['sources']} the answer was given"
+            )
+        yield case, context
 
 
 def rescore_gap_claims(report: dict, cases: Iterable[GoldenCase]) -> dict:
@@ -328,7 +383,7 @@ def saved_reports(eval_dir: Path = DEFAULT_EVAL_DIR) -> list[Path]:
     ]
 
 
-def _named(name: str, eval_dir: Path) -> Path | None:
+def named_report(name: str, eval_dir: Path) -> Path | None:
     """A report named on the command line: a path as given, from the repository root, or
     a name in `eval_dir`."""
     for path in (Path(name), REPO_ROOT / name, eval_dir / name):
@@ -390,7 +445,7 @@ def main(
     if args.all:
         paths = saved_reports(args.dir)
     elif args.reports:
-        found = {name: _named(name, args.dir) for name in args.reports}
+        found = {name: named_report(name, args.dir) for name in args.reports}
         missing = [name for name, path in found.items() if path is None]
         if missing:
             parser.error(f"no such report: {', '.join(missing)}")
@@ -433,17 +488,29 @@ def main(
         rescored = rescore_figures(
             report,
             own_cases,
-            _index_for(args.index, report.get("chunk_tokens")),
+            index_for(args.index, report.get("chunk_tokens")),
             fact_values=fact_values or corpus_fact_values,
+            prepare=saved_arm.prepare or prepare_answer_context,
+        )
+        rescored = rescore_structure(
+            rescored,
+            own_cases,
+            index_for(args.index, report.get("chunk_tokens")),
+            names=company_names(),
             prepare=saved_arm.prepare or prepare_answer_context,
         )
         rescored = rescore_uncited_claims(rescore_gap_claims(rescored, own_cases))
         path.write_text(json.dumps(rescored, indent=2) + "\n", encoding="utf-8")
         was, now = report["overall"]["figures_exact"], rescored["overall"]["figures_exact"]
         failing = [c["case_id"] for c in rescored["cases"] if c["figures"]["unmatched"]]
+        followed = (
+            report["overall"].get("structure_followed", 0.0),
+            rescored["overall"]["structure_followed"],
+        )
         print(
             f"{path}: figures exact {was:.2f} → {now:.2f}; "
             f"not exact: {', '.join(failing) or 'none'}; "
+            f"structure followed {followed[0]:.2f} → {followed[1]:.2f}; "
             f"{_gap_claims_line([report], [rescored])}; "
             f"{_uncited_claims_line([report], [rescored])}",
             file=out,
@@ -451,7 +518,7 @@ def main(
     return 0
 
 
-def _index_for(index: Path, chunk_tokens: int | None) -> Path:
+def index_for(index: Path, chunk_tokens: int | None) -> Path:
     """The index a saved report's Answer Contexts are rebuilt from: `index`, or, for a
     report answered from chunks of another size, the index of that size beside it
     (`edgar_rag-chunks450.sqlite`, as `make eval-generation CHUNK_TOKENS=450` builds it)

@@ -1,11 +1,13 @@
 'use client'
 
-import { useEffect, useRef, useState, type FormEvent, type Ref } from 'react'
+import { useEffect, useMemo, useRef, useState, type FormEvent, type Ref } from 'react'
 import Link from 'next/link'
 import { useChat } from '@ai-sdk/react'
 import { DefaultChatTransport } from 'ai'
 import AnswerMessage from '@/components/AnswerMessage'
+import CalendarPanel from '@/components/CalendarPanel'
 import FollowUps from '@/components/FollowUps'
+import SidePanel, { PanelToolbar, type PanelTab } from '@/components/SidePanel'
 import SourcesPanel from '@/components/SourcesPanel'
 import {
   answerComplete,
@@ -15,38 +17,79 @@ import {
   messageText,
   rejectionReason,
   type ResearchMessage,
-  type Source,
 } from '@/lib/chat'
-import { loadConversation, saveConversation } from '@/lib/conversation'
-import { WHATS_COVERED_ID, type CoverageSummary } from '@/lib/coverage'
+import {
+  calendarAutoOpenOff,
+  loadConversation,
+  saveConversation,
+  turnCalendarAutoOpenOff,
+} from '@/lib/conversation'
+import { ASK_PARAM, WHATS_COVERED_ID, type CoverageSummary } from '@/lib/coverage'
+import type { CompanyCalendar } from '@/lib/evalExport'
 import { followUps } from '@/lib/followUps'
 import { STARTERS } from '@/lib/starters'
 
-/** Which answer's Sources the panel shows, and which of them is open. */
+/** Which answer's Sources the panel's Sources tab shows, and which of them is open; with
+ * none chosen, the tab shows the latest answer's, even while it streams. */
 interface OpenSource {
   messageId: string
-  tag: string
+  tag: string | null
 }
 
 /**
  * The research workspace: a conversation thread, starter prompts on an empty
- * conversation, and a Sources panel that opens on a citation click. The conversation is
+ * conversation, and one right-hand side panel with a toolbar that is always visible. A
+ * citation click opens the panel's Sources tab at that Source; the toolbar's Sources icon
+ * opens it at the latest answer's first Source, or closes it, and so does choosing the
+ * Sources tab after another answer's citation; the latest answer's Sources show as soon
+ * as they arrive, before its text. The conversation is
  * kept in session storage, so it survives a page refresh, and "New conversation" clears
  * it, so an old Query Scope can't leak into a new topic. With a Corpus coverage summary,
  * the empty conversation also says how many Companies are covered. The latest answer,
- * once complete, is followed by suggested follow-up questions.
+ * once complete, is followed by suggested follow-up questions. The toolbar's Calendar
+ * icon opens the panel's Calendar tab: a ticker tab for every Company the conversation's
+ * Query Scopes named, each showing its Company Calendar from `calendars`. The Calendar
+ * follows the conversation as each answer's Query Scope arrives, before its text: the
+ * first answer naming a Company opens the panel on it, unless the panel has been closed in
+ * this browser session; while it shows, each new answer naming a Company selects its
+ * alphabetically first; and while the panel is closed, an answer naming a Company not seen
+ * before puts a dot on the calendar icon until the Calendar is next opened.
  */
-export default function Workspace({ coverage }: { coverage?: CoverageSummary }) {
+export default function Workspace({
+  coverage,
+  calendars = [],
+}: {
+  coverage?: CoverageSummary
+  calendars?: CompanyCalendar[]
+}) {
   const [transport] = useState(
     () => new DefaultChatTransport<ResearchMessage>({ api: '/api/chat' })
   )
   const { messages, sendMessage, regenerate, setMessages, status, stop, error } =
     useChat<ResearchMessage>({
       transport,
+      // A restored conversation never streams, so only a new answer moves the Calendar.
+      onData: (part) => {
+        if (part.type === 'data-query-scope') followScope(part.data.companies)
+      },
     })
   const [input, setInput] = useState('')
+  // The tab the side panel shows, or null while it is closed.
+  const [panel, setPanel] = useState<PanelTab | null>(null)
   const [open, setOpen] = useState<OpenSource | null>(null)
+  // The ticker the Calendar tab shows, or null for its first.
+  const [calendarTicker, setCalendarTicker] = useState<string | null>(null)
+  // Whether an answer named Companies new to the Calendar while the panel was closed.
+  const [calendarDot, setCalendarDot] = useState(false)
+  // Whether the panel was closed on this page: the Calendar no longer opens by itself.
+  // Session storage keeps it for the browser session, when storage is available.
+  const [autoOpenOff, setAutoOpenOff] = useState(false)
+  const calendarsByTicker = useMemo(
+    () => new Map(calendars.map((calendar) => [calendar.ticker, calendar])),
+    [calendars]
+  )
   const threadRef = useRef<HTMLDivElement>(null)
+  const questionRef = useRef<HTMLInputElement>(null)
   const lastQuestionRef = useRef<HTMLDivElement>(null)
   // How to scroll the next question into place once it renders, or null for not at all.
   const pendingScroll = useRef<ScrollBehavior | null>(null)
@@ -54,6 +97,24 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
   const [endBelow, setEndBelow] = useState(false)
 
   const busy = status === 'submitted' || status === 'streaming'
+
+  /**
+   * Moves the Calendar along with the answer whose Query Scope just arrived, naming
+   * `companies` (see the component's doc). The answer's own message doesn't hold its
+   * Query Scope yet, so every Query Scope in `messages` is an earlier answer's.
+   */
+  function followScope(companies: { ticker: string }[]) {
+    const named = companies.map((c) => c.ticker).sort()
+    if (named.length === 0) return
+    const before = new Set(messages.flatMap(scopeTickers))
+    const autoOpen = panel === null && before.size === 0 && !autoOpenOff && !calendarAutoOpenOff()
+    if (panel === 'calendar' || autoOpen) {
+      showPanel('calendar')
+      setCalendarTicker(named[0])
+    } else if (panel === null && named.some((ticker) => !before.has(ticker))) {
+      setCalendarDot(true)
+    }
+  }
 
   // Session storage is read after the first render, so the server-rendered page (which
   // has no storage) and the browser's first render agree.
@@ -65,6 +126,25 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
       setMessages(saved)
     }
   }, [setMessages])
+
+  // A question "What's covered" asks about is filled in, never sent, and leaves the
+  // address so a refresh doesn't fill it in again. Read after the first render, like
+  // session storage, since the server-rendered page has no address to read.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    const question = params.get(ASK_PARAM)
+    if (!question) return
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- synced once from the address
+    setInput(question)
+    params.delete(ASK_PARAM)
+    const search = params.toString()
+    window.history.replaceState(
+      window.history.state,
+      '',
+      `${window.location.pathname}${search ? `?${search}` : ''}${window.location.hash}`
+    )
+    questionRef.current?.focus()
+  }, [])
 
   // Saved once each answer is complete, never half-written. Only "New conversation"
   // clears it, so the empty first render never overwrites a saved conversation.
@@ -108,7 +188,10 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
     if (busy) stop()
     setMessages([])
     saveConversation([])
+    setPanel(null)
     setOpen(null)
+    setCalendarTicker(null)
+    setCalendarDot(false)
     setInput('')
   }
 
@@ -119,18 +202,71 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
     setInput('')
   }
 
-  const openMessage = open ? messages.find((m) => m.id === open.messageId) : undefined
-  const openSources = open && openMessage ? switcherSources(openMessage, open.tag) : []
+  /** Opens the Sources tab at one answer's Source, whatever the panel showed. */
+  function cite(messageId: string, tag: string) {
+    setOpen({ messageId, tag })
+    showPanel('sources')
+  }
+
+  /** Opens the panel on a tab; opening the Calendar clears its icon's dot. */
+  function showPanel(tab: PanelTab) {
+    setPanel(tab)
+    if (tab === 'calendar') setCalendarDot(false)
+  }
+
+  /** The user closes the panel: from now on, the Calendar never opens by itself. */
+  function closePanel() {
+    setPanel(null)
+    setAutoOpenOff(true)
+    turnCalendarAutoOpenOff()
+  }
+
+  /** A toolbar icon: opens the panel on its tab, or closes it when that tab is showing. */
+  function toggle(tab: PanelTab) {
+    if (panel === tab) {
+      closePanel()
+      return
+    }
+    if (tab === 'sources') setOpen(null)
+    showPanel(tab)
+  }
+
+  /** A panel tab: Sources shows the latest answer's, keeping the open Source if it is one
+   * of them. */
+  function chooseTab(tab: PanelTab) {
+    if (tab === 'sources' && open?.messageId !== latestAnswer?.id) setOpen(null)
+    showPanel(tab)
+  }
+
+  const latestAnswer = messages.findLast((m) => m.role === 'assistant')
+  const openMessage = open ? messages.find((m) => m.id === open.messageId) : latestAnswer
+  const openSources = openMessage ? messageSources(openMessage) : []
+  const openCited = new Set(
+    openMessage ? citedSources(messageText(openMessage), openSources).map((s) => s.tag) : []
+  )
+  const shownTag =
+    panel === 'sources' && openMessage ? (open?.tag ?? openSources[0]?.tag ?? null) : null
+  // Every Company any answer's Query Scope named, alphabetical: the Calendar's tickers.
+  const calendarTickers = [...new Set(messages.flatMap(scopeTickers))].sort()
   const last = messages.at(-1)
   const writing = status === 'streaming' && last?.role === 'assistant' && !messageText(last)
   const turns = groupTurns(messages)
   // Follow-ups suggested under the latest answer once it is complete, built from its
-  // Query Scope by fixed templates, so no model is asked.
+  // Query Scope by fixed templates, so no model is asked, and skipping what any earlier
+  // question already asked.
   const lastScope = last?.role === 'assistant' ? messageDataPart(last, 'query-scope') : null
   const lastQuestion = messages.findLast((m) => m.role === 'user')
+  const earlier = turns.slice(0, -1).map((turn) => ({
+    question: turn[0].role === 'user' ? messageText(turn[0]) : '',
+    scope:
+      turn
+        .filter((m) => m.role === 'assistant')
+        .map((m) => messageDataPart(m, 'query-scope'))
+        .find((scope) => scope !== null) ?? null,
+  }))
   const suggestions =
     status === 'ready' && lastScope
-      ? followUps(lastScope, lastQuestion ? messageText(lastQuestion) : '')
+      ? followUps(lastScope, lastQuestion ? messageText(lastQuestion) : '', earlier)
       : []
 
   const renderMessage = (message: ResearchMessage) =>
@@ -148,8 +284,8 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
         scope={messageDataPart(message, 'query-scope')}
         gaps={messageDataPart(message, 'coverage-gaps')?.gaps ?? []}
         complete={answerComplete(message, messages, status)}
-        openTag={open?.messageId === message.id ? open.tag : null}
-        onCite={(tag) => setOpen({ messageId: message.id, tag })}
+        openTag={openMessage?.id === message.id ? shownTag : null}
+        onCite={(tag) => cite(message.id, tag)}
       />
     )
 
@@ -258,8 +394,15 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
             onSubmit={handleSubmit}
             className="shrink-0 border-t border-line bg-canvas/80 px-5 py-3 backdrop-blur-xl"
           >
+            <PanelToolbar
+              open={panel}
+              onToggle={toggle}
+              dot={calendarDot ? 'calendar' : null}
+              variant="buttons"
+            />
             <div className="mx-auto flex max-w-3xl gap-2">
               <input
+                ref={questionRef}
                 type="text"
                 aria-label="Question"
                 value={input}
@@ -288,27 +431,34 @@ export default function Workspace({ coverage }: { coverage?: CoverageSummary }) 
           </form>
         </main>
 
-        {open && openSources.length > 0 && (
-          <SourcesPanel
-            sources={openSources}
-            selected={open.tag}
-            onSelect={(tag) => setOpen({ ...open, tag })}
-            onClose={() => setOpen(null)}
-          />
+        {panel && (
+          <SidePanel tab={panel} onTab={chooseTab} onClose={closePanel}>
+            {panel === 'calendar' ? (
+              <CalendarPanel
+                tickers={calendarTickers}
+                calendars={calendarsByTicker}
+                selected={calendarTicker}
+                onSelect={setCalendarTicker}
+              />
+            ) : (
+              <SourcesPanel
+                sources={openSources}
+                cited={openCited}
+                selected={shownTag}
+                onSelect={(tag) => openMessage && setOpen({ messageId: openMessage.id, tag })}
+              />
+            )}
+          </SidePanel>
         )}
+        <PanelToolbar
+          open={panel}
+          onToggle={toggle}
+          dot={calendarDot ? 'calendar' : null}
+          variant="rail"
+        />
       </div>
     </div>
   )
-}
-
-/**
- * The Sources the panel's switcher lists for one answer: the Sources it cites, plus the
- * open one when it is not cited, in tag order.
- */
-function switcherSources(message: ResearchMessage, openTag: string): Source[] {
-  const sources = messageSources(message)
-  const cited = citedSources(messageText(message), sources)
-  return sources.filter((s) => s.tag === openTag || cited.includes(s))
 }
 
 /**
@@ -322,6 +472,12 @@ function groupTurns(messages: ResearchMessage[]): ResearchMessage[][] {
     else turns[turns.length - 1].push(message)
   }
   return turns
+}
+
+/** The tickers an answer's Query Scope named, alphabetical; none for a question. */
+function scopeTickers(message: ResearchMessage): string[] {
+  if (message.role !== 'assistant') return []
+  return (messageDataPart(message, 'query-scope')?.companies ?? []).map((c) => c.ticker).sort()
 }
 
 /** Smooth scrolling, unless the user prefers reduced motion. */

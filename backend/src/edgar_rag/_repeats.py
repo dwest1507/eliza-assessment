@@ -33,7 +33,8 @@ MIN_NEW_WORDS = 30
 so a date or a figure updated in place does not count as a new paragraph."""
 
 GAP = "\n[…]\n"
-"""What stands between two passages that are not contiguous in the Filing."""
+"""What stands between two passages that are not contiguous in the Filing: within a
+Source, between chunks whose positions skip, and between runs of new sentences."""
 
 _WORD = re.compile(r"[a-z0-9]+")
 

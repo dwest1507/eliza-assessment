@@ -24,8 +24,12 @@ _Avoid_: Filters, entities, intent
 One numbered, citable item in an Answer Call's context: the retrieved text of one Section of one Filing, or the Financial Facts taken from one Filing.
 _Avoid_: Reference, document, context item
 
+**Answer Context**:
+Everything one Answer Call is given to answer from: the Sources, each Company's coverage, the Financial Facts and the Coverage Gaps, prepared by retrieval from the Query Scope.
+_Avoid_: Prompt context, retrieved context
+
 **Coverage Gap**:
-A part of a question the Corpus cannot answer (a trend asked of a Snapshot Company, a Company not in the Corpus, a stale Filing, guidance the Filings don't contain), stated in the answer with a fixed wording instead of being filled from general knowledge.
+A part of a question the Corpus cannot answer (a trend asked of a Snapshot Company, a Company not in the Corpus, a stale Filing, guidance the Filings don't contain, or Companies whose latest periods differ). Every Coverage Gap is shown with the answer, in a fixed wording, as a Coverage note after it; the answer never fills one from general knowledge, and says in its own words only those that leave part of the question unanswered.
 _Avoid_: Limitation, missing data, caveat
 
 ### Evaluation
@@ -58,6 +62,14 @@ _Avoid_: Error, hallucination
 Whether a Required Fact's evidence quote is in the text of an Answer Context's Sources: retrieval's measure of whether an answer could state that fact at all.
 _Avoid_: Recall (unqualified), coverage
 
+**Generation Miss**:
+A must-state Required Fact whose evidence reached the Answer Context (Evidence Reached) but which the answer did not state: a fact lost by generation, not by retrieval.
+_Avoid_: Answer miss, recall miss
+
+**Retrieval Miss**:
+A must-state Required Fact whose evidence did not reach the Answer Context: a planning miss (the Section plan left its Section out) or a ranking miss (its Section was searched, but the passage was not ranked into the context budget).
+_Avoid_: Search miss, recall miss
+
 **Control Run**:
 The shipped choice run again beside its challengers in a comparison, so the comparison shows its own run-to-run noise. If it comes out ahead of the shipped run, the comparison is inconclusive and the shipped choice stands. The comparisons of one round (the same code, prompt and Golden Set version) share one shipped run and one Control Run.
 _Avoid_: Baseline, rerun
@@ -79,6 +91,10 @@ _Avoid_: Issuer, registrant, firm
 **Sector**:
 The industry group a Company belongs to, taken from a curated GICS-style reference table, since Filings do not carry one.
 _Avoid_: Industry (unqualified), vertical
+
+**Company Group**:
+A curated, named set of Companies that no Sector captures (e.g. "big tech"), which a question can name in place of its Companies. Disclosed like the Sector table.
+_Avoid_: Basket, peer set, Sector (for a group that cuts across Sectors)
 
 **Filing**:
 One 10-K or 10-Q document submitted to the SEC by a single company, as one file in the corpus.
@@ -131,5 +147,5 @@ The calendar quarter in which the Report Period ends (the `Quarter:` header fiel
 _Avoid_: Quarter (unqualified)
 
 **Fiscal Period**:
-The company's own fiscal year and quarter for a Filing (e.g. NVIDIA "Q2 FY2026"), derived from the Report Period and the company's fiscal year end. A secondary label only.
+The company's own fiscal year and quarter for a Filing (e.g. NVIDIA "Q2 FY2026"), derived from the Report Period and the company's fiscal year end. A secondary label only, always given with its calendar months where a reader sees it (NVIDIA's "Q2 FY2026 (May–Jul 2025)").
 _Avoid_: Quarter (unqualified)

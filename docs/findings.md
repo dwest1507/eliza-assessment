@@ -183,6 +183,7 @@ _Analysis 7: whether Financial Facts can be extracted (revenue)._
 
 - **Finding:** A rule-based extractor reads revenue from all 197 Tracked Company Filings, and every value equals the SEC XBRL company-facts value for the same Filing and period to the dollar; eight hand-checked values agree. It handles eight revenue labels, current-year columns first or last, and scale words in titles or header rows. A 10-K reports the year, so a quarterly series derives the fourth quarter.
 - **Implication:** Revenue trends for Tracked Companies can use exact, cited figures instead of the Answer Call reading flattened tables. Nothing is yet known about the 41 Snapshot Companies.
+- **Update (#153, 2026-10-21):** the Snapshot Companies were then measured the same way: of their 49 Filings, 43 yield revenue and net income, and after two fixes (American Express's revenue, Morgan Stanley's net income) every figure equals the SEC reference, so Financial Facts now cover every Company ([ADR 0001's note](adr/0001-sqlite-financial-facts-store.md)).
 - **Design decision:** Keep the Financial Facts seam separate from the Corpus seam. Each fact carries its Filing ID, Report Period and printed label so it can be cited. The extractor returns nothing rather than a guess. The SEC data is an evaluation reference only, never an answer source.
 
 ## 22. Net income can be extracted exactly too, once the right row is chosen

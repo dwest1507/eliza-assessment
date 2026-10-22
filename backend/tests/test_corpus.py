@@ -559,6 +559,18 @@ def test_the_major_pharmaceutical_companies_resolve_through_the_sector_table():
     assert pharma == ["ABBV", "JNJ", "LLY", "MRK", "PFE"]
 
 
+def test_the_sector_table_holds_the_big_tech_company_group(corpus):
+    rows = load_sector_table()
+
+    big_tech = sorted(r.ticker for r in rows if r.group == "Big Tech")
+
+    assert big_tech == ["AAPL", "AMZN", "GOOG", "META", "MSFT", "NVDA", "TSLA"]
+    assert {r.group for r in rows} == {"Big Tech", None}
+    nvda = next(f for f in corpus if f.ticker == "NVDA")
+    adbe = next(f for f in corpus if f.ticker == "ADBE")
+    assert (nvda.group, adbe.group) == ("Big Tech", None)
+
+
 def test_nvidias_last_two_years_are_eight_consecutive_quarters_up_to_its_latest_filing(corpus):
     nvda = sorted((f for f in corpus if f.ticker == "NVDA"), key=lambda f: f.report_period)
     anchor = nvda[-1].report_period

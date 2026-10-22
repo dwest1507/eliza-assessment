@@ -2,6 +2,8 @@ import { act, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import Workspace from '@/components/Workspace'
+import evalExport from '@/data/eval-export.json'
+import type { EvalExport } from '@/lib/evalExport'
 import { STARTERS } from '@/lib/starters'
 
 /** The parts the chat API streams, in its order: the Query Scope and Sources first. */
@@ -14,9 +16,10 @@ const SOURCES = [
     formType: '10-K',
     reportPeriod: '2025-09-27',
     fiscalPeriod: 'FY2025',
+    calendarMonths: 'Oct 2024–Sep 2025',
     section: 'Risk Factors',
     item: 'Item 1A',
-    label: 'AAPL 10-K FY2025, Risk Factors (Item 1A).',
+    label: 'AAPL 10-K FY2025 (Oct 2024–Sep 2025), Risk Factors (Item 1A).',
     text: 'A significant majority of the Company’s manufacturing is performed by outsourcing partners.',
   },
   {
@@ -27,9 +30,10 @@ const SOURCES = [
     formType: '10-K',
     reportPeriod: '2025-12-31',
     fiscalPeriod: 'FY2025',
+    calendarMonths: 'Jan–Dec 2025',
     section: 'Risk Factors',
     item: 'Item 1A',
-    label: 'TSLA 10-K FY2025, Risk Factors (Item 1A).',
+    label: 'TSLA 10-K FY2025 (Jan–Dec 2025), Risk Factors (Item 1A).',
     text: 'We may be impacted by trade policies, political uncertainty and tariffs.',
   },
 ]
@@ -43,9 +47,10 @@ const UNCITED_SOURCE = {
   formType: '10-K',
   reportPeriod: '2025-06-30',
   fiscalPeriod: 'FY2025',
+  calendarMonths: 'Jul 2024–Jun 2025',
   section: 'Risk Factors',
   item: 'Item 1A',
-  label: 'MSFT 10-K FY2025, Risk Factors (Item 1A).',
+  label: 'MSFT 10-K FY2025 (Jul 2024–Jun 2025), Risk Factors (Item 1A).',
   text: 'Our global operations subject us to potential trade restrictions.',
 }
 
@@ -56,14 +61,23 @@ const ANSWER = [
 ]
 
 /**
- * An answer in the prompt's fixed structure: the direct answer, the per-Company detail
- * and the closing Coverage note, each a paragraph, streamed one paragraph at a time.
+ * An answer in the prompt's structure: the direct answer, then the per-Company detail,
+ * each a paragraph, streamed one paragraph at a time. From prompt v15 it has no closing
+ * Coverage note: the workspace shows the Coverage Gaps below it (ADR 0016).
  */
 const LONG_ANSWER = [
   'Apple and Tesla both face **trade policy** risk [S1].\n\n',
   '**Apple.** Apple depends on outsourcing partners.\n\n',
-  '**Tesla.** Tesla is exposed to tariffs [S2].\n\nCoverage: Wells Fargo is not in the Filings provided.',
+  '**Tesla.** Tesla is exposed to tariffs [S2].\n\nNeither gives a tariff forecast in these filings.',
 ]
+
+/** A Coverage Gap as the chat API streams it: a Company not in the Corpus. */
+const WELLS_FARGO_GAP = {
+  kind: 'missing_company',
+  label: 'Not in the Corpus',
+  companies: ['Wells Fargo'],
+  text: 'Not in the Corpus: Wells Fargo is not in the Filings provided, so this answer does not cover it.',
+}
 
 const QUERY_SCOPE = {
   companies: [
@@ -85,9 +99,10 @@ const FACTS_SOURCE = {
   formType: '10-Q',
   reportPeriod: '2025-10-26',
   fiscalPeriod: 'Q3 FY2026',
+  calendarMonths: 'Aug–Oct 2025',
   section: 'Financial Facts',
   item: null,
-  label: 'NVDA 10-Q Q3 FY2026, Financial Facts.',
+  label: 'NVDA 10-Q Q3 FY2026 (Aug–Oct 2025), Financial Facts.',
   text: 'Revenue, 3 months ended 2025-10-26: $57,006 million (reported as "Revenue")',
   kind: 'facts',
   rows: [
@@ -277,15 +292,16 @@ describe('Workspace', () => {
     await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
     await screen.findByText('trade policy')
 
-    expect(screen.queryByRole('complementary', { name: 'Sources' })).not.toBeInTheDocument()
+    // The panel may have opened by itself, but on the Calendar.
+    expect(screen.queryByRole('tabpanel', { name: 'Sources' })).not.toBeInTheDocument()
 
     const answer = screen.getByRole('article', { name: 'Answer' })
     await user.click(within(answer).getByRole('link', { name: 'Source S2' }))
 
-    const panel = await screen.findByRole('complementary', { name: 'Sources' })
+    const panel = await screen.findByRole('tabpanel', { name: 'Sources' })
     const source = within(panel).getByRole('region', { name: /^S2/ })
     expect(within(source).getByRole('heading', { level: 3 })).toHaveTextContent(
-      'S2Tesla 10-K, FY2025 · Risk Factors'
+      'S2Tesla 10-K, FY2025 (Jan–Dec 2025) · Risk Factors'
     )
 
     // The Filing metadata waits under a collapsed toggle.
@@ -319,14 +335,14 @@ describe('Workspace', () => {
     await user.click(within(answer).getByRole('link', { name: 'Source S2' }))
     await user.click(within(answer).getByRole('link', { name: 'Source S1' }))
 
-    const panel = screen.getByRole('complementary', { name: 'Sources' })
+    const panel = screen.getByRole('tabpanel', { name: 'Sources' })
     expect(within(panel).getByRole('region', { name: /^S1/ })).toHaveTextContent(
       'A significant majority of the Company’s manufacturing'
     )
     expect(within(panel).queryByRole('region', { name: /^S2/ })).not.toBeInTheDocument()
 
-    await user.click(within(panel).getByRole('button', { name: 'Close Sources' }))
-    expect(screen.queryByRole('complementary', { name: 'Sources' })).not.toBeInTheDocument()
+    await user.click(screen.getByRole('button', { name: 'Close panel' }))
+    expect(screen.queryByRole('complementary', { name: 'Side panel' })).not.toBeInTheDocument()
   })
 
   it('sends only the conversation text back to the API on a follow-up', async () => {
@@ -354,15 +370,12 @@ describe('Workspace', () => {
     expect(await screen.findByText(STARTERS[0].question)).toBeInTheDocument()
     expect(screen.getByText('trade policy')).toBeInTheDocument()
     expect(screen.queryByRole('list', { name: 'Starter prompts' })).not.toBeInTheDocument()
-    // The restored answer is complete, so it shows its disclosures.
+    // The restored answer is complete, so it shows its Sources disclosure.
     const answer = screen.getByRole('article', { name: 'Answer' })
     expect(within(answer).getByRole('button', { name: 'Sources (2)' })).toBeInTheDocument()
-    expect(
-      within(answer).getByRole('button', { name: 'How this was answered' })
-    ).toBeInTheDocument()
     // It keeps its Sources, so its citations still open the panel.
     await user.click(within(answer).getByRole('link', { name: 'Source S2' }))
-    expect(await screen.findByRole('complementary', { name: 'Sources' })).toBeInTheDocument()
+    expect(await screen.findByRole('tabpanel', { name: 'Sources' })).toBeInTheDocument()
 
     // A follow-up after the refresh still carries the earlier turns.
     await user.type(screen.getByRole('textbox', { name: 'Question' }), 'And Microsoft?{Enter}')
@@ -383,7 +396,7 @@ describe('Workspace', () => {
 
     expect(screen.getByRole('list', { name: 'Starter prompts' })).toBeInTheDocument()
     expect(screen.queryByText('trade policy')).not.toBeInTheDocument()
-    expect(screen.queryByRole('complementary', { name: 'Sources' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('complementary', { name: 'Side panel' })).not.toBeInTheDocument()
 
     // The next question starts afresh, with no earlier turns.
     await user.type(screen.getByRole('textbox', { name: 'Question' }), 'And Microsoft?{Enter}')
@@ -412,25 +425,19 @@ describe('Workspace', () => {
     await within(answer).findByRole('link', { name: 'Source S1' })
     expect(within(answer).queryByRole('list', { name: 'Query Scope' })).not.toBeInTheDocument()
     expect(within(answer).queryByRole('button', { name: /^Sources/ })).not.toBeInTheDocument()
-    expect(
-      within(answer).queryByRole('button', { name: 'How this was answered' })
-    ).not.toBeInTheDocument()
     expect(within(answer).queryByRole('button', { name: /^S\d/ })).not.toBeInTheDocument()
 
     await user.click(within(answer).getByRole('link', { name: 'Source S1' }))
-    const panel = await screen.findByRole('complementary', { name: 'Sources' })
+    const panel = await screen.findByRole('tabpanel', { name: 'Sources' })
     expect(within(panel).getByRole('region', { name: /^S1/ })).toHaveTextContent(
-      'Apple 10-K, FY2025 · Risk Factors'
+      'Apple 10-K, FY2025 (Oct 2024–Sep 2025) · Risk Factors'
     )
 
     release()
     expect(await within(answer).findByRole('button', { name: 'Sources (2)' })).toBeInTheDocument()
-    expect(
-      within(answer).getByRole('button', { name: 'How this was answered' })
-    ).toBeInTheDocument()
   })
 
-  it('lists only the cited Sources, in tag order, under a collapsed "Sources (N)"', async () => {
+  it('holds the Query Scope chips, the cited Sources and a collapsed "Also retrieved (N)" under one "Sources"', async () => {
     fetchMock.mockImplementation(async () =>
       uiMessageStream(
         ['Tesla is exposed to **tariffs** [S2]; Apple to its partners [S1], as Tesla [S2].'],
@@ -444,52 +451,15 @@ describe('Workspace', () => {
     const answer = screen.getByRole('article', { name: 'Answer' })
     const toggle = await within(answer).findByRole('button', { name: 'Sources (2)' })
 
+    // One disclosure, collapsed: "How this was answered" is gone.
+    expect(within(answer).queryByRole('button', { name: /How this was answered/ })).toBeNull()
     expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(within(answer).queryByRole('list', { name: 'Query Scope' })).not.toBeInTheDocument()
     expect(within(answer).queryByRole('list', { name: 'Cited Sources' })).not.toBeInTheDocument()
 
     await user.click(toggle)
     expect(toggle).toHaveAttribute('aria-expanded', 'true')
-    const list = within(answer).getByRole('list', { name: 'Cited Sources' })
-    expect(
-      within(list)
-        .getAllByRole('button')
-        .map((chip) => chip.textContent)
-    ).toEqual(['S1 AAPL 10-K FY2025, Risk Factors', 'S2 TSLA 10-K FY2025, Risk Factors'])
-
-    await user.click(within(list).getByRole('button', { name: /^S2/ }))
-    const panel = await screen.findByRole('complementary', { name: 'Sources' })
-    expect(within(panel).getByRole('region', { name: /^S2/ })).toHaveTextContent(
-      'Tesla 10-K, FY2025 · Risk Factors'
-    )
-  })
-
-  it('shows no "Sources" list when the answer cites none', async () => {
-    fetchMock.mockImplementation(async () =>
-      uiMessageStream(['The Filings do not discuss **this** at all.'])
-    )
-    const user = userEvent.setup()
-    render(<Workspace />)
-    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
-    const answer = screen.getByRole('article', { name: 'Answer' })
-    await within(answer).findByRole('button', { name: 'How this was answered' })
-
-    expect(within(answer).queryByRole('button', { name: /^Sources/ })).not.toBeInTheDocument()
-  })
-
-  it('holds the Query Scope chips and every retrieved Source under "How this was answered"', async () => {
-    fetchMock.mockImplementation(async () =>
-      uiMessageStream(ANSWER, QUERY_SCOPE, [...SOURCES, UNCITED_SOURCE])
-    )
-    const user = userEvent.setup()
-    render(<Workspace />)
-    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
-    const answer = screen.getByRole('article', { name: 'Answer' })
-    const toggle = await within(answer).findByRole('button', { name: 'How this was answered' })
-
-    expect(toggle).toHaveAttribute('aria-expanded', 'false')
-    expect(within(answer).queryByRole('list', { name: 'Query Scope' })).not.toBeInTheDocument()
-
-    await user.click(toggle)
+    // The Query Scope chips come first, then the cited Sources in tag order.
     const chips = within(answer).getByRole('list', { name: 'Query Scope' })
     expect(
       within(chips)
@@ -500,32 +470,126 @@ describe('Workspace', () => {
       'title',
       'Company: Apple Inc (tracked)'
     )
-    const retrieved = within(answer).getByRole('list', { name: 'Retrieved Sources' })
+    const cited = within(answer).getByRole('list', { name: 'Cited Sources' })
+    expect(chips.compareDocumentPosition(cited) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(
+      within(cited)
+        .getAllByRole('button')
+        .map((chip) => chip.textContent)
+    ).toEqual([
+      'S1 AAPL 10-K FY2025 (Oct 2024–Sep 2025), Risk Factors',
+      'S2 TSLA 10-K FY2025 (Jan–Dec 2025), Risk Factors',
+    ])
+
+    // The Sources it was given but does not cite wait under their own collapsed toggle.
+    const also = within(answer).getByRole('button', { name: 'Also retrieved (1)' })
+    expect(also).toHaveAttribute('aria-expanded', 'false')
+    expect(cited.compareDocumentPosition(also) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(within(answer).queryByRole('list', { name: 'Also retrieved' })).not.toBeInTheDocument()
+    await user.click(also)
+    const retrieved = within(answer).getByRole('list', { name: 'Also retrieved' })
     expect(
       within(retrieved)
         .getAllByRole('button')
         .map((chip) => chip.textContent)
-    ).toEqual([
-      'S1 AAPL 10-K FY2025, Risk Factors',
-      'S2 TSLA 10-K FY2025, Risk Factors',
-      'S3 MSFT 10-K FY2025, Risk Factors',
-    ])
+    ).toEqual(['S3 MSFT 10-K FY2025 (Jul 2024–Jun 2025), Risk Factors'])
 
-    // An uncited Source opens too, and joins the cited ones in the panel's switcher.
-    await user.click(within(retrieved).getByRole('button', { name: /^S3/ }))
-    const panel = await screen.findByRole('complementary', { name: 'Sources' })
-    expect(within(panel).getByRole('region', { name: /^S3/ })).toHaveTextContent(
-      'Microsoft 10-K, FY2025 · Risk Factors'
+    // Each chip opens the Sources tab at its Source, an uncited one too.
+    await user.click(within(cited).getByRole('button', { name: /^S2/ }))
+    const panel = await screen.findByRole('tabpanel', { name: 'Sources' })
+    expect(within(panel).getByRole('region', { name: /^S2/ })).toHaveTextContent(
+      'Tesla 10-K, FY2025 (Jan–Dec 2025) · Risk Factors'
     )
-    const switcher = () =>
-      within(within(panel).getByRole('navigation', { name: "This answer's Sources" }))
-        .getAllByRole('button')
-        .map((tab) => tab.textContent)
-    expect(switcher()).toEqual(['S1', 'S2', 'S3'])
+    await user.click(within(retrieved).getByRole('button', { name: /^S3/ }))
+    expect(within(panel).getByRole('region', { name: /^S3/ })).toHaveTextContent(
+      'Microsoft 10-K, FY2025 (Jul 2024–Jun 2025) · Risk Factors'
+    )
+  })
 
-    // Opening a cited Source leaves the switcher with the cited Sources only.
-    await user.click(within(answer).getByRole('link', { name: 'Source S1' }))
-    expect(switcher()).toEqual(['S1', 'S2'])
+  it('shows the Query Scope and the retrieved Sources when the answer cites none', async () => {
+    fetchMock.mockImplementation(async () =>
+      uiMessageStream(['The Filings do not discuss **this** at all.'])
+    )
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    await user.click(await within(answer).findByRole('button', { name: 'Sources' }))
+
+    expect(within(answer).getByRole('list', { name: 'Query Scope' })).toBeInTheDocument()
+    expect(within(answer).queryByRole('list', { name: 'Cited Sources' })).not.toBeInTheDocument()
+    expect(within(answer).getByRole('button', { name: 'Also retrieved (2)' })).toBeInTheDocument()
+  })
+
+  it('numbers every retrieved Source in the panel, cited and uncited styled apart', async () => {
+    fetchMock.mockImplementation(async () =>
+      uiMessageStream(ANSWER, QUERY_SCOPE, [...SOURCES, UNCITED_SOURCE])
+    )
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    await user.click(await within(answer).findByRole('link', { name: 'Source S1' }))
+
+    const panel = await screen.findByRole('tabpanel', { name: 'Sources' })
+    const strip = within(panel).getByRole('navigation', { name: "This answer's Sources" })
+    const tabs = within(strip).getAllByRole('button')
+    expect(tabs.map((tab) => tab.textContent)).toEqual(['S1', 'S2', 'S3'])
+    expect(strip.querySelector('ul')).toHaveClass('flex-wrap')
+    // Cited tabs in the accent colour, the uncited one muted, each saying which it is.
+    const [s1, s2, s3] = tabs
+    expect(s1).toHaveAttribute('aria-pressed', 'true')
+    expect(s1).toHaveAttribute('title', 'Cited: AAPL 10-K FY2025 (Oct 2024–Sep 2025), Risk Factors')
+    expect(s2).toHaveClass('text-accent-strong')
+    expect(s3).toHaveAttribute(
+      'title',
+      'Retrieved, not cited: MSFT 10-K FY2025 (Jul 2024–Jun 2025), Risk Factors'
+    )
+    expect(s3).toHaveClass('text-muted')
+    expect(s3).not.toHaveClass('text-accent-strong')
+
+    // An uncited Source opens with its number, and its header gives the tag and its label.
+    await user.click(s3)
+    expect(s3).toHaveAttribute('aria-pressed', 'true')
+    const source = within(panel).getByRole('region', { name: /^S3/ })
+    const heading = within(source).getByRole('heading', { level: 3 })
+    expect(heading).toHaveTextContent('S3Microsoft 10-K, FY2025 (Jul 2024–Jun 2025) · Risk Factors')
+    expect(heading).toHaveAttribute(
+      'title',
+      'MSFT 10-K FY2025 (Jul 2024–Jun 2025), Risk Factors (Item 1A).'
+    )
+    expect(source).toHaveTextContent(
+      'Our global operations subject us to potential trade restrictions.'
+    )
+  })
+
+  it("gives each Source's calendar months beside its fiscal period, in the header and the list", async () => {
+    fetchMock.mockImplementation(async () =>
+      uiMessageStream(ANSWER, QUERY_SCOPE, [...SOURCES, UNCITED_SOURCE])
+    )
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    await user.click(await within(answer).findByRole('link', { name: 'Source S1' }))
+
+    const panel = await screen.findByRole('tabpanel', { name: 'Sources' })
+    const heading = within(within(panel).getByRole('region', { name: /^S1/ })).getByRole(
+      'heading',
+      { level: 3 }
+    )
+    expect(heading).toHaveTextContent('S1Apple 10-K, FY2025 (Oct 2024–Sep 2025) · Risk Factors')
+
+    const strip = within(panel).getByRole('navigation', { name: "This answer's Sources" })
+    expect(
+      within(strip)
+        .getAllByRole('button')
+        .map((tab) => tab.title)
+    ).toEqual([
+      'Cited: AAPL 10-K FY2025 (Oct 2024–Sep 2025), Risk Factors',
+      'Cited: TSLA 10-K FY2025 (Jan–Dec 2025), Risk Factors',
+      'Retrieved, not cited: MSFT 10-K FY2025 (Jul 2024–Jun 2025), Risk Factors',
+    ])
   })
 
   it('shows only the opening paragraph until "Show full analysis" is clicked', async () => {
@@ -538,7 +602,7 @@ describe('Workspace', () => {
 
     expect(within(answer).getByText('trade policy')).toBeInTheDocument()
     expect(within(answer).queryByText(/outsourcing partners/)).not.toBeInTheDocument()
-    expect(within(answer).queryByText(/Coverage:/)).not.toBeInTheDocument()
+    expect(within(answer).queryByText(/tariff forecast/)).not.toBeInTheDocument()
     expect(toggle).toHaveAttribute('aria-expanded', 'false')
     expect(within(answer).queryByText(/still being written/)).not.toBeInTheDocument()
 
@@ -546,7 +610,7 @@ describe('Workspace', () => {
     const hide = within(answer).getByRole('button', { name: 'Hide full analysis' })
     expect(hide).toHaveAttribute('aria-expanded', 'true')
     expect(within(answer).getByText(/outsourcing partners/)).toBeInTheDocument()
-    expect(within(answer).getByText(/Coverage:/)).toBeInTheDocument()
+    expect(within(answer).getByText(/tariff forecast/)).toBeInTheDocument()
     expect(within(answer).getByRole('link', { name: 'Source S2' })).toBeInTheDocument()
 
     await user.click(hide)
@@ -565,23 +629,15 @@ describe('Workspace', () => {
 
     await user.click(within(answer).getByRole('link', { name: 'Source S1' }))
 
-    const panel = await screen.findByRole('complementary', { name: 'Sources' })
+    const panel = await screen.findByRole('tabpanel', { name: 'Sources' })
     expect(within(panel).getByRole('region', { name: /^S1/ })).toHaveTextContent(
-      'Apple 10-K, FY2025 · Risk Factors'
+      'Apple 10-K, FY2025 (Oct 2024–Sep 2025) · Risk Factors'
     )
   })
 
-  it('shows a Coverage Gap once by default, leaving the closing Coverage note to the full analysis', async () => {
-    const gaps = [
-      {
-        kind: 'missing_company',
-        label: 'Not in the Corpus',
-        companies: ['Wells Fargo'],
-        text: 'Not in the Corpus: Wells Fargo is not in the Filings provided, so this answer does not cover it.',
-      },
-    ]
+  it('shows each Coverage Gap once, as a Coverage note below the answer, collapsed or not', async () => {
     fetchMock.mockImplementation(async () =>
-      uiMessageStream(LONG_ANSWER, QUERY_SCOPE, SOURCES, gaps)
+      uiMessageStream(LONG_ANSWER, QUERY_SCOPE, SOURCES, [WELLS_FARGO_GAP])
     )
     const user = userEvent.setup()
     render(<Workspace />)
@@ -589,9 +645,38 @@ describe('Workspace', () => {
     const answer = screen.getByRole('article', { name: 'Answer' })
     const toggle = await within(answer).findByRole('button', { name: 'Show full analysis' })
 
-    expect(answer.textContent?.match(/Wells Fargo is not in the Filings/gi)).toHaveLength(1)
+    expect(answer.textContent?.match(/Wells Fargo is not in the filings/gi)).toHaveLength(1)
     await user.click(toggle)
-    expect(answer.textContent?.match(/Wells Fargo is not in the Filings/gi)).toHaveLength(2)
+    expect(answer.textContent?.match(/Wells Fargo is not in the filings/gi)).toHaveLength(1)
+    // Below the whole answer, not between its opening and its full analysis.
+    const notes = within(answer).getByRole('note', { name: 'Coverage notes' })
+    const last = within(answer).getByText(/tariff forecast/)
+    expect(last.compareDocumentPosition(notes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('shows the Coverage notes only once the answer is complete, never above it', async () => {
+    const { response, release } = heldUiMessageStream(
+      (part) => part.type === 'text-delta',
+      LONG_ANSWER,
+      QUERY_SCOPE,
+      SOURCES,
+      [WELLS_FARGO_GAP]
+    )
+    fetchMock.mockImplementation(async () => response)
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+
+    const answer = await screen.findByRole('article', { name: 'Answer' })
+    await within(answer).findByText('trade policy')
+    // The gaps arrived before the text, but nothing leads the answer with them.
+    expect(within(answer).queryByRole('note', { name: 'Coverage notes' })).not.toBeInTheDocument()
+    expect(answer.textContent).not.toMatch(/Wells Fargo/)
+
+    release()
+    const notes = await within(answer).findByRole('note', { name: 'Coverage notes' })
+    const opening = within(answer).getByText('trade policy')
+    expect(opening.compareDocumentPosition(notes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('shows the whole answer, with no control, when it has one paragraph', async () => {
@@ -599,7 +684,7 @@ describe('Workspace', () => {
     render(<Workspace />)
     await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
     const answer = screen.getByRole('article', { name: 'Answer' })
-    await within(answer).findByRole('button', { name: 'How this was answered' })
+    await within(answer).findByRole('button', { name: /^Sources/ })
 
     expect(within(answer).getByText(/Tesla is exposed to tariffs/)).toBeInTheDocument()
     expect(within(answer).queryByRole('button', { name: /full analysis/ })).not.toBeInTheDocument()
@@ -616,7 +701,7 @@ describe('Workspace', () => {
     render(<Workspace />)
     await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
     const answer = screen.getByRole('article', { name: 'Answer' })
-    await within(answer).findByRole('button', { name: 'How this was answered' })
+    await within(answer).findByRole('button', { name: /^Sources/ })
 
     expect(within(answer).getByText(/Tesla is exposed to tariffs/)).toBeInTheDocument()
     expect(within(answer).queryByRole('button', { name: /full analysis/ })).not.toBeInTheDocument()
@@ -734,7 +819,7 @@ describe('Workspace', () => {
     render(<Workspace />)
     await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
     const answer = screen.getByRole('article', { name: 'Answer' })
-    await user.click(await within(answer).findByRole('button', { name: 'How this was answered' }))
+    await user.click(await within(answer).findByRole('button', { name: /^Sources/ }))
 
     const searched = within(answer).getByRole('list', { name: 'Searched in' })
     expect(
@@ -758,7 +843,7 @@ describe('Workspace', () => {
     render(<Workspace />)
     await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
     const answer = screen.getByRole('article', { name: 'Answer' })
-    await user.click(await within(answer).findByRole('button', { name: 'How this was answered' }))
+    await user.click(await within(answer).findByRole('button', { name: /^Sources/ }))
 
     expect(within(answer).getByRole('list', { name: 'Query Scope' })).toBeInTheDocument()
     expect(within(answer).queryByRole('list', { name: 'Searched in' })).not.toBeInTheDocument()
@@ -786,7 +871,7 @@ describe('Workspace', () => {
       'How has net income changed at the major banks over the last two years?{Enter}'
     )
     const answer = screen.getByRole('article', { name: 'Answer' })
-    await user.click(await within(answer).findByRole('button', { name: 'How this was answered' }))
+    await user.click(await within(answer).findByRole('button', { name: /^Sources/ }))
 
     const chips = within(answer).getByRole('list', { name: 'Query Scope' })
     expect(
@@ -800,14 +885,44 @@ describe('Workspace', () => {
     )
   })
 
-  it('shows each Coverage Gap in a callout beside the answer', async () => {
+  it('shows a Company Group as a curated group with the Companies it covers', async () => {
+    const bigTech = ['AAPL', 'AMZN', 'GOOG', 'META', 'MSFT', 'NVDA', 'TSLA']
+    fetchMock.mockImplementation(async () =>
+      uiMessageStream(ANSWER, {
+        companies: bigTech.map((ticker) => ({ ticker, name: ticker, coverage: 'tracked' })),
+        sectorPhrases: [
+          {
+            phrase: 'big tech companies',
+            column: 'group',
+            values: ['Big Tech'],
+            tickers: bigTech,
+          },
+        ],
+        timeWindow: { kind: 'latest', count: null, label: 'latest' },
+        sections: ['Risk Factors'],
+        metric: null,
+      })
+    )
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.type(
+      screen.getByRole('textbox', { name: 'Question' }),
+      'What are the main AI risks for big tech companies?{Enter}'
+    )
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    await user.click(await within(answer).findByRole('button', { name: /^Sources/ }))
+
+    const chips = within(answer).getByRole('list', { name: 'Query Scope' })
+    const chip = within(chips).getByText(`“big tech companies” → ${bigTech.join(', ')}`)
+    expect(chip.closest('li')).toHaveAttribute(
+      'title',
+      'Company Group “Big Tech”, curated in the Sector table'
+    )
+  })
+
+  it('shows each Coverage Gap as a Coverage note in its fixed wording, in plain words', async () => {
     const gaps = [
-      {
-        kind: 'missing_company',
-        label: 'Not in the Corpus',
-        companies: ['Wells Fargo'],
-        text: 'Not in the Corpus: Wells Fargo is not in the Filings provided, so this answer does not cover it.',
-      },
+      WELLS_FARGO_GAP,
       {
         kind: 'snapshot_trend',
         label: 'Trend unavailable',
@@ -822,13 +937,11 @@ describe('Workspace', () => {
     await screen.findByText('trade policy')
 
     const answer = screen.getByRole('article', { name: 'Answer' })
-    const callout = within(answer).getByRole('note', { name: 'Coverage Gaps' })
-    // Headed in plain words, keeping the domain term as its accessible name and hover text.
-    const heading = within(callout).getByRole('heading', {
-      name: 'What these filings can’t answer',
-    })
+    const notes = await within(answer).findByRole('note', { name: 'Coverage notes' })
+    // Headed "Coverage notes", keeping the domain term as hover text.
+    const heading = within(notes).getByRole('heading', { name: 'Coverage notes' })
     expect(heading).toHaveAttribute('title', 'Coverage Gaps')
-    const items = within(callout).getAllByRole('listitem')
+    const items = within(notes).getAllByRole('listitem')
     expect(items).toHaveLength(2)
     // Each gap's label in plain words, with the label the answer states on hover.
     expect(within(items[0]).getByText('Not covered')).toHaveAttribute('title', 'Not in the Corpus')
@@ -847,18 +960,19 @@ describe('Workspace', () => {
     )
     expect(within(items[1]).getByTitle('Corpus')).toHaveTextContent('collection')
     expect(within(items[0]).getByTitle('Filings')).toHaveTextContent('filings')
-    // The callout comes before the answer text, so it cannot be missed.
+    // The notes follow the answer text: the answer leads with its finding.
     const text = within(answer).getByText('trade policy')
-    expect(callout.compareDocumentPosition(text) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(text.compareDocumentPosition(notes) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
-  it('shows no Coverage Gap callout when the answer has none', async () => {
+  it('shows no Coverage notes when the answer has no Coverage Gap', async () => {
     const user = userEvent.setup()
     render(<Workspace />)
     await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
-    await screen.findByText('trade policy')
+    const answer = screen.getByRole('article', { name: 'Answer' })
+    await within(answer).findByRole('button', { name: 'Sources (2)' })
 
-    expect(screen.queryByRole('note', { name: 'Coverage Gaps' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('note', { name: 'Coverage notes' })).not.toBeInTheDocument()
   })
 
   it('shows a Facts Source in the Sources panel as a table of its rows', async () => {
@@ -875,10 +989,10 @@ describe('Workspace', () => {
     const answer = screen.getByRole('article', { name: 'Answer' })
     await user.click(within(answer).getByRole('link', { name: 'Source S1' }))
 
-    const panel = await screen.findByRole('complementary', { name: 'Sources' })
+    const panel = await screen.findByRole('tabpanel', { name: 'Sources' })
     const source = within(panel).getByRole('region', { name: /^S1/ })
     expect(within(source).getByRole('heading', { level: 3 })).toHaveTextContent(
-      'S1NVIDIA 10-Q, Q3 FY2026 · Financial Facts'
+      'S1NVIDIA 10-Q, Q3 FY2026 (Aug–Oct 2025) · Financial Facts'
     )
     await user.click(within(source).getByRole('button', { name: 'Filing details' }))
     expect(within(source).getByText('Filing ID').nextElementSibling?.textContent).toBe(
@@ -914,9 +1028,10 @@ describe('Workspace', () => {
       formType: '10-Q',
       reportPeriod: '2024-07-28',
       fiscalPeriod: 'Q2 FY2025',
+      calendarMonths: 'May–Jul 2024',
       section: 'MD&A',
       item: 'Item 2',
-      label: 'NVDA 10-Q Q2 FY2025, MD&A (Item 2).',
+      label: 'NVDA 10-Q Q2 FY2025 (May–Jul 2024), MD&A (Item 2).',
       text: [
         'Second Quarter of Fiscal Year 2025 Summary',
         '| Three Months Ended |  |',
@@ -936,10 +1051,10 @@ describe('Workspace', () => {
     const answer = screen.getByRole('article', { name: 'Answer' })
     await user.click(within(answer).getByRole('link', { name: 'Source S1' }))
 
-    const panel = await screen.findByRole('complementary', { name: 'Sources' })
+    const panel = await screen.findByRole('tabpanel', { name: 'Sources' })
     const source = within(panel).getByRole('region', { name: /^S1/ })
     expect(within(source).getByRole('heading', { level: 3 })).toHaveTextContent(
-      'S1NVIDIA 10-Q, Q2 FY2025 · MD&A'
+      'S1NVIDIA 10-Q, Q2 FY2025 (May–Jul 2024) · MD&A'
     )
     const table = within(source).getByRole('table', { name: 'Table from the passage' })
     const rows = within(table)
@@ -955,7 +1070,7 @@ describe('Workspace', () => {
       ['Gross margin', '75.1', '%'],
     ])
     expect(within(source).queryByText(/\|/)).not.toBeInTheDocument()
-    expect(within(source).getByRole('separator', { name: 'Text left out' })).toBeInTheDocument()
+    expect(within(source).getByRole('separator', { name: 'Passage skipped' })).toBeInTheDocument()
     expect(within(source).getByText('Data Center revenue was a record.')).toBeInTheDocument()
   })
 
@@ -1012,6 +1127,152 @@ describe('Workspace', () => {
   })
 })
 
+describe('The side panel', () => {
+  /** A second answer, about Microsoft, with its own Sources. */
+  const MSFT_SOURCE = { ...UNCITED_SOURCE, tag: 'S1' }
+  const secondAnswer = () =>
+    uiMessageStream(
+      ['Microsoft faces **trade restrictions** [S1].'],
+      { ...QUERY_SCOPE, companies: [{ ticker: 'MSFT', name: 'Microsoft Corp' }] },
+      [MSFT_SOURCE],
+      [],
+      'msg-2'
+    )
+
+  const rail = () => screen.getByRole('group', { name: 'Panel toolbar' })
+  const railSources = () => within(rail()).getByRole('button', { name: 'Sources' })
+  const sidePanel = () => screen.queryByRole('complementary', { name: 'Side panel' })
+
+  /** Asks the first starter, then a follow-up, so the thread holds two answers. */
+  async function twoAnswers(user: ReturnType<typeof userEvent.setup>) {
+    fetchMock
+      .mockImplementationOnce(async () => uiMessageStream())
+      .mockImplementationOnce(async () => secondAnswer())
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByText('trade policy')
+    await user.type(screen.getByRole('textbox', { name: 'Question' }), 'And Microsoft?{Enter}')
+    await screen.findByText('trade restrictions')
+    return screen.getAllByRole('article', { name: 'Answer' })
+  }
+
+  it('puts Calendar before Sources, in the panel tabs and in the toolbar', async () => {
+    const user = userEvent.setup()
+    render(<Workspace />)
+    const names = (group: HTMLElement, role: 'button' | 'tab') =>
+      within(group)
+        .getAllByRole(role)
+        .map((element) => element.getAttribute('aria-label') ?? element.textContent)
+
+    expect(names(rail(), 'button')).toEqual(['Calendar', 'Sources'])
+    expect(names(screen.getByRole('group', { name: 'Panel buttons' }), 'button')).toEqual([
+      'Calendar',
+      'Sources',
+    ])
+    await user.click(railSources())
+    expect(names(screen.getByRole('tablist', { name: 'Panel tabs' }), 'tab')).toEqual([
+      'Calendar',
+      'Sources',
+    ])
+  })
+
+  it('keeps the toolbar visible, its Sources icon opening and closing the panel', async () => {
+    const user = userEvent.setup()
+    render(<Workspace />)
+
+    // Visible from the start, before any answer.
+    expect(railSources()).toHaveAttribute('aria-pressed', 'false')
+    expect(sidePanel()).not.toBeInTheDocument()
+
+    await user.click(railSources())
+    expect(sidePanel()).toBeInTheDocument()
+    expect(railSources()).toHaveAttribute('aria-pressed', 'true')
+    const tab = within(screen.getByRole('tablist', { name: 'Panel tabs' })).getByRole('tab', {
+      name: 'Sources',
+    })
+    expect(tab).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tabpanel', { name: 'Sources' })).toHaveTextContent(/No Sources yet/)
+
+    // Clicking the open tab's icon closes the panel.
+    await user.click(railSources())
+    expect(sidePanel()).not.toBeInTheDocument()
+    expect(railSources()).toHaveAttribute('aria-pressed', 'false')
+  })
+
+  it("opens from the toolbar at the latest answer's first Source", async () => {
+    const user = userEvent.setup()
+    render(<Workspace />)
+    const [first] = await twoAnswers(user)
+
+    // A citation in the first answer, then closed.
+    await user.click(within(first).getByRole('link', { name: 'Source S2' }))
+    expect(screen.getByRole('region', { name: /^S2/ })).toHaveTextContent('Tesla')
+    await user.click(screen.getByRole('button', { name: 'Close panel' }))
+    expect(sidePanel()).not.toBeInTheDocument()
+
+    // The toolbar reopens it at the latest answer's S1.
+    await user.click(railSources())
+    const panel = screen.getByRole('tabpanel', { name: 'Sources' })
+    expect(within(panel).getByRole('region', { name: /^S1/ })).toHaveTextContent(
+      'Microsoft 10-K, FY2025 (Jul 2024–Jun 2025) · Risk Factors'
+    )
+    expect(
+      within(within(panel).getByRole('navigation', { name: "This answer's Sources" }))
+        .getAllByRole('button')
+        .map((tab) => tab.textContent)
+    ).toEqual(['S1'])
+  })
+
+  it('opens the Sources tab at a citation, whatever the panel shows', async () => {
+    const user = userEvent.setup()
+    render(<Workspace />)
+    const [first, second] = await twoAnswers(user)
+
+    // Open from the toolbar, on the latest answer: a citation in the first answer moves it.
+    await user.click(railSources())
+    await user.click(within(first).getByRole('link', { name: 'Source S2' }))
+    const panel = screen.getByRole('tabpanel', { name: 'Sources' })
+    expect(within(panel).getByRole('region', { name: /^S2/ })).toHaveTextContent(
+      'Tesla 10-K, FY2025 (Jan–Dec 2025) · Risk Factors'
+    )
+    expect(railSources()).toHaveAttribute('aria-pressed', 'true')
+
+    // Clicking a citation again keeps the panel open, never toggles it closed.
+    await user.click(within(first).getByRole('link', { name: 'Source S2' }))
+    expect(sidePanel()).toBeInTheDocument()
+
+    // Closed, a citation in the other answer opens it there.
+    await user.click(screen.getByRole('button', { name: 'Close panel' }))
+    await user.click(within(second).getByRole('link', { name: 'Source S1' }))
+    expect(
+      within(screen.getByRole('tabpanel', { name: 'Sources' })).getByRole('region', {
+        name: /^S1/,
+      })
+    ).toHaveTextContent('Microsoft 10-K, FY2025 (Jul 2024–Jun 2025) · Risk Factors')
+  })
+
+  it('on a narrow screen, puts the toolbar above the question box and the panel full-screen', async () => {
+    const user = userEvent.setup()
+    render(<Workspace />)
+
+    // jsdom applies no media queries, so the breakpoint classes are what decide it.
+    expect(rail()).toHaveClass('hidden', 'lg:flex')
+    const buttons = screen.getByRole('group', { name: 'Panel buttons' })
+    expect(buttons).toHaveClass('lg:hidden')
+    const input = screen.getByRole('textbox', { name: 'Question' })
+    expect(buttons.compareDocumentPosition(input) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+
+    await user.click(within(buttons).getByRole('button', { name: 'Sources' }))
+    const panel = sidePanel()
+    expect(panel).toHaveClass('fixed', 'inset-0', 'lg:static')
+    expect(within(buttons).getByRole('button', { name: 'Sources' })).toHaveAttribute(
+      'aria-pressed',
+      'true'
+    )
+    await user.click(screen.getByRole('button', { name: 'Close panel' }))
+    expect(sidePanel()).not.toBeInTheDocument()
+  })
+})
+
 describe('Follow-up suggestions', () => {
   /** The API's stream for one answer, under its own message id, so two answers differ. */
   function answerStream(messageId: string, ...args: Parameters<typeof uiMessageParts>) {
@@ -1045,9 +1306,9 @@ describe('Follow-up suggestions', () => {
     expect(screen.queryByRole('list', { name: 'Suggested follow-ups' })).not.toBeInTheDocument()
 
     release()
+    // The question compared Apple's and Tesla's risks, so that comparison isn't suggested.
     const list = await screen.findByRole('list', { name: 'Suggested follow-ups' })
     expect(suggestionsOf(list)).toEqual([
-      'How do the main risk factors of Apple and Tesla compare?',
       'How does revenue compare between Apple and Tesla in their latest filings?',
       'How do Apple and Tesla describe their outlook in their latest filings?',
     ])
@@ -1073,6 +1334,7 @@ describe('Follow-up suggestions', () => {
     const second = {
       ...QUERY_SCOPE,
       companies: [{ ticker: 'AAPL', name: 'Apple Inc', coverage: 'tracked' }],
+      sections: [],
     }
     const held = heldUiMessageStream((part) => part.type === 'text-delta', ANSWER, second)
     fetchMock
@@ -1083,7 +1345,7 @@ describe('Follow-up suggestions', () => {
     await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
 
     const first = await screen.findByRole('list', { name: 'Suggested follow-ups' })
-    const suggestion = 'How do the main risk factors of Apple and Tesla compare?'
+    const suggestion = 'How does revenue compare between Apple and Tesla in their latest filings?'
     await user.click(within(first).getByRole('button', { name: suggestion }))
 
     await waitFor(() => expect(fetchMock).toHaveBeenCalledTimes(2))
@@ -1111,6 +1373,26 @@ describe('Follow-up suggestions', () => {
     )
   })
 
+  it("skips what an earlier question asked, by its answer's Query Scope", async () => {
+    const apple = [{ ticker: 'AAPL', name: 'Apple Inc', coverage: 'tracked' }]
+    const revenue = { ...QUERY_SCOPE, companies: apple, sections: [], metric: 'revenue' }
+    fetchMock
+      .mockImplementationOnce(async () =>
+        answerStream('msg-0', ANSWER, { ...QUERY_SCOPE, companies: apple })
+      )
+      .mockImplementationOnce(async () => answerStream('msg-1', ANSWER, revenue))
+    const user = userEvent.setup()
+    render(<Workspace />)
+    await user.type(screen.getByRole('textbox', { name: 'Question' }), "Apple's risks?{Enter}")
+    await screen.findByRole('list', { name: 'Suggested follow-ups' })
+    await user.type(screen.getByRole('textbox', { name: 'Question' }), 'And its revenue?{Enter}')
+
+    await waitFor(() => expect(screen.getAllByRole('article', { name: 'Answer' })).toHaveLength(2))
+    const list = await screen.findByRole('list', { name: 'Suggested follow-ups' })
+    // Apple's risks were asked first, its revenue just now: only its outlook is left.
+    expect(suggestionsOf(list)).toEqual(["What does Apple's latest filing say about its outlook?"])
+  })
+
   it('shows no suggestions once a later question fails', async () => {
     const user = userEvent.setup()
     render(<Workspace />)
@@ -1121,5 +1403,431 @@ describe('Follow-up suggestions', () => {
     await user.type(screen.getByRole('textbox', { name: 'Question' }), 'And Microsoft?{Enter}')
     await screen.findByRole('alert')
     expect(screen.queryByRole('list', { name: 'Suggested follow-ups' })).not.toBeInTheDocument()
+  })
+})
+
+describe('The Calendar tab', () => {
+  /** The committed export's Company Calendars, as the workspace page passes them. */
+  const CALENDARS = (evalExport as EvalExport).companies
+
+  const rail = () => screen.getByRole('group', { name: 'Panel toolbar' })
+  const railCalendar = () => within(rail()).getByRole('button', { name: 'Calendar' })
+  const tickers = () =>
+    within(screen.getByRole('navigation', { name: 'Companies asked about' }))
+      .getAllByRole('button')
+      .map((tab) => tab.textContent)
+  const calendarTable = (ticker: string) =>
+    screen.getByRole('table', { name: `${ticker} fiscal calendar` })
+  /** The table's row for one fiscal period, by its first cell, never its band's heading. */
+  const row = (table: HTMLElement, fiscalPeriod: string) =>
+    within(table).getByRole('row', { name: new RegExp(`^${fiscalPeriod}\\b.+`) })
+
+  /** Two answers: Apple and Tesla (Microsoft retrieved too, but not in the Query Scope),
+   * then NVIDIA and McDonald's. */
+  async function twoAnswers(user: ReturnType<typeof userEvent.setup>) {
+    fetchMock
+      .mockImplementationOnce(async () =>
+        uiMessageStream(ANSWER, QUERY_SCOPE, [...SOURCES, UNCITED_SOURCE])
+      )
+      .mockImplementationOnce(async () =>
+        uiMessageStream(
+          ['NVIDIA grew **fast** [S1].'],
+          {
+            ...QUERY_SCOPE,
+            companies: [
+              { ticker: 'NVDA', name: 'NVIDIA Corp', coverage: 'tracked' },
+              { ticker: 'MCD', name: "McDonald's Corp", coverage: 'snapshot' },
+            ],
+          },
+          [FACTS_SOURCE],
+          [],
+          'msg-2'
+        )
+      )
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByText('trade policy')
+    await user.type(screen.getByRole('textbox', { name: 'Question' }), 'And NVIDIA?{Enter}')
+    await screen.findByText('fast')
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Stop' })).not.toBeInTheDocument()
+    )
+  }
+
+  it('opens from the calendar icon, and says so when no company has been asked about', async () => {
+    const user = userEvent.setup()
+    render(<Workspace calendars={CALENDARS} />)
+
+    expect(railCalendar()).toHaveAttribute('aria-pressed', 'false')
+    await user.click(railCalendar())
+    expect(railCalendar()).toHaveAttribute('aria-pressed', 'true')
+    expect(
+      within(screen.getByRole('tablist', { name: 'Panel tabs' })).getByRole('tab', {
+        name: 'Calendar',
+      })
+    ).toHaveAttribute('aria-selected', 'true')
+    expect(screen.getByRole('tabpanel', { name: 'Calendar' })).toHaveTextContent(/No companies yet/)
+
+    await user.click(railCalendar())
+    expect(screen.queryByRole('complementary', { name: 'Side panel' })).not.toBeInTheDocument()
+  })
+
+  it("lists every Query Scope's Companies seen so far as alphabetical ticker tabs", async () => {
+    const user = userEvent.setup()
+    render(<Workspace calendars={CALENDARS} />)
+    await twoAnswers(user)
+
+    // The panel opened on the Calendar after the first answer and followed the second.
+    expect(railCalendar()).toHaveAttribute('aria-pressed', 'true')
+    // Microsoft was only retrieved as a Source, never in a Query Scope.
+    expect(tickers()).toEqual(['AAPL', 'MCD', 'NVDA', 'TSLA'])
+    await user.click(screen.getByRole('button', { name: 'AAPL' }))
+    expect(
+      within(screen.getByRole('navigation', { name: 'Companies asked about' })).getByRole(
+        'button',
+        { name: 'AAPL' }
+      )
+    ).toHaveAttribute('aria-pressed', 'true')
+    expect(calendarTable('AAPL')).toBeInTheDocument()
+  })
+
+  it("shows a ticker's calendar newest first, banded by fiscal year, its revenue traceable", async () => {
+    const user = userEvent.setup()
+    render(<Workspace calendars={CALENDARS} />)
+    await twoAnswers(user)
+    await user.click(screen.getByRole('button', { name: 'NVDA' }))
+
+    const panel = screen.getByRole('tabpanel', { name: 'Calendar' })
+    expect(panel).toHaveTextContent('Fiscal year ends late January')
+    const table = calendarTable('NVDA')
+
+    // Banded by fiscal year, newest first; the calendar months sit beside each period.
+    const bands = within(table).getAllByRole('rowgroup').slice(1)
+    expect(bands.slice(0, 4).map((band) => band.getAttribute('aria-label'))).toEqual([
+      'FY2026',
+      'FY2025',
+      'FY2024',
+      'FY2023',
+    ])
+    // A fiscal year's band holds its year and its quarters, never the next year's first.
+    const fy2025 = within(bands[1])
+      .getAllByRole('row')
+      .map((r) => r.querySelector('th')?.textContent)
+    expect(fy2025).toEqual(['FY2025', 'FY2025', 'Q4 FY2025', 'Q3 FY2025', 'Q2 FY2025', 'Q1 FY2025'])
+
+    const q3 = row(table, 'Q3 FY2026')
+    expect(q3).toHaveTextContent('Aug–Oct 2025')
+    expect(q3).toHaveTextContent('10-Q')
+    expect(within(q3).getByText('$57,006M')).toHaveAttribute(
+      'title',
+      'NVDA_10-Q_2025-10-26 · Revenue'
+    )
+    const fy = row(table, 'FY2025')
+    expect(fy).toHaveTextContent('Feb 2024–Jan 2025')
+    expect(within(fy).getByText('$130,497M')).toHaveAttribute(
+      'title',
+      'NVDA_10-K_2025-01-26 · Revenue'
+    )
+    expect(fy).toHaveClass('font-semibold')
+    // The fiscal year's row sits beside its fourth quarter, whose revenue is derived.
+    const q4 = row(table, 'Q4 FY2025')
+    expect(fy.compareDocumentPosition(q4) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(q4).toHaveTextContent('$39,331Mderived')
+    expect(within(q4).getByText('$39,331M')).toHaveAttribute(
+      'title',
+      expect.stringContaining('FY2025 less Q1–Q3 FY2025')
+    )
+    // Every row, newest first.
+    const periods = within(table)
+      .getAllByRole('row')
+      .slice(1)
+      .map((r) => r.querySelector('th[scope="row"]')?.textContent)
+      .filter((p) => p && /FY/.test(p))
+    expect(periods.slice(0, 5)).toEqual([
+      'Q3 FY2026',
+      'Q2 FY2026',
+      'Q1 FY2026',
+      'FY2025',
+      'Q4 FY2025',
+    ])
+  })
+
+  it("greys the periods with no Filing, and shows a Snapshot Company's revenue where its filings give it", async () => {
+    const user = userEvent.setup()
+    render(<Workspace calendars={CALENDARS} />)
+    await twoAnswers(user)
+    await user.click(screen.getByRole('button', { name: 'MCD' }))
+
+    const table = calendarTable('MCD')
+    expect(within(table).getByRole('columnheader', { name: 'Revenue' })).toBeInTheDocument()
+    expect(screen.getByRole('tabpanel', { name: 'Calendar' })).not.toHaveTextContent(
+      /couldn’t be read/
+    )
+    const filed = row(table, 'FY2024')
+    expect(filed).toHaveTextContent('10-K')
+    expect(within(filed).getByText('$25,920M')).toHaveAttribute(
+      'title',
+      'MCD_10-K_2024-12-31 · Total revenues'
+    )
+    expect(filed).not.toHaveClass('text-muted')
+    const gap = row(table, 'Q3 FY2024')
+    expect(gap).toHaveTextContent('Jul–Sep 2024')
+    expect(gap).toHaveTextContent('not in the filings')
+    expect(gap).toHaveClass('text-muted')
+  })
+
+  it('says so when no revenue figure could be read from a company’s filings', async () => {
+    fetchMock.mockImplementationOnce(async () =>
+      uiMessageStream(['Target faces **tariffs** [S1].'], {
+        ...QUERY_SCOPE,
+        companies: [{ ticker: 'TGT', name: 'Target Corp', coverage: 'snapshot' }],
+      })
+    )
+    const user = userEvent.setup()
+    render(<Workspace calendars={CALENDARS} />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByText('tariffs')
+    await screen.findByRole('tabpanel', { name: 'Calendar' })
+
+    expect(screen.getByRole('tabpanel', { name: 'Calendar' })).toHaveTextContent(
+      'No revenue figure could be read from this company’s filings.'
+    )
+    expect(
+      within(calendarTable('TGT')).queryByRole('columnheader', { name: 'Revenue' })
+    ).not.toBeInTheDocument()
+  })
+})
+
+describe('The Calendar follows the conversation', () => {
+  const CALENDARS = (evalExport as EvalExport).companies
+
+  const rail = () => screen.getByRole('group', { name: 'Panel toolbar' })
+  const railCalendar = () => within(rail()).getByRole('button', { name: 'Calendar' })
+  const buttonsCalendar = () =>
+    within(screen.getByRole('group', { name: 'Panel buttons' })).getByRole('button', {
+      name: 'Calendar',
+    })
+  const sidePanel = () => screen.queryByRole('complementary', { name: 'Side panel' })
+  const shownTicker = () =>
+    within(screen.getByRole('navigation', { name: 'Companies asked about' }))
+      .getAllByRole('button')
+      .find((tab) => tab.getAttribute('aria-pressed') === 'true')?.textContent
+
+  /** An answer about NVIDIA and McDonald's: two Companies not asked about before. */
+  const nvidiaAnswer = (messageId: string) =>
+    uiMessageStream(
+      ['NVIDIA grew **fast** [S1].'],
+      {
+        ...QUERY_SCOPE,
+        companies: [
+          { ticker: 'NVDA', name: 'NVIDIA Corp', coverage: 'tracked' },
+          { ticker: 'MCD', name: "McDonald's Corp", coverage: 'snapshot' },
+        ],
+      },
+      [FACTS_SOURCE],
+      [],
+      messageId
+    )
+  /** An answer whose Query Scope names no Company, as for the tariffs starter. */
+  const tariffsAnswer = (messageId: string) =>
+    uiMessageStream(
+      ['No Company is named, so **every filing** was searched.'],
+      { ...QUERY_SCOPE, companies: [] },
+      SOURCES,
+      [],
+      messageId
+    )
+
+  /** Types a question and waits for its answer, with `text` in it, to complete. */
+  async function ask(user: ReturnType<typeof userEvent.setup>, question: string, text: string) {
+    const before = screen.queryAllByText(text).length
+    await user.type(screen.getByRole('textbox', { name: 'Question' }), `${question}{Enter}`)
+    await waitFor(() => {
+      expect(screen.getAllByText(text)).toHaveLength(before + 1)
+      expect(screen.queryByRole('button', { name: 'Stop' })).not.toBeInTheDocument()
+    })
+  }
+
+  it("opens on the Calendar as soon as the first answer's Query Scope arrives, before its text", async () => {
+    const { response, release } = heldUiMessageStream((part) => part.type === 'data-query-scope')
+    fetchMock.mockImplementation(async () => response)
+    const user = userEvent.setup()
+    render(<Workspace calendars={CALENDARS} />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+
+    // Only the Query Scope has arrived: the Calendar already shows its Companies.
+    expect(await screen.findByRole('tabpanel', { name: 'Calendar' })).toBeInTheDocument()
+    expect(screen.queryByText(/trade policy/)).not.toBeInTheDocument()
+    expect(railCalendar()).toHaveAttribute('aria-pressed', 'true')
+    // Apple and Tesla: the alphabetically first is shown.
+    expect(shownTicker()).toBe('AAPL')
+
+    release()
+    await screen.findByText(/trade policy/)
+    expect(shownTicker()).toBe('AAPL')
+  })
+
+  it("shows the streaming answer's Sources when the Sources tab is chosen, before any citation", async () => {
+    const { response, release } = heldUiMessageStream((part) => part.type === 'text-delta')
+    fetchMock.mockImplementation(async () => response)
+    const user = userEvent.setup()
+    render(<Workspace calendars={CALENDARS} />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByRole('tabpanel', { name: 'Calendar' })
+
+    // The answer is still streaming; the Sources tab shows its Sources at the first.
+    await user.click(
+      within(screen.getByRole('tablist', { name: 'Panel tabs' })).getByRole('tab', {
+        name: 'Sources',
+      })
+    )
+    const panel = screen.getByRole('tabpanel', { name: 'Sources' })
+    expect(panel).not.toHaveTextContent(/No Sources yet/)
+    expect(
+      within(within(panel).getByRole('navigation', { name: "This answer's Sources" }))
+        .getAllByRole('button')
+        .map((tab) => tab.textContent)
+    ).toEqual(['S1', 'S2'])
+    expect(within(panel).getByRole('region', { name: /^S1/ })).toHaveTextContent('Apple')
+
+    // A Source opens from the panel while the answer is written.
+    await user.click(within(panel).getByRole('button', { name: 'S2' }))
+    expect(within(panel).getByRole('region', { name: /^S2/ })).toHaveTextContent('Tesla')
+    release()
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Stop' })).not.toBeInTheDocument()
+    )
+  })
+
+  it('stays closed once closed, through "New conversation" and a refresh; the rail reopens it', async () => {
+    fetchMock
+      .mockImplementationOnce(async () => uiMessageStream())
+      .mockImplementationOnce(async () => nvidiaAnswer('msg-2'))
+      .mockImplementationOnce(async () =>
+        uiMessageStream(ANSWER, QUERY_SCOPE, SOURCES, [], 'msg-3')
+      )
+      .mockImplementationOnce(async () =>
+        uiMessageStream(ANSWER, QUERY_SCOPE, SOURCES, [], 'msg-4')
+      )
+    const user = userEvent.setup()
+    const { unmount } = render(<Workspace calendars={CALENDARS} />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByRole('tabpanel', { name: 'Calendar' })
+
+    await user.click(screen.getByRole('button', { name: 'Close panel' }))
+    await ask(user, 'And NVIDIA?', 'fast')
+    expect(sidePanel()).not.toBeInTheDocument()
+
+    // A new conversation's first answer naming a Company doesn't reopen it either.
+    await user.click(screen.getByRole('button', { name: 'New conversation' }))
+    await ask(user, 'Compare Apple and Tesla', 'trade policy')
+    expect(sidePanel()).not.toBeInTheDocument()
+
+    // Nor after a refresh in the same browser session.
+    await user.click(screen.getByRole('button', { name: 'New conversation' }))
+    unmount()
+    render(<Workspace calendars={CALENDARS} />)
+    await ask(user, 'Compare Apple and Tesla', 'trade policy')
+    expect(sidePanel()).not.toBeInTheDocument()
+
+    // The rail is the way back.
+    await user.click(railCalendar())
+    expect(screen.getByRole('tabpanel', { name: 'Calendar' })).toBeInTheDocument()
+    expect(shownTicker()).toBe('AAPL')
+  })
+
+  it('closing it from its toolbar icon turns auto-open off too', async () => {
+    fetchMock
+      .mockImplementationOnce(async () => uiMessageStream())
+      .mockImplementationOnce(async () =>
+        uiMessageStream(ANSWER, QUERY_SCOPE, SOURCES, [], 'msg-2')
+      )
+    const user = userEvent.setup()
+    render(<Workspace calendars={CALENDARS} />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByRole('tabpanel', { name: 'Calendar' })
+
+    await user.click(railCalendar())
+    await user.click(screen.getByRole('button', { name: 'New conversation' }))
+    await ask(user, 'Compare Apple and Tesla', 'trade policy')
+    expect(sidePanel()).not.toBeInTheDocument()
+  })
+
+  it("follows each new answer's alphabetically first Company while it shows; citations still open Sources", async () => {
+    fetchMock
+      .mockImplementationOnce(async () => uiMessageStream())
+      .mockImplementationOnce(async () => nvidiaAnswer('msg-2'))
+      .mockImplementationOnce(async () => tariffsAnswer('msg-3'))
+      .mockImplementationOnce(async () =>
+        uiMessageStream(ANSWER, QUERY_SCOPE, SOURCES, [], 'msg-4')
+      )
+    const user = userEvent.setup()
+    render(<Workspace calendars={CALENDARS} />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByRole('tabpanel', { name: 'Calendar' })
+    await user.click(screen.getByRole('button', { name: 'TSLA' }))
+    expect(shownTicker()).toBe('TSLA')
+
+    // NVIDIA and McDonald's: McDonald's comes first.
+    await ask(user, 'And NVIDIA?', 'fast')
+    expect(shownTicker()).toBe('MCD')
+
+    // An answer naming no Company leaves the shown Company alone.
+    await ask(user, 'Which companies are most exposed to tariffs?', 'every filing')
+    expect(shownTicker()).toBe('MCD')
+
+    // A citation opens Sources, and the next answer leaves it there.
+    const answers = screen.getAllByRole('article', { name: 'Answer' })
+    await user.click(within(answers[1]).getByRole('link', { name: 'Source S1' }))
+    expect(screen.getByRole('tabpanel', { name: 'Sources' })).toBeInTheDocument()
+    await ask(user, 'Compare Apple and Tesla again', 'trade policy')
+    expect(screen.getByRole('tabpanel', { name: 'Sources' })).toBeInTheDocument()
+  })
+
+  it('puts a dot on the calendar icon when an answer adds Companies while closed, until the Calendar opens', async () => {
+    fetchMock
+      .mockImplementationOnce(async () => uiMessageStream())
+      .mockImplementationOnce(async () =>
+        uiMessageStream(ANSWER, QUERY_SCOPE, SOURCES, [], 'msg-2')
+      )
+      .mockImplementationOnce(async () => nvidiaAnswer('msg-3'))
+    const user = userEvent.setup()
+    render(<Workspace calendars={CALENDARS} />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByRole('tabpanel', { name: 'Calendar' })
+    await user.click(screen.getByRole('button', { name: 'Close panel' }))
+    expect(railCalendar()).not.toHaveAccessibleDescription(/new companies/)
+
+    // The same Companies again add nothing.
+    await ask(user, 'Compare Apple and Tesla again', 'trade policy')
+    expect(railCalendar()).not.toHaveAccessibleDescription(/new companies/)
+
+    await ask(user, 'And NVIDIA?', 'fast')
+    expect(sidePanel()).not.toBeInTheDocument()
+    expect(railCalendar()).toHaveAccessibleDescription(/new companies/)
+    expect(buttonsCalendar()).toHaveAccessibleDescription(/new companies/)
+
+    // Opening Sources leaves the dot; opening the Calendar clears it.
+    await user.click(within(rail()).getByRole('button', { name: 'Sources' }))
+    expect(railCalendar()).toHaveAccessibleDescription(/new companies/)
+    await user.click(
+      within(screen.getByRole('tablist', { name: 'Panel tabs' })).getByRole('tab', {
+        name: 'Calendar',
+      })
+    )
+    expect(railCalendar()).not.toHaveAccessibleDescription(/new companies/)
+    expect(buttonsCalendar()).not.toHaveAccessibleDescription(/new companies/)
+  })
+
+  it('neither opens nor adds tickers for an answer whose Query Scope names no Company', async () => {
+    fetchMock.mockImplementationOnce(async () => tariffsAnswer('msg-1'))
+    const user = userEvent.setup()
+    render(<Workspace calendars={CALENDARS} />)
+    await user.click(screen.getByRole('button', { name: STARTERS[0].label }))
+    await screen.findByText('every filing')
+
+    expect(sidePanel()).not.toBeInTheDocument()
+    expect(railCalendar()).not.toHaveAccessibleDescription(/new companies/)
+    await user.click(railCalendar())
+    expect(screen.getByRole('tabpanel', { name: 'Calendar' })).toHaveTextContent(/No companies yet/)
   })
 })

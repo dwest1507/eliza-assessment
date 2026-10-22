@@ -15,9 +15,9 @@ table of contents is located. The cleaned body is then split into Sections at it
 headings, skipping the table of contents. Each Section carries its standard name and
 its original Item label; text outside any Item is kept as an "Unsectioned" Section.
 
-Every Filing carries its Company's Sector and industry from the curated Sector table
-(`data/reference/sectors.csv`). Coverage is also Company-level, so only `load_corpus`
-classes each Company as a Tracked Company or a Snapshot Company.
+Every Filing carries its Company's Sector, industry and Company Group (if any) from the
+curated Sector table (`data/reference/sectors.csv`). Coverage is also Company-level, so
+only `load_corpus` classes each Company as a Tracked Company or a Snapshot Company.
 """
 
 from __future__ import annotations
@@ -111,6 +111,9 @@ class SectorRow:
     sic_description: str
     sic_agrees: bool
     note: str
+    group: str | None = None
+    """The curated Company Group the Company belongs to ("Big Tech"), a named set of
+    Companies no Sector captures, or None."""
 
 
 @dataclass(frozen=True)
@@ -141,6 +144,8 @@ class Filing:
     fiscal_period: str | None = None
     sector: str | None = None
     industry: str | None = None
+    group: str | None = None
+    """The Company's curated Company Group from the Sector table, or None."""
     coverage: Coverage | None = None
     diagnostics: tuple[Diagnostic, ...] = ()
 
@@ -238,7 +243,12 @@ def load_filing(path: str | Path, fiscal_year_end_month: int | None = None) -> F
     )
     sector_row = _sector_rows(DEFAULT_SECTOR_TABLE).get(filing.ticker)
     if sector_row:
-        filing = replace(filing, sector=sector_row.sector, industry=sector_row.industry)
+        filing = replace(
+            filing,
+            sector=sector_row.sector,
+            industry=sector_row.industry,
+            group=sector_row.group,
+        )
     if fiscal_year_end_month is None and form_type == "10-K":
         fiscal_year_end_month = _period_month(report_period)[1]
     return _with_fiscal_period(filing, fiscal_year_end_month)
@@ -286,6 +296,7 @@ def load_sector_table(path: str | Path = DEFAULT_SECTOR_TABLE) -> list[SectorRow
                 sic_description=row["sic_description"],
                 sic_agrees=row["sic_agrees"] == "yes",
                 note=row["note"],
+                group=row["group"] or None,
             )
             for row in csv.DictReader(f)
         ]
@@ -388,6 +399,45 @@ def _period_month(d: date) -> tuple[int, int]:
     if d.day <= _SPILLOVER_DAYS:
         d = d.replace(day=1) - timedelta(days=1)
     return d.year, d.month
+
+
+MONTH_NAMES = (
+    "January February March April May June July August September October November December"
+).split()
+
+
+def month_span(end_year: int, end_month: int, months: int) -> str:
+    """The calendar months of a period `months` long that ends in month `end_month` (1 to
+    12) of `end_year`: "May–Jul 2025" for a quarter, "Oct 2024–Sep 2025" for a year that
+    crosses a calendar year."""
+    end = end_year * 12 + end_month - 1
+    (start_year, start), (_, end) = divmod(end - months + 1, 12), divmod(end, 12)
+    first, last = MONTH_NAMES[start][:3], f"{MONTH_NAMES[end][:3]} {end_year}"
+    return f"{first}–{last}" if start_year == end_year else f"{first} {start_year}–{last}"
+
+
+def calendar_months(report_period: date | str, months: int) -> str:
+    """The calendar months of a period `months` long (3 or 12) to a Report Period, ending
+    in the month that date stands for (a 52/53-week period that ends in the first days of
+    a month stands for the month before): "May–Jul 2025" for NVIDIA's quarter to
+    2025-07-27, "Oct 2024–Sep 2025" for Apple's year to 2025-09-27."""
+    if isinstance(report_period, str):
+        report_period = date.fromisoformat(report_period)
+    return month_span(*_period_month(report_period), months)
+
+
+def filing_months(report_period: date | str, form_type: str) -> str:
+    """The calendar months a Filing reports on: its year for a 10-K, its quarter for a
+    10-Q."""
+    return calendar_months(report_period, 12 if form_type.startswith("10-K") else 3)
+
+
+def year_end_month(report_period: date | str) -> str:
+    """The month a 10-K's Report Period ends its fiscal year in, named: "January" for
+    NVIDIA's 2025-01-26, "June" for Microsoft's 2025-06-30."""
+    if isinstance(report_period, str):
+        report_period = date.fromisoformat(report_period)
+    return MONTH_NAMES[_period_month(report_period)[1] - 1]
 
 
 def _with_fiscal_period(filing: Filing, fiscal_year_end_month: int | None) -> Filing:

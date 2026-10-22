@@ -379,6 +379,32 @@ def _prose_chunks(text: str, size: ChunkSize) -> list[str]:
     return chunks
 
 
+def opening_overlap(previous: str, following: str) -> int:
+    """How much of `following`, the next prose chunk of the same Section, opens with the
+    end of `previous`: the length of the longest suffix of `previous` that `following`
+    starts with, or 0. A chunk opens with the last sentences (or, after one sentence too
+    long to carry, the last words) of the chunk before it, so the suffix must start where
+    a sentence or a word starts in `previous`, end where one ends in `following`, and
+    hold a word: "in" ending one chunk is no overlap of "increased" opening the next, nor
+    is the "|" closing one table row of the "|" opening the next."""
+    for k in range(min(len(previous), len(following)), 0, -1):
+        if following[k - 1] != previous[-1] or not previous.endswith(following[:k]):
+            continue
+        starts = k == len(previous) or previous[-k - 1].isspace() or previous[-k - 1] in _CLOSERS
+        ends = (
+            k == len(following)
+            or following[k].isspace()
+            or (following[k - 1] in _CLOSERS and following[k].isupper())
+        )
+        if starts and ends and re.search(r"\w", following[:k]):
+            return k
+    return 0
+
+
+# What a sentence can end with, glued straight onto the next ("...affected.Because").
+_CLOSERS = frozenset('.!?:;"”’)')
+
+
 def _overlap(sentences: list[str], overlap: int) -> list[str]:
     """The end of a chunk to open the next one with: its last sentences that fit in
     `overlap` tokens, or, when its last sentence alone is longer, that sentence's last

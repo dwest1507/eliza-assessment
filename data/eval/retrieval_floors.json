@@ -2,12 +2,12 @@
   "split": "dev",
   "arm": "fts5",
   "golden_set_version": 2,
-  "cases": 57,
+  "cases": 60,
   "chunk_tokens": 600,
   "context_budget": 32000,
   "floors": {
     "hit@10": 0.96,
     "recall@10": 0.87,
-    "mrr": 0.77
+    "mrr": 0.78
   }
 }

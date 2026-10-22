@@ -11,7 +11,16 @@ from statistics import fmean
 
 import pytest
 
-from edgar_eval.selection import AHEAD_P, RULES, Candidate, FactOutcome, choose, sign_test
+from edgar_eval.selection import (
+    AHEAD_P,
+    RULES,
+    Candidate,
+    EvidenceGroup,
+    FactOutcome,
+    choose,
+    compare,
+    sign_test,
+)
 
 
 def test_the_sign_test_counts_cases_where_one_side_scored_higher():
@@ -703,6 +712,35 @@ def test_the_compare_command_takes_a_control_run_and_says_why_it_is_inconclusive
     assert saved["comparisons"]["dense"]["qualifies"]
 
 
+def test_the_compare_command_prints_every_capped_answer_of_every_run(tmp_path, capsys):
+    from edgar_eval.selection import main
+
+    shipped = _fact_report("gpt-6-luna", [[True]] * 3, key="model")
+    control = _fact_report("gpt-6-luna", [[True]] * 3, key="model", truncated=(2,))
+    haiku = _fact_report("claude-haiku-5-5", [[True]] * 3, key="model", truncated=(0, 1))
+    paths = []
+    for name, report in (("shipped", shipped), ("control", control), ("haiku", haiku)):
+        paths.append(tmp_path / f"{name}.json")
+        paths[-1].write_text(json.dumps(report))
+    out = tmp_path / "generator-choice-dev.json"
+
+    main(
+        ["compare", str(paths[0]), str(paths[2]), "--control", str(paths[1])]
+        + ["--rule", "generators", "--json", str(out)]
+    )
+
+    printed = capsys.readouterr().out
+    capped = printed.split("Answers capped (stopped at the token cap, scored as truncated):")[1]
+    assert "  gpt-6-luna (shipped run): none\n" in capped
+    assert "  gpt-6-luna (Control Run): c2\n" in capped
+    assert "  claude-haiku-5-5: c0, c1\n" in capped
+    assert json.loads(out.read_text())["capped"] == {
+        "gpt-6-luna (shipped run)": [],
+        "gpt-6-luna (Control Run)": ["c2"],
+        "claude-haiku-5-5": ["c0", "c1"],
+    }
+
+
 # --- One shipped run and one Control Run per round (ADR 0011) ------------------------------
 # A round is the same code, prompt and Golden Set version on one split. The Arm, settings
 # and generator commands of a round share its shipped run and Control Run, reusing them
@@ -1211,3 +1249,470 @@ def test_the_compare_command_prints_and_saves_the_fact_level_result(tmp_path, ca
     assert (saved["paired"], saved["facts"], saved["total_difference"]) == (60, 60, 3)
     both = {"facts": 60, "challenger_stated": 3, "shipped_stated": 0}
     assert saved["by_evidence"]["both"] == both
+
+
+# --- The prompt rules (ADR 0017) -----------------------------------------------------------
+# `prompts`, for changes meant to raise facts stated: ADR 0015's fact-level test, with
+# structure followed added to the guardrails. `prompt-fix`, for correctness changes: fewer
+# cases failing the figure check than the shipped run, behind on none of the same
+# guardrails nor on facts stated. The Control Run check is unchanged.
+
+
+def _prompt_report(name, stated, *, unstructured=(), unfigured=(), **fields):
+    """`_fact_report` named by prompt version, with structure not followed in the cases in
+    `unstructured` and the figure check failed in those in `unfigured`."""
+    report = _fact_report(name, stated, key="name")
+    for i, case in enumerate(report["cases"]):
+        case["structure"] = {"words": 450, "problems": ["too long"] if i in unstructured else []}
+        case["figures"] = {"figures": 2, "unmatched": ["12%"] if i in unfigured else []}
+    return report | {"model": "gpt-6-luna"} | fields
+
+
+def _prompt_candidates(rule, shipped, challenger):
+    return (
+        Candidate.from_report(shipped, rule),
+        Candidate.from_report(challenger, rule),
+    )
+
+
+def test_prompts_qualifies_a_candidate_ahead_on_facts_stated_and_behind_on_nothing():
+    shipped, challenger = _prompt_candidates(
+        "prompts",
+        _prompt_report("v15", [[False]] * 20),
+        _prompt_report("v16", [[True]] * 6 + [[False]] * 14),
+    )
+
+    choice = choose(shipped, [challenger], "prompts")
+
+    comparison = choice.comparisons["v16"]
+    assert comparison.stated_facts.verdict == "ahead"
+    assert comparison.structure.verdict == "indistinguishable"
+    assert comparison.qualifies and choice.chosen == "v16"
+
+
+def test_prompts_refuses_a_candidate_ahead_on_facts_but_behind_on_structure():
+    shipped, challenger = _prompt_candidates(
+        "prompts",
+        _prompt_report("v15", [[False]] * 20),
+        _prompt_report("v16", [[True]] * 6 + [[False]] * 14, unstructured=range(4)),
+    )
+
+    choice = choose(shipped, [challenger], "prompts")
+
+    comparison = choice.comparisons["v16"]
+    assert comparison.stated_facts.verdict == "ahead"
+    assert (comparison.structure.wins, comparison.structure.losses) == (0, 4)
+    assert comparison.structure.verdict == "behind"
+    assert not comparison.qualifies and choice.chosen == "v15"
+
+
+def test_structure_blocks_only_the_prompt_rules():
+    # Structure is carried by every rule's comparison but is a guardrail of the prompt
+    # rules only: under the Arm rule the same candidate still qualifies.
+    shipped, challenger = _prompt_candidates(
+        "arms",
+        _prompt_report("v15", [[False]] * 20),
+        _prompt_report("v16", [[True]] * 6 + [[False]] * 14, unstructured=range(4)),
+    )
+
+    comparison = choose(shipped, [challenger], "arms").comparisons[challenger.name]
+
+    assert comparison.structure.verdict == "behind"
+    assert comparison.qualifies
+
+
+def test_prompt_fix_qualifies_a_candidate_with_fewer_figure_failures_behind_on_nothing():
+    shipped, challenger = _prompt_candidates(
+        "prompt-fix",
+        _prompt_report("v15", [[True]] * 20, unfigured=(0, 1, 2)),
+        _prompt_report("v18", [[True]] * 20, unfigured=(3,)),
+    )
+
+    choice = choose(shipped, [challenger], "prompt-fix")
+
+    figures = choice.comparisons["v18"].figures
+    assert (figures.paired, figures.challenger_failed, figures.shipped_failed) == (20, 1, 3)
+    assert (figures.fixed, figures.broken) == (3, 1)
+    assert figures.verdict == "ahead"
+    assert choice.comparisons["v18"].qualifies and choice.chosen == "v18"
+
+
+def test_prompt_fix_refuses_a_candidate_with_as_many_figure_failures():
+    shipped, challenger = _prompt_candidates(
+        "prompt-fix",
+        _prompt_report("v15", [[True]] * 20, unfigured=(0, 1)),
+        _prompt_report("v18", [[True]] * 20, unfigured=(2, 3)),
+    )
+
+    comparison = choose(shipped, [challenger], "prompt-fix").comparisons["v18"]
+
+    assert comparison.figures.verdict == "indistinguishable"
+    assert not comparison.qualifies
+
+
+def test_prompt_fix_refuses_a_candidate_behind_on_facts_stated():
+    # Of 60 cases of four facts, the candidate states none where v15 states all four in
+    # 15, and one more in 25: 35 fewer facts, though 25 cases higher to 15 lower is not
+    # behind case by case. Facts stated is a guardrail of prompt-fix alone.
+    none, one, every = [False] * 4, [True] + [False] * 3, [True] * 4
+    shipped, challenger = _prompt_candidates(
+        "prompt-fix",
+        _prompt_report("v15", [every] * 15 + [none] * 25 + [none] * 20, unfigured=(0, 1, 2)),
+        _prompt_report("v18", [none] * 15 + [one] * 25 + [none] * 20),
+    )
+
+    comparison = choose(shipped, [challenger], "prompt-fix").comparisons["v18"]
+
+    assert comparison.figures.verdict == "ahead"
+    assert comparison.fact_recall.verdict != "behind"
+    assert comparison.stated_facts.total_difference == -35
+    assert comparison.stated_facts.verdict == "behind"
+    assert not comparison.qualifies
+
+
+@pytest.mark.parametrize(
+    ("rule", "shipped", "challenger", "control", "metric"),
+    [
+        (
+            "prompts",
+            _prompt_report("v15", [[False]] * 20),
+            _prompt_report("v16", [[True]] * 6 + [[False]] * 14),
+            _prompt_report("v15", [[True]] * 3 + [[False]] * 17),
+            "Fact Recall fact by fact",
+        ),
+        (
+            "prompt-fix",
+            _prompt_report("v15", [[True]] * 20, unfigured=(0, 1, 2)),
+            _prompt_report("v18", [[True]] * 20),
+            _prompt_report("v15", [[True]] * 20, unfigured=(0,)),
+            "Figures exact",
+        ),
+    ],
+)
+def test_a_control_run_ahead_makes_either_prompt_rule_inconclusive(
+    rule, shipped, challenger, control, metric
+):
+    shipped, candidate = _prompt_candidates(rule, shipped, challenger)
+    control = Candidate.from_report(control, rule)
+
+    choice = choose(shipped, [candidate], rule, control=control)
+
+    assert choice.comparisons[candidate.name].qualifies
+    assert choice.inconclusive and choice.chosen == "v15"
+    assert metric in choice.reason
+
+
+def test_structure_followed_is_a_score_of_every_candidate_read_from_a_report():
+    report = _prompt_report("v15", [[True]] * 3, unstructured=(1,), unfigured=(2,))
+
+    for rule in RULES:
+        candidate = Candidate.from_report(report, rule)
+        assert candidate.structure == {"c0": True, "c1": False, "c2": True}
+        assert candidate.figures == {"c0": True, "c1": True, "c2": False}
+
+
+def test_a_report_recording_no_structure_leaves_it_unscored():
+    candidate = Candidate.from_report(_fact_report("fts5", [[True]] * 2))
+
+    assert candidate.structure == {"c0": None, "c1": None}
+
+
+def test_a_prompt_candidate_is_named_by_its_report_name_else_its_prompt_version():
+    named = _prompt_report("legal-route", [[True]], prompt_version="v15")
+    unnamed = _prompt_report(None, [[True]], prompt_version="v16")
+
+    assert Candidate.from_report(named, "prompts").name == "legal-route"
+    assert Candidate.from_report(unnamed, "prompts").name == "v16"
+
+
+def test_the_compare_command_applies_a_prompt_rule_and_records_both_sides_versions(
+    tmp_path, capsys
+):
+    from edgar_eval.selection import main
+
+    versions = {"prompt_version": "v15", "code_version": "aaaa"}
+    reports = {
+        "generation-dev.json": _prompt_report(None, [[False]] * 20, **versions),
+        "generation-control-dev.json": _prompt_report(None, [[False]] * 20, **versions),
+        "generation-dev-v16.json": _prompt_report(
+            "v16", [[True]] * 6 + [[False]] * 14, prompt_version="v16", code_version="bbbb"
+        ),
+    }
+    for name, report in reports.items():
+        (tmp_path / name).write_text(json.dumps(report))
+    out = tmp_path / "prompt-choice-dev.json"
+
+    main(
+        [
+            "compare",
+            str(tmp_path / "generation-dev.json"),
+            str(tmp_path / "generation-dev-v16.json"),
+        ]
+        + ["--control", str(tmp_path / "generation-control-dev.json")]
+        + ["--rule", "prompts", "--json", str(out)]
+    )
+
+    printed = capsys.readouterr().out
+    assert "Structure followed: indistinguishable" in printed
+    assert "Chosen: v16" in printed
+    saved = json.loads(out.read_text())
+    assert saved["rule"] == "prompts"
+    assert saved["chosen"] == "v16" and saved["comparisons"]["v16"]["qualifies"]
+    assert saved["versions"] == {
+        "v15 (shipped run)": {"prompt_version": "v15", "code_version": "aaaa"},
+        "v15 (Control Run)": {"prompt_version": "v15", "code_version": "aaaa"},
+        "v16": {"prompt_version": "v16", "code_version": "bbbb"},
+    }
+
+
+def test_the_compare_command_tells_apart_challengers_named_alike(tmp_path, capsys):
+    # #126's reports share prompt v7: under a prompt rule each challenger not named by
+    # its report takes its file's name beside the shared one.
+    from edgar_eval.selection import main
+
+    shipped = tmp_path / "generation-dev.json"
+    first = tmp_path / "generation-arms-dev-hybrid-local.json"
+    second = tmp_path / "generation-dev-chunks600-budget48000.json"
+    shipped.write_text(json.dumps(_prompt_report(None, [[False]] * 20, prompt_version="v7")))
+    for path in (first, second):
+        path.write_text(json.dumps(_prompt_report(None, [[True]] * 20, prompt_version="v7")))
+    out = tmp_path / "choice.json"
+
+    main(
+        ["compare", str(shipped), str(first), str(second), "--rule", "prompts", "--json", str(out)]
+    )
+
+    saved = json.loads(out.read_text())
+    assert set(saved["comparisons"]) == {
+        "v7 (generation-arms-dev-hybrid-local)",
+        "v7 (generation-dev-chunks600-budget48000)",
+    }
+    assert saved["shipped"] == "v7"
+
+
+# --- Several runs a side (ADR 0017's note of 2026-10-21) -----------------------------------
+# A side of a comparison may be answered by several runs of one setup: the round's shipped
+# run and its second run, the Control Run and its second run, a candidate and its second
+# run. Each case's score is then the mean over the side's runs that scored it, and the
+# rules, thresholds and tests are unchanged.
+
+
+def test_one_run_a_side_reads_as_it_did():
+    report = _prompt_report("v15", [[True, False]] * 3, unstructured=(1,), unfigured=(2,))
+
+    assert Candidate.from_reports([report], "prompts") == Candidate.from_report(report, "prompts")
+
+
+def test_two_identical_runs_a_side_give_the_one_run_comparison():
+    shipped = _prompt_report("v15", [[False, False]] * 10 + [[True, False]] * 10)
+    challenger = _prompt_report("v16", [[True, True]] * 6 + [[True, False]] * 14)
+    single = compare(
+        Candidate.from_report(challenger, "prompts"),
+        Candidate.from_report(shipped, "prompts"),
+        "prompts",
+    )
+
+    for runs in (2, 3):
+        paired = compare(
+            Candidate.from_reports([challenger] * runs, "prompts"),
+            Candidate.from_reports([shipped] * runs, "prompts"),
+            "prompts",
+        )
+        assert paired.stated_facts == single.stated_facts
+        assert paired.fact_recall == single.fact_recall
+        assert paired.figures == single.figures
+
+
+def test_a_fact_stated_in_one_of_two_runs_counts_half():
+    # The shipped side states each case's fact in its first run only; the candidate in
+    # both of its runs, in 12 of 20 cases: 12 against 6 facts a run, +6.
+    first = _prompt_report("v15", [[True]] * 12 + [[False]] * 8)
+    second = _prompt_report("v15", [[False]] * 20)
+    candidate = _prompt_report("v16", [[True]] * 12 + [[False]] * 8)
+
+    shipped = Candidate.from_reports([first, second], "prompts")
+    challenger = Candidate.from_reports([candidate, candidate], "prompts")
+    facts = compare(challenger, shipped, "prompts").stated_facts
+
+    assert shipped.runs == 2 and shipped.facts["c0"] == (FactOutcome(stated=0.5, reached=True),)
+    assert (facts.facts, facts.challenger_stated, facts.shipped_stated) == (20, 12, 6)
+    assert facts.total_difference == 6
+    assert facts.by_evidence["both"] == EvidenceGroup(
+        facts=20, challenger_stated=12, shipped_stated=6
+    )
+
+
+def test_a_mean_count_that_is_not_whole_is_kept_exactly():
+    first = _prompt_report("v15", [[True]] * 3 + [[False]] * 17)
+    second = _prompt_report("v15", [[False]] * 20)
+    shipped = Candidate.from_reports([first, second], "prompts")
+    challenger = Candidate.from_report(_prompt_report("v16", [[False]] * 20), "prompts")
+
+    facts = compare(challenger, shipped, "prompts").stated_facts
+
+    assert (facts.challenger_stated, facts.shipped_stated, facts.total_difference) == (0, 1.5, -1.5)
+
+
+def test_each_score_is_the_mean_of_the_runs_that_scored_the_case():
+    first = _prompt_report("v15", [[True, True]] * 2, unstructured=(0,), unfigured=(0,))
+    second = _prompt_report("v15", [[True, False]] * 2, unfigured=(0, 1))
+    second["cases"][1]["fact_recall"] = None  # its judgment failed in this run
+
+    side = Candidate.from_reports([first, second], "prompts")
+
+    assert side.fact_recall == {"c0": 0.75, "c1": 1.0}
+    assert side.structure == {"c0": 0.5, "c1": 1.0}
+    assert side.figures == {"c0": 0.0, "c1": 0.5}
+
+
+def test_figure_failures_are_counted_as_each_sides_mean():
+    shipped = Candidate.from_reports(
+        [
+            _prompt_report("v15", [[True]] * 20, unfigured=(0, 1, 2)),
+            _prompt_report("v15", [[True]] * 20, unfigured=(0,)),
+        ],
+        "prompt-fix",
+    )
+    challenger = Candidate.from_reports(
+        [
+            _prompt_report("v18", [[True]] * 20, unfigured=(3,)),
+            _prompt_report("v18", [[True]] * 20),
+        ],
+        "prompt-fix",
+    )
+
+    figures = compare(challenger, shipped, "prompt-fix").figures
+
+    assert (figures.challenger_failed, figures.shipped_failed) == (0.5, 2)
+    assert (figures.fixed, figures.broken) == (2, 0.5)
+    assert figures.verdict == "ahead"
+
+
+def test_a_control_run_ahead_in_one_run_but_not_on_the_mean_leaves_the_choice_conclusive():
+    # One Control Run states 6 more facts than the shipped run, the other 6 fewer: on the
+    # mean of two runs a side the Control Run is level with the shipped run.
+    shipped = _prompt_report("v15", [[True]] * 6 + [[False]] * 14)
+    controls = [
+        _prompt_report("v15", [[True]] * 12 + [[False]] * 8),
+        _prompt_report("v15", [[False]] * 20),
+    ]
+    candidate = _prompt_report("v16", [[True]] * 14 + [[False]] * 6)
+    one = choose(
+        Candidate.from_report(shipped, "prompts"),
+        [Candidate.from_report(candidate, "prompts")],
+        "prompts",
+        control=Candidate.from_report(controls[0], "prompts"),
+    )
+
+    two = choose(
+        Candidate.from_reports([shipped, shipped], "prompts"),
+        [Candidate.from_reports([candidate, candidate], "prompts")],
+        "prompts",
+        control=Candidate.from_reports(controls, "prompts"),
+    )
+
+    assert one.inconclusive
+    assert not two.inconclusive and two.chosen == "v16"
+    assert two.control.stated_facts.total_difference == 0
+    assert (two.runs, two.control_runs) == ({"v15": 2, "v16": 2}, 2)
+
+
+@pytest.mark.parametrize(
+    "field", ["prompt_version", "model", "arm", "settings", "golden_set_version", "split"]
+)
+def test_the_runs_of_one_side_must_be_of_one_setup(field):
+    setup = {
+        "prompt_version": "v15",
+        "model": "gpt-6-luna",
+        "arm": "fts5",
+        "settings": "chunks-600-budget-32000",
+        "golden_set_version": 2,
+        "split": "dev",
+    }
+    first = _prompt_report(None, [[True]] * 2, **setup)
+    second = _prompt_report(None, [[True]] * 2, **setup | {field: "other"})
+
+    with pytest.raises(ValueError, match=field):
+        Candidate.from_reports([first, second], "prompts")
+
+
+def test_the_runs_of_one_side_may_be_named_apart():
+    first = _prompt_report("v16", [[True]] * 2, prompt_version="v16")
+    second = _prompt_report("v16-run2", [[False]] * 2, prompt_version="v16")
+
+    assert Candidate.from_reports([first, second], "prompts").name == "v16"
+
+
+def test_the_compare_command_reads_several_runs_a_side_joined_by_plus(tmp_path, capsys):
+    from edgar_eval.selection import main
+
+    versions = {"prompt_version": "v15", "code_version": "aaaa"}
+    reports = {
+        "generation-dev.json": _prompt_report(None, [[True]] * 3 + [[False]] * 17, **versions),
+        "generation-dev-run2.json": _prompt_report(None, [[False]] * 20, **versions),
+        "generation-control-dev.json": _prompt_report(
+            None, [[True]] * 3 + [[False]] * 17, **versions
+        ),
+        "generation-control-dev-run2.json": _prompt_report(None, [[False]] * 20, **versions),
+        "generation-dev-v16.json": _prompt_report(
+            "v16", [[True]] * 6 + [[False]] * 14, prompt_version="v16", code_version="bbbb"
+        ),
+        "generation-dev-v16-run2.json": _prompt_report(
+            "v16-run2", [[True]] * 6 + [[False]] * 14, prompt_version="v16", code_version="cccc"
+        ),
+    }
+    for name, report in reports.items():
+        (tmp_path / name).write_text(json.dumps(report))
+    side = lambda *names: "+".join(str(tmp_path / n) for n in names)  # noqa: E731
+    out = tmp_path / "prompt-choice-dev.json"
+
+    main(
+        [
+            "compare",
+            side("generation-dev.json", "generation-dev-run2.json"),
+            side("generation-dev-v16.json", "generation-dev-v16-run2.json"),
+            "--control",
+            side("generation-control-dev.json", "generation-control-dev-run2.json"),
+            "--rule",
+            "prompts",
+            "--json",
+            str(out),
+        ]
+    )
+
+    printed = capsys.readouterr().out
+    assert "the mean of its runs" in printed
+    assert "Control Run (v15 run again, 2 runs" in printed
+    assert "1.5 of 20 must-state facts stated against 1.5, +0," in printed
+    assert "6 of 20 must-state facts stated against 1.5, +4.5" in printed
+    assert "Chosen: v16" in printed
+    saved = json.loads(out.read_text())
+    assert saved["chosen"] == "v16" and not saved["inconclusive"]
+    assert saved["reports"] == [
+        str(tmp_path / "generation-dev.json"),
+        str(tmp_path / "generation-dev-v16.json"),
+    ]
+    assert (saved["runs"], saved["control_runs"]) == ({"v15": 2, "v16": 2}, 2)
+    assert saved["run_reports"] == {
+        "v15 (shipped run)": [
+            str(tmp_path / "generation-dev.json"),
+            str(tmp_path / "generation-dev-run2.json"),
+        ],
+        "v15 (Control Run)": [
+            str(tmp_path / "generation-control-dev.json"),
+            str(tmp_path / "generation-control-dev-run2.json"),
+        ],
+        "v16": [
+            str(tmp_path / "generation-dev-v16.json"),
+            str(tmp_path / "generation-dev-v16-run2.json"),
+        ],
+    }
+    assert saved["versions"]["v16"] == {"prompt_version": "v16", "code_version": "bbbb+cccc"}
+    assert set(saved["capped"]) == {
+        "v15 (shipped run 1)",
+        "v15 (shipped run 2)",
+        "v15 (Control Run 1)",
+        "v15 (Control Run 2)",
+        "v16 (run 1)",
+        "v16 (run 2)",
+    }

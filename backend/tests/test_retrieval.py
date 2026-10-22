@@ -7,6 +7,7 @@ import sqlite3
 import pytest
 
 from edgar_rag import _topics
+from edgar_rag.corpus import filing_months
 from edgar_rag.retrieval import (
     CHUNK_TOKENS,
     CONTEXT_BUDGET_TOKENS,
@@ -14,6 +15,7 @@ from edgar_rag.retrieval import (
     PROMPT_VERSION,
     STUB_TOKENS,
     Message,
+    answer_words,
     build_index,
     count_tokens,
     index_chunk_tokens,
@@ -321,13 +323,15 @@ def test_a_source_carries_its_citation_metadata_and_passage(index):
     assert source.filing_id == f"TSLA_{source.form_type}_{source.report_period}"
     assert source.fiscal_period
     assert "Texas" in source.text
-    assert source.label.startswith(f"TSLA {source.form_type} {source.fiscal_period}, ")
+    assert source.label.startswith(
+        f"TSLA {source.form_type} {source.fiscal_period} ({source.calendar_months}), "
+    )
 
 
 def test_the_prompt_renders_rules_sources_and_question(index):
     context = _ask(index, BRIEF_QUESTION)
 
-    assert context.prompt_version == PROMPT_VERSION == "v7"
+    assert context.prompt_version == PROMPT_VERSION == "v19"
     system, user = context.messages
     assert system.role == "system"
     assert "[S3]" in system.content and "general knowledge" in system.content
@@ -369,14 +373,6 @@ def test_fts5_syntax_in_a_question_is_searched_as_words(index):
 
     assert [c.ticker for c in context.query_scope.companies] == ["AAPL"]
     assert context.sources
-
-
-def test_a_question_with_no_search_terms_gets_no_sources(index):
-    context = _ask(index, "What about Apple?")
-
-    assert [c.ticker for c in context.query_scope.companies] == ["AAPL"]
-    assert context.sources == ()
-    assert "No Sources were found" in context.messages[1].content
 
 
 def test_earlier_turns_are_rendered_as_context_without_their_source_tags(index):
@@ -793,11 +789,15 @@ def test_on_the_risk_route_the_topic_word_outranks_risk_and_generic_words(index,
         for c in _chunks(index, section="Risk Factors")
         if c["filing_id"] in in_scope and topic in c["text"].lower()
     }
-    passages = {p for _, p in _passages(context)}
     (request,) = ranker.requests
     # The passages retrieved, best first: the ones on the topic rank before any other,
     # which only fill what is left of the budget once a larger one on the topic doesn't.
-    retrieved = [topic in text[i].lower() for i in request.lexical if text[i] in passages]
+    # A retrieved chunk's whole text is in its Source, joined to any next to it.
+    retrieved = [
+        topic in text[i].lower()
+        for i in request.lexical
+        if any(text[i] in s.text for s in context.sources)
+    ]
     assert 0 < sum(retrieved) < len(on_topic)  # more passages on the topic than fit
     assert retrieved == sorted(retrieved, reverse=True)
 
@@ -939,6 +939,219 @@ def test_an_outlook_question_still_states_that_guidance_is_not_in_the_filings(in
     assert [(g.kind, g.companies) for g in context.coverage_gaps] == [("no_guidance", ("TSLA",))]
 
 
+# --- The Overview route and the document-order fill -----------------------------------
+
+OVERVIEW = ("Business", "MD&A", "Risk Factors")
+
+
+def _text_places(context, ticker):
+    return {
+        (s.filing_id, s.section) for s in context.sources if s.kind == "text" and s.ticker == ticker
+    }
+
+
+def _opening_chunk(index, filing_id, section):
+    rows = [
+        c
+        for c in _chunks(index, filing_id=filing_id, section=section)
+        if c["kind"] != "risk_pointer"
+    ]
+    return min(rows, key=lambda c: c["ordinal"])
+
+
+def _source_tokens(context):
+    return sum(count_tokens(s.text) for s in context.sources)
+
+
+def test_a_question_with_no_topic_reads_each_companys_latest_business_mdna_and_risk_factors(
+    overview_index,
+):
+    context = _ask(overview_index, "Compare Coke and Pepsi")
+
+    scope = context.query_scope
+    assert [c.ticker for c in scope.companies] == ["KO", "PEP"]
+    assert scope.sections == OVERVIEW
+    assert scope.time_window.label == "latest"
+    # Coca-Cola's latest Business and Risk Factors are in its FY2024 10-K; its latest MD&A
+    # is in its Q3 FY2025 10-Q, whose Risk Factors only point back to the 10-K.
+    planned = [
+        ("KO", "KO_10-K_2024-12-31", "Business"),
+        ("KO", "KO_10-K_2024-12-31", "Risk Factors"),
+        ("KO", "KO_10-Q_2025-09-26", "MD&A"),
+        ("PEP", "PEP_10-K_2025-12-27", "Business"),
+        ("PEP", "PEP_10-K_2025-12-27", "MD&A"),
+        ("PEP", "PEP_10-K_2025-12-27", "Risk Factors"),
+    ]
+    assert _searched(context) == planned
+    for _, filing_id, section in planned:
+        (source,) = [s for s in context.sources if (s.filing_id, s.section) == (filing_id, section)]
+        # Opening chunks first: each Section's Source starts where the Section does.
+        assert source.text.startswith(_opening_chunk(overview_index, filing_id, section)["text"])
+    assert {s.section for s in context.sources if s.ticker == "KO"} == set(OVERVIEW)
+    assert {s.section for s in context.sources if s.ticker == "PEP"} == set(OVERVIEW)
+    assert CONTEXT_BUDGET_TOKENS * 0.8 <= _source_tokens(context) <= CONTEXT_BUDGET_TOKENS
+
+
+def test_a_broad_question_about_jpmorgan_reads_its_latest_10k(index):
+    context = _ask(index, "How is JP Morgan doing?")
+
+    assert [c.ticker for c in context.query_scope.companies] == ["JPM"]
+    assert context.query_scope.sections == OVERVIEW
+    # JPMorgan's Item 7 is a pointer to the annual report's financial review (a stub),
+    # so its latest 10-K is read in Business and Risk Factors.
+    assert _searched(context) == [
+        ("JPM", "JPM_10-K_2025-12-31", "Business"),
+        ("JPM", "JPM_10-K_2025-12-31", "Risk Factors"),
+    ]
+    assert _text_places(context, "JPM") == {
+        ("JPM_10-K_2025-12-31", "Business"),
+        ("JPM_10-K_2025-12-31", "Risk Factors"),
+    }
+    for source in context.sources:
+        assert source.text.startswith(
+            _opening_chunk(index, source.filing_id, source.section)["text"]
+        )
+    assert CONTEXT_BUDGET_TOKENS * 0.8 <= _source_tokens(context) <= CONTEXT_BUDGET_TOKENS
+
+
+def test_a_question_naming_only_a_company_takes_the_overview_route(index):
+    context = _ask(index, "What about Apple?")
+
+    assert context.query_scope.sections == OVERVIEW
+    # The Q1 FY2026 10-Q's Risk Factors only point back to the 10-K: cited as they stand.
+    assert _text_places(context, "AAPL") == {
+        ("AAPL_10-K_2025-09-27", "Business"),
+        ("AAPL_10-K_2025-09-27", "Risk Factors"),
+        ("AAPL_10-Q_2025-12-27", "MD&A"),
+        ("AAPL_10-Q_2025-12-27", "Risk Factors"),
+    }
+    assert "No Sources were found" not in context.messages[1].content
+
+
+def test_a_follow_up_switching_company_after_an_overview_takes_it_too(index):
+    conversation = [
+        Message("user", "How is JP Morgan doing?"),
+        Message("assistant", "JPMorgan is the largest US bank [S1]."),
+        Message("user", "And what about Tesla?"),
+    ]
+
+    context = prepare_answer_context(conversation, index)
+
+    assert [c.ticker for c in context.query_scope.companies] == ["TSLA"]
+    assert context.query_scope.sections == OVERVIEW
+    assert {s.section for s in context.sources} == set(OVERVIEW)
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "What does Apple say about tariffs?",
+        "How has Apple changed?",
+        "How was Apple doing over the last two years?",
+        "How was Apple doing in fiscal 2024?",
+        "What are Apple's main risks?",
+    ],
+)
+def test_a_topic_a_change_a_time_phrase_or_a_hint_keeps_its_own_route(index, question):
+    assert _ask(index, question).query_scope.sections != OVERVIEW
+
+
+TESLA_OUTLOOK_2026 = "What is Tesla's outlook for 2026?"
+
+
+def test_a_plan_whose_matches_fall_short_fills_its_budget_in_document_order(index):
+    mdna = _mdna(index)
+    first, fourth = sorted(mdna)[:3], mdna[sorted(mdna)[3]]
+    matched = mdna[max(mdna)]
+    budget = matched["tokens"] + sum(mdna[o]["tokens"] for o in first)
+
+    source = _retrieve(index, [matched], context_budget=budget)
+
+    # The one matched chunk, the MD&A's last, leaves the budget unspent: the MD&A's
+    # opening chunks fill it, and the fourth no longer fits.
+    assert source.text.startswith(mdna[first[0]]["text"])
+    assert source.text.endswith(GAP + matched["text"])
+    assert source.text.count(GAP) == 1
+    assert _middle(fourth) not in source.text
+    # Filled up to the budget and no further.
+    assert _read(mdna, source.text) == {*first, max(mdna)}
+    assert sum(mdna[o]["tokens"] for o in _read(mdna, source.text)) == budget
+
+
+def test_a_one_company_outlook_reads_the_whole_mdna_when_it_fits(index):
+    context = _ask(index, TESLA_OUTLOOK_2026)
+
+    (source,) = [s for s in context.sources if s.kind == "text"]
+    assert (source.filing_id, source.section) == (TESLA_10K, "MD&A")
+    # The MD&A (about 15,500 tokens) fits in the budget, so every chunk of it is read.
+    assert GAP not in source.text
+    assert all(c["text"][-100:] in source.text for c in _mdna(index).values())
+    assert _source_tokens(context) <= CONTEXT_BUDGET_TOKENS
+
+
+def test_a_plan_whose_matches_fill_the_budget_is_not_filled(index):
+    mdna = _mdna(index)
+    ranked = [mdna[o] for o in sorted(mdna, reverse=True)][:6]
+    # The best five fill the budget but for one token less than the sixth needs: the sixth
+    # does not fit, so the plan's matches have not run out, and nothing is added, though
+    # the MD&A's shorter unmatched chunks would fit in what is left.
+    budget = sum(c["tokens"] for c in ranked) - 1
+    assert min(c["tokens"] for o, c in mdna.items() if c not in ranked) < ranked[5]["tokens"]
+
+    context = _retrieve_context(index, ranked, context_budget=budget)
+    source = _mdna_source(context)
+
+    assert source.text.startswith(ranked[4]["text"])
+    assert ranked[5]["text"][:100] not in source.text
+    assert mdna[sorted(mdna)[0]]["text"] not in source.text
+    # Exactly the five ranked chunks, as before the fill: no other MD&A chunk reaches the
+    # Sources or the prompt.
+    chosen = {c["ordinal"] for c in ranked[:5]}
+    assert _read(mdna, source.text) == chosen
+    prompt = "\n".join(m.content for m in context.messages)
+    assert _read(mdna, prompt) == chosen
+
+
+# --- Open questions ------------------------------------------------------------------------
+
+
+def _latest_filings(indexed_filings):
+    by_ticker = {}
+    for f in sorted(indexed_filings, key=lambda f: f.report_period):
+        by_ticker.setdefault(f.ticker, []).append(f)
+    latest = set()
+    for own in by_ticker.values():
+        annual = [i for i, f in enumerate(own) if f.form_type == "10-K"]
+        latest |= {f.filing_id for f in own[annual[-1] :]}
+    return latest
+
+
+def test_a_question_naming_no_company_and_no_time_phrase_reads_the_latest_filings(
+    index, indexed_filings
+):
+    context = _ask(index, "Which companies discuss Gigafactory production?")
+
+    assert context.query_scope.time_window.label == "latest"
+    assert {p.filing_id for p in context.query_scope.searched} == _latest_filings(indexed_filings)
+    assert any(s.ticker == "TSLA" for s in context.sources)
+    assert {s.filing_id for s in context.sources} <= _latest_filings(indexed_filings)
+
+
+@pytest.mark.parametrize(
+    ("question", "label"),
+    [
+        ("How has Gigafactory production changed?", "all Filings"),
+        (
+            "Which companies discussed Gigafactory production over the last two years?",
+            "last 2 years",
+        ),
+        ("Which companies discussed Gigafactory production in fiscal 2023?", "all Filings"),
+    ],
+)
+def test_an_open_change_question_or_named_period_keeps_its_window(index, question, label):
+    assert _ask(index, question).query_scope.time_window.label == label
+
+
 # --- The places searched -----------------------------------------------------------------
 
 
@@ -982,7 +1195,7 @@ def test_a_question_naming_no_company_records_every_filing_searched_whole(index,
     context = _ask(index, "Which companies discuss artificial intelligence?")
 
     assert {(p.filing_id, p.section) for p in context.query_scope.searched} == {
-        (f.filing_id, None) for f in indexed_filings
+        (f, None) for f in _latest_filings(indexed_filings)
     }
 
 
@@ -1106,6 +1319,147 @@ def test_an_index_built_by_an_older_version_says_to_rebuild_it(tmp_path, index):
         _ask(old, BRIEF_QUESTION)
 
 
+# --- Source text -------------------------------------------------------------------------
+
+GAP = "\n[…]\n"
+TESLA_10K = "TSLA_10-K_2025-12-31"
+# An outlook question reads the MD&A of Tesla's latest Filing, its FY2025 10-K.
+TESLA_OUTLOOK = "What is Tesla's outlook?"
+
+
+def _mdna(index):
+    """Tesla's FY2025 10-K MD&A chunks, by ordinal."""
+    return {c["ordinal"]: c for c in _chunks(index, filing_id=TESLA_10K, section="MD&A")}
+
+
+def _retrieve_context(index, rows, **kwargs):
+    """The Answer Context of Tesla's outlook when retrieval ranks exactly these chunks,
+    within a budget they fill unless another is given (a budget they leave unspent is
+    filled from the rest of the MD&A)."""
+    ids = [r["id"] for r in rows]
+    kwargs.setdefault("context_budget", sum(r["tokens"] for r in rows))
+    return prepare_answer_context(
+        [Message("user", TESLA_OUTLOOK)],
+        index,
+        ranker=lambda request: [i for i in ids if i in request.eligible],
+        **kwargs,
+    )
+
+
+def _mdna_source(context):
+    (source,) = [s for s in context.sources if s.filing_id == TESLA_10K and s.section == "MD&A"]
+    return source
+
+
+def _retrieve(index, rows, **kwargs):
+    """The Source citing Tesla's MD&A when retrieval ranks exactly these chunks."""
+    return _mdna_source(_retrieve_context(index, rows, **kwargs))
+
+
+def _middle(chunk):
+    middle = len(chunk["text"]) // 2
+    return chunk["text"][middle : middle + 100]
+
+
+def _read(mdna, text):
+    """The ordinals of the MD&A chunks a text holds."""
+    return {o for o, c in mdna.items() if _middle(c) in text}
+
+
+def test_adjacent_chunks_join_as_one_passage_with_their_overlap_shown_once(index):
+    mdna = _mdna(index)
+    run = [mdna[76], mdna[77], mdna[78]]
+    assert all(c["kind"] == "prose" for c in run)
+    assert all(b["text"][:80] in a["text"] for a, b in zip(run, run[1:], strict=False))
+
+    source = _retrieve(index, [*run, mdna[80]])
+
+    # Ordinal 79 was not retrieved: exactly one marker, before the last chunk.
+    assert source.text.count(GAP) == 1
+    joined, after = source.text.split(GAP)
+    assert after == mdna[80]["text"]
+    assert joined.startswith(run[0]["text"])
+    assert joined.endswith(run[-1]["text"][-200:])
+    # Each chunk's opening repeats the end of the one before it; it is shown once.
+    for chunk in run[1:]:
+        assert joined.count(chunk["text"][:80]) == 1
+    assert len(joined) < sum(len(c["text"]) for c in run)
+
+
+def test_a_dropped_overlap_is_the_longest_suffix_the_next_chunk_opens_with(index):
+    mdna = _mdna(index)
+    a, b = mdna[76], mdna[77]
+    overlap = max(k for k in range(1, len(b["text"])) if a["text"].endswith(b["text"][:k]))
+
+    source = _retrieve(index, [a, b])
+
+    assert source.text == a["text"] + b["text"][overlap:]
+
+
+def test_a_table_and_the_prose_after_it_join_with_no_marker_and_no_text_lost(index):
+    mdna = _mdna(index)
+    table, prose = mdna[90], mdna[91]
+    assert (table["kind"], prose["kind"]) == ("table", "prose")
+
+    source = _retrieve(index, [table, prose])
+
+    assert GAP not in source.text
+    assert source.text == table["text"] + "\n" + prose["text"]
+
+
+def test_chunks_that_skip_an_ordinal_are_separated_by_exactly_one_marker(index):
+    mdna = _mdna(index)
+    chosen = [mdna[76], mdna[78], mdna[80]]
+
+    source = _retrieve(index, chosen)
+
+    assert source.text == GAP.join(c["text"] for c in chosen)
+
+
+def test_joining_passages_leaves_chunk_selection_and_the_budget_unchanged(index):
+    mdna = _mdna(index)
+    chosen = [mdna[76], mdna[77], mdna[78], mdna[80]]
+    budget = sum(c["tokens"] for c in chosen)
+
+    # Each chunk still costs its whole size: the overlap shown once frees no budget.
+    whole = _retrieve(index, chosen, context_budget=budget)
+    short = _retrieve(index, chosen, context_budget=budget - 1)
+
+    assert whole.text.endswith(GAP + mdna[80]["text"])
+    assert mdna[80]["text"][-200:] not in short.text
+    assert short.text.endswith(mdna[78]["text"][-200:])
+
+
+def test_a_source_records_where_its_best_ranked_chunk_stands_in_its_text(index):
+    """The Generation Miss report asks whether a quote falls in it (`edgar_eval.misses`)."""
+    mdna = _mdna(index)
+
+    # Ranked best, the chunk after a skipped ordinal stands after the marker.
+    skipped = _retrieve(index, [mdna[80], mdna[76], mdna[77]])
+    start, end = skipped.best_chunk
+    assert skipped.text[start:end] == mdna[80]["text"]
+    assert skipped.text[:start].endswith(GAP)
+
+    # Ranked best, a chunk whose opening repeats the one before it stands for the text
+    # it adds; the first chunk in body order stands whole.
+    a, b = mdna[76], mdna[77]
+    joined = _retrieve(index, [b, a])
+    start, end = joined.best_chunk
+    assert (start, end) == (len(a["text"]), len(joined.text))
+    assert b["text"].endswith(joined.text[start:end])
+    assert _retrieve(index, [a, b]).best_chunk == (0, len(a["text"]))
+
+
+def test_a_facts_source_has_no_best_ranked_chunk(index):
+    context = prepare_answer_context(
+        [Message("user", "What was Apple's revenue in FY2025?")], index
+    )
+
+    facts = [s for s in context.sources if s.kind == "facts"]
+    assert facts and all(s.best_chunk is None for s in facts)
+    assert all(s.best_chunk is not None for s in context.sources if s.kind == "text")
+
+
 # --- Deduplication -----------------------------------------------------------------------
 
 _WORD = re.compile(r"[a-z0-9]+")
@@ -1118,7 +1472,8 @@ def _shingles(text):
 
 
 def _passages(context):
-    """Each retrieved chunk, with the Source that cites it."""
+    """Each passage retrieved (a run of chunks next to each other in the Filing, or a
+    chunk's new paragraphs), with the Source that cites it."""
     return [(s, p) for s in context.sources for p in s.text.split("\n[…]\n")]
 
 
@@ -1386,6 +1741,89 @@ def test_words_that_only_mention_a_sector_are_not_sector_phrases(sector_index, q
 
     assert [c.ticker for c in context.query_scope.companies] == tickers
     assert context.query_scope.sector_phrases == ()
+
+
+# --- Company Groups ----------------------------------------------------------------------
+
+BIG_TECH_QUESTION = "What are the main AI risks for big tech companies?"
+BIG_TECH = ["AAPL", "AMZN", "GOOG", "META", "MSFT", "NVDA", "TSLA"]
+
+
+def test_big_tech_resolves_to_the_curated_company_group(big_tech_index):
+    context = _ask(big_tech_index, BIG_TECH_QUESTION)
+
+    assert [c.ticker for c in context.query_scope.companies] == BIG_TECH
+    assert {s.ticker for s in context.sources} == set(BIG_TECH)
+    [group] = context.query_scope.sector_phrases
+    assert group.phrase == "big tech companies"
+    assert group.column == "group"
+    assert group.is_company_group
+    assert group.values == ("Big Tech",)
+    assert group.tickers == tuple(BIG_TECH)
+
+
+@pytest.mark.parametrize(
+    "question",
+    [
+        "How do the megacap tech companies describe competition?",
+        "What does Big Tech say about AI regulation?",
+        "What are the risk factors of the megacap tech names?",
+    ],
+)
+def test_megacap_tech_and_big_tech_alone_name_the_same_group(big_tech_index, question):
+    context = _ask(big_tech_index, question)
+
+    assert [c.ticker for c in context.query_scope.companies] == BIG_TECH
+    assert [p.column for p in context.query_scope.sector_phrases] == ["group"]
+
+
+def test_tech_companies_still_resolve_to_the_information_technology_sector(big_tech_index):
+    context = _ask(big_tech_index, "What are the main AI risks for tech companies?")
+
+    [phrase] = context.query_scope.sector_phrases
+    assert (phrase.column, phrase.values) == ("sector", ("Information Technology",))
+    assert not phrase.is_company_group
+    assert {c.ticker for c in context.query_scope.companies} == {
+        "AAPL",
+        "ADBE",
+        "CSCO",
+        "IBM",
+        "MSFT",
+        "NVDA",
+    }
+
+
+def test_the_prompt_names_a_company_group_as_a_curated_group(big_tech_index):
+    context = _ask(big_tech_index, BIG_TECH_QUESTION)
+
+    in_scope = context.messages[1].content.split("# Companies in scope")[1].split("# ")[0]
+    assert '"big tech companies"' in in_scope
+    assert 'curated Company Group "Big Tech"' in in_scope
+    for name in ("Apple Inc", "Amazon", "Alphabet", "Meta Platforms", "Microsoft", "NVIDIA"):
+        assert name in in_scope
+    assert "Tesla" in in_scope
+    assert "Adobe" not in in_scope and "Cisco" not in in_scope
+
+
+def test_the_index_carries_each_companys_group(big_tech_index):
+    db = sqlite3.connect(big_tech_index)
+    groups = dict(db.execute("SELECT ticker, company_group FROM companies"))
+    db.close()
+
+    assert {t for t, g in groups.items() if g == "Big Tech"} == set(BIG_TECH)
+    assert groups["ADBE"] is None and groups["IBM"] is None
+
+
+def test_an_index_built_before_company_groups_is_refused(tmp_path, big_tech_index):
+    old = tmp_path / "old.sqlite"
+    old.write_bytes(big_tech_index.read_bytes())
+    db = sqlite3.connect(old)
+    db.execute("PRAGMA user_version = 5")
+    db.commit()
+    db.close()
+
+    with pytest.raises(RuntimeError, match="make index"):
+        _ask(old, BIG_TECH_QUESTION)
 
 
 # --- Metric ------------------------------------------------------------------------------
@@ -1657,8 +2095,116 @@ def test_the_prompt_gives_each_companys_coverage_report_periods_and_fiscal_perio
         for filing in company.in_scope:
             assert (
                 f"{filing.filing_id} ({filing.form_type} {filing.fiscal_period}, "
+                f"{filing_months(filing.report_period, filing.form_type)}, "
                 f"Report Period {filing.report_period})"
             ) in coverage
+
+
+@pytest.fixture(scope="module")
+def msft_index(tmp_path_factory):
+    """Microsoft's Filings from FY2025 on: its fiscal year ends in June."""
+    from datetime import date
+
+    from edgar_rag.corpus import load_corpus
+    from edgar_rag.retrieval import build_index
+
+    filings = [
+        f for f in load_corpus() if f.ticker == "MSFT" and f.report_period >= date(2024, 9, 1)
+    ]
+    return build_index(filings, tmp_path_factory.mktemp("msft_index") / "edgar_rag.sqlite")
+
+
+@pytest.mark.parametrize(
+    ("question", "company_line", "filings"),
+    [
+        # NVIDIA's 52/53-week year ends in late January: FY2026's second quarter is
+        # May to July 2025, and FY2025 ran from February 2024 to January 2025.
+        (
+            "How has NVIDIA's revenue changed over the last two years?",
+            "NVIDIA Corporation (NVDA): Tracked Company; fiscal year ends in January",
+            [
+                "NVDA_10-K_2025-01-26 (10-K FY2025, Feb 2024–Jan 2025, Report Period 2025-01-26)",
+                "NVDA_10-Q_2025-07-27 (10-Q Q2 FY2026, May–Jul 2025, Report Period 2025-07-27)",
+                "NVDA_10-Q_2025-10-26 (10-Q Q3 FY2026, Aug–Oct 2025, Report Period 2025-10-26)",
+            ],
+        ),
+        # Apple's year ends in late September: its first quarter is October to December.
+        (
+            BRIEF_QUESTION,
+            "Apple Inc (AAPL): Tracked Company; fiscal year ends in September",
+            [
+                "AAPL_10-K_2025-09-27 (10-K FY2025, Oct 2024–Sep 2025, Report Period 2025-09-27)",
+                "AAPL_10-Q_2025-12-27 (10-Q Q1 FY2026, Oct–Dec 2025, Report Period 2025-12-27)",
+            ],
+        ),
+        # Tesla's year is the calendar year.
+        (
+            "How has Tesla's revenue changed over the last two years?",
+            "Tesla Inc (TSLA): Tracked Company; fiscal year ends in December",
+            [
+                "TSLA_10-K_2025-12-31 (10-K FY2025, Jan–Dec 2025, Report Period 2025-12-31)",
+                "TSLA_10-Q_2025-06-30 (10-Q Q2 FY2025, Apr–Jun 2025, Report Period 2025-06-30)",
+            ],
+        ),
+    ],
+)
+def test_the_coverage_block_gives_each_filings_calendar_months(
+    index, question, company_line, filings
+):
+    coverage = _section(_ask(index, question).messages[1].content, "Coverage")
+
+    assert company_line in coverage
+    for filing in filings:
+        assert filing in coverage
+
+
+def test_the_coverage_block_gives_calendar_months_for_a_june_year_end(msft_index):
+    """Microsoft's year ends on June 30: FY2026's first quarter is July to September 2025."""
+    coverage = _section(
+        _ask(msft_index, "What are Microsoft's main risk factors?").messages[1].content,
+        "Coverage",
+    )
+
+    assert "Microsoft Corporation (MSFT): Tracked Company; fiscal year ends in June" in coverage
+    assert (
+        "MSFT_10-K_2025-06-30 (10-K FY2025, Jul 2024–Jun 2025, Report Period 2025-06-30)"
+    ) in coverage
+    assert (
+        "MSFT_10-Q_2025-09-30 (10-Q Q1 FY2026, Jul–Sep 2025, Report Period 2025-09-30)"
+    ) in coverage
+    assert (
+        "MSFT_10-Q_2025-12-31 (10-Q Q2 FY2026, Oct–Dec 2025, Report Period 2025-12-31)"
+    ) in coverage
+
+
+def test_the_prompt_asks_for_calendar_months_beside_a_non_december_fiscal_period(index):
+    """Prompt v15: the first time the answer names a fiscal period of a Company whose year
+    doesn't end in December, it gives the calendar months the Coverage block lists."""
+    context = _ask(index, "How has NVIDIA's revenue changed over the last two years?")
+    rules = " ".join(context.messages[0].content.split())
+
+    assert (
+        "The first time the answer names a fiscal period of a Company whose fiscal year "
+        "does not end in December, give its calendar months after it"
+    ) in rules
+    assert 'copied from "Coverage"' in rules
+    assert '"Q2 FY2026 (May–Jul 2025)"' in rules
+
+
+def test_each_source_label_carries_its_calendar_months(index):
+    context = _ask(index, "How has NVIDIA's revenue changed over the last two years?")
+    user = context.messages[1].content
+    labels = {s.filing_id: s.label for s in context.sources}
+
+    assert labels["NVDA_10-Q_2025-07-27"].startswith("NVDA 10-Q Q2 FY2026 (May–Jul 2025), ")
+    assert labels["NVDA_10-K_2025-01-26"].startswith("NVDA 10-K FY2025 (Feb 2024–Jan 2025), ")
+    for source in context.sources:
+        assert f"[{source.tag}] {source.label}" in user
+    # The Financial Facts rows give the months beside each fiscal period too, a derived
+    # fourth quarter included.
+    facts = _section(user, "Financial Facts")
+    assert "| NVDA | Revenue | Q3 FY2026 (Aug–Oct 2025) | 3 months ended 2025-10-26 |" in facts
+    assert "| NVDA | Revenue | Q4 FY2025 (Nov 2024–Jan 2025) | " in facts
 
 
 def test_the_prompt_says_what_the_stale_filing_is_in_the_coverage_block(gap_index):
@@ -1674,6 +2220,147 @@ def test_a_question_with_no_gaps_says_so_in_the_prompt(index):
 
     assert context.coverage_gaps == ()
     assert _section(context.messages[1].content, "Coverage Gaps").strip() == "None."
+
+
+def test_the_prompt_asks_for_a_gap_only_where_it_leaves_part_of_the_question_unanswered(index):
+    """Prompt v15 (ADR 0016): the product shows every Coverage Gap as a Coverage note, so
+    the answer no longer recites the gap wordings near its start or in a closing Coverage
+    note; it says so in its own words where a gap leaves part of the question unanswered,
+    and still never fills one."""
+    context = _ask(index, "Compare the risk factors of JPMorgan and Wells Fargo.")
+    system, user = (m.content for m in context.messages)
+    rules = " ".join(system.split())
+
+    # The gaps still reach the prompt, so the answer knows what it cannot cover.
+    assert "Wells Fargo is not in the Filings provided" in _section(user, "Coverage Gaps")
+    assert "in your own words" in rules
+    assert "leaves part of the question unanswered" in rules
+    assert "Never fill a gap from general knowledge" in rules
+    assert "shown below your answer" in rules
+    assert "Never mention that the companies' periods differ for its own sake" in rules
+    # Nothing asks for the fixed wordings near the start or a closing Coverage note.
+    assert "in the words given" not in rules
+    assert "near the start of the answer. Never fill" not in rules
+    assert 'end with a short "Coverage" note' not in rules
+    assert "repeat the Coverage Gaps" not in rules
+    assert "report for different periods" not in rules
+
+
+def test_the_prompt_asks_for_a_comparison_table_whenever_companies_are_compared(index):
+    context = _ask(index, BRIEF_QUESTION)
+    rules = " ".join(context.messages[0].content.split())
+
+    assert (
+        "When the question compares two or more Companies on the same dimensions, give a "
+        "comparison table first"
+    ) in rules
+    assert "then each Company's detail under its own heading" in rules
+
+
+def _text_companies(context):
+    return {s.ticker for s in context.sources if s.kind == "text"}
+
+
+@pytest.mark.parametrize(
+    ("fixture", "question", "companies", "words"),
+    [
+        ("index", "What are Apple's main risk factors?", 1, "300 to 600"),
+        ("index", "Compare the risk factors of Apple and Tesla.", 2, "300 to 600"),
+        ("index", BRIEF_QUESTION, 3, "300 to 750"),
+        (
+            "index",
+            "Compare the risk factors of Apple, Tesla, Target and NVIDIA.",
+            4,
+            "300 to 900",
+        ),
+        (
+            "sector_index",
+            "What are the main risks facing pharmaceutical companies?",
+            5,
+            "300 to 1,000",
+        ),
+        (
+            "big_tech_index",
+            "What are the main risks facing big tech companies?",
+            7,
+            "300 to 1,000",
+        ),
+    ],
+)
+def test_the_length_block_scales_the_word_range_to_the_companies_with_text_sources(
+    request, fixture, question, companies, words
+):
+    """Prompt v17: the ceiling is 600 words for one or two Companies with text Sources,
+    150 more for each further Company, to at most 1,000; the system rules refer to it."""
+    context = _ask(request.getfixturevalue(fixture), question)
+    system, user = (m.content for m in context.messages)
+
+    assert len(_text_companies(context)) == companies
+    noun = "Company" if companies == 1 else "Companies"
+    assert _section(user, "Length").strip() == (
+        f"Write {words} words: the Sources cover {companies} {noun}."
+    )
+    rules = " ".join(system.split())
+    assert 'Write the number of words given under "Length"' in rules
+    assert "keep the most material points" in rules
+    assert "Write 300 to 600 words" not in rules
+
+
+def test_an_answer_with_no_text_sources_gets_no_length_block(index):
+    context = _ask(index, "What are Wells Fargo's main risk factors?")
+
+    assert not _text_companies(context)
+    assert "# Length" not in context.messages[1].content
+
+
+@pytest.mark.parametrize(
+    ("companies", "words"),
+    [
+        (0, (300, 600)),
+        (1, (300, 600)),
+        (2, (300, 600)),
+        (3, (300, 750)),
+        (4, (300, 900)),
+        (5, (300, 1000)),
+        (9, (300, 1000)),
+    ],
+)
+def test_the_answer_word_range_rises_150_a_company_after_the_second(companies, words):
+    assert answer_words(companies) == words
+
+
+def test_the_prompt_asks_for_each_point_in_full(index):
+    """Prompt v16 (#161): rule 8 asks for the Company's own claim, then the particulars
+    its Source names, in the Source's tense, attributed to one Company, with every text
+    Source cited at least once; the ban on broad categories no longer bans the claim."""
+    context = _ask(index, BRIEF_QUESTION)
+    rules = " ".join(context.messages[0].content.split())
+
+    assert PROMPT_VERSION == "v19"
+    assert "8. State each point in full." in rules
+    # The Company's own claim first, its own assessment included.
+    assert "first the Company's own claim as its Source states it" in rules
+    assert "including its own assessment of how material the matter is, or of its outlook" in (
+        rules
+    )
+    # Then the particulars, courts, counts and words of scale among them.
+    assert (
+        "then the particulars the Source names: the laws and programs, products, people, "
+        "places, courts, counts, dates, amounts and percentages"
+    ) in rules
+    assert '"a substantial number", "large numbers", "very few"' in rules
+    # The tense, stated outright.
+    assert (
+        "When a Source says something has happened, is happening, or has happened in the "
+        'past and may again, say that it has; never reduce it to "could" or "may".'
+    ) in rules
+    # One Company per claim, and every text Source drawn on.
+    assert "Attribute each claim to the one Company whose Source states it" in rules
+    assert "never pool Companies in one claim" in rules
+    assert "Give each text Source at least one cited point." in rules
+    # The ban on broad categories, kept without banning the Company's headline.
+    assert "Never replace the particulars with a category that would fit any company" in rules
+    assert "Never reduce them to broad categories" not in rules
 
 
 def test_coverage_gaps_are_worded_the_same_way_every_time(index, gap_index):

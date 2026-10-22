@@ -34,7 +34,7 @@ The file holds `version`, `split_rule` and `cases`. Each case has:
 | `id` | Stable, unique case id. The split is computed from it. |
 | `question` | The latest user message, the one the Answer Call answers |
 | `history` | Earlier turns, oldest first, as `{role, content}` with role `user` or `assistant`. Always ends with an assistant answer. Empty for a single-turn case. |
-| `question_type` | One of `risk`, `figure_trend`, `sector`, `outlook`, `missing_company`, `stale_filing` |
+| `question_type` | One of `risk`, `figure_trend`, `sector`, `outlook`, `missing_company`, `stale_filing`, and from version 2 `overview`, a broad question naming Companies and no topic ([Cases added later](#cases-added-later)) |
 | `split` | `dev` or `holdout`, as computed by the split rule. From version 2, recorded per case, and `pending` while new cases are drafted ([The file](#the-file)) |
 | `starter` | `{order, label}` for a starter prompt, else `null` |
 | `tags` | Free labels for case features: `brief_example`, `inherits_companies`, `switches_company`, `topic_change_without_company`, and `periods_differ_comparison` on a comparison asked to test the periods differ gap ([the fifth and sixth slices](#the-new-cases)) |
@@ -131,7 +131,7 @@ No id is in both files: the loader rejects one that is.
 
 ## Version 2
 
-Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions and four variants of each, and version 2's file, with all three batches of version 1's 27 other cases rewritten and all six slices of new cases, 80 cases in all, are built, and the split is [frozen](#the-frozen-split): 60 dev cases and 20 holdout cases, none pending. Version 2 is the harnesses' default; its dev split has been measured and its holdout scored once ([evaluation](evaluation.md#the-version-2-holdout-run)).
+Decided on 2026-10-17 ([ADR 0012](adr/0012-golden-set-version-2-and-the-brief-suite.md)). The Required Fact tiers, the Brief Suite, with the brief's three questions and four variants of each, and version 2's file, with all three batches of version 1's 27 other cases rewritten and all six slices of new cases, 80 cases in all, are built, and the split is [frozen](#the-frozen-split): 60 dev cases and 20 holdout cases, none pending. Three dev cases were [added later](#cases-added-later), 83 in all. Version 2 is the harnesses' default; its dev split has been measured and its holdout scored once ([evaluation](evaluation.md#the-version-2-holdout-run)).
 
 ### The file
 
@@ -149,8 +149,8 @@ Version 2 lives in [`data/eval/golden_set_v2.json`](../data/eval/golden_set_v2.j
 - **No repeated question.** No question is asked twice across Golden Set version 1, Golden Set version 2 and the Brief Suite, once case and whitespace are normalised. A version 1 case may share its question with the version 2 case that rewrites it under the same id, and with the Brief Suite case that replaces it.
 - **No shared id** between version 2 and the Brief Suite; the Brief Suite's loader checks both versions.
 - **Figures from the reference.** Every dollar amount a version 2 or Brief Suite Required Fact states must match a USD value that the SEC company-facts reference records for the fact's own Filing (matched on the accession number in its source URL), at the amount's printed precision: "$60.9 billion" matches 60.85 to 60.95 billion. A figure about a Company the reference does not cache fails. The test is skipped when the cache is absent (`make sec-facts`). Percentages are not checked against it.
-- **The frozen split.** A test recomputes the 20 lowest SHA-256 digests over the 53 new cases, named by their six slices so a case added later never enters the count, and checks they are the frozen list and the cases recording `holdout`, every other case `dev`, 60 and 20 ([The frozen split](#the-frozen-split)).
-- **The mix by kind of question**, counted per split against ADR 0012's table below and printed with the test run. It is reported, not enforced against the table and not adjusted, since the hash decides the holdout's; the test pins the frozen mix recorded [below](#the-frozen-split), so a case that changes kind or split shows there. A follow-up counts as one whatever it asks; a Coverage Gap case asks about a missing Company or a stale Filing, or for a trend or outlook the Filings cannot give (a `snapshot_trend` or `no_guidance` gap), or is a comparison asked to test the periods differ gap (tagged `periods_differ_comparison`); elsewhere that gap only qualifies the answer, and the rest count by question type (`risk`; `figure_trend` and `outlook` as trends; `sector`).
+- **The frozen split.** A test recomputes the 20 lowest SHA-256 digests over the 53 new cases, named by their six slices so a case added later never enters the count, and checks they are the frozen list and the cases recording `holdout`, every other case `dev`, 60 and 20, and the cases added later `dev` ([The frozen split](#the-frozen-split)).
+- **The mix by kind of question**, counted per split against ADR 0012's table below and printed with the test run. It is reported, not enforced against the table and not adjusted, since the hash decides the holdout's; the test pins the frozen mix recorded [below](#the-frozen-split), so a case that changes kind or split shows there. A follow-up counts as one whatever it asks; a Coverage Gap case asks about a missing Company or a stale Filing, or for a trend or outlook the Filings cannot give (a `snapshot_trend` or `no_guidance` gap), or is a comparison asked to test the periods differ gap (tagged `periods_differ_comparison`); elsewhere that gap only qualifies the answer, and the rest count by question type (`risk`; `figure_trend` and `outlook` as trends; `sector`; `overview`, a kind ADR 0012's table has no row for, as its own).
 
 ### The rewritten version 1 cases
 
@@ -368,8 +368,27 @@ The mix by kind of question, counted as in [Checks](#the-file), against [ADR 001
 | Coverage Gap cases | 15 | ~10 | 2 | ~3 |
 | Follow-ups | 6 | ~8 | 5 | ~3 |
 | **Total** | **60** | 60 | **20** | 20 |
+| Overview questions, [added later](#cases-added-later) | 2 | – | 0 | – |
+| Sector questions, [added later](#cases-added-later) | 1 | – | 0 | – |
 
 The hash decided the holdout's mix, so it is reported and not adjusted: the holdout has more follow-ups and fewer Coverage Gap cases than the table, and dev the reverse. All five new follow-ups fell in the holdout, so dev's six are version 1's rewrites. Dev's Coverage Gap count is high because nine of the 27 rewritten version 1 cases are Coverage Gap cases, beside six new ones. The rewritten cases count 4 risk, 5 trend, 3 sector, 9 Coverage Gap and 6 follow-up cases, all dev; the new ones 16 risk (10 dev, 6 holdout), 11 trend (7, 4), 13 sector (10, 3), 8 Coverage Gap (6, 2) and 5 follow-ups (0, 5). No case moves from here on: a case added later is `dev` unless a new Golden Set version says otherwise, and version 2's holdout is scored once, on the final version 2 setup ([the holdout rule](evaluation.md#the-holdout-rule)): that run has been made ([The version 2 holdout run](evaluation.md#the-version-2-holdout-run)).
+
+#### Cases added later
+
+A case added after the freeze is `dev` by the split rule, never enters the digest recomputation, and leaves the holdout list untouched. The test names each one (`ADDED_LATER`) and pins the mix with it.
+
+- **The Overview route's two questions** (#145, 2026-10-20), of a new question type, `overview`: a broad question naming Companies and no topic, which the Overview route answers from each Company's latest Business, MD&A and Risk Factors ([evaluation](evaluation.md#the-overview-route-the-document-order-fill-and-latest-for-open-questions-145-2026-10-20)). Each is labelled from the Filings' Sections like every case, as a good answer needs it, not as the route reaches it.
+
+| Case | Companies | Required Facts (must-state / detail) | Sections drafted from |
+|---|---|---|---|
+| `overview-ko-pep-compare` ("Compare Coke and Pepsi") | Coca-Cola, PepsiCo | 4 / 6 | Business and Risk Factors of Coca-Cola's FY2024 10-K, the MD&A of its Q3 FY2025 10-Q; Business, MD&A and Risk Factors of PepsiCo's FY2025 10-K. Expects the periods differ gap: their latest 10-Ks are a year apart |
+| `overview-jpm-doing` ("How is JP Morgan doing?") | JPMorgan | 3 / 4 | Business and Risk Factors of its FY2025 10-K, and the financial review the Corpus holds in Other, after Item 15, where its 2025 net income and revenue are (must-state). Its figures are stated as changes, since the SEC reference the figure check reads caches Tracked Companies only |
+
+- **The "big tech" Company Group's question** (#146, 2026-10-20), a sector question: "big tech companies" names the curated Company Group of the Sector table's `group` column, not the Information Technology Sector ([assumption 5](assumptions.md#5-a-curated-sector-table-is-acceptable), [evaluation](evaluation.md#the-big-tech-company-group-146-2026-10-20)). The mix above counts it in its own row; the test's pinned mix counts it with the sector questions, 14 dev.
+
+| Case | Companies | Required Facts (must-state / detail) | Sections drafted from |
+|---|---|---|---|
+| `group-big-tech-ai-risks` ("What are the main AI risks for big tech companies?") | Apple, Amazon, Alphabet, Meta, Microsoft, NVIDIA, Tesla | 11 / 16 | Every AI passage of each Company's latest Risk Factors: the FY2025 10-Ks of Apple, Amazon, Alphabet, Meta and Tesla, and the latest 10-Qs of Microsoft (Q2 FY2026) and NVIDIA (Q3 FY2026), which restate their risk factors. Each Company's headline AI risk (one or two) is must-state. Alphabet's and Meta's facts repeat `risk-goog-meta-ai`'s. Expects the periods differ gap |
 
 ### What is decided
 
