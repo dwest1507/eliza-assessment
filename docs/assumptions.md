@@ -22,7 +22,8 @@ Status:
 | 9 | Companies missing from the Corpus are named as missing, never answered | No | not confirmed |
 | 10 | A mainstream hosted LLM API is acceptable for the demo | No | not confirmed |
 | 11 | Questions are asked in a chat, and follow-ups build on earlier ones | No | not confirmed |
-| 12 | An illustrative value model: about $720k a year of analyst time saved | No | not confirmed |
+| 12 | An illustrative value model: about $360k a year of analyst time saved | No | not confirmed |
+| 13 | An illustrative running cost: about $46k a year on Azure, mostly an engineer's time | No | not confirmed |
 
 ## 1. One API call per question
 
@@ -139,11 +140,34 @@ Status:
 
 ## 12. An illustrative value model
 
-- **Assumption:** An illustrative model of what the workspace is worth to a deal team, with inputs we chose and the Client has not given us. None of them is measured. They are there so the Client can replace them with their own.
-  - **Inputs:** 10 analysts, each asking 5 questions a week, each question saving 2 hours of reading, at $150 an hour, over 48 working weeks a year.
+- **Assumption:** An illustrative model of what the workspace is worth to a deal team, with inputs we chose and the Client has not given us. None of them is measured. They are there so the Client can replace them with their own, and a pilot would measure them.
+  - **Inputs:** 10 analysts, each asking 5 questions a week, each question saving 1 hour of reading, net of the minutes spent checking the answer's citations, at $150 an hour, over 48 working weeks a year.
   - **Formula:** analysts × questions a week × hours saved per question × hourly rate × working weeks = value a year.
-  - **Result:** 10 × 5 × 2 × $150 × 48 = $720,000, **about $720k a year**: 50 questions a week, 2,400 a year, 4,800 analyst hours saved.
-  - **Against the cost of the Answer Calls:** 50 Answer Calls a week. At the shipped `gpt-6-luna`'s $0.0030 per answer, at reasoning effort low, that is $0.15 a week. Even at the most expensive model compared, `claude-opus-5-5` at $0.1925 per answer, it is $9.63 a week, about $462 a year: under $10 a week. Both prices are the final round's, on the dev split ([The final all-model round](evaluation.md#the-final-all-model-round-154-2026-10-21)). The cost of hosting, maintenance and the analysts' time checking the cited Sources is left out.
+  - **Result:** 10 × 5 × 1 × $150 × 48 = $360,000, **about $360k a year**: 50 questions a week, 2,400 a year, 2,400 analyst hours saved.
+  - **A conservative case:** at 15 minutes saved per question, a quarter of the base case, it is **about $90k a year**.
+  - **Why 1 hour:** a median 10-K in the Corpus is about 70,000 words, about 5 hours to read once, and a question comparing three Companies' risks reads about two hours of Risk Factors ([market context](market-context.md#how-long-a-filing-takes-to-read)). Experts answering narrower single questions with search tools took 16.8 minutes in one benchmark, so 2 hours would be easy to attack; 1 hour is the base case and 15 minutes the conservative one. This model used 2 hours, about $720k a year, until 2026-10-22.
+  - **Against the cost:** the Answer Calls alone cost little: 50 a week at the shipped `gpt-6-luna`'s $0.0030 per answer is $0.15 a week, and even at the most expensive model compared, `claude-opus-5-5` at $0.1925 per answer, $9.63 a week, about $462 a year ([The final all-model round](evaluation.md#the-final-all-model-round-154-2026-10-21)). The fully loaded running cost, with hosting, security and an engineer's time, is assumption 13: about $46k a year expected, so the value is about 8× the cost in the base case and about 2× in the conservative one. At the high cost, $91k, the conservative case about breaks even. The analysts' time checking the cited Sources is netted out of the hours saved.
 - **Why it matters:** The brief's value case rests on analyst time, which we cannot measure without the Client. A worked figure lets the Client weigh the investment, as long as it is read as illustrative: the answer is fast and cheap (measured), and the time it saves is the Client's to confirm.
-- **Asked in email:** No. To agree with the Client: how many analysts, how many questions each asks a week, and how long one takes to answer by hand today.
+- **Asked in email:** No. To agree with the Client, or to measure in a pilot: how many analysts, how many questions each asks a week, and how long one takes to answer by hand today.
+- **Status:** not confirmed
+
+## 13. An illustrative running cost
+
+- **Assumption:** An illustrative fully loaded cost of running the workspace in production inside the firm's own Microsoft Azure tenant, for the usage of assumption 12 (about 2,400 questions a year). Azure prices are verified list prices; the engineering effort and the security test's hours are our assumptions. A pilot would set the real figures.
+  - **Totals, a year:** low $21,717 (about $22k), **expected $45,799, about $46k**, high $90,546 (about $91k).
+
+    | Line, a year | Low | Expected | High |
+    |---|---|---|---|
+    | Computing: hosting, firewall, private network, monitoring, Defender for Cloud, model calls, evaluation runs, a nightly EDGAR job | $2,066 | $7,424 | $13,935 |
+    | of which the Answer Calls (`gpt-6-luna` on Azure, US data zone) | $7.82 | $7.82 | $78.24 |
+    | Engineering upkeep: 0.10, 0.15 or 0.25 of an engineer | $19,650 | $32,103 | $60,907 |
+    | Annual security test: 0, 40 or 80 hours | $0 | $6,273 | $15,704 |
+
+  - **Computing:** the expected case is App Service Premium v4 (two zone-redundant P0v4 instances, $0.073 an hour each, and a staging instance), Front Door Premium for the web application firewall and Private Link ($330 a month, the largest computing line), four private endpoints, Log Analytics at 3 GB a month beyond the free allowance, Blob Storage and Defender for Cloud. Prices are pay-as-you-go list prices for East US, read from Microsoft's [Azure Retail Prices API](https://learn.microsoft.com/en-us/rest/api/cost-management/retail-prices/azure-retail-prices) on 2026-10-22, before any discount the firm has negotiated. The low case uses Front Door Standard ($35 a month) and no Defender; the high case larger instances and Application Gateway WAF v2. A pilot can run on a minimal setup for about $291 a year (Container Apps, no firewall or private network).
+  - **The Answer Calls:** `gpt-6-luna` is offered on Azure at OpenAI's own list price ($0.10 and $0.50 per million input and output tokens), 10% more in the US data zone. At the final round's mean of 25,180 input and 891 output tokens an answer, that is $7.82 a year; $78.24 at ten times the usage.
+  - **Engineering:** a fully loaded engineer costs $196,503 to $243,627 a year: the BLS median and mean wages for Software Developers, May 2025 ($135,980 and $148,100, and $168,590 in securities and investment firms), divided by the wage share of compensation for professional occupations, 69.2% ([BLS Employer Costs for Employee Compensation, June 2026](https://www.bls.gov/news.release/ecec.t04.htm)). The fraction of an engineer is ours, built bottom-up at about 264 hours a year (0.13 of an engineer): updates and patching, monitoring, a quarterly re-run of the evaluation on new models, the nightly EDGAR job, user support and the security review. No credible source gives the upkeep of a small internal app.
+  - **Security test:** at the median federal-schedule rate for a penetration tester, $156.83 an hour (GSA CALC+); the hours are ours. SOC 2 is not needed while the firm operates the workspace in its own tenant: a SOC 2 report attests a service an outside organisation provides.
+  - **Left out:** the one-time build, the firm's existing Microsoft 365 and Entra ID licences (Entra ID P1, $7 a user a month, if not already held), and a DDoS Network Protection plan if the firm's landing zone requires one and its hub does not already pay it ($2,943.55 a month).
+- **Why it matters:** Set beside assumption 12, it shows that the cost of the workspace is mostly an engineer's time, not the AI: the Answer Calls cost under $10 a year. A value case that counted only the Answer Calls would understate the cost by thousands of times.
+- **Asked in email:** No. To agree with the Client, or to measure in a pilot: where it would run, the firm's Azure discounts and security policies, and who would maintain it.
 - **Status:** not confirmed

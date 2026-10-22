@@ -27,15 +27,18 @@ type Thresholds = EvalExport['thresholds']
 
 /**
  * The "How it works" page: a plain overview first (how an answer is made, "What's
- * covered", the shipped run's headline numbers and the known limits), then three sections
- * under "Technical details", each collapsed by default: the architecture, the evaluation
- * scoreboard (the retrieval Arms and their screen, the latest round's shipped run beside its
- * Control Run, and that round's generator comparison) and the latest holdout run beside dev.
+ * covered", the headline numbers, the holdout run's where there is one, and the known
+ * limits), then three sections under "Technical details", each collapsed by default: the
+ * architecture, the evaluation scoreboard (the retrieval Arms and their screen, the latest
+ * round's shipped run beside its Control Run, and that round's generator comparison) and the
+ * latest holdout run beside dev.
  * All are read from the evaluation export, which holds the latest results only, so the
  * evidence sits in the product; `docs/evaluation.md` keeps the history.
  */
 export default function HowItWorks({ data }: { data: EvalExport }) {
   const shipped = shippedRun(data)
+  const heldOut = data.holdout?.generation ?? null
+  const headline = heldOut ?? shipped
   return (
     <div className="min-h-dvh text-ink">
       <header className="sticky top-0 z-30 flex items-center gap-4 border-b border-line bg-canvas/80 px-5 py-3 backdrop-blur-xl">
@@ -57,7 +60,7 @@ export default function HowItWorks({ data }: { data: EvalExport }) {
         <div className="mx-auto flex w-full max-w-5xl flex-col gap-16">
           <HowAnswersAreMade />
           <WhatsCovered companies={data.companies} missing={data.missingCompanies} />
-          {shipped && <HeadlineNumbers run={shipped} />}
+          {headline && <HeadlineNumbers run={headline} heldOut={heldOut !== null} />}
           <KnownLimits />
         </div>
         <TechnicalDetails

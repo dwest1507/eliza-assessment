@@ -64,8 +64,12 @@ def _linked_docs(slide: str) -> list[Path]:
 
 
 def _appears(figure: str, text: str) -> bool:
-    pattern = rf"(?<![\d.,]){re.escape(figure)}(?![\d]|[.,]\d)"
-    return re.search(pattern, text) is not None
+    """A figure appears word for word, or, a whole percentage, as the share the documents
+    record: "74%" traces to "0.74", since the slides speak in percentages."""
+    candidates = [figure]
+    if re.fullmatch(r"\d{1,2}%", figure):
+        candidates.append(f"0.{int(figure[:-1]):02d}")
+    return any(re.search(rf"(?<![\d.,]){re.escape(c)}(?![\d]|[.,]\d)", text) for c in candidates)
 
 
 @pytest.fixture(scope="module")
@@ -77,21 +81,63 @@ def test_the_deck_has_about_eight_slides(slides):
     assert 7 <= len(slides) <= 9
 
 
+def _slide(slides: list[str], heading: str) -> str:
+    [slide] = [s for s in slides if heading in s.splitlines()[0].lower()]
+    return slide
+
+
 def test_the_deck_covers_the_topics_of_the_presentation(slides):
+    """Eight slides for the Client, in this order, then one appendix slide."""
     headings = [s.splitlines()[0].lower() for s in slides]
-    for topic in ("problem", "value", "demo", "holdout", "risks", "future"):
-        assert any(topic in h for h in headings), f"no slide heading names {topic!r}"
+    topics = (
+        "checked answer",
+        "problem",
+        "value",
+        "demo",
+        "how we know it works",
+        "completeness or reliability",
+        "limits",
+        "next step",
+        "appendix",
+    )
+    assert len(headings) == len(topics)
+    for heading, topic in zip(headings, topics, strict=True):
+        assert topic in heading, f"expected a slide on {topic!r}, found {heading!r}"
 
 
-def test_the_evaluation_slide_uses_the_holdout_run(slides):
-    [results] = [s for s in slides if "holdout" in s.splitlines()[0].lower()]
-    assert "evaluation.md#the-holdout-run" in results
+def test_the_evaluation_slide_uses_the_final_holdout_run(slides):
+    results = _slide(slides, "how we know it works")
+    assert "evaluation.md#the-final-all-model-round" in results
+    assert "20 questions" in _body(results)
+
+
+def test_the_model_slide_shows_the_trade_off_in_plain_words(slides):
+    """Completeness (Fact Recall) and Reliability (Faithfulness), as percentages, for every
+    model of the final round, so the Client can weigh one against the other."""
+    body = _body(_slide(slides, "completeness or reliability"))
+    assert "Completeness" in body and "Reliability" in body
+    for model in ("gpt-6-luna", "gpt-6.1-sol", "gpt-5.6-terra", "Haiku", "Sonnet", "Opus"):
+        assert model in body, f"the model slide leaves out {model!r}"
+
+
+# Glossary terms the panel hasn't been taught: the slides say them in plain words, and only
+# the speaker notes use them.
+_JARGON = ("Fact Recall", "Faithfulness", "Query Scope", "Corpus", "Answer Call", "Golden Set")
+
+
+def test_the_slides_speak_plain_language(slides):
+    for number, slide in enumerate(slides, start=1):
+        body = _LINK.sub("]", _body(slide))
+        for term in _JARGON:
+            assert term not in body, f"slide {number} shows {term!r} outside its notes"
+        for stat in (r"\bp\s*[=<]", r"McNemar", r"Control Run", r"one-sided"):
+            assert not re.search(stat, body), f"slide {number} shows {stat!r} outside its notes"
 
 
 def test_the_future_state_follows_the_clients_answers(slides):
     """The Client confirmed one generative call is a hard requirement (assumption 1), and
     asked for live EDGAR ingestion to be proposed as the way to fill the gaps (assumption 2)."""
-    [future] = [s for s in slides if "future" in s.splitlines()[0].lower()]
+    future = _slide(slides, "next step")
     lowered = future.lower()
     for item in (
         "data room",
@@ -104,6 +150,9 @@ def test_the_future_state_follows_the_clients_answers(slides):
     assert "multi-step" not in lowered
     # Built in #153, so no longer a future step.
     assert "financial facts for every company" not in lowered
+    # The deck closes on a pilot, not on a list of features.
+    assert "proposed next step" in _body(future).lower()
+    assert "pilot" in _body(future).lower()
 
 
 _NOTES = re.compile(r"<!--.*?-->", re.S)
@@ -118,40 +167,40 @@ def _notes(slide: str) -> str:
     return " ".join(_NOTES.findall(slide))
 
 
-def test_the_value_slide_carries_the_illustrative_value_model(slides):
-    """The value model is assumption 12, not confirmed: the slide shows its calculation,
-    says it is illustrative and links the assumption its inputs come from."""
-    [value] = [s for s in slides if "value" in s.splitlines()[0].lower()]
-    body = _body(value)
+def test_the_value_slide_carries_the_illustrative_value_and_cost(slides):
+    """The value model is assumption 12 and the fully loaded running cost assumption 13,
+    both not confirmed: the slide shows the calculation and both results, says they are
+    illustrative and links the assumptions their inputs come from."""
+    body = _body(_slide(slides, "value"))
     assert "illustrative" in body.lower()
     assert "assumptions.md#12" in body
-    for figure in ("720k", "$150", "48"):
+    assert "assumptions.md#13" in body
+    for figure in ("360k", "$150", "48", "$90k", "$46k"):
         assert figure in body, f"the value slide leaves out {figure!r}"
     assumptions = (REPO / "docs" / "assumptions.md").read_text(encoding="utf-8")
-    [twelve] = re.findall(r"^## 12\..*?(?=^## |\Z)", assumptions, re.M | re.S)
-    assert "- **Status:** not confirmed" in twelve
-    assert re.search(r"^\| 12 \|.*\| not confirmed \|$", assumptions, re.M)
+    for number in (12, 13):
+        [section] = re.findall(rf"^## {number}\..*?(?=^## |\Z)", assumptions, re.M | re.S)
+        assert "- **Status:** not confirmed" in section
+        assert re.search(rf"^\| {number} \|.*\| not confirmed \|$", assumptions, re.M)
 
 
 def test_the_choices_slide_keeps_its_statistics_in_the_speaker_notes(slides):
-    [choices] = [s for s in slides if "choices" in s.splitlines()[0].lower()]
-    body = _LINK.sub("]", _body(choices))
-    for term in (r"\bp\s*[=<]", r"McNemar", r"Control Run", r"one-sided"):
-        assert not re.search(term, body), f"the choices slide shows {term!r} outside its notes"
+    choices = _slide(slides, "choices")
     assert re.search(r"\bp\s*=", _notes(choices)), "the statistics belong in the notes"
 
 
-def test_the_risks_slide_reports_the_human_check(slides):
+def test_the_limits_slide_reports_the_human_check(slides):
     """The developer's blind labels of 15 fact items (#152) replace "no human in the loop":
-    the slide states both agreements, links the section, and says the claim labels are
-    still Claude's alone."""
-    [risks] = [s for s in slides if "risks" in s.splitlines()[0].lower()]
-    body = _body(risks)
+    the slide names the check and links the section, and its notes state both agreements
+    and say the claim labels are still Claude's alone."""
+    limits = _slide(slides, "limits")
+    body = _body(limits)
     assert "evaluation.md#the-human-check" in body
-    assert "no human in the loop" not in body.lower()
-    for figure in ("15 fact labels", "80%", "87%"):
-        assert figure in body, f"the risks slide leaves out {figure!r}"
-    assert re.search(r"claim labels[^.]*Claude's alone", body)
+    assert "15 fact labels" in body
+    assert "no human in the loop" not in limits.lower()
+    for figure in ("80%", "87%"):
+        assert figure in limits, f"the limits slide leaves out {figure!r}"
+    assert re.search(r"claim labels[^.]*Claude's alone", limits)
 
 
 def test_no_slide_mentions_the_brief_suite(slides):
