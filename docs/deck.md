@@ -25,7 +25,7 @@ A research assistant for your deal team: ask a business question about a public 
 - **Honest about gaps.** It's built to answer only from the filings, and to say what they don't cover.
 - **Measured, not promised.** Tested on questions it had never seen, against the facts a good answer must state.
 
-> Sources: [the brief](AI-RAG%20Assessment.md), [assumption 1](assumptions.md#1-one-api-call-per-question)
+> Sources: [the brief](https://github.com/dwest1507/eliza-assessment/blob/main/docs/AI-RAG%20Assessment.md), [assumption 1](https://github.com/dwest1507/eliza-assessment/blob/main/docs/assumptions.md#1-one-api-call-per-question)
 
 <!--
 Frame this as a client meeting. The three bullets are the promises the rest of the deck backs:
@@ -47,7 +47,7 @@ predictable.
 
 **So the bar isn't "an answer". It's an answer you can check in one click.**
 
-> Sources: [market context](market-context.md), [EDA findings](findings.md), [assumption 3](assumptions.md#3-every-filing-is-kept-whatever-its-date)
+> Sources: [market context](https://github.com/dwest1507/eliza-assessment/blob/main/docs/market-context.md), [EDA findings](https://github.com/dwest1507/eliza-assessment/blob/main/docs/findings.md), [assumption 3](https://github.com/dwest1507/eliza-assessment/blob/main/docs/assumptions.md#3-every-filing-is-kept-whatever-its-date)
 
 <!--
 The reading time is our estimate: the Corpus's median 10-K word count over an average adult
@@ -79,7 +79,7 @@ flagged as stale, as the Client agreed (assumption 3).
 
 **Beyond hours:** a first read on a target in minutes, more companies screened per thesis, and every claim one click from its source.
 
-> Sources: [assumption 12](assumptions.md#12-an-illustrative-value-model), [assumption 13](assumptions.md#13-an-illustrative-running-cost), [market context](market-context.md#how-long-a-filing-takes-to-read)
+> Sources: [assumption 12](https://github.com/dwest1507/eliza-assessment/blob/main/docs/assumptions.md#12-an-illustrative-value-model), [assumption 13](https://github.com/dwest1507/eliza-assessment/blob/main/docs/assumptions.md#13-an-illustrative-running-cost), [market context](https://github.com/dwest1507/eliza-assessment/blob/main/docs/market-context.md#how-long-a-filing-takes-to-read)
 
 <!--
 Every input is ours (assumptions 12 and 13, not confirmed). Ask the Client for theirs: how many
@@ -108,7 +108,7 @@ decides everything.
 2. **Every claim is one click from its source.** The risks of Apple, Tesla and JPMorgan compared, then a follow-up.
 3. **It says what's missing instead of filling it in.** JPMorgan and Wells Fargo, then "What's covered".
 
-> Sources: [README: running the full stack](../README.md#running-the-full-stack), [ADR 0003](adr/0003-follow-ups-inherit-query-scope-by-rules.md), [ADR 0016](adr/0016-coverage-gaps-shown-by-the-product.md)
+> Sources: [README: running the full stack](https://github.com/dwest1507/eliza-assessment/blob/main/README.md#running-the-full-stack), [ADR 0003](https://github.com/dwest1507/eliza-assessment/blob/main/docs/adr/0003-follow-ups-inherit-query-scope-by-rules.md), [ADR 0016](https://github.com/dwest1507/eliza-assessment/blob/main/docs/adr/0016-coverage-gaps-shown-by-the-product.md)
 
 <!--
 Run `make dev` before the meeting and open http://localhost:3000. Each question is a starter
@@ -146,7 +146,7 @@ Take the panel's own question only if they ask.
 
 *How:* 83 questions, each written with the facts a good answer must state. An independent AI judge grades every answer, and we checked a sample of its grades by hand. Fancier search options didn't produce better answers, so we kept the simple, cheap one.
 
-> Sources: [the final round and its holdout run](evaluation.md#the-final-all-model-round-154-2026-10-21), [the test questions](golden-set.md), [market context](market-context.md#how-well-the-best-ai-answers-filing-questions)
+> Sources: [the final round and its holdout run](https://github.com/dwest1507/eliza-assessment/blob/main/docs/evaluation.md#the-final-all-model-round-154-2026-10-21), [the test questions](https://github.com/dwest1507/eliza-assessment/blob/main/docs/golden-set.md), [market context](https://github.com/dwest1507/eliza-assessment/blob/main/docs/market-context.md#how-well-the-best-ai-answers-filing-questions)
 
 <!--
 The holdout: the shipped setup (keyword search, `gpt-6-luna`, prompt v19) scored once on 20
@@ -192,7 +192,7 @@ Six models answered the same 63 test questions from the same sources. The rule f
 - **We default to reliability:** a number in an IC memo has to hold up without re-checking.
 - **You can choose otherwise.** Switching models is one setting, and every new model gets the same test: testing all six cost $27.75.
 
-> Sources: [the final round of model comparisons](evaluation.md#the-final-all-model-round-154-2026-10-21), [ADR 0009](adr/0009-gpt-6-luna-stays-the-generator.md), [ADR 0011](adr/0011-one-sided-thresholds-and-a-control-run.md)
+> Sources: [the final round of model comparisons](https://github.com/dwest1507/eliza-assessment/blob/main/docs/evaluation.md#the-final-all-model-round-154-2026-10-21), [ADR 0009](https://github.com/dwest1507/eliza-assessment/blob/main/docs/adr/0009-gpt-6-luna-stays-the-generator.md), [ADR 0011](https://github.com/dwest1507/eliza-assessment/blob/main/docs/adr/0011-one-sided-thresholds-and-a-control-run.md)
 
 <!--
 Completeness is Fact Recall and Reliability is Faithfulness, both on the 63 dev questions, every
@@ -230,7 +230,7 @@ the pilot can tune the prompt for a larger model and test it the same way.
 | **Answers state about 76% of key facts,** tested on 20 questions, with 15 fact labels checked by hand | **The pilot:** your analysts' own questions, graded by them, tuned on them |
 | **Answers go to a hosted AI model** | **A private deployment** in your own cloud environment, or a local model |
 
-> Sources: [EDA findings](findings.md), [the final round and its holdout run](evaluation.md#the-final-all-model-round-154-2026-10-21), [the human check](evaluation.md#the-human-check), [assumptions](assumptions.md)
+> Sources: [EDA findings](https://github.com/dwest1507/eliza-assessment/blob/main/docs/findings.md), [the final round and its holdout run](https://github.com/dwest1507/eliza-assessment/blob/main/docs/evaluation.md#the-final-all-model-round-154-2026-10-21), [the human check](https://github.com/dwest1507/eliza-assessment/blob/main/docs/evaluation.md#the-human-check), [assumptions](https://github.com/dwest1507/eliza-assessment/blob/main/docs/assumptions.md)
 
 <!--
 Each limit is solvable, and each fix is the next piece of work. Lead with them before the panel
@@ -260,7 +260,7 @@ the missing-company list are our curation (assumptions 5 and 9).
 
 **Proposed next step: a 6-week pilot.** 3–5 of your analysts and their real questions, on your watchlist. We agree up front what success means, for example: at least 1 hour saved per question, completeness and reliability on your questions at or above today's, and every figure exact. At the end: real numbers for the value model, and a decision on what to build next.
 
-> Sources: [market context](market-context.md#changes-in-filing-language-carry-signal), [assumptions 1, 2, 7 and 13](assumptions.md), [ADR 0001](adr/0001-sqlite-financial-facts-store.md)
+> Sources: [market context](https://github.com/dwest1507/eliza-assessment/blob/main/docs/market-context.md#changes-in-filing-language-carry-signal), [assumptions 1, 2, 7 and 13](https://github.com/dwest1507/eliza-assessment/blob/main/docs/assumptions.md), [ADR 0001](https://github.com/dwest1507/eliza-assessment/blob/main/docs/adr/0001-sqlite-financial-facts-store.md)
 
 <!--
 Every step keeps the rule the Client confirmed: one AI call per question.
@@ -296,7 +296,7 @@ inputs.
 - **The prompt:** a version was kept only if it stated more key facts or fixed named failures. The final one states each point in full, gives more room for more companies, and quotes figures rather than computing them.
 - **The model:** see the dial slide.
 
-> Sources: [the Arm comparison](evaluation.md#the-arm-comparison-on-the-new-retrieval-127-2026-10-18), [the settings comparison](evaluation.md#the-settings-comparison-on-the-new-retrieval-129-2026-10-18), [prompt log](prompt-iterations.md), [ADR 0008](adr/0008-fts5-stays-the-shipped-arm.md), [ADR 0011](adr/0011-one-sided-thresholds-and-a-control-run.md)
+> Sources: [the Arm comparison](https://github.com/dwest1507/eliza-assessment/blob/main/docs/evaluation.md#the-arm-comparison-on-the-new-retrieval-127-2026-10-18), [the settings comparison](https://github.com/dwest1507/eliza-assessment/blob/main/docs/evaluation.md#the-settings-comparison-on-the-new-retrieval-129-2026-10-18), [prompt log](https://github.com/dwest1507/eliza-assessment/blob/main/docs/prompt-iterations.md), [ADR 0008](https://github.com/dwest1507/eliza-assessment/blob/main/docs/adr/0008-fts5-stays-the-shipped-arm.md), [ADR 0011](https://github.com/dwest1507/eliza-assessment/blob/main/docs/adr/0011-one-sided-thresholds-and-a-control-run.md)
 
 <!--
 Shown only if asked about the design. The statistics, for a technical panelist: every choice was

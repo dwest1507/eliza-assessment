@@ -14,6 +14,9 @@ import pytest
 
 REPO = Path(__file__).resolve().parents[2]
 DECK = REPO / "docs" / "deck.md"
+# The deck links the repository's documents by their public GitHub URLs on main, so a
+# copy handed to someone without the repository still opens them.
+GITHUB = "https://github.com/dwest1507/eliza-assessment/blob/main/"
 
 # A figure is an amount, a share, a count or a size: "0.67", "$0.0030", "25,500", "19%",
 # "98k". Not figures: numbers inside labels, names and links ("10-K", "FY2025", "v7",
@@ -52,15 +55,33 @@ def _figures(slide: str) -> list[str]:
     return found
 
 
+def _repo_path(target: str) -> Path | None:
+    """The repository file a link's GitHub URL names, or None for any other link."""
+    if not target.startswith(GITHUB):
+        return None
+    return REPO / unquote(target.removeprefix(GITHUB).split("#")[0])
+
+
 def _linked_docs(slide: str) -> list[Path]:
     docs = []
     for target in _LINK.findall(slide):
-        if "://" in target:
-            continue
-        path = (DECK.parent / unquote(target.split("#")[0])).resolve()
-        if path.suffix == ".md":
+        path = _repo_path(target)
+        if path is not None and path.suffix == ".md":
             docs.append(path)
     return docs
+
+
+def _anchors(doc: Path) -> set[str]:
+    """The heading anchors GitHub gives a Markdown file: lower case, punctuation other
+    than hyphens dropped, spaces as hyphens, a repeated heading numbered from -1."""
+    seen: dict[str, int] = {}
+    for heading in re.findall(r"^#{1,6} +(.+?) *$", doc.read_text(encoding="utf-8"), re.M):
+        slug = re.sub(r"[^\w\- ]", "", heading.lower()).replace(" ", "-")
+        count = seen.get(slug, 0)
+        seen[slug] = count + 1
+        if count:
+            seen[f"{slug}-{count}"] = 1
+    return set(seen)
 
 
 def _appears(figure: str, text: str) -> bool:
@@ -201,6 +222,20 @@ def test_the_limits_slide_reports_the_human_check(slides):
     for figure in ("80%", "87%"):
         assert figure in limits, f"the limits slide leaves out {figure!r}"
     assert re.search(r"claim labels[^.]*Claude's alone", limits)
+
+
+def test_every_link_opens_without_the_repository():
+    """A link to a repository document is its GitHub URL on main, naming a file that
+    exists and, when it has an anchor, a heading in it; no link is a local path."""
+    for target in _LINK.findall(DECK.read_text(encoding="utf-8")):
+        assert "://" in target, f"{target!r} is a local path, not a public URL"
+        path = _repo_path(target)
+        if path is None:
+            continue
+        assert path.is_file(), f"{target!r} names no file in the repository"
+        _, _, anchor = target.partition("#")
+        if anchor:
+            assert anchor in _anchors(path), f"{target!r} names no heading of {path.name}"
 
 
 def test_no_slide_mentions_the_brief_suite(slides):
