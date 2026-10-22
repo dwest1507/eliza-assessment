@@ -175,7 +175,7 @@ eval-settings: $(INDEX) ## Screen each chunk size and context budget named on Ev
 SPLIT ?= dev
 RETRIEVAL_REPORT = data/derived/eval/retrieval-$(SPLIT).json
 
-eval-export: $(RETRIEVAL_REPORT) ## Export the latest eval results (Golden Set version 2) and Corpus coverage for the "How it works" page [SPLIT=...]
+eval-export: $(RETRIEVAL_REPORT) ## Export the latest eval results (Golden Set version 2) and each Company's Company Calendar for the "How it works" page and the workspace [SPLIT=...]
 	$(UV) python -m edgar_eval.export --split $(SPLIT)
 
 judge-study-sample: $(INDEX) ## Draw the judge study's items from the saved reports and write its blind labelling sheet to data/eval/judge_study/ (no provider call) [SEED=...]

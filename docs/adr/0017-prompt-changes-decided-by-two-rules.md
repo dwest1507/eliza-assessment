@@ -97,4 +97,10 @@ Applied offline to #126's saved reports (prompt v7, `compare --rule prompts`, fr
 - **Behind on no guardrail but structure followed:** 6 cases higher, 12 lower, −0.048 [−0.111, +0.016], p behind = 0.119, so the rule's verdict is v15.
 - **The Control pair is not ahead** (+3, p ahead = 0.334), but it is further behind the shipped pair on the same guardrail: 4 higher, 11 lower, −0.071 [−0.143, −0.008], p behind = 0.059.
 
-**The decision.** As the note above says, a candidate blocked only on a guardrail that noise alone moves is the developer's call, with both margins side by side. The developer treated v19's structure margin as noise, since it is inside the Control pair's, so v19 qualifies under `prompts` and is the version that freezes (#153). The rule and its thresholds are unchanged; the choice file keeps the rule's own verdict, and the ruling is recorded here, on #165 and in the evaluation notes.
+**The decision.** A candidate blocked only on a guardrail that noise alone moves is the developer's call, with both margins side by side. The developer treated v19's structure margin as noise, since it is inside the Control pair's, so v19 qualifies under `prompts` and is the version that freezes (#153). The rule and its thresholds are unchanged; the choice file keeps the rule's own verdict, and the ruling is recorded here, on #165 and in the evaluation notes.
+
+**What this amends.** The 2026-10-21 note above says a candidate blocked only on structure or Faithfulness "is decided by the rule as it stands". For v19 the developer overrode that: v19 ships on the ruling, not on the rule's verdict. The rule stays as written for any later candidate, and an override like this one is recorded as a note here.
+
+**The other approved deviations in spec #132's round:**
+- **Two runs a side:** spec #132 said "One run per candidate. A second run is for reference only." Every side was read two runs a side instead (the 2026-10-21 note above).
+- **v16's structure read under v17's range:** user story 36 allows structure to be re-read under v17's word range only before the longer-answers comparison. On the developer's choice, v16 (#161) was read under it throughout, since its misses on v15's check were answers over 600 words about many Companies. v16 qualifies only under that range, so it ships only with it, as it does in v19.
